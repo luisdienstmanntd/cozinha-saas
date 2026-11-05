@@ -50,3 +50,10 @@ Consulte [o relatório da Fase 1](docs/FASE_1.md), [as decisões](docs/DECISOES.
 
 O foco aprovado é uma unidade piloto de restaurante independente. Preparação mínima para operar é obrigatória, com cobrança a decidir. Preço, demanda, datas, permissões e material físico continuam sujeitos às validações do debate. Não iniciar a próxima fase sem aceite humano; não criar serviços, publicar ou contratar equipamentos sem autorização.
 
+## Fase 2 em andamento — bloqueada em 05/11/2026
+
+Autenticação local e migração de organizações/unidades/vínculos estão preparadas, mas a fase não foi validada: Docker falhou durante download de imagens com a unidade C: sem espaço. Veja `docs/FASE_2.md` antes de continuar. O modo demo permanece padrão.
+
+Após recuperar o ambiente, com Docker no PATH: `npm run db:start`, `npm run db:reset`, `npm run test:db` e `npm run test:integration`. O reset apaga dados somente da instância local descartável deste projeto. A integração cria dados sintéticos com credenciais aleatórias e remove suas próprias fixtures; recusa URL diferente de `http://127.0.0.1:54321`. Não vincular projeto remoto para esses testes.
+
+Modo local da interface requer `VITE_APP_MODE=local`, `VITE_SUPABASE_URL=http://127.0.0.1:54321` e `VITE_SUPABASE_PUBLISHABLE_KEY` obtida da instância local em `.env.local` ignorado pelo Git. Nunca colocar chave administrativa no frontend. Não há provisionamento de contas pela interface; a integração cria e remove contas temporárias. Não há conta de demonstração permanente nesta entrega parcial.
