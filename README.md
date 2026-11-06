@@ -50,10 +50,10 @@ Consulte [o relatório da Fase 1](docs/FASE_1.md), [as decisões](docs/DECISOES.
 
 O foco aprovado é uma unidade piloto de restaurante independente. Preparação mínima para operar é obrigatória, com cobrança a decidir. Preço, demanda, datas, permissões e material físico continuam sujeitos às validações do debate. Não iniciar a próxima fase sem aceite humano; não criar serviços, publicar ou contratar equipamentos sem autorização.
 
-## Fase 2 em andamento — bloqueada em 05/11/2026
+## Fase 2 — validada localmente, aguardando aceite
 
-Autenticação local e migração de organizações/unidades/vínculos estão preparadas, mas a fase não foi validada: Docker falhou durante download de imagens com a unidade C: sem espaço. Veja `docs/FASE_2.md` antes de continuar. O modo demo permanece padrão.
+Autenticação local e migração de organizações, unidades e vínculos foram verificadas com pgTAP e integração via API Supabase. Veja [o relatório da Fase 2](docs/FASE_2.md). O modo demo permanece padrão.
 
-Após recuperar o ambiente, com Docker no PATH: `npm run db:start`, `npm run db:reset`, `npm run test:db` e `npm run test:integration`. O reset apaga dados somente da instância local descartável deste projeto. A integração cria dados sintéticos com credenciais aleatórias e remove suas próprias fixtures; recusa URL diferente de `http://127.0.0.1:54321`. Não vincular projeto remoto para esses testes.
+Com Docker no PATH e Node 24: `npm run db:start`, `npm run test:db` e `npm run test:integration`. Para testar a reaplicação da migração, `npm run db:reset` recria o banco da instância local descartável deste projeto. A integração cria dados sintéticos com credenciais aleatórias e remove suas próprias fixtures; recusa URL diferente de `http://127.0.0.1:54321`. Não vincular projeto remoto para esses testes.
 
-Modo local da interface requer `VITE_APP_MODE=local`, `VITE_SUPABASE_URL=http://127.0.0.1:54321` e `VITE_SUPABASE_PUBLISHABLE_KEY` obtida da instância local em `.env.local` ignorado pelo Git. Nunca colocar chave administrativa no frontend. Não há provisionamento de contas pela interface; a integração cria e remove contas temporárias. Não há conta de demonstração permanente nesta entrega parcial.
+Modo local da interface requer `VITE_APP_MODE=local`, `VITE_SUPABASE_URL=http://127.0.0.1:54321` e `VITE_SUPABASE_PUBLISHABLE_KEY` obtida da instância local em `.env.local` ignorado pelo Git. Nunca colocar chave administrativa no frontend. Não há provisionamento de contas pela interface nem conta de demonstração permanente; a integração cria e remove contas temporárias.

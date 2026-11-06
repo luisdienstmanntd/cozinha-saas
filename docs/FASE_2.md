@@ -58,4 +58,24 @@ Evidência parcial: Node 24.22.1 explícito, vitest run src/features/identity/co
 
 Revisão independente e críticas cruzadas realizadas por suflex_analyst, business_strategist e architect_qa sem edição de arquivos. Concordaram com escopo local e ausência de onboarding. Arquitectura identificou três CTEs DML aninhadas nos testes SQL; corrigidas para WITH no nível superior. Nenhum outro bloqueador demonstrado por inspeção; isso não substitui execução. Limpeza visual por revogação exige nova consulta/operação; não ocorre espontaneamente. Remoção opcional de dist foi rejeitada; nenhum arquivo removido.
 
-Arquivos alterados: package.json/lock, App, configuração de ambiente/testes, feature identity (domínio, contrato, adapter, UI/testes), vitest.config.ts, scripts/local-supabase.mjs, tests/integration/identity.test.mjs, supabase/config.toml/.gitignore/migração/rollback/pgTAP, README, DECISOES e este relatório. CI remota não foi validada nesta execução. Trabalho a sincronizar como WIP explicitamente bloqueado, sem avançar de fase.
+Arquivos do WIP `79a35ed`: package.json/lock, App, configuração de ambiente/testes, feature identity (domínio, contrato, adapter, UI/testes), vitest.config.ts, scripts/local-supabase.mjs, tests/integration/identity.test.mjs, supabase/config.toml/.gitignore/migração/rollback/pgTAP, README, DECISOES e este relatório.
+
+## Validação final local — 06/11/2026
+
+Com cerca de 42 GiB livres em C:, `docker info` confirmou o motor 29.6.2. A inicialização falhou com imagens locais do Auth e do Kong incapazes de resolver o usuário declarado; a do PostgREST falhou com `exec format error`. Um teste temporário com CLI v2 isolou o problema, mas também falhou no Kong. O novo download das três imagens para `linux/amd64` corrigiu as falhas com os mesmos digests. A CLI original 3.0.0 foi restaurada, sem alteração de dependências. A pilha descartável subiu sem afetar os contêineres de outros projetos.
+
+| Comando/verificação                                                         | Resultado                                                                                  |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `npm run db:start` (equivalente pela CLI fixada)                            | Exit 0; Auth, API e banco locais disponíveis, migração aplicada.                           |
+| `psql -v ON_ERROR_STOP=1` com `supabase/rollback/identity_multiempresa.sql` | Exit 0; as três tabelas de identidade foram removidas e `auth.users` permaneceu.           |
+| `npx supabase db reset --no-seed`                                           | Exit 0; reaplicou a migração `20261105144003_identity_multiempresa.sql`.                   |
+| `npx supabase test db`                                                      | Exit 0; 33 verificações pgTAP passaram antes e depois do reset.                            |
+| `npm run test:integration`                                                  | Exit 0; 9 testes passaram após o reset (também passaram antes do reset via `node --test`). |
+| `npx supabase db advisors --type security --level warn --fail-on warn`      | Exit 0; nenhuma ocorrência no nível de aviso ou superior.                                  |
+| `npm run lint` / `npm run typecheck`                                        | Exit 0 em ambos.                                                                           |
+| `npm run test`                                                              | Exit 0; 17 testes em 5 arquivos, sem skips.                                                |
+| `npm run build`                                                             | Exit 0; aviso informativo de JS de 526,65 kB (150,37 kB gzip).                             |
+
+Na revisão da retomada, `architect_qa` identificou que `updateUser` não renova o JWT. O teste de integração agora renova a sessão e verifica as claims adulteradas antes de confirmar que elas não concedem acesso nem elevam o papel. As suites também confirmam isolamento A/B, joins, anônimo, inserção com ID alheio e revogação com o mesmo token. Nenhuma política precisou mudar na retomada.
+
+Arquivos alterados na retomada: `tests/integration/identity.test.mjs`, `README.md`, `docs/DECISOES.md` e este relatório. A validação é local; não houve deploy, teste em banco remoto ou aceite humano da Fase 2. Fase 3 não iniciada.

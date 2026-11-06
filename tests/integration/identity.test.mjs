@@ -247,6 +247,10 @@ test('autenticação e isolamento real via API Supabase local', async (t) => {
             data: { role: 'owner', organization_id: orgs[1] },
           }),
         );
+        checked(await c.auth.refreshSession());
+        const { claims } = checked(await c.auth.getClaims());
+        assert.equal(claims.user_metadata?.role, 'owner');
+        assert.equal(claims.user_metadata?.organization_id, orgs[1]);
         assert.equal(
           checked(await c.from('organizations').select('id'))[0].id,
           orgs[0],

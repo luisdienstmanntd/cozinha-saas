@@ -61,8 +61,8 @@
 
 ## D-011 — Identidade de teste local (05/11/2026)
 
-- **Status:** implementação parcial da Fase 2, BLOQUEADA; sem aceite nem validação RLS.
-- **Decisão proposta:** owner/member por vínculo atual no banco, sem papéis no user_metadata; provisionamento de empresas/membros só em fixtures administrativas locais; IDs e organization_id imutáveis pelo cliente. Helper privado mínimo evita recursão de RLS. Frontend local usa somente chave publicável e sessão em memória.
+- **Status:** validada localmente em 06/11/2026; aguardando aceite da Fase 2.
+- **Decisão:** owner/member por vínculo atual no banco, sem papéis no user_metadata; provisionamento de empresas/membros só em fixtures administrativas locais; IDs e organization_id imutáveis pelo cliente. Helper privado mínimo evita recursão de RLS. Frontend local usa somente chave publicável e sessão em memória.
 - **Motivo:** demonstrar isolamento com o mínimo de superfície funcional e operacional.
-- **Consequência:** sem cadastro público, convites ou gestão comercial da equipe. Interface retira dados após atualização, erro ou saída; revogação administrativa não apaga espontaneamente dados já renderizados. A próxima consulta deve ser negada pelo banco, ainda pendente de execução real.
-- **Revisar quando:** recuperar Docker/espaço e concluir testes/revisão da Fase 2; detalhes em docs/FASE_2.md.
+- **Consequência:** sem cadastro público, convites ou gestão comercial da equipe. A interface retira dados após atualização, erro ou saída. A revogação impede a próxima leitura ou escrita no banco, mesmo com o token anterior; dados já renderizados permanecem visíveis até a interface atualizar.
+- **Revisar quando:** forem definidos provisionamento de contas para o piloto ou novos papéis; evidências em [Fase 2](FASE_2.md).
