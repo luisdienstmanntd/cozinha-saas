@@ -1,10 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import type { IdentityGateway } from '../application/identityGateway';
 import type { Access } from '../domain/identity';
 import { credentials, organizationName } from '../domain/identity';
 
-export function IdentityHome({ gateway }: { gateway: IdentityGateway }) {
+export function IdentityHome({
+  gateway,
+  renderCatalog,
+}: {
+  gateway: IdentityGateway;
+  renderCatalog?: (
+    organizationId: string,
+    establishmentId: string,
+    canCreate: boolean,
+  ) => ReactNode;
+}) {
   const [userId, setUserId] = useState<string | null>(null);
   const [access, setAccess] = useState<Access>([]);
   const [email, setEmail] = useState('');
@@ -12,6 +22,7 @@ export function IdentityHome({ gateway }: { gateway: IdentityGateway }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [catalogUnit, setCatalogUnit] = useState<string | null>(null);
   const generation = useRef(0);
 
   useEffect(
@@ -20,6 +31,7 @@ export function IdentityHome({ gateway }: { gateway: IdentityGateway }) {
         generation.current++;
         setUserId(null);
         setAccess([]);
+        setCatalogUnit(null);
         setPassword('');
         setBusy(false);
         setNotice('');
@@ -120,6 +132,7 @@ export function IdentityHome({ gateway }: { gateway: IdentityGateway }) {
             onClick={() =>
               void run(async () => {
                 setAccess([]);
+                setCatalogUnit(null);
                 await gateway.signOut();
                 generation.current++;
                 setUserId(null);
@@ -143,9 +156,32 @@ export function IdentityHome({ gateway }: { gateway: IdentityGateway }) {
                   {organization.establishments.map((unit) => (
                     <li key={unit.id}>
                       {unit.name} — {unit.timezone}
+                      {renderCatalog && (
+                        <>
+                          {' '}
+                          <button
+                            aria-pressed={catalogUnit === unit.id}
+                            onClick={() => setCatalogUnit(unit.id)}
+                          >
+                            Catálogo de {unit.name}
+                          </button>
+                        </>
+                      )}
                     </li>
                   ))}
                 </ul>
+                {renderCatalog &&
+                  organization.establishments
+                    .filter((unit) => unit.id === catalogUnit)
+                    .map((unit) => (
+                      <section
+                        key={unit.id}
+                        aria-label={`Catálogo de ${unit.name}`}
+                      >
+                        <h3>Catálogo de {unit.name}</h3>
+                        {renderCatalog(organization.id, unit.id, owner)}
+                      </section>
+                    ))}
                 {organization.establishments.length === 0 && (
                   <p>Nenhuma unidade cadastrada.</p>
                 )}

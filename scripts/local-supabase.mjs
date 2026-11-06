@@ -27,6 +27,8 @@ export function localSupabase() {
   }
   const options = { auth: { persistSession: false, autoRefreshToken: false } };
   return {
+    url,
+    publishableKey: status.PUBLISHABLE_KEY,
     admin: createClient(url, status.SERVICE_ROLE_KEY, options),
     client: () => createClient(url, status.ANON_KEY, options),
   };

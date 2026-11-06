@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { IdentityGateway } from '../application/identityGateway';
 import {
   accessSchema,
@@ -6,17 +6,7 @@ import {
   organizationName,
 } from '../domain/identity';
 
-export function createIdentityGateway(
-  url: string,
-  publishableKey: string,
-): IdentityGateway {
-  const client = createClient(url, publishableKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: true,
-      detectSessionInUrl: false,
-    },
-  });
+export function createIdentityGateway(client: SupabaseClient): IdentityGateway {
   return {
     async signIn(email, password) {
       const input = credentials.parse({ email, password });

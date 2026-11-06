@@ -50,10 +50,16 @@ Consulte [o relatório da Fase 1](docs/FASE_1.md), [as decisões](docs/DECISOES.
 
 O foco aprovado é uma unidade piloto de restaurante independente. Preparação mínima para operar é obrigatória, com cobrança a decidir. Preço, demanda, datas, permissões e material físico continuam sujeitos às validações do debate. Não iniciar a próxima fase sem aceite humano; não criar serviços, publicar ou contratar equipamentos sem autorização.
 
-## Fase 2 — validada localmente, aguardando aceite
+## Fase 2 — identidade e isolamento validados localmente
 
 Autenticação local e migração de organizações, unidades e vínculos foram verificadas com pgTAP e integração via API Supabase. Veja [o relatório da Fase 2](docs/FASE_2.md). O modo demo permanece padrão.
 
 Com Docker no PATH e Node 24: `npm run db:start`, `npm run test:db` e `npm run test:integration`. Para testar a reaplicação da migração, `npm run db:reset` recria o banco da instância local descartável deste projeto. A integração cria dados sintéticos com credenciais aleatórias e remove suas próprias fixtures; recusa URL diferente de `http://127.0.0.1:54321`. Não vincular projeto remoto para esses testes.
 
 Modo local da interface requer `VITE_APP_MODE=local`, `VITE_SUPABASE_URL=http://127.0.0.1:54321` e `VITE_SUPABASE_PUBLISHABLE_KEY` obtida da instância local em `.env.local` ignorado pelo Git. Nunca colocar chave administrativa no frontend. Não há provisionamento de contas pela interface nem conta de demonstração permanente; a integração cria e remove contas temporárias.
+
+## Fase 03A — catálogo por estabelecimento
+
+Após entrar, escolha o catálogo do estabelecimento. Membros ativos consultam produtos e fornecedores; proprietários ativos também podem cadastrá-los. O produto exige uma unidade de medida. Fornecedores permanecem independentes dos produtos até o registro de origem do lote em um incremento posterior.
+
+Com a migração aplicada no banco descartável, instale o Chromium de teste com `npx playwright install chromium` e rode `npm run test:e2e`. O fluxo cria e remove dados fictícios, abre a aplicação em `127.0.0.1:5174` e usa uma chave publicável local. Ver [plano e resultados da 03A](docs/FASE_03A.md).

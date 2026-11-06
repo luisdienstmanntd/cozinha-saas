@@ -1,28 +1,13 @@
+import type { configureApp } from './configureApp';
 import { DemoHome } from '../features/demo/components/DemoHome';
-import { parseEnvironment } from '../shared/config/environment';
-import { useMemo } from 'react';
-import { createIdentityGateway } from '../features/identity/data/supabaseIdentity';
 import { IdentityHome } from '../features/identity/components/IdentityHome';
+import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
 
 export function App({
-  environment = import.meta.env,
+  configuration,
 }: {
-  environment?: Record<string, unknown>;
+  configuration: ReturnType<typeof configureApp>;
 }) {
-  const configuration = useMemo(() => {
-    try {
-      const config = parseEnvironment(environment);
-      return {
-        config,
-        gateway:
-          config.mode === 'local'
-            ? createIdentityGateway(config.url, config.publishableKey)
-            : null,
-      };
-    } catch {
-      return null;
-    }
-  }, [environment]);
   if (!configuration) {
     return (
       <main className="page configuration-error">
@@ -34,7 +19,18 @@ export function App({
       </main>
     );
   }
-  if (configuration.gateway)
-    return <IdentityHome gateway={configuration.gateway} />;
+  if (configuration.mode === 'local')
+    return (
+      <IdentityHome
+        gateway={configuration.identity}
+        renderCatalog={(organizationId, establishmentId, canCreate) => (
+          <CatalogPanel
+            gateway={configuration.catalog}
+            scope={{ organizationId, establishmentId }}
+            canCreate={canCreate}
+          />
+        )}
+      />
+    );
   return <DemoHome />;
 }
