@@ -13,6 +13,7 @@ export function IdentityHome({
     organizationId: string,
     establishmentId: string,
     canCreate: boolean,
+    userId: string,
   ) => ReactNode;
 }) {
   const [userId, setUserId] = useState<string | null>(null);
@@ -179,7 +180,7 @@ export function IdentityHome({
                         aria-label={`Catálogo de ${unit.name}`}
                       >
                         <h3>Catálogo de {unit.name}</h3>
-                        {renderCatalog(organization.id, unit.id, owner)}
+                        {renderCatalog(organization.id, unit.id, owner, userId)}
                       </section>
                     ))}
                 {organization.establishments.length === 0 && (

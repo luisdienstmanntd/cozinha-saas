@@ -8,6 +8,7 @@ type Props = {
   gateway: CatalogGateway;
   scope: CatalogScope;
   canCreate: boolean;
+  onCreated?: () => void;
 };
 type ListState =
   | { status: 'loading' }
@@ -22,6 +23,7 @@ function CatalogSection({
   gateway,
   scope: { organizationId, establishmentId },
   canCreate,
+  onCreated,
   kind,
 }: Props & { kind: CatalogKind }) {
   const product = kind === 'products';
@@ -76,6 +78,7 @@ function CatalogSection({
           : previous,
       );
       form.reset();
+      onCreated?.();
       setNotice(product ? 'Produto cadastrado.' : 'Fornecedor cadastrado.');
     } catch (cause) {
       setError(message(cause, 'Falha no cadastro.'));

@@ -4,6 +4,7 @@ import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 test('proprietário cadastra catálogo, troca de unidade e recupera os dados em nova sessão', async ({
   page,
 }) => {
+  page.setDefaultTimeout(5000);
   let duplicateClientWarnings = 0;
   page.on('console', (message) => {
     if (message.text().includes('Multiple GoTrueClient instances detected'))
@@ -31,8 +32,32 @@ test('proprietário cadastra catálogo, troca de unidade e recupera os dados em 
     await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(
-      page.getByText('Horta de teste', { exact: true }),
+      page
+        .getByRole('region', { name: 'Fornecedores' })
+        .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
+    await expect(
+      page
+        .getByRole('combobox', { name: 'Produto', exact: true })
+        .locator('option', { hasText: 'Arroz de teste' }),
+    ).toHaveCount(1);
+    await expect(
+      page
+        .getByRole('combobox', { name: 'Fornecedor', exact: true })
+        .locator('option', { hasText: 'Horta de teste' }),
+    ).toHaveCount(1);
+    await page
+      .getByRole('combobox', { name: 'Produto', exact: true })
+      .selectOption({ label: 'Arroz de teste (kg)' });
+    await page
+      .getByRole('combobox', { name: 'Fornecedor', exact: true })
+      .selectOption({ label: 'Horta de teste' });
+    await page.getByLabel('Lote de origem').fill('0001');
+    await page.getByLabel('Quantidade recebida').fill('1.25');
+    await page.getByLabel('Data de validade').fill('2027-01-01');
+    await page.getByRole('button', { name: 'Registrar recebimento' }).click();
+    await expect(page.getByText('Recebimento registrado.')).toBeVisible();
+    await expect(page.getByText(/lote 0001/)).toBeVisible();
     await page.getByLabel('Nome do fornecedor').fill('HORTA DE TESTE');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(page.getByRole('alert')).toHaveText(
@@ -44,9 +69,11 @@ test('proprietário cadastra catálogo, troca de unidade e recupera os dados em 
     await expect(page.getByText('Nenhum produto cadastrado.')).toBeVisible();
     await expect(page.getByText('Nenhum fornecedor cadastrado.')).toBeVisible();
     await expect(page.getByText('Arroz de teste — kg')).toHaveCount(0);
-    await expect(page.getByText('Horta de teste', { exact: true })).toHaveCount(
-      0,
-    );
+    await expect(
+      page
+        .getByRole('region', { name: 'Fornecedores' })
+        .getByText('Horta de teste', { exact: true }),
+    ).toHaveCount(0);
     await page.reload();
     await signIn();
     await page
@@ -54,8 +81,11 @@ test('proprietário cadastra catálogo, troca de unidade e recupera os dados em 
       .click();
     await expect(page.getByText('Arroz de teste — kg')).toBeVisible();
     await expect(
-      page.getByText('Horta de teste', { exact: true }),
+      page
+        .getByRole('region', { name: 'Fornecedores' })
+        .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
+    await expect(page.getByText(/lote 0001/)).toBeVisible();
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),

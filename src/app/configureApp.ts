@@ -2,6 +2,7 @@ import { parseEnvironment } from '../shared/config/environment';
 import { createIdentityGateway } from '../features/identity/data/supabaseIdentity';
 import { createCatalogGateway } from '../features/catalog/data/supabaseCatalog';
 import { createClient } from '@supabase/supabase-js';
+import { createBatchGateway } from '../features/batches/data/supabaseBatches';
 
 export function configureApp(environment: Record<string, unknown>) {
   try {
@@ -18,6 +19,7 @@ export function configureApp(environment: Record<string, unknown>) {
       mode: 'local' as const,
       identity: createIdentityGateway(client),
       catalog: createCatalogGateway(client),
+      batches: createBatchGateway(client),
     };
   } catch {
     return null;

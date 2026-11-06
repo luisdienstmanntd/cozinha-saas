@@ -63,3 +63,7 @@ Modo local da interface requer `VITE_APP_MODE=local`, `VITE_SUPABASE_URL=http://
 Após entrar, escolha o catálogo do estabelecimento. Membros ativos consultam produtos e fornecedores; proprietários ativos também podem cadastrá-los. O produto exige uma unidade de medida. Fornecedores permanecem independentes dos produtos até o registro de origem do lote em um incremento posterior.
 
 Com a migração aplicada no banco descartável, instale o Chromium de teste com `npx playwright install chromium` e rode `npm run test:e2e`. O fluxo cria e remove dados fictícios, abre a aplicação em `127.0.0.1:5174` e usa uma chave publicável local. Ver [plano e resultados da 03A](docs/FASE_03A.md).
+
+## Fase 03B — recebimento de lotes
+
+No estabelecimento selecionado, o proprietário registra produto, fornecedor, lote de origem, quantidade e validade informada com sua origem. A unidade vem do produto. Em caso de falha de conexão, reenvie os mesmos dados na mesma aba; se fechar a aba, confira a lista antes de registrar novamente. Ver [relatório da 03B](docs/FASE_03B.md).
