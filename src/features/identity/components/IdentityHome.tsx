@@ -7,6 +7,7 @@ import { credentials, organizationName } from '../domain/identity';
 export function IdentityHome({
   gateway,
   renderCatalog,
+  renderDestination,
 }: {
   gateway: IdentityGateway;
   renderCatalog?: (
@@ -15,6 +16,7 @@ export function IdentityHome({
     canCreate: boolean,
     userId: string,
   ) => ReactNode;
+  renderDestination?: (userId: string) => ReactNode;
 }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [access, setAccess] = useState<Access>([]);
@@ -122,6 +124,7 @@ export function IdentityHome({
         </form>
       ) : (
         <>
+          {!busy && access.length > 0 && renderDestination?.(userId)}
           <button
             disabled={busy}
             onClick={() => void run(() => refresh(generation.current))}

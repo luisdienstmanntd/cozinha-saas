@@ -63,6 +63,7 @@ export async function withCatalogFixture(run) {
     await run({ admin, client, users, scopeA, scopeA2, scopeB });
   } finally {
     for (const table of [
+      'containers',
       'batch_receipts',
       'products',
       'suppliers',

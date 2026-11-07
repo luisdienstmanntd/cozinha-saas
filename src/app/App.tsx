@@ -4,6 +4,8 @@ import { IdentityHome } from '../features/identity/components/IdentityHome';
 import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
 import { BatchPanel } from '../features/batches/components/BatchPanel';
 import { useState } from 'react';
+import { LabelView } from '../features/labels/components/LabelView';
+import { parseContainerPath } from '../features/labels/domain/label';
 
 function Workspace({
   configuration,
@@ -37,6 +39,7 @@ function Workspace({
         canCreate={canCreate}
         catalogRevision={revision}
         userId={userId}
+        labels={configuration.labels}
       />
     </>
   );
@@ -62,6 +65,12 @@ export function App({
     return (
       <IdentityHome
         gateway={configuration.identity}
+        renderDestination={() => {
+          const id = parseContainerPath(window.location.pathname);
+          return id ? (
+            <LabelView id={id} gateway={configuration.labels} />
+          ) : null;
+        }}
         renderCatalog={(organizationId, establishmentId, canCreate, userId) => (
           <Workspace
             configuration={configuration}

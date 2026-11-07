@@ -5,6 +5,8 @@ import type { CatalogItem, CatalogScope } from '../../catalog/domain/catalog';
 import type { BatchGateway } from '../application/batchGateway';
 import { batchInputSchema } from '../domain/batch';
 import type { BatchRow } from '../domain/batch';
+import type { LabelGateway } from '../../labels/application/labelGateway';
+import { LabelView } from '../../labels/components/LabelView';
 
 type Props = {
   scope: CatalogScope;
@@ -13,6 +15,7 @@ type Props = {
   batches: BatchGateway;
   catalogRevision?: number;
   userId: string;
+  labels?: LabelGateway;
 };
 type Loaded = {
   products: CatalogItem[];
@@ -27,6 +30,7 @@ function BatchContents({
   batches,
   catalogRevision,
   userId,
+  labels,
 }: Props) {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState('');
@@ -36,6 +40,7 @@ function BatchContents({
   const [origin, setOrigin] = useState('original');
   const [conflictReviewed, setConflictReviewed] = useState(false);
   const [reviewError, setReviewError] = useState('');
+  const [labelId, setLabelId] = useState<string | null>(null);
   const intent = useRef<string | null>(null);
   useEffect(() => {
     let current = true;
@@ -135,6 +140,9 @@ function BatchContents({
   return (
     <section aria-label="Recebimentos de lote">
       <h3>Recebimentos de lote</h3>
+      {labelId && labels && (
+        <LabelView key={labelId} id={labelId} gateway={labels} />
+      )}
       {error && <p role="alert">{error}</p>}
       {error === 'Esta tentativa já foi usada com outros dados.' && (
         <div>
@@ -220,6 +228,29 @@ function BatchContents({
                     ? 'original'
                     : 'definida pelo responsável'}
                   )
+                  {canCreate && labels && (
+                    <>
+                      {' '}
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          setBusy(true);
+                          setError('');
+                          void labels
+                            .ensure({ organizationId, establishmentId }, row.id)
+                            .then(setLabelId, () =>
+                              setError(
+                                'Não foi possível preparar o recipiente. Confira seu acesso.',
+                              ),
+                            )
+                            .finally(() => setBusy(false));
+                        }}
+                      >
+                        Abrir etiqueta
+                      </button>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>

@@ -1,0 +1,58 @@
+import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
+import { containerPath } from '../domain/label';
+import type { LabelData } from '../domain/label';
+
+export async function makeLabelPdf(
+  data: LabelData,
+  origin: string,
+): Promise<Blob> {
+  const url = new URL(origin);
+  if (
+    url.origin !== 'http://127.0.0.1:5173' &&
+    url.origin !== 'http://127.0.0.1:5174'
+  )
+    throw new Error('Endereço de demonstração indisponível.');
+  const batch = data.batch_receipts;
+  const text = [batch.products.name, batch.source_code];
+  if (text.some((item) => /[^\u0020-\u007e\u00a0-\u00ff]/u.test(item)))
+    throw new Error(
+      'Nome ou lote contém caracteres não disponíveis neste modelo de PDF.',
+    );
+  const doc = new jsPDF({ unit: 'mm', format: [100, 100], compress: false });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  const lines = doc.splitTextToSize(batch.products.name, 88) as string[];
+  if (lines.length > 4)
+    throw new Error('Nome muito longo para esta etiqueta de demonstração.');
+  doc.text(lines, 6, 10);
+  const y = 10 + lines.length * 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  const code = doc.splitTextToSize(
+    `Lote: ${batch.source_code}`,
+    88,
+  ) as string[];
+  if (code.length > 3)
+    throw new Error(
+      'Código do lote muito longo para esta etiqueta de demonstração.',
+    );
+  doc.text(code, 6, y);
+  const next = y + code.length * 4 + 2;
+  doc.text(`Quantidade: ${batch.quantity} ${batch.unit}`, 6, next);
+  doc.text(
+    `Validade: ${batch.expiry_date} (${batch.expiry_origin === 'original' ? 'original' : 'responsável'})`,
+    6,
+    next + 5,
+  );
+  doc.text(`ID: ${data.id}`, 6, 95);
+  if (next + 5 > 59)
+    throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
+  const qr = await QRCode.toDataURL(`${url.origin}${containerPath(data.id)}`, {
+    errorCorrectionLevel: 'M',
+    margin: 2,
+    width: 300,
+  });
+  doc.addImage(qr, 'PNG', 62, 61, 30, 30);
+  return doc.output('blob');
+}

@@ -67,3 +67,7 @@ Com a migração aplicada no banco descartável, instale o Chromium de teste com
 ## Fase 03B — recebimento de lotes
 
 No estabelecimento selecionado, o proprietário registra produto, fornecedor, lote de origem, quantidade e validade informada com sua origem. A unidade vem do produto. Em caso de falha de conexão, reenvie os mesmos dados na mesma aba; se fechar a aba, confira a lista antes de registrar novamente. Ver [relatório da 03B](docs/FASE_03B.md).
+
+## Fase 03C — etiqueta de demonstração
+
+O proprietário pode abrir a etiqueta de um recebimento e gerar um PDF provisório de 100 × 100 mm. O QR contém o ID do recipiente e o acesso ao destino exige login. A emissão ou reemissão não altera a quantidade. A etiqueta e a leitura física ainda precisam de ensaio; a URL `127.0.0.1` não aponta ao computador quando aberta em outro dispositivo. Ver [relatório da 03C](docs/FASE_03C.md).

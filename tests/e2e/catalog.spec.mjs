@@ -1,16 +1,20 @@
 import { expect, test } from '@playwright/test';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
+import { checked } from '../../scripts/local-supabase.mjs';
+import { readFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
+import { Buffer } from 'node:buffer';
 
-test('proprietário cadastra catálogo, troca de unidade e recupera os dados em nova sessão', async ({
+test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado', async ({
   page,
-}) => {
+}, testInfo) => {
   page.setDefaultTimeout(5000);
   let duplicateClientWarnings = 0;
   page.on('console', (message) => {
     if (message.text().includes('Multiple GoTrueClient instances detected'))
       duplicateClientWarnings++;
   });
-  await withCatalogFixture(async ({ users }) => {
+  await withCatalogFixture(async ({ users, admin, scopeA }) => {
     async function signIn() {
       await page.getByLabel('E-mail').fill(users[0].email);
       await page.getByLabel('Senha').fill(users[0].password);
@@ -58,6 +62,25 @@ test('proprietário cadastra catálogo, troca de unidade e recupera os dados em 
     await page.getByRole('button', { name: 'Registrar recebimento' }).click();
     await expect(page.getByText('Recebimento registrado.')).toBeVisible();
     await expect(page.getByText(/lote 0001/)).toBeVisible();
+    await page.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    const label = page.getByRole('region', { name: 'Recipiente', exact: true });
+    await expect(label.getByText(/Identificação:/)).toBeVisible();
+    const id = (await label.getByText(/Identificação:/).innerText()).replace(
+      'Identificação: ',
+      '',
+    );
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    const waitDownload = page.waitForEvent('download');
+    await label.getByRole('button', { name: 'Gerar etiqueta PDF' }).click();
+    const pdf = await waitDownload;
+    const pdfPath = testInfo.outputPath('etiqueta.pdf');
+    await pdf.saveAs(pdfPath);
+    const bytes = await readFile(pdfPath);
+    expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(bytes.includes(Buffer.from('Arroz de teste'))).toBe(true);
+    expect(bytes.includes(Buffer.from('0001'))).toBe(true);
+    expect(bytes.includes(Buffer.from('2027-01-01'))).toBe(true);
+    expect(pdf.suggestedFilename()).toBe(`etiqueta-${id}.pdf`);
     await page.getByLabel('Nome do fornecedor').fill('HORTA DE TESTE');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(page.getByRole('alert')).toHaveText(
@@ -91,6 +114,83 @@ test('proprietário cadastra catálogo, troca de unidade e recupera os dados em 
       page.getByRole('button', { name: 'Entrar', exact: true }),
     ).toBeVisible();
     await expect(page.getByText('Arroz de teste — kg')).toHaveCount(0);
+    await page.goto(`/recipiente/${id}`);
+    await expect(
+      page.getByRole('region', { name: 'Recipiente', exact: true }),
+    ).toHaveCount(0);
+    await page.getByLabel('E-mail').fill(users[1].email);
+    await page.getByLabel('Senha').fill(users[1].password);
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(page.getByRole('alert')).toHaveText(
+      'Recipiente indisponível ou sem acesso.',
+    );
+    await page.getByRole('button', { name: 'Sair', exact: true }).click();
+    await signIn();
+    const resolved = page.getByRole('region', {
+      name: 'Recipiente',
+      exact: true,
+    });
+    await expect(resolved.getByText(`Identificação: ${id}`)).toBeVisible();
+    const secondDownload = page.waitForEvent('download');
+    await resolved.getByRole('button', { name: 'Gerar etiqueta PDF' }).click();
+    expect((await secondDownload).suggestedFilename()).toBe(
+      `etiqueta-${id}.pdf`,
+    );
+    const containers = checked(
+      await admin
+        .from('containers')
+        .select('id')
+        .eq('organization_id', scopeA.organization_id),
+    );
+    const batches = checked(
+      await admin
+        .from('batch_receipts')
+        .select('quantity')
+        .eq('organization_id', scopeA.organization_id),
+    );
+    expect(containers).toEqual([{ id }]);
+    expect(batches).toEqual([{ quantity: 1.25 }]);
+    checked(
+      await admin
+        .from('memberships')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('user_id', users[0].id),
+    );
+    await page.getByRole('button', { name: 'Atualizar acesso' }).click();
+    await expect(page.getByRole('alert')).toHaveText(
+      'Nenhum vínculo ativo. Solicite acesso ao responsável.',
+    );
+    await expect(
+      page.getByRole('region', { name: 'Recipiente', exact: true }),
+    ).toHaveCount(0);
   });
   expect(duplicateClientWarnings).toBe(0);
+});
+
+test('modelo PDF comporta nome longo com acentuação', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { makeLabelPdf } =
+      await import('/src/features/labels/application/pdf.ts');
+    const blob = await makeLabelPdf(
+      {
+        id: '12345678-1234-4234-8234-123456789abc',
+        batch_receipts: {
+          source_code: 'REMESSA DE TESTE 0001',
+          quantity: 1.25,
+          unit: 'kg',
+          expiry_date: '2027-01-01',
+          expiry_origin: 'original',
+          products: { name: 'Açúcar integral de cozinha '.repeat(4).trim() },
+        },
+      },
+      globalThis.location.origin,
+    );
+    return Array.from(new Uint8Array(await blob.arrayBuffer()));
+  });
+  const pdf = Buffer.from(result);
+  expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+  await writeFile(testInfo.outputPath('etiqueta-longa.pdf'), pdf);
 });

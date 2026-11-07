@@ -3,6 +3,7 @@ import { createIdentityGateway } from '../features/identity/data/supabaseIdentit
 import { createCatalogGateway } from '../features/catalog/data/supabaseCatalog';
 import { createClient } from '@supabase/supabase-js';
 import { createBatchGateway } from '../features/batches/data/supabaseBatches';
+import { createLabelGateway } from '../features/labels/data/supabaseLabels';
 
 export function configureApp(environment: Record<string, unknown>) {
   try {
@@ -20,6 +21,7 @@ export function configureApp(environment: Record<string, unknown>) {
       identity: createIdentityGateway(client),
       catalog: createCatalogGateway(client),
       batches: createBatchGateway(client),
+      labels: createLabelGateway(client),
     };
   } catch {
     return null;
