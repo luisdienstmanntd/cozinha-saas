@@ -2,6 +2,8 @@
 
 O aceite humano da fase 03D foi recebido antes desta revisão. Foram realizadas análises independentes de cozinha, negócio e arquitetura, seguidas de críticas cruzadas. Os agentes não alteraram arquivos.
 
+O usuário aceitou esta revisão após a conclusão das correções e verificações documentadas abaixo. O próximo incremento depende de solicitação explícita, conforme o brief do produto.
+
 ## Critérios e correções
 
 - Prioridade alta para o usuário: uma etiqueta aberta não deve permanecer visível quando a atualização dos recebimentos falha; a geração iniciada antes de sair da tela ou trocar o contexto não deve disparar download depois. Os testes de componente reproduziram as duas falhas antes das correções. A visualização é fechada na atualização ou falha; resultados assíncronos de uma instância antiga são descartados, inclusive durante a criação do PDF. Um arquivo já baixado não pode ser revogado por essa medida.
