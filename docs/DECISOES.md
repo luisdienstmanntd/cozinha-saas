@@ -108,3 +108,10 @@
 - **Motivo:** fechar uma lacuna entre banco e interface sem antecipar auditoria de unidade. Trocar o fuso reclassificaria a validade de recebimentos já registrados (D-015), e `establishments` não guarda autoria das edições exigida por D-004.
 - **Consequência:** a unidade não tem trilha de auditoria de nome, não pode ser excluída e a criação não é idempotente. Um resultado incerto recarrega a lista e pede conferência antes de nova tentativa. Nomes repetidos são permitidos pelo banco e geram rótulos iguais na interface. Recarregar após gravar desmonta a área de trabalho aberta, como já acontecia ao salvar o nome da organização.
 - **Revisar quando:** for necessário mudar fuso ou excluir/arquivar unidade (exige migração de auditoria em fase própria), quando houver convite de membros, ou antes de uma visão multiunidade. Ver [revisão da interface](REVISAO_INTERFACE_UNIDADES.md).
+
+## D-018 — Anulação integral de movimentação (08/11/2026)
+
+- **Decisão:** proprietário pode anular integralmente um consumo ou descarte mediante motivo, criando uma única compensação vinculada ao original, sem alterar ou remover eventos. A quantidade é derivada do movimento original no banco; saídas e anulações bloqueiam o mesmo recebimento, e o reenvio é idempotente e reautorizado.
+- **Motivo:** corrigir registro incorreto sem perder autoria, histórico ou consistência do saldo registrado.
+- **Consequência:** anulação não recupera alimento fisicamente; para substituir quantidade ou tipo é necessário registrar uma nova saída. Não há estorno parcial nem estorno de estorno. A recuperação após fechamento da aba permanece pendente e a rota do QR ainda não exibe saldo.
+- **Revisar quando:** a operação de piloto exigir recuperação durável, substituição atômica ou outras formas de correção.

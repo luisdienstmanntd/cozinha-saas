@@ -100,7 +100,19 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     ).toBeVisible();
     await movements.getByLabel('Quantidade da saída').fill('0.5');
     await movements.getByRole('button', { name: 'Registrar saída' }).click();
-    await movements.getByRole('button', { name: 'Confirmar saída' }).click();
+    await page
+      .getByRole('button', { name: 'Gerenciar unidades de Empresa de teste A' })
+      .click();
+    await page
+      .getByRole('button', { name: 'Renomear Cozinha auxiliar' })
+      .click();
+    await expect(page.getByText('Nome da unidade atualizado.')).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Movimentações' }),
+    ).toHaveCount(0);
+    await page.getByRole('button', { name: 'Ver movimentações' }).click();
+    await expect(movements.getByText(/Tentativa pendente/)).toBeVisible();
+    await movements.getByRole('button', { name: 'Repetir tentativa' }).click();
     await expect(
       movements.getByText('Saldo registrado: 0.75 kg'),
     ).toBeVisible();
@@ -143,6 +155,19 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await reopened.getByRole('button', { name: 'Confirmar saída' }).click();
     await expect(reopened.getByText('Saldo registrado: 0 kg')).toBeVisible();
     await expect(reopened.getByText(/Descarte — 0.75 kg/)).toBeVisible();
+    const consumed = reopened
+      .getByRole('listitem')
+      .filter({ hasText: 'Consumo — 0.5 kg' });
+    await consumed.getByRole('button', { name: 'Anular registro' }).click();
+    await reopened
+      .getByLabel('Motivo da anulação')
+      .fill('Lançamento incorreto');
+    await reopened.getByRole('button', { name: 'Revisar anulação' }).click();
+    await expect(reopened.getByText(/não recupera alimento/)).toBeVisible();
+    await reopened.getByRole('button', { name: 'Confirmar anulação' }).click();
+    await expect(reopened.getByText('Saldo registrado: 0.5 kg')).toBeVisible();
+    await expect(consumed).toContainText('anulado');
+    await expect(reopened.getByText(/Anulação do registro/)).toBeVisible();
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),

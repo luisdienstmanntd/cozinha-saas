@@ -9,13 +9,16 @@ import type {
 } from '../application/movementGateway';
 import { MovementRejected } from '../application/movementGateway';
 
-const savedSchema = z.object({
-  batchId: z.string(),
-  kind: z.enum(['consumption', 'discard']),
-  quantity: z.string(),
-  reason: z.string().nullable(),
-  intentId: z.uuid(),
-});
+const savedSchema = z
+  .object({
+    batchId: z.string(),
+    kind: z.enum(['consumption', 'discard', 'reversal']),
+    quantity: z.string(),
+    reason: z.string().nullable(),
+    intentId: z.uuid(),
+    targetId: z.uuid().optional(),
+  })
+  .refine((value) => value.kind !== 'reversal' || value.targetId !== undefined);
 export function MovementPanel({
   scope,
   userId,
@@ -38,6 +41,7 @@ export function MovementPanel({
   const key = `movement-intent:${userId}:${scope.organizationId}:${scope.establishmentId}:${batch.id}`;
   const [events, setEvents] = useState<Movement[] | null>(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [stored] = useState(() => {
     try {
@@ -54,6 +58,7 @@ export function MovementPanel({
   const [rejected, setRejected] = useState(false);
   const [reviewedHistory, setReviewedHistory] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [reversing, setReversing] = useState<Movement | null>(null);
   const active = useRef(false);
   useEffect(() => {
     active.current = true;
@@ -95,6 +100,7 @@ export function MovementPanel({
   async function send(input: MovementInput) {
     setBusy(true);
     setError('');
+    setNotice('');
     try {
       await gateway.record(scope, input);
     } catch (cause) {
@@ -103,7 +109,7 @@ export function MovementPanel({
       setReviewedHistory(false);
       setError(
         cause instanceof MovementRejected
-          ? 'Saída recusada. Atualize o histórico e confira o saldo antes de iniciar outra tentativa.'
+          ? `${input.kind === 'reversal' ? 'Anulação' : 'Saída'} recusada. Atualize o histórico e confira o saldo antes de iniciar outra tentativa.`
           : 'Não foi possível confirmar a saída. Repita a mesma tentativa; não crie outra sem conferir o histórico.',
       );
       setBusy(false);
@@ -118,12 +124,16 @@ export function MovementPanel({
         throw new Error('Tentativa alterada.');
       sessionStorage.removeItem(key);
       setPending(null);
+      if (input.kind === 'reversal')
+        setNotice(
+          'Anulação registrada. Para substituir, registre uma nova saída.',
+        );
       setEvents(null);
       setVersion((v) => v + 1);
     } catch {
       setConfirmed(true);
       setError(
-        'Saída confirmada, mas não foi possível limpar a tentativa nesta aba.',
+        `${input.kind === 'reversal' ? 'Anulação' : 'Saída'} confirmada, mas não foi possível limpar a tentativa nesta aba.`,
       );
     } finally {
       setBusy(false);
@@ -200,14 +210,50 @@ export function MovementPanel({
       setError('Não foi possível guardar a tentativa nesta aba.');
     }
   }
+  function reviewReversal(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!reversing) return;
+    const reason = String(
+      new FormData(e.currentTarget).get('reason') ?? '',
+    ).trim();
+    if (!reason || reason.length > 500) {
+      setError('Informe o motivo da anulação.');
+      return;
+    }
+    const input: MovementInput = {
+      batchId: batch.id,
+      kind: 'reversal',
+      quantity: String(reversing.quantity),
+      reason,
+      intentId: crypto.randomUUID(),
+      targetId: reversing.id,
+    };
+    try {
+      sessionStorage.setItem(key, JSON.stringify(input));
+      setPending(input);
+      setReviewing(true);
+      setReversing(null);
+      setError('');
+    } catch {
+      setError('Não foi possível guardar a tentativa nesta aba.');
+    }
+  }
   const total = events?.reduce(
-    (sum, item) => sum + Math.round(item.quantity * 1000),
+    (sum, item) =>
+      sum +
+      (item.kind === 'reversal' ? -1 : 1) * Math.round(item.quantity * 1000),
     0,
   );
   const remaining =
     total === undefined
       ? null
       : (Math.round(batch.quantity * 1000) - total) / 1000;
+  const original =
+    pending?.kind === 'reversal'
+      ? events?.find(
+          (item) => item.id === pending.targetId && item.kind !== 'reversal',
+        )
+      : undefined;
   return (
     <section aria-label="Movimentações">
       <h3>Movimentações</h3>
@@ -216,12 +262,13 @@ export function MovementPanel({
         {batch.quantity} {batch.unit}
       </p>
       <p>O saldo registrado não comprova a quantidade física.</p>
+      {notice && <p role="status">{notice}</p>}
       <p>
-        Confira a saída antes de confirmar: a correção de movimentos ainda não
-        está disponível. Se fechar a aba após uma falha, confira o histórico
-        antes de registrar novamente.
+        Confira a operação antes de confirmar. Se fechar a aba após uma falha,
+        confira o histórico antes de registrar novamente.
       </p>
       {error && <p role="alert">{error}</p>}
+      {!events && !error && <p>Consultando histórico…</p>}
       {stored.invalid && (
         <p role="alert">
           Não foi possível recuperar a tentativa anterior. Confira o histórico
@@ -241,10 +288,34 @@ export function MovementPanel({
           <ul>
             {events.map((item) => (
               <li key={item.id}>
-                {item.kind === 'discard' ? 'Descarte' : 'Consumo'} —{' '}
-                {item.quantity} {batch.unit} — {item.reason ?? 'sem motivo'} —{' '}
+                {item.kind === 'reversal'
+                  ? 'Anulação do registro'
+                  : item.kind === 'discard'
+                    ? 'Descarte'
+                    : 'Consumo'}{' '}
+                — {item.quantity} {batch.unit} — {item.reason ?? 'sem motivo'} —{' '}
                 {item.created_at} — fuso {item.timezone} — autor{' '}
-                {item.created_by}
+                {item.created_by} — ID {item.id}
+                {item.kind === 'reversal' && (
+                  <> — movimento original {item.reverses_id}</>
+                )}
+                {item.kind !== 'reversal' &&
+                  events.some((event) => event.reverses_id === item.id) && (
+                    <> — anulado</>
+                  )}
+                {canCreate &&
+                  !stored.invalid &&
+                  !pending &&
+                  item.kind !== 'reversal' &&
+                  !events.some((event) => event.reverses_id === item.id) && (
+                    <button
+                      disabled={busy}
+                      type="button"
+                      onClick={() => setReversing(item)}
+                    >
+                      Anular registro
+                    </button>
+                  )}
               </li>
             ))}
           </ul>
@@ -254,28 +325,65 @@ export function MovementPanel({
         <>
           <p>
             Tentativa pendente:{' '}
-            {pending.kind === 'discard' ? 'descarte' : 'consumo'} de{' '}
-            {pending.quantity} {batch.unit}.
+            {pending.kind === 'reversal'
+              ? 'anulação do registro'
+              : pending.kind === 'discard'
+                ? 'descarte'
+                : 'consumo'}{' '}
+            de {pending.quantity} {batch.unit}.
           </p>
           {pending.reason && <p>Motivo: {pending.reason}</p>}
+          {pending.kind === 'reversal' &&
+            events &&
+            (original ? (
+              <p>
+                Registro original:{' '}
+                {original.kind === 'discard' ? 'Descarte' : 'Consumo'} —{' '}
+                {original.created_at} — motivo {original.reason ?? 'sem motivo'}{' '}
+                — ID {original.id}
+              </p>
+            ) : (
+              <p>
+                Não foi possível localizar o registro original no histórico;
+                atualize o histórico antes de continuar.
+              </p>
+            ))}
+          {pending.kind === 'reversal' && events && !original && !rejected && (
+            <button disabled={busy} onClick={() => void refreshHistory()}>
+              Atualizar histórico
+            </button>
+          )}
+          {pending.kind === 'reversal' && (
+            <p>
+              A anulação corrige somente o registro; não recupera alimento nem
+              desfaz descarte físico. Para substituir, registre uma nova saída.
+            </p>
+          )}
           {reviewing && remaining !== null && (
             <p>
-              Saldo após a saída, se confirmado:{' '}
+              Saldo após a operação, se confirmada:{' '}
               {(Math.round(remaining * 1000) -
-                Math.round(Number(pending.quantity) * 1000)) /
+                (pending.kind === 'reversal' ? -1 : 1) *
+                  Math.round(Number(pending.quantity) * 1000)) /
                 1000}{' '}
               {batch.unit}. O servidor confirmará o saldo atual.
             </p>
           )}
           {canCreate && !confirmed && !rejected && (
             <button
-              disabled={busy || !events}
+              disabled={
+                busy || !events || (pending.kind === 'reversal' && !original)
+              }
               onClick={() => {
                 setReviewing(false);
                 void send(pending);
               }}
             >
-              {reviewing ? 'Confirmar saída' : 'Repetir tentativa'}
+              {reviewing
+                ? pending.kind === 'reversal'
+                  ? 'Confirmar anulação'
+                  : 'Confirmar saída'
+                : 'Repetir tentativa'}
             </button>
           )}
           {reviewing && (
@@ -301,6 +409,20 @@ export function MovementPanel({
             </button>
           )}
         </>
+      ) : reversing && canCreate ? (
+        <form onSubmit={reviewReversal}>
+          <p>
+            Anular {reversing.kind === 'discard' ? 'descarte' : 'consumo'} de{' '}
+            {reversing.quantity} {batch.unit}.
+          </p>
+          <label>
+            Motivo da anulação <input name="reason" required maxLength={500} />
+          </label>
+          <button>Revisar anulação</button>
+          <button type="button" onClick={() => setReversing(null)}>
+            Voltar
+          </button>
+        </form>
       ) : (
         canCreate &&
         events &&
