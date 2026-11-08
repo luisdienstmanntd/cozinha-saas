@@ -32,3 +32,14 @@ Plano autorizado após revisão das fases 03A–03C e continuidade solicitada em
 - `npm run format:check`: falhou em 41 arquivos preexistentes não alterados. `prettier --check` nos arquivos alterados passou; `git diff --check` também passou.
 
 Arquivos alterados: `BatchPanel`, domínio/consulta de lotes, repasse do fuso da unidade, testes unitários/componentes, integração e E2E, README, decisões e este relatório. Sem deploy. Fase aguardando os gates que dependem do Supabase local.
+
+## Retomada em casa — 08/11/2026
+
+O usuário informou que o projeto havia avançado no outro computador; esta cópia foi atualizada por fast-forward até `bf8411d`. O rascunho local anterior foi preservado em `stash@{0}` (identificado como “rascunho local 03D antes de sincronizar GitHub”). Docker 29.6.2 e Supabase descartável local estavam disponíveis.
+
+- `npm run lint`, `npm run typecheck`, `npm run test` e `npm run build`: exit 0. Vitest: 51 testes em 15 arquivos; build com aviso informativo de bundle principal de 974,74 kB (296,76 kB gzip).
+- `supabase test db`: exit 0, 88 verificações pgTAP. `node --test tests/integration/*.test.mjs`: exit 0, 12 testes. `supabase db advisors --type security --level warn --fail-on warn`: exit 0, sem ocorrências.
+- `npm run test:e2e`: exit 0, 2 testes Chromium. Estes resultados substituem apenas os gates anteriormente bloqueados; não houve deploy.
+- Revisão arquitetural somente leitura identificou pendências: painel aberto não atualiza automaticamente na virada de dia; busca por nome depende de catálogo limitado a 1.000 produtos e pode não encontrar um produto além desse limite; resumo e busca consideram apenas os últimos 1.000 recebimentos e não são totais completos da unidade, mesmo com aviso de limite. A consulta usa relógio do dispositivo; a revisão recomenda referência única por atualização e explicitação dessa fonte. A junção de recipiente passou no teste de integração real. Essas questões ainda não foram corrigidas nem aceitas como limitações operacionais.
+
+A 03D permanece em revisão; não iniciar o próximo incremento antes da decisão e aceite humanos.
