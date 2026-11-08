@@ -70,6 +70,17 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       '',
     );
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    const search = page.getByRole('searchbox', {
+      name: 'Buscar por produto, lote ou ID do recipiente',
+    });
+    const results = page.getByRole('list', { name: 'Recebimentos e validade' });
+    await search.fill('arroz de teste');
+    await expect(results.getByText(/lote 0001/)).toBeVisible();
+    await search.fill('0001');
+    await expect(results.getByText(/Arroz de teste/)).toBeVisible();
+    await search.fill(id);
+    await expect(results.getByText(`recipiente ${id}`)).toBeVisible();
+    await search.clear();
     const waitDownload = page.waitForEvent('download');
     await label.getByRole('button', { name: 'Gerar etiqueta PDF' }).click();
     const pdf = await waitDownload;

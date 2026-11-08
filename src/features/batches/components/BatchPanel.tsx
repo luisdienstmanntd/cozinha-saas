@@ -7,9 +7,11 @@ import { batchInputSchema } from '../domain/batch';
 import type { BatchRow } from '../domain/batch';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { LabelView } from '../../labels/components/LabelView';
+import { getExpiryStatus } from '../domain/expiryStatus';
 
 type Props = {
   scope: CatalogScope;
+  timezone: string;
   canCreate: boolean;
   catalog: CatalogGateway;
   batches: BatchGateway;
@@ -25,6 +27,7 @@ type Loaded = {
 
 function BatchContents({
   scope: { organizationId, establishmentId },
+  timezone,
   canCreate,
   catalog,
   batches,
@@ -41,6 +44,7 @@ function BatchContents({
   const [conflictReviewed, setConflictReviewed] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [labelId, setLabelId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const intent = useRef<string | null>(null);
   useEffect(() => {
     let current = true;
@@ -214,46 +218,107 @@ function BatchContents({
           {loaded.rows.length >= 1000 && (
             <p>Exibindo até 1.000 recebimentos; outros podem não aparecer.</p>
           )}
+          <section aria-label="Painel de validade">
+            <h4>Validade</h4>
+            {(() => {
+              const counts = { overdue: 0, today: 0, tomorrow: 0, upcoming: 0 };
+              for (const row of loaded.rows)
+                counts[getExpiryStatus(row.expiry_date, timezone)]++;
+              return (
+                <p>
+                  Vencidos: {counts.overdue} · Vence hoje: {counts.today} ·{' '}
+                  Vence amanhã: {counts.tomorrow} · Posteriores:{' '}
+                  {counts.upcoming}
+                </p>
+              );
+            })()}
+            <label>
+              Buscar por produto, lote ou ID do recipiente{' '}
+              <input
+                type="search"
+                aria-label="Buscar por produto, lote ou ID do recipiente"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </label>
+          </section>
           {loaded.rows.length === 0 ? (
             <p>Nenhum recebimento registrado.</p>
           ) : (
-            <ul>
-              {loaded.rows.map((row) => (
-                <li key={row.id}>
-                  {loaded.products.find((p) => p.id === row.product_id)?.name ??
-                    'Produto'}{' '}
-                  — lote {row.source_code} — {row.quantity} {row.unit} —
-                  validade {row.expiry_date} (
-                  {row.expiry_origin === 'original'
-                    ? 'original'
-                    : 'definida pelo responsável'}
-                  )
-                  {canCreate && labels && (
-                    <>
-                      {' '}
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => {
-                          setBusy(true);
-                          setError('');
-                          void labels
-                            .ensure({ organizationId, establishmentId }, row.id)
-                            .then(setLabelId, () =>
-                              setError(
-                                'Não foi possível preparar o recipiente. Confira seu acesso.',
-                              ),
-                            )
-                            .finally(() => setBusy(false));
-                        }}
-                      >
-                        Abrir etiqueta
-                      </button>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
+            (() => {
+              const normalizedSearch = search.trim().toLocaleLowerCase('pt-BR');
+              const products = new Map(
+                loaded.products.map((product) => [product.id, product.name]),
+              );
+              const visibleRows = loaded.rows.filter((row) => {
+                const productName = products.get(row.product_id) ?? 'Produto';
+                return [productName, row.source_code, row.container_id ?? '']
+                  .join(' ')
+                  .toLocaleLowerCase('pt-BR')
+                  .includes(normalizedSearch);
+              });
+              return visibleRows.length ? (
+                <ul aria-label="Recebimentos e validade">
+                  {visibleRows.map((row) => {
+                    const status = getExpiryStatus(row.expiry_date, timezone);
+                    const statusLabel = {
+                      overdue: 'Vencido',
+                      today: 'Vence hoje',
+                      tomorrow: 'Vence amanhã',
+                      upcoming: 'Posterior',
+                    }[status];
+                    return (
+                      <li key={row.id}>
+                        {products.get(row.product_id) ?? 'Produto'} — lote{' '}
+                        {row.source_code} — {row.quantity} {row.unit} — validade{' '}
+                        {row.expiry_date} (
+                        {row.expiry_origin === 'original'
+                          ? 'original'
+                          : 'definida pelo responsável'}
+                        ) — {statusLabel}
+                        {row.container_id && (
+                          <> — recipiente {row.container_id}</>
+                        )}
+                        {canCreate && labels && (
+                          <>
+                            {' '}
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => {
+                                setBusy(true);
+                                setError('');
+                                void labels
+                                  .ensure(
+                                    { organizationId, establishmentId },
+                                    row.id,
+                                  )
+                                  .then(
+                                    (id) => {
+                                      setLabelId(id);
+                                      setLoaded(null);
+                                      setAttempt((value) => value + 1);
+                                    },
+                                    () =>
+                                      setError(
+                                        'Não foi possível preparar o recipiente. Confira seu acesso.',
+                                      ),
+                                  )
+                                  .finally(() => setBusy(false));
+                              }}
+                            >
+                              Abrir etiqueta
+                            </button>
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p>Nenhum recebimento corresponde à busca.</p>
+              );
+            })()
           )}
           {canCreate && (
             <form onSubmit={(event) => void submit(event)}>

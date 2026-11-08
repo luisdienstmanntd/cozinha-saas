@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 import type { BatchGateway } from '../application/batchGateway';
 import { batchInputSchema, batchRowSchema } from '../domain/batch';
 
@@ -8,13 +9,19 @@ export function createBatchGateway(client: SupabaseClient): BatchGateway {
       const { data, error } = await client
         .from('batch_receipts')
         .select(
-          'id,product_id,source_code,quantity,unit,expiry_date,expiry_origin',
+          'id,product_id,source_code,quantity,unit,expiry_date,expiry_origin,containers(id)',
         )
         .eq('organization_id', scope.organizationId)
         .eq('establishment_id', scope.establishmentId)
         .order('created_at', { ascending: false });
       if (error) throw new Error('Não foi possível consultar os recebimentos.');
-      return batchRowSchema.array().parse(data);
+      const rows = zBatchRows(data);
+      return rows.map(({ containers, ...row }) => {
+        const container = Array.isArray(containers)
+          ? containers[0]
+          : containers;
+        return { ...row, container_id: container?.id ?? null };
+      });
     },
     async receive(scope, input) {
       const v = batchInputSchema.parse(input);
@@ -39,6 +46,25 @@ export function createBatchGateway(client: SupabaseClient): BatchGateway {
       return zUuid(data);
     },
   };
+}
+
+function zBatchRows(value: unknown) {
+  return batchRowSchema
+    .omit({ container_id: true })
+    .extend({
+      containers: z
+        .union([
+          z.object({ id: batchRowSchema.shape.container_id.unwrap() }),
+          z
+            .object({ id: batchRowSchema.shape.container_id.unwrap() })
+            .array()
+            .max(1),
+        ])
+        .nullable()
+        .optional(),
+    })
+    .array()
+    .parse(value);
 }
 function zUuid(value: unknown): string {
   return batchRowSchema.shape.id.parse(value);

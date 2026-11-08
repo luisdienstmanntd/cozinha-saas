@@ -13,6 +13,7 @@ function Workspace({
   establishmentId,
   canCreate,
   userId,
+  timezone,
 }: {
   configuration: NonNullable<ReturnType<typeof configureApp>> & {
     mode: 'local';
@@ -21,6 +22,7 @@ function Workspace({
   establishmentId: string;
   canCreate: boolean;
   userId: string;
+  timezone: string;
 }) {
   const [revision, setRevision] = useState(0);
   const scope = { organizationId, establishmentId };
@@ -36,6 +38,7 @@ function Workspace({
         catalog={configuration.catalog}
         batches={configuration.batches}
         scope={scope}
+        timezone={timezone}
         canCreate={canCreate}
         catalogRevision={revision}
         userId={userId}
@@ -71,13 +74,20 @@ export function App({
             <LabelView id={id} gateway={configuration.labels} />
           ) : null;
         }}
-        renderCatalog={(organizationId, establishmentId, canCreate, userId) => (
+        renderCatalog={(
+          organizationId,
+          establishmentId,
+          canCreate,
+          userId,
+          timezone,
+        ) => (
           <Workspace
             configuration={configuration}
             organizationId={organizationId}
             establishmentId={establishmentId}
             canCreate={canCreate}
             userId={userId}
+            timezone={timezone}
           />
         )}
       />

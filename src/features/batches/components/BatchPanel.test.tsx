@@ -29,6 +29,7 @@ it('mantém os dados quando o recebimento falha', async () => {
   render(
     <BatchPanel
       scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="America/Sao_Paulo"
       canCreate
       userId="user-a"
       catalog={catalog}
@@ -78,6 +79,7 @@ it('exige recarregar a lista antes de liberar uma nova tentativa em conflito', a
   render(
     <BatchPanel
       scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="America/Sao_Paulo"
       userId="user-a"
       canCreate
       catalog={catalog}
@@ -144,6 +146,7 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
   const view = render(
     <BatchPanel
       scope={scope}
+      timezone="America/Sao_Paulo"
       canCreate
       userId="user-a"
       catalog={catalog}
@@ -155,6 +158,7 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
   const view2 = render(
     <BatchPanel
       scope={scope}
+      timezone="America/Sao_Paulo"
       canCreate
       userId="user-a"
       catalog={catalog}
@@ -170,6 +174,7 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
   render(
     <BatchPanel
       scope={scope}
+      timezone="America/Sao_Paulo"
       canCreate
       userId="user-b"
       catalog={catalog}

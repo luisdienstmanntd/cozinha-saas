@@ -15,6 +15,7 @@ export function IdentityHome({
     establishmentId: string,
     canCreate: boolean,
     userId: string,
+    timezone: string,
   ) => ReactNode;
   renderDestination?: (userId: string) => ReactNode;
 }) {
@@ -183,7 +184,13 @@ export function IdentityHome({
                         aria-label={`Catálogo de ${unit.name}`}
                       >
                         <h3>Catálogo de {unit.name}</h3>
-                        {renderCatalog(organization.id, unit.id, owner, userId)}
+                        {renderCatalog(
+                          organization.id,
+                          unit.id,
+                          owner,
+                          userId,
+                          unit.timezone,
+                        )}
                       </section>
                     ))}
                 {organization.establishments.length === 0 && (

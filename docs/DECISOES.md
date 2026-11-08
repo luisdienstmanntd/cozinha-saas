@@ -87,3 +87,10 @@
 - **Motivo:** permitir reimpressão rastreável sem antecipar fracionamento ou duplicar a entrada.
 - **Consequência:** modelo 100 × 100 mm é provisório e não foi validado fisicamente; caracteres não suportados geram erro visível. QR local não funciona automaticamente em outro dispositivo.
 - **Revisar quando:** forem definidos alocação/fracionamento, fonte Unicode e condições reais de impressão. Ver [Fase 03C](FASE_03C.md).
+
+## D-015 — Consulta de validade somente leitura (07/11/2026)
+
+- **Decisão:** classificar a data civil registrada com base no dia atual do fuso IANA do estabelecimento. A busca por produto, lote ou recipiente filtra a lista autorizada, sem criar ou alterar registros.
+- **Motivo:** entregar consulta operacional básica sem inferir validade sanitária nem introduzir movimentações de estoque antes de definir correção e baixa auditáveis.
+- **Consequência:** resultados e contagens se limitam aos 1.000 recebimentos carregados; a interface avisa quando atinge esse limite. ID de recipiente só é pesquisável depois que o recipiente existe.
+- **Revisar quando:** volume exigir paginação, antes de disponibilizar consumo/descarte, e quando forem aprovados correção auditável e recuperação de tentativas. Ver [Fase 03D](FASE_03D.md).

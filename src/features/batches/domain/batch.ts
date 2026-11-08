@@ -29,5 +29,6 @@ export const batchRowSchema = z.object({
   unit: z.string(),
   expiry_date: civilDate,
   expiry_origin: z.enum(['original', 'responsible']),
+  container_id: z.uuid().nullable(),
 });
 export type BatchRow = z.infer<typeof batchRowSchema>;

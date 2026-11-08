@@ -89,6 +89,26 @@ test('recebimento de lote é atômico, idempotente e isolado', async () => {
       assert.equal(rows[0].created_by, users[0].id);
       assert.equal(rows[0].unit, 'kg');
       assert.equal(rows[0].timezone, 'America/Sao_Paulo');
+      const containerId = checked(
+        await a.rpc('ensure_container', {
+          p_organization_id: scopeA.organization_id,
+          p_establishment_id: scopeA.establishment_id,
+          p_batch_id: ids[0],
+        }),
+      );
+      const joined = checked(
+        await a
+          .from('batch_receipts')
+          .select('id,containers(id)')
+          .eq('organization_id', scopeA.organization_id)
+          .eq('establishment_id', scopeA.establishment_id)
+          .eq('id', ids[0])
+          .single(),
+      );
+      const relatedContainer = Array.isArray(joined.containers)
+        ? joined.containers[0]
+        : joined.containers;
+      assert.equal(relatedContainer?.id, containerId);
       assert.equal(
         (await a.rpc('receive_batch', { ...args, p_quantity: '2' })).error
           ?.code,
@@ -126,6 +146,10 @@ test('recebimento de lote é atômico, idempotente e isolado', async () => {
         ).error,
       );
       assert.deepEqual(checked(await b.from('batch_receipts').select()), []);
+      assert.deepEqual(
+        checked(await b.from('batch_receipts').select('id,containers(id)')),
+        [],
+      );
       assert.ok((await client().from('batch_receipts').select()).error);
       assert.ok(
         (
