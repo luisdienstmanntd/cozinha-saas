@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { EstablishmentTools } from './EstablishmentTools';
@@ -59,6 +59,48 @@ async function review(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('gestão de unidades', () => {
+  it.each(['create', 'rename'] as const)(
+    'não avisa outra sessão quando %s termina após desmontagem',
+    async (operation) => {
+      let resolve!: (value: string) => void;
+      const pending = new Promise<string>((done) => {
+        resolve = done;
+      });
+      const gateway: EstablishmentGateway = {
+        create: vi.fn().mockReturnValue(pending),
+        rename: vi.fn().mockReturnValue(pending),
+      };
+      const onChanged = vi.fn().mockResolvedValue(undefined);
+      const view = render(
+        <EstablishmentTools
+          gateway={gateway}
+          organization={organization}
+          owner
+          onChanged={onChanged}
+        />,
+      );
+      const user = userEvent.setup();
+      await user.click(
+        screen.getByRole('button', { name: 'Gerenciar unidades de Empresa A' }),
+      );
+      if (operation === 'create') {
+        await review(user);
+        await user.click(
+          screen.getByRole('button', { name: 'Confirmar criação' }),
+        );
+      } else {
+        await user.click(
+          screen.getByRole('button', { name: 'Renomear Unidade A' }),
+        );
+      }
+      view.unmount();
+      await act(async () => {
+        resolve('id');
+        await pending;
+      });
+      expect(onChanged).not.toHaveBeenCalled();
+    },
+  );
   it('colaborador não vê nenhum controle de unidade', async () => {
     await setup(false);
     expect(screen.queryByRole('region')).not.toBeInTheDocument();

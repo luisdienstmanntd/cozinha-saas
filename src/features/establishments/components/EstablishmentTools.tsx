@@ -119,7 +119,7 @@ export function EstablishmentTools({
     const input = review;
     void save(async () => {
       await gateway.create(organization.id, input);
-      await onChanged(`Unidade ${input.name} criada.`);
+      if (mounted.current) await onChanged(`Unidade ${input.name} criada.`);
     });
   }
 
@@ -141,7 +141,7 @@ export function EstablishmentTools({
     }
     void save(async () => {
       await gateway.rename(organization.id, unitId, value);
-      await onChanged('Nome da unidade atualizado.');
+      if (mounted.current) await onChanged('Nome da unidade atualizado.');
     });
   }
 
