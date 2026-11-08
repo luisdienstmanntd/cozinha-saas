@@ -80,6 +80,7 @@ function BatchContents({
       (cause: unknown) => {
         if (current) {
           setLoaded(null);
+          setLabelId(null);
           setError(
             cause instanceof Error &&
               cause.message ===
@@ -255,6 +256,10 @@ function BatchContents({
           <section aria-label="Painel de validade">
             <h4>Validade</h4>
             <p>
+              Contagens de recebimentos registrados; não representam saldo
+              disponível.
+            </p>
+            <p>
               Fuso: {timezone}. Data de referência: {referenceDate}. Referência:
               relógio deste dispositivo. Novos registros podem exigir
               atualização. Após mudar o fuso da unidade, atualize o acesso.
@@ -267,6 +272,7 @@ function BatchContents({
               type="button"
               onClick={() => {
                 setLoaded(null);
+                setLabelId(null);
                 setError('');
                 setNow(new Date());
                 setAttempt((value) => value + 1);

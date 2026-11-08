@@ -1,11 +1,84 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { LabelView } from './LabelView';
+import { makeLabelPdf } from '../application/pdf';
 
 vi.mock('../application/pdf', () => ({
   makeLabelPdf: vi.fn().mockRejectedValue(new Error('Falha ao gerar PDF.')),
 }));
+
+it('não inicia download se a tela for fechada durante a geração do PDF', async () => {
+  const user = userEvent.setup();
+  const data = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    batch_receipts: {
+      source_code: '0001',
+      quantity: 1,
+      unit: 'kg',
+      expiry_date: '2027-01-01',
+      expiry_origin: 'original' as const,
+      products: { name: 'Arroz' },
+    },
+  };
+  let resolve!: (value: Blob) => void;
+  const pending = new Promise<Blob>((done) => {
+    resolve = done;
+  });
+  vi.mocked(makeLabelPdf).mockReturnValueOnce(pending);
+  const create = vi.fn();
+  vi.stubGlobal('URL', { ...URL, createObjectURL: create });
+  const view = render(
+    <LabelView
+      id={data.id}
+      gateway={{ ensure: vi.fn(), get: vi.fn().mockResolvedValue(data) }}
+    />,
+  );
+  await user.click(
+    await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
+  );
+  expect(screen.getByText(/O QR usa endereço local/)).toBeVisible();
+  view.unmount();
+  await act(async () => {
+    resolve(new Blob());
+    await pending;
+  });
+  expect(create).not.toHaveBeenCalled();
+  vi.unstubAllGlobals();
+});
+
+it('não gera arquivo depois que a visualização foi desmontada durante a consulta', async () => {
+  const user = userEvent.setup();
+  const data = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    batch_receipts: {
+      source_code: '0001',
+      quantity: 1,
+      unit: 'kg',
+      expiry_date: '2027-01-01',
+      expiry_origin: 'original' as const,
+      products: { name: 'Arroz' },
+    },
+  };
+  let resolve!: (value: typeof data) => void;
+  const pending = new Promise<typeof data>((done) => {
+    resolve = done;
+  });
+  const get = vi.fn().mockResolvedValueOnce(data).mockReturnValueOnce(pending);
+  const view = render(
+    <LabelView id={data.id} gateway={{ ensure: vi.fn(), get }} />,
+  );
+  await user.click(
+    await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
+  );
+  vi.mocked(makeLabelPdf).mockClear();
+  view.unmount();
+  await act(async () => {
+    resolve(data);
+    await pending;
+  });
+  expect(makeLabelPdf).not.toHaveBeenCalled();
+});
 
 it('não revela dados quando a consulta é negada', async () => {
   render(

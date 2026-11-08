@@ -3,6 +3,67 @@ import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { BatchPanel } from './BatchPanel';
 
+it('oculta etiqueta aberta quando atualizar recebimentos perde autorização', async () => {
+  const id = '12345678-1234-4234-8234-123456789abc';
+  const row = {
+    id: '20000000-0000-4000-8000-000000000001',
+    product_id: '10000000-0000-4000-8000-000000000001',
+    product_name: 'Arroz',
+    source_code: 'L1',
+    quantity: 1,
+    unit: 'kg',
+    expiry_date: '2026-01-01',
+    expiry_origin: 'original' as const,
+    container_id: id,
+  };
+  const data = {
+    id,
+    batch_receipts: {
+      source_code: 'L1',
+      quantity: 1,
+      unit: 'kg',
+      expiry_date: '2026-01-01',
+      expiry_origin: 'original' as const,
+      products: { name: 'Arroz' },
+    },
+  };
+  const list = vi
+    .fn()
+    .mockResolvedValueOnce([row])
+    .mockResolvedValueOnce([row])
+    .mockRejectedValueOnce(new Error('sem acesso'));
+  const user = userEvent.setup();
+  render(
+    <BatchPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="UTC"
+      userId="user"
+      canCreate
+      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      batches={{ list, receive: vi.fn() }}
+      labels={{
+        ensure: vi.fn().mockResolvedValue(id),
+        get: vi.fn().mockResolvedValue(data),
+      }}
+    />,
+  );
+  await user.click(
+    await screen.findByRole('button', { name: 'Abrir etiqueta' }),
+  );
+  expect(
+    await screen.findByRole('region', { name: 'Recipiente' }),
+  ).toBeVisible();
+  await user.click(
+    await screen.findByRole('button', { name: 'Atualizar recebimentos' }),
+  );
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Não foi possível carregar todos',
+  );
+  expect(
+    screen.queryByRole('region', { name: 'Recipiente' }),
+  ).not.toBeInTheDocument();
+});
+
 it('informa o limite de volume sem apresentar um painel parcial', async () => {
   render(
     <BatchPanel
