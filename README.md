@@ -71,3 +71,11 @@ No estabelecimento selecionado, o proprietário registra produto, fornecedor, lo
 ## Fase 03C — etiqueta de demonstração
 
 O proprietário pode abrir a etiqueta de um recebimento e gerar um PDF provisório de 100 × 100 mm. O QR contém o ID do recipiente e o acesso ao destino exige login. A emissão ou reemissão não altera a quantidade. A etiqueta e a leitura física ainda precisam de ensaio; a URL `127.0.0.1` não aponta ao computador quando aberta em outro dispositivo. Ver [relatório da 03C](docs/FASE_03C.md).
+
+## Fase 03D — consulta e painel de validade
+
+No estabelecimento selecionado, membros ativos consultam validade por produto, lote ou ID de recipiente. O painel classifica a data civil registrada como vencida, hoje, amanhã ou posterior usando o fuso da unidade; não calcula nem altera prazos. A busca cobre até 1.000 recebimentos carregados e avisa quando esse limite é atingido. Consumo, descarte e correção auditável permanecem fora desta fase. Ver [plano e resultados da 03D](docs/FASE_03D.md).
+
+## Pesquisa de mercado e módulos futuros
+
+O estudo comparativo de Fixee, Yeschef, ValidaChef e Etiquetador, incluindo recomendações dos quatro agentes, riscos, fronteiras core/premium e roteiro de validação está em [Pesquisa competitiva e opções de módulos](docs/ESTUDO_COMPETITIVO_E_MODULOS.md). Os recursos e preços mencionados ali são descrições dos próprios fornecedores na data de consulta, não validação independente nem proposta comercial aprovada.
