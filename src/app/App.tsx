@@ -43,6 +43,7 @@ function Workspace({
         catalogRevision={revision}
         userId={userId}
         labels={configuration.labels}
+        movements={configuration.movements}
       />
     </>
   );

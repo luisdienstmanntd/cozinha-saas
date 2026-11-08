@@ -12,4 +12,21 @@ Riscos: correção de uma baixa incorreta exige evento compensatório auditado, 
 
 A migração adiciona eventos protegidos por RLS e função transacional para baixas. O teste inicial falhou por ausência da funcionalidade e passou após implementação. Os gates locais passaram: `npm run lint`, `npm run typecheck`, `npm run test` (62), `npm run build`, `npm run test:e2e` (3); `supabase test db` (107 verificações), `node --test tests/integration/*.test.mjs` (13) e `supabase db advisors --type security --level warn --fail-on warn` (sem ocorrências). O build mantém aviso de bundle 976,89 kB. A reversão em banco local sem movimentos e `supabase migration up` passaram; a reversão recusa remover histórico não vazio.
 
-O teste concorrente real confirma que duas baixas que excederiam o saldo geram apenas uma saída, e que reenvios concorrentes idênticos geram um único evento. O banco não é, sozinho, uma entrega operacional: faltam interface, integração E2E da nova jornada, correção auditável e recuperação segura após fechamento de aba. Nenhum desses itens foi declarado concluído.
+O teste concorrente real confirma que duas baixas que excederiam o saldo geram apenas uma saída, e que reenvios concorrentes idênticos geram um único evento. Quando a base foi concluída, ainda faltavam interface, integração E2E da nova jornada, correção auditável e recuperação segura após fechamento de aba.
+
+## Interface demonstrativa — andamento
+
+O painel passou a permitir consultar até 1.000 eventos, calcular saldo registrado e confirmar consumo ou descarte. A intenção é mantida por usuário, unidade e recebimento no armazenamento da aba para reenvio idempotente após erro incerto. O descarte exige motivo; o usuário pode corrigir antes do primeiro envio. Após recusa definitiva, atualiza o histórico antes de iniciar outra tentativa. Falha ao limpar a tentativa após confirmação é apresentada como saída confirmada. Etiqueta e consulta indicam quantidade inicial; a impressão não gera movimentação.
+
+A revisão cruzada encontrou e motivou testes para correção antes do envio, recuperação de recusa e comunicação de falha local após confirmação. A interface exibe o limite de consulta sem saldo parcial. O fluxo ainda não resolve correção auditável de eventos, recuperação da intenção após fechar a aba, nem a consulta de saldo pela rota do QR; não é um piloto pronto. Contagens de validade continuam sendo de recebimentos históricos, inclusive os esgotados.
+
+A resposta atrasada de uma tela anterior não pode apagar uma intenção mais recente: um teste reproduziu a falha antes de corrigi-la com guarda de montagem e conferência do identificador. A revisão arquitetural verificou a correção. A geração de PDF explicita quantidade inicial, sem movimentar saldo.
+
+### Verificação da interface
+
+- `npm run lint`, `npm run typecheck`, `npm run test`: sucesso, 70 testes em 17 arquivos. `npm run build`: sucesso, com aviso de bundle principal de 984,35 kB.
+- `npm run test:e2e`: sucesso, 3 testes Chromium. A jornada inclui consumo parcial, nova sessão, descarte do restante e histórico; reimpressão mantém a quantidade original.
+- `npm run test:coverage`: sucesso, 70 testes e 76,76% de linhas no total; `MovementPanel.tsx` 92% e `supabaseMovements.ts` 46,66%. Cobertura não inclui integração e E2E; adaptadores com lacunas permanecem explícitos no relatório.
+- Os gates de banco e API descritos na seção anterior passaram antes da interface; não houve nova migração desde então. Alterados: configuração da aplicação, painel de lotes, componentes/gateway/testes de movimentações, etiqueta/PDF, E2E e decisões.
+
+Este incremento demonstrativo aguarda aceite humano. Correção auditável, recuperação após fechar a aba e consulta de saldo pela rota do QR são pendências; sem elas, não apresentar o sistema como pronto para piloto.

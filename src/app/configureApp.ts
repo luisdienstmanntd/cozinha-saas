@@ -4,6 +4,7 @@ import { createCatalogGateway } from '../features/catalog/data/supabaseCatalog';
 import { createClient } from '@supabase/supabase-js';
 import { createBatchGateway } from '../features/batches/data/supabaseBatches';
 import { createLabelGateway } from '../features/labels/data/supabaseLabels';
+import { createMovementGateway } from '../features/movements/data/supabaseMovements';
 
 export function configureApp(environment: Record<string, unknown>) {
   try {
@@ -22,6 +23,7 @@ export function configureApp(environment: Record<string, unknown>) {
       catalog: createCatalogGateway(client),
       batches: createBatchGateway(client),
       labels: createLabelGateway(client),
+      movements: createMovementGateway(client),
     };
   } catch {
     return null;

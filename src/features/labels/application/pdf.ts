@@ -39,7 +39,7 @@ export async function makeLabelPdf(
     );
   doc.text(code, 6, y);
   const next = y + code.length * 4 + 2;
-  doc.text(`Quantidade: ${batch.quantity} ${batch.unit}`, 6, next);
+  doc.text(`Quantidade inicial: ${batch.quantity} ${batch.unit}`, 6, next);
   doc.text(
     `Validade: ${batch.expiry_date} (${batch.expiry_origin === 'original' ? 'original' : 'responsável'})`,
     6,

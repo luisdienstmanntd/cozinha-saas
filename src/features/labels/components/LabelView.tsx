@@ -82,7 +82,8 @@ export function LabelView({
             {data.batch_receipts.source_code}
           </p>
           <p>
-            {data.batch_receipts.quantity} {data.batch_receipts.unit} — validade{' '}
+            Quantidade inicial: {data.batch_receipts.quantity}{' '}
+            {data.batch_receipts.unit} — validade{' '}
             {data.batch_receipts.expiry_date} (
             {data.batch_receipts.expiry_origin === 'original'
               ? 'original'

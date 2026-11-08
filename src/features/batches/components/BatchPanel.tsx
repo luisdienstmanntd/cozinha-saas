@@ -8,6 +8,8 @@ import type { BatchRow } from '../domain/batch';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { LabelView } from '../../labels/components/LabelView';
 import { getExpiryStatus, localCivilDate } from '../domain/expiryStatus';
+import type { MovementGateway } from '../../movements/application/movementGateway';
+import { MovementPanel } from '../../movements/components/MovementPanel';
 
 type Props = {
   scope: CatalogScope;
@@ -18,6 +20,7 @@ type Props = {
   catalogRevision?: number;
   userId: string;
   labels?: LabelGateway;
+  movements?: MovementGateway;
 };
 type Loaded = {
   products: CatalogItem[];
@@ -35,6 +38,7 @@ function BatchContents({
   catalogRevision,
   userId,
   labels,
+  movements,
 }: Props) {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState('');
@@ -45,6 +49,7 @@ function BatchContents({
   const [conflictReviewed, setConflictReviewed] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [labelId, setLabelId] = useState<string | null>(null);
+  const [movementId, setMovementId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [now, setNow] = useState(() => new Date());
   const intent = useRef<string | null>(null);
@@ -81,6 +86,7 @@ function BatchContents({
         if (current) {
           setLoaded(null);
           setLabelId(null);
+          setMovementId(null);
           setError(
             cause instanceof Error &&
               cause.message ===
@@ -273,6 +279,7 @@ function BatchContents({
               onClick={() => {
                 setLoaded(null);
                 setLabelId(null);
+                setMovementId(null);
                 setError('');
                 setNow(new Date());
                 setAttempt((value) => value + 1);
@@ -345,6 +352,33 @@ function BatchContents({
                         ) — {statusLabel}
                         {row.container_id && (
                           <> — recipiente {row.container_id}</>
+                        )}
+                        {movements && (
+                          <button
+                            type="button"
+                            onClick={() => setMovementId(row.id)}
+                          >
+                            Ver movimentações
+                          </button>
+                        )}
+                        {movements && movementId === row.id && (
+                          <MovementPanel
+                            key={row.id}
+                            scope={{ organizationId, establishmentId }}
+                            userId={userId}
+                            batch={{
+                              id: row.id,
+                              productName:
+                                row.product_name ??
+                                products.get(row.product_id) ??
+                                'Produto',
+                              sourceCode: row.source_code,
+                              quantity: row.quantity,
+                              unit: row.unit,
+                            }}
+                            canCreate={canCreate}
+                            gateway={movements}
+                          />
                         )}
                         {canCreate && labels && (
                           <>

@@ -91,7 +91,20 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     expect(bytes.includes(Buffer.from('Arroz de teste'))).toBe(true);
     expect(bytes.includes(Buffer.from('0001'))).toBe(true);
     expect(bytes.includes(Buffer.from('2027-01-01'))).toBe(true);
+    expect(bytes.includes(Buffer.from('Quantidade inicial:'))).toBe(true);
     expect(pdf.suggestedFilename()).toBe(`etiqueta-${id}.pdf`);
+    await page.getByRole('button', { name: 'Ver movimentações' }).click();
+    const movements = page.getByRole('region', { name: 'Movimentações' });
+    await expect(
+      movements.getByText('Saldo registrado: 1.25 kg'),
+    ).toBeVisible();
+    await movements.getByLabel('Quantidade da saída').fill('0.5');
+    await movements.getByRole('button', { name: 'Registrar saída' }).click();
+    await movements.getByRole('button', { name: 'Confirmar saída' }).click();
+    await expect(
+      movements.getByText('Saldo registrado: 0.75 kg'),
+    ).toBeVisible();
+    await expect(movements.getByText(/Consumo — 0.5 kg/)).toBeVisible();
     await page.getByLabel('Nome do fornecedor').fill('HORTA DE TESTE');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(page.getByRole('alert')).toHaveText(
@@ -120,6 +133,16 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
         .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText(/lote 0001/)).toBeVisible();
+    await page.getByRole('button', { name: 'Ver movimentações' }).click();
+    await expect(page.getByText('Saldo registrado: 0.75 kg')).toBeVisible();
+    const reopened = page.getByRole('region', { name: 'Movimentações' });
+    await reopened.getByLabel('Tipo de saída').selectOption('discard');
+    await reopened.getByLabel('Quantidade da saída').fill('0.75');
+    await reopened.getByLabel('Motivo').fill('Dano');
+    await reopened.getByRole('button', { name: 'Registrar saída' }).click();
+    await reopened.getByRole('button', { name: 'Confirmar saída' }).click();
+    await expect(reopened.getByText('Saldo registrado: 0 kg')).toBeVisible();
+    await expect(reopened.getByText(/Descarte — 0.75 kg/)).toBeVisible();
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),
