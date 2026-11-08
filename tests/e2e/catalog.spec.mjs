@@ -143,6 +143,19 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await reopened.getByRole('button', { name: 'Confirmar saída' }).click();
     await expect(reopened.getByText('Saldo registrado: 0 kg')).toBeVisible();
     await expect(reopened.getByText(/Descarte — 0.75 kg/)).toBeVisible();
+    const consumed = reopened
+      .getByRole('listitem')
+      .filter({ hasText: 'Consumo — 0.5 kg' });
+    await consumed.getByRole('button', { name: 'Anular registro' }).click();
+    await reopened
+      .getByLabel('Motivo da anulação')
+      .fill('Lançamento incorreto');
+    await reopened.getByRole('button', { name: 'Revisar anulação' }).click();
+    await expect(reopened.getByText(/não recupera alimento/)).toBeVisible();
+    await reopened.getByRole('button', { name: 'Confirmar anulação' }).click();
+    await expect(reopened.getByText('Saldo registrado: 0.5 kg')).toBeVisible();
+    await expect(consumed).toContainText('anulado');
+    await expect(reopened.getByText(/Anulação do registro/)).toBeVisible();
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),

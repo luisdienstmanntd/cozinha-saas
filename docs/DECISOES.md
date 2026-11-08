@@ -101,3 +101,10 @@
 - **Motivo:** manter histórico e quantidades consistentes com o modelo atual de um recipiente integral por recebimento, sem antecipar fracionamento ou conversões.
 - **Consequência:** a interface demonstra baixa, histórico e saldo registrado, com confirmação e reenvio da mesma intenção na aba. Ainda não há correção auditável de erros nem recuperação confiável após fechamento da aba. Não está pronta para piloto. A equivalência entre recebimento e recipiente depende do modelo atual. O motivo é obrigatório para descarte; a consulta limita-se a 1.000 eventos por recebimento, recusando totais parciais.
 - **Revisar quando:** criar a interface, recuperação de tentativas ou correção por evento compensatório; antes de ampliar permissões ou modelar múltiplos recipientes. Ver [plano da Fase 5](FASE_05_PLANO.md).
+
+## D-018 — Anulação integral de movimentação (08/11/2026)
+
+- **Decisão:** proprietário pode anular integralmente um consumo ou descarte mediante motivo, criando uma única compensação vinculada ao original, sem alterar ou remover eventos. A quantidade é derivada do movimento original no banco; saídas e anulações bloqueiam o mesmo recebimento, e o reenvio é idempotente e reautorizado.
+- **Motivo:** corrigir registro incorreto sem perder autoria, histórico ou consistência do saldo registrado.
+- **Consequência:** anulação não recupera alimento fisicamente; para substituir quantidade ou tipo é necessário registrar uma nova saída. Não há estorno parcial nem estorno de estorno. A recuperação após fechamento da aba permanece pendente e a rota do QR ainda não exibe saldo.
+- **Revisar quando:** a operação de piloto exigir recuperação durável, substituição atômica ou outras formas de correção. A numeração D-017 está reservada à revisão de unidades na ramificação paralela.

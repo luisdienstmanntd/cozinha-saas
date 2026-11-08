@@ -116,6 +116,72 @@ test('baixas concorrentes são atômicas, idempotentes e isoladas', async () => 
       assert.ok(
         (await a.from('stock_movements').delete().eq('id', events[0].id)).error,
       );
+      const undo = {
+        p_organization_id: scopeA.organization_id,
+        p_establishment_id: scopeA.establishment_id,
+        p_movement_id: events[0].id,
+        p_reason: 'erro de registro',
+        p_intent_id: randomUUID(),
+      };
+      const reversals = await Promise.all([
+        a.rpc('reverse_movement', undo),
+        a.rpc('reverse_movement', { ...undo, p_intent_id: randomUUID() }),
+      ]);
+      assert.equal(reversals.filter((x) => !x.error).length, 1);
+      assert.equal(
+        reversals.filter((x) => x.error?.code === '23505').length,
+        1,
+      );
+      const reversed = checked(
+        await a
+          .from('stock_movements')
+          .select()
+          .eq('reverses_id', events[0].id),
+      ).at(0);
+      assert.ok(reversed);
+      assert.equal(
+        checked(
+          await a.rpc('reverse_movement', {
+            ...undo,
+            p_intent_id: reversed.intent_id,
+          }),
+        ),
+        reversed.id,
+      );
+      assert.ok((await member.rpc('reverse_movement', undo)).error);
+      assert.ok((await b.rpc('reverse_movement', undo)).error);
+      assert.ok(
+        (
+          await a.rpc('reverse_movement', {
+            ...undo,
+            p_establishment_id: scopeA2.establishment_id,
+          })
+        ).error,
+      );
+      const concurrent = await Promise.all([
+        a.rpc('reverse_movement', {
+          ...undo,
+          p_movement_id: checked(repeat[0]),
+          p_intent_id: randomUUID(),
+        }),
+        a.rpc('record_movement', {
+          ...args,
+          p_quantity: 0.8,
+          p_intent_id: randomUUID(),
+        }),
+      ]);
+      assert.equal(concurrent[0].error, null);
+      assert.ok(!concurrent[1].error || concurrent[1].error.code === '22023');
+      const history = checked(await a.from('stock_movements').select());
+      const balance =
+        1 -
+        history.reduce(
+          (sum, event) =>
+            sum +
+            (event.kind === 'reversal' ? -event.quantity : event.quantity),
+          0,
+        );
+      assert.ok(balance >= 0 && balance <= 1);
       checked(
         await admin
           .from('memberships')
@@ -123,6 +189,14 @@ test('baixas concorrentes são atômicas, idempotentes e isoladas', async () => 
           .eq('user_id', users[0].id),
       );
       assert.ok((await a.rpc('record_movement', winner)).error);
+      assert.ok(
+        (
+          await a.rpc('reverse_movement', {
+            ...undo,
+            p_intent_id: reversed.intent_id,
+          })
+        ).error,
+      );
       assert.deepEqual(checked(await a.from('stock_movements').select()), []);
     },
   );

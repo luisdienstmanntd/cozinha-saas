@@ -109,6 +109,29 @@ it('não mostra saldo ou formulário quando o histórico não pode ser consultad
   ).not.toBeInTheDocument();
 });
 
+it('informa enquanto o histórico ainda está sendo consultado', () => {
+  sessionStorage.clear();
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{
+        list: vi.fn().mockReturnValue(new Promise(() => {})),
+        record: vi.fn(),
+      }}
+    />,
+  );
+  expect(screen.getByText('Consultando histórico…')).toBeVisible();
+});
+
 it('permite corrigir antes do envio e após uma recusa definitiva', async () => {
   sessionStorage.clear();
   const user = userEvent.setup();
@@ -251,4 +274,177 @@ it('não envia duas requisições ao confirmar repetidamente enquanto aguarda', 
   await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
   await user.dblClick(screen.getByRole('button', { name: 'Confirmar saída' }));
   expect(record).toHaveBeenCalledTimes(1);
+});
+
+it('confirma anulação integral com motivo e preserva o histórico', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  const id = '12345678-1234-4234-8234-123456789abc';
+  const original = {
+    id,
+    kind: 'discard' as const,
+    quantity: 0.5,
+    reason: 'dano',
+    created_by: 'autor',
+    created_at: '2026-01-01T12:00:00Z',
+    timezone: 'UTC',
+    reverses_id: null,
+  };
+  const list = vi
+    .fn()
+    .mockResolvedValueOnce([original])
+    .mockResolvedValue([
+      original,
+      {
+        ...original,
+        id: '22345678-1234-4234-8234-123456789abc',
+        kind: 'reversal',
+        reverses_id: id,
+        reason: 'erro',
+      },
+    ]);
+  const record = vi.fn().mockResolvedValue('evento');
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list, record }}
+    />,
+  );
+  expect(await screen.findByText('Saldo registrado: 0.5 kg')).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Anular registro' }));
+  await user.type(screen.getByLabelText('Motivo da anulação'), 'erro');
+  await user.click(screen.getByRole('button', { name: 'Revisar anulação' }));
+  expect(screen.getByText(/não recupera alimento/i)).toBeVisible();
+  expect(screen.getByText(/Registro original: Descarte/)).toHaveTextContent(
+    '12345678',
+  );
+  await user.click(screen.getByRole('button', { name: 'Confirmar anulação' }));
+  expect(await screen.findByText('Saldo registrado: 1 kg')).toBeVisible();
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'Para substituir, registre uma nova saída',
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Anular registro' }),
+  ).not.toBeInTheDocument();
+  expect(record.mock.calls.at(0)?.[1]).toMatchObject({
+    kind: 'reversal',
+    targetId: id,
+    reason: 'erro',
+  });
+});
+
+it('identifica como inválida uma intenção de anulação sem alvo', async () => {
+  sessionStorage.clear();
+  sessionStorage.setItem(
+    'movement-intent:user:org:unit:batch',
+    JSON.stringify({
+      batchId: 'batch',
+      kind: 'reversal',
+      quantity: '0.5',
+      reason: 'erro',
+      intentId: '12345678-1234-4234-8234-123456789abc',
+    }),
+  );
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list: vi.fn().mockResolvedValue([]), record: vi.fn() }}
+    />,
+  );
+  expect(
+    await screen.findByText(/Não foi possível recuperar a tentativa anterior/),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: 'Repetir tentativa' }),
+  ).not.toBeInTheDocument();
+  sessionStorage.clear();
+});
+
+it('impede confirmar anulação se o movimento original não aparece no histórico', async () => {
+  sessionStorage.clear();
+  sessionStorage.setItem(
+    'movement-intent:user:org:unit:batch',
+    JSON.stringify({
+      batchId: 'batch',
+      kind: 'reversal',
+      quantity: '0.5',
+      reason: 'erro',
+      intentId: '12345678-1234-4234-8234-123456789abc',
+      targetId: '22345678-1234-4234-8234-123456789abc',
+    }),
+  );
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list: vi.fn().mockResolvedValue([]), record: vi.fn() }}
+    />,
+  );
+  expect(
+    await screen.findByText(/não foi possível localizar o registro original/i),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Repetir tentativa' }),
+  ).toBeDisabled();
+  sessionStorage.clear();
+});
+
+it('não permite anulação se a tentativa armazenada estiver inválida', async () => {
+  sessionStorage.clear();
+  sessionStorage.setItem('movement-intent:user:org:unit:batch', 'inválido');
+  const event = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    kind: 'discard' as const,
+    quantity: 0.5,
+    reason: 'dano',
+    created_by: 'autor',
+    created_at: '2026-01-01T12:00:00Z',
+    timezone: 'UTC',
+  };
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list: vi.fn().mockResolvedValue([event]), record: vi.fn() }}
+    />,
+  );
+  expect(await screen.findByText('Saldo registrado: 0.5 kg')).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: 'Anular registro' }),
+  ).not.toBeInTheDocument();
+  sessionStorage.clear();
 });

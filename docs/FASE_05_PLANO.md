@@ -29,4 +29,29 @@ A resposta atrasada de uma tela anterior não pode apagar uma intenção mais re
 - `npm run test:coverage`: sucesso, 70 testes e 76,76% de linhas no total; `MovementPanel.tsx` 92% e `supabaseMovements.ts` 46,66%. Cobertura não inclui integração e E2E; adaptadores com lacunas permanecem explícitos no relatório.
 - Os gates de banco e API descritos na seção anterior passaram antes da interface; não houve nova migração desde então. Alterados: configuração da aplicação, painel de lotes, componentes/gateway/testes de movimentações, etiqueta/PDF, E2E e decisões.
 
-Este incremento demonstrativo aguarda aceite humano. Correção auditável, recuperação após fechar a aba e consulta de saldo pela rota do QR são pendências; sem elas, não apresentar o sistema como pronto para piloto.
+O usuário aceitou este incremento demonstrativo. Correção auditável, recuperação após fechar a aba e consulta de saldo pela rota do QR permanecem pendências; sem elas, não apresentar o sistema como pronto para piloto.
+
+## Próximo incremento: estorno auditável
+
+O proprietário poderá estornar integralmente uma baixa específica mediante motivo obrigatório e confirmação. O evento original permanece imutável e o evento compensatório registra vínculo, autoria, instante e fuso. O saldo registrado volta a refletir a compensação; isso não significa retorno físico de alimento. Não há estorno parcial nem estorno de estorno. Para corrigir quantidade, o usuário estorna a saída e registra nova baixa separadamente.
+
+Aceite: autorização pelo banco e isolamento entre empresas; replay idêntico retorna o mesmo evento; reutilização com dados alterados e segundo estorno são recusados; operações concorrentes serializam no recebimento; nenhum saldo fica acima da quantidade inicial ou abaixo de zero; histórico, motivo e autor permanecem íntegros. Testes pgTAP, API concorrente, interface e E2E precedem ou acompanham a implementação. Recuperação após fechamento da aba permanece limitação explícita deste incremento.
+
+## Anulação auditável — revisão e comportamento
+
+A anulação cria compensação integral com motivo, autor, data, fuso e referência ao movimento original, sem alterar os eventos anteriores. Duas anulações concorrentes não duplicam o crédito. O replay é autorizado novamente e não cria outro evento; uma saída original já anulada também mantém sua identidade em replay. O saldo deriva das saídas menos as anulações. A confirmação identifica o lançamento original e explica que não há retorno físico de alimento; para substituir a saída, o operador registra outra separadamente.
+
+As revisões independentes e críticas cruzadas de arquitetura, negócio e cozinha motivaram testes para motivo composto por espaços invisíveis, concorrência, identificação do alvo, armazenamento inválido e conflito após outra anulação. O banco recusa motivo sem conteúdo; na interface, um conflito confirmado permite consultar o histórico antes de iniciar outra tentativa. Um resultado de rede incerto continua associado à mesma intenção na aba. O limite de 1.000 eventos continua recusando consulta parcial.
+
+A revisão paralela de unidades do Claude está no PR #1, ainda em rascunho e fora da `main`. Uma falha de callback após troca de sessão foi reproduzida e corrigida no commit `634eecc` dessa branch; os riscos de criação de unidade sem idempotência e de perda de formulário após atualização de acesso permanecem documentados naquele PR.
+
+Limitações antes de piloto: a intenção não sobrevive ao fechamento da aba; a rota do QR ainda não consulta saldo; correções de recebimento, validade e cadastro não fazem parte desta anulação; o modelo físico do QR/PDF e as rotinas de operação ainda precisam de validação. Nunca interpretar anulação como recuperação física do produto.
+
+### Verificação da anulação
+
+- `supabase test db`: sucesso, 118 verificações; `node --test tests/integration/*.test.mjs`: sucesso, 13 testes, incluindo anulação concorrente, disputa com nova baixa e revogação; `supabase db advisors --type security --level warn --fail-on warn`: sem ocorrências.
+- Rollback em banco local sem anulações e `supabase migration up`: sucesso. O rollback contém proteção que recusa remover histórico com anulações; não foi executado contra histórico real.
+- `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`: sucesso, 76 testes em 17 arquivos. O build manteve aviso de bundle principal de 987,32 kB.
+- `npm run test:e2e`: sucesso, 3 testes Chromium, incluindo criação de saída, descarte e anulação com histórico. Uma execução anterior expirou aguardando a consulta de histórico em 5 segundos; a repetição passou. Foi adicionada indicação de carregamento e a bateria completa posterior passou. Não foi determinada a causa da demora pontual.
+- `npm run test:coverage`: sucesso, 76 testes e 77,07% de linhas no total; `MovementPanel.tsx` 90,55% e `supabaseMovements.ts` 54,54%. Cobertura unitária não inclui API nem navegador.
+- Arquivos alterados: migração e rollback de anulação, pgTAP e integração, domínio/gateway e interface de movimentação, testes de componente e E2E, decisões e este plano. O PR de unidades não foi integrado à `main`; sua validação combinada com a anulação ainda precisa ser feita antes da integração.

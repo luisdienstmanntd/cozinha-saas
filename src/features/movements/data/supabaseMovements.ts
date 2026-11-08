@@ -4,21 +4,25 @@ import type { MovementGateway } from '../application/movementGateway';
 import { MovementRejected } from '../application/movementGateway';
 const movementSchema = z.object({
   id: z.uuid(),
-  kind: z.enum(['consumption', 'discard']),
+  kind: z.enum(['consumption', 'discard', 'reversal']),
   quantity: z.number(),
   reason: z.string().nullable(),
   created_by: z.uuid(),
   created_at: z.string(),
   timezone: z.string(),
+  reverses_id: z.uuid().nullable(),
 });
 export function createMovementGateway(client: SupabaseClient): MovementGateway {
   return {
     async list(scope, batchId) {
       const { data, error, count } = await client
         .from('stock_movements')
-        .select('id,kind,quantity,reason,created_by,created_at,timezone', {
-          count: 'exact',
-        })
+        .select(
+          'id,kind,quantity,reason,created_by,created_at,timezone,reverses_id',
+          {
+            count: 'exact',
+          },
+        )
         .eq('organization_id', scope.organizationId)
         .eq('establishment_id', scope.establishmentId)
         .eq('batch_id', batchId)
@@ -39,6 +43,20 @@ export function createMovementGateway(client: SupabaseClient): MovementGateway {
       return rows;
     },
     async record(scope, input) {
+      if (input.kind === 'reversal') {
+        const target = z.uuid().parse(input.targetId);
+        const { data, error } = await client.rpc('reverse_movement', {
+          p_organization_id: scope.organizationId,
+          p_establishment_id: scope.establishmentId,
+          p_movement_id: target,
+          p_reason: input.reason,
+          p_intent_id: input.intentId,
+        });
+        if (error?.code === '22023' || error?.code === '23505')
+          throw new MovementRejected('Anulação recusada.');
+        if (error) throw new Error('Não foi possível confirmar a anulação.');
+        return z.uuid().parse(data);
+      }
       const { data, error } = await client.rpc('record_movement', {
         p_organization_id: scope.organizationId,
         p_establishment_id: scope.establishmentId,
