@@ -85,6 +85,13 @@ test('recebimento de lote é atômico, idempotente e isolado', async () => {
       );
       assert.equal(ids[0], ids[1]);
       const rows = checked(await a.from('batch_receipts').select());
+      const named = checked(
+        await a
+          .from('batch_receipts')
+          .select('id,products!inner(name)')
+          .eq('id', ids[0]),
+      );
+      assert.equal(named[0].products.name, 'Produto lote');
       assert.equal(rows.length, 1);
       assert.equal(rows[0].created_by, users[0].id);
       assert.equal(rows[0].unit, 'kg');

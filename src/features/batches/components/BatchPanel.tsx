@@ -7,7 +7,7 @@ import { batchInputSchema } from '../domain/batch';
 import type { BatchRow } from '../domain/batch';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { LabelView } from '../../labels/components/LabelView';
-import { getExpiryStatus } from '../domain/expiryStatus';
+import { getExpiryStatus, localCivilDate } from '../domain/expiryStatus';
 
 type Props = {
   scope: CatalogScope;
@@ -23,6 +23,7 @@ type Loaded = {
   products: CatalogItem[];
   suppliers: CatalogItem[];
   rows: BatchRow[];
+  fetchedAt: Date;
 };
 
 function BatchContents({
@@ -45,7 +46,25 @@ function BatchContents({
   const [reviewError, setReviewError] = useState('');
   const [labelId, setLabelId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [now, setNow] = useState(() => new Date());
   const intent = useRef<string | null>(null);
+  let referenceDate: string | null = null;
+  try {
+    referenceDate = localCivilDate(now, timezone);
+  } catch {
+    /* Fuso inválido: exibir erro sem classificar. */
+  }
+  useEffect(() => {
+    const update = () => setNow(new Date());
+    const timer = window.setInterval(update, 60000);
+    window.addEventListener('focus', update);
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', update);
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, []);
   useEffect(() => {
     let current = true;
     const scope = { organizationId, establishmentId };
@@ -55,10 +74,20 @@ function BatchContents({
       batches.list(scope),
     ]).then(
       ([products, suppliers, rows]) => {
-        if (current) setLoaded({ products, suppliers, rows });
+        if (current)
+          setLoaded({ products, suppliers, rows, fetchedAt: new Date() });
       },
-      () => {
-        if (current) setError('Não foi possível carregar os recebimentos.');
+      (cause: unknown) => {
+        if (current) {
+          setLoaded(null);
+          setError(
+            cause instanceof Error &&
+              cause.message ===
+                'O limite de 10.000 recebimentos foi excedido; a consulta não foi exibida.'
+              ? cause.message
+              : 'Não foi possível carregar todos os recebimentos. Confira o acesso e tente novamente.',
+          );
+        }
       },
     );
     return () => {
@@ -165,7 +194,9 @@ function BatchContents({
                 .then(
                   (rows) => {
                     setLoaded((previous) =>
-                      previous ? { ...previous, rows } : previous,
+                      previous
+                        ? { ...previous, rows, fetchedAt: new Date() }
+                        : previous,
                     );
                     setConflictReviewed(true);
                   },
@@ -213,17 +244,40 @@ function BatchContents({
           Tentar novamente
         </button>
       )}
-      {loaded && (
+      {loaded && !referenceDate && (
+        <p role="alert">
+          Não foi possível interpretar o fuso do estabelecimento. Atualize o
+          acesso ou corrija o fuso.
+        </p>
+      )}
+      {loaded && referenceDate && (
         <>
-          {loaded.rows.length >= 1000 && (
-            <p>Exibindo até 1.000 recebimentos; outros podem não aparecer.</p>
-          )}
           <section aria-label="Painel de validade">
             <h4>Validade</h4>
+            <p>
+              Fuso: {timezone}. Data de referência: {referenceDate}. Referência:
+              relógio deste dispositivo. Novos registros podem exigir
+              atualização. Após mudar o fuso da unidade, atualize o acesso.
+            </p>
+            <p>
+              Última consulta: {loaded.fetchedAt.toISOString()} (relógio deste
+              dispositivo).
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setLoaded(null);
+                setError('');
+                setNow(new Date());
+                setAttempt((value) => value + 1);
+              }}
+            >
+              Atualizar recebimentos
+            </button>
             {(() => {
               const counts = { overdue: 0, today: 0, tomorrow: 0, upcoming: 0 };
               for (const row of loaded.rows)
-                counts[getExpiryStatus(row.expiry_date, timezone)]++;
+                counts[getExpiryStatus(row.expiry_date, timezone, now)]++;
               return (
                 <p>
                   Vencidos: {counts.overdue} · Vence hoje: {counts.today} ·{' '}
@@ -251,7 +305,8 @@ function BatchContents({
                 loaded.products.map((product) => [product.id, product.name]),
               );
               const visibleRows = loaded.rows.filter((row) => {
-                const productName = products.get(row.product_id) ?? 'Produto';
+                const productName =
+                  row.product_name ?? products.get(row.product_id) ?? 'Produto';
                 return [productName, row.source_code, row.container_id ?? '']
                   .join(' ')
                   .toLocaleLowerCase('pt-BR')
@@ -260,7 +315,11 @@ function BatchContents({
               return visibleRows.length ? (
                 <ul aria-label="Recebimentos e validade">
                   {visibleRows.map((row) => {
-                    const status = getExpiryStatus(row.expiry_date, timezone);
+                    const status = getExpiryStatus(
+                      row.expiry_date,
+                      timezone,
+                      now,
+                    );
                     const statusLabel = {
                       overdue: 'Vencido',
                       today: 'Vence hoje',
@@ -269,9 +328,11 @@ function BatchContents({
                     }[status];
                     return (
                       <li key={row.id}>
-                        {products.get(row.product_id) ?? 'Produto'} — lote{' '}
-                        {row.source_code} — {row.quantity} {row.unit} — validade{' '}
-                        {row.expiry_date} (
+                        {row.product_name ??
+                          products.get(row.product_id) ??
+                          'Produto'}{' '}
+                        — lote {row.source_code} — {row.quantity} {row.unit} —
+                        validade {row.expiry_date} (
                         {row.expiry_origin === 'original'
                           ? 'original'
                           : 'definida pelo responsável'}

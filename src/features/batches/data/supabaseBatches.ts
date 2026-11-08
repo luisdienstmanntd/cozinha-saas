@@ -6,21 +6,52 @@ import { batchInputSchema, batchRowSchema } from '../domain/batch';
 export function createBatchGateway(client: SupabaseClient): BatchGateway {
   return {
     async list(scope) {
-      const { data, error } = await client
-        .from('batch_receipts')
-        .select(
-          'id,product_id,source_code,quantity,unit,expiry_date,expiry_origin,containers(id)',
-        )
+      const all: ReturnType<typeof zBatchRows> = [];
+      let cursor: string | null = null;
+      for (;;) {
+        let query = client
+          .from('batch_receipts')
+          .select(
+            'id,product_id,source_code,quantity,unit,expiry_date,expiry_origin,containers(id),products!inner(name)',
+          )
+          .eq('organization_id', scope.organizationId)
+          .eq('establishment_id', scope.establishmentId)
+          .order('id', { ascending: true });
+        if (cursor) query = query.gt('id', cursor);
+        const { data, error } = await query.limit(500);
+        if (error)
+          throw new Error('Não foi possível consultar todos os recebimentos.');
+        const page = zBatchRows(data);
+        all.push(...page);
+        if (all.length > 10000)
+          throw new Error(
+            'O limite de 10.000 recebimentos foi excedido; a consulta não foi exibida.',
+          );
+        if (page.length < 500) break;
+        const next = page.at(-1)?.id;
+        if (!next || next === cursor)
+          throw new Error('Não foi possível concluir a paginação.');
+        cursor = next;
+      }
+      const { data: establishment, error: accessError } = await client
+        .from('establishments')
+        .select('id')
         .eq('organization_id', scope.organizationId)
-        .eq('establishment_id', scope.establishmentId)
-        .order('created_at', { ascending: false });
-      if (error) throw new Error('Não foi possível consultar os recebimentos.');
-      const rows = zBatchRows(data);
-      return rows.map(({ containers, ...row }) => {
+        .eq('id', scope.establishmentId)
+        .maybeSingle();
+      if (accessError || !establishment)
+        throw new Error(
+          'Acesso ao estabelecimento indisponível; a consulta não foi exibida.',
+        );
+      return all.map(({ containers, products, ...row }) => {
         const container = Array.isArray(containers)
           ? containers[0]
           : containers;
-        return { ...row, container_id: container?.id ?? null };
+        return {
+          ...row,
+          product_name: products.name,
+          container_id: container?.id ?? null,
+        };
       });
     },
     async receive(scope, input) {
@@ -62,6 +93,7 @@ function zBatchRows(value: unknown) {
         ])
         .nullable()
         .optional(),
+      products: z.object({ name: z.string().min(1) }),
     })
     .array()
     .parse(value);

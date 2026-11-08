@@ -74,7 +74,7 @@ O proprietário pode abrir a etiqueta de um recebimento e gerar um PDF provisór
 
 ## Fase 03D — consulta e painel de validade
 
-No estabelecimento selecionado, membros ativos consultam validade por produto, lote ou ID de recipiente. O painel classifica a data civil registrada como vencida, hoje, amanhã ou posterior usando o fuso da unidade; não calcula nem altera prazos. A busca cobre até 1.000 recebimentos carregados e avisa quando esse limite é atingido. Consumo, descarte e correção auditável permanecem fora desta fase. Ver [plano e resultados da 03D](docs/FASE_03D.md).
+No estabelecimento selecionado, membros ativos consultam validade por produto, lote ou ID de recipiente. O painel classifica a data civil registrada como vencida, hoje, amanhã ou posterior usando o fuso da unidade e o relógio do dispositivo; não calcula nem altera prazos. A consulta percorre páginas e informa erro acima de 10.000 recebimentos, sem apresentar totais parciais. Registros inseridos durante a consulta podem aparecer apenas após atualizar. Consumo, descarte e correção auditável permanecem fora desta fase. Ver [plano e resultados da 03D](docs/FASE_03D.md).
 
 ## Pesquisa de mercado e módulos futuros
 

@@ -24,6 +24,7 @@ export type BatchInput = z.infer<typeof batchInputSchema>;
 export const batchRowSchema = z.object({
   id: z.uuid(),
   product_id: z.uuid(),
+  product_name: z.string().optional(),
   source_code: z.string(),
   quantity: z.number(),
   unit: z.string(),

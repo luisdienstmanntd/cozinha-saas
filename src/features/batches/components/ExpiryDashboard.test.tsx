@@ -1,7 +1,122 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { BatchPanel } from './BatchPanel';
+
+it('informa o limite de volume sem apresentar um painel parcial', async () => {
+  render(
+    <BatchPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="UTC"
+      userId="user"
+      canCreate={false}
+      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      batches={{
+        list: vi
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              'O limite de 10.000 recebimentos foi excedido; a consulta não foi exibida.',
+            ),
+          ),
+        receive: vi.fn(),
+      }}
+    />,
+  );
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'O limite de 10.000 recebimentos foi excedido',
+  );
+  expect(
+    screen.queryByRole('region', { name: 'Painel de validade' }),
+  ).not.toBeInTheDocument();
+});
+
+it('informa erro se não conseguir interpretar o fuso da unidade', async () => {
+  render(
+    <BatchPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="Inválido/Fuso"
+      userId="user"
+      canCreate={false}
+      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      batches={{ list: vi.fn().mockResolvedValue([]), receive: vi.fn() }}
+    />,
+  );
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Não foi possível interpretar o fuso',
+  );
+  expect(
+    screen.queryByText('Nenhum recebimento registrado.'),
+  ).not.toBeInTheDocument();
+});
+
+it('atualiza a classificação na virada do dia da cozinha sem interação', async () => {
+  vi.useFakeTimers();
+  try {
+    vi.setSystemTime(new Date('2026-01-01T02:59:30Z'));
+    const rows = [
+      {
+        id: '20000000-0000-4000-8000-000000000001',
+        product_id: '10000000-0000-4000-8000-000000000001',
+        product_name: 'Arroz',
+        source_code: 'L1',
+        quantity: 1,
+        unit: 'kg',
+        expiry_date: '2025-12-31',
+        expiry_origin: 'original' as const,
+        container_id: null,
+      },
+    ];
+    const catalog = { list: vi.fn().mockResolvedValue([]), create: vi.fn() };
+    const batches = { list: vi.fn().mockResolvedValue(rows), receive: vi.fn() };
+    await act(async () => {
+      render(
+        <BatchPanel
+          scope={{ organizationId: 'org', establishmentId: 'unit' }}
+          timezone="America/Sao_Paulo"
+          userId="user"
+          canCreate={false}
+          catalog={catalog}
+          batches={batches}
+        />,
+      );
+    });
+    expect(screen.getByText(/Vence hoje: 1/)).toBeVisible();
+    await act(async () => {
+      vi.advanceTimersByTime(60000);
+    });
+    expect(screen.getByText(/Vencidos: 1/)).toBeVisible();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('busca pelo nome do produto associado mesmo fora da lista de catálogo', async () => {
+  const row = {
+    id: '20000000-0000-4000-8000-000000000001',
+    product_id: '10000000-0000-4000-8000-000000000001',
+    product_name: 'Produto distante',
+    source_code: 'L1',
+    quantity: 1,
+    unit: 'kg',
+    expiry_date: '2026-01-01',
+    expiry_origin: 'original' as const,
+    container_id: null,
+  };
+  const user = userEvent.setup();
+  render(
+    <BatchPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="UTC"
+      userId="user"
+      canCreate={false}
+      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      batches={{ list: vi.fn().mockResolvedValue([row]), receive: vi.fn() }}
+    />,
+  );
+  await user.type(await screen.findByRole('searchbox'), 'distante');
+  expect(screen.getByText(/Produto distante — lote L1/)).toBeVisible();
+});
 
 function dateOffset(offset: number) {
   const today = new Intl.DateTimeFormat('en-CA', {

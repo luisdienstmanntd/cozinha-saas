@@ -2,6 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
 select no_plan();
+select has_index('public','batch_receipts','batch_receipts_scope_id_idx','índice para paginação por estabelecimento');
 insert into auth.users(id) values ('81000000-0000-4000-8000-000000000001'),('81000000-0000-4000-8000-000000000002');
 insert into organizations(id,name) values ('82000000-0000-4000-8000-000000000001','A'),('82000000-0000-4000-8000-000000000002','B');
 insert into establishments(id,organization_id,name,timezone) values

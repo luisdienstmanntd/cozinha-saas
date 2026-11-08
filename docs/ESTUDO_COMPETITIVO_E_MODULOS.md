@@ -1,5 +1,7 @@
 # Pesquisa competitiva e opções de módulos
 
+> Atualização de 08/11/2026: a limitação de 1.000 recebimentos descrita no retrato de 07/11 foi corrigida. Consulte [Fase 03D](FASE_03D.md) para o comportamento e os limites atuais.
+
 **Consulta:** 07/11/2026. **Participantes:** `suflex_analyst`, `business_strategist`, `architect_qa` e `feature_market_research`, com pesquisa independente e crítica cruzada. **Escopo:** páginas públicas oficiais de Fixee, Yeschef, ValidaChef e Etiquetador, comparadas ao brief e às decisões do Cozinha SaaS.
 
 ## Como ler esta pesquisa
