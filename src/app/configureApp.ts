@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createBatchGateway } from '../features/batches/data/supabaseBatches';
 import { createLabelGateway } from '../features/labels/data/supabaseLabels';
 import { createMovementGateway } from '../features/movements/data/supabaseMovements';
+import { createEstablishmentGateway } from '../features/establishments/data/supabaseEstablishments';
 
 export function configureApp(environment: Record<string, unknown>) {
   try {
@@ -24,6 +25,7 @@ export function configureApp(environment: Record<string, unknown>) {
       batches: createBatchGateway(client),
       labels: createLabelGateway(client),
       movements: createMovementGateway(client),
+      establishments: createEstablishmentGateway(client),
     };
   } catch {
     return null;

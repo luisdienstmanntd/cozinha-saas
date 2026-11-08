@@ -6,6 +6,7 @@ import { BatchPanel } from '../features/batches/components/BatchPanel';
 import { useState } from 'react';
 import { LabelView } from '../features/labels/components/LabelView';
 import { parseContainerPath } from '../features/labels/domain/label';
+import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 
 function Workspace({
   configuration,
@@ -69,6 +70,15 @@ export function App({
     return (
       <IdentityHome
         gateway={configuration.identity}
+        renderOrganizationTools={(organization, owner, onChanged, busy) => (
+          <EstablishmentTools
+            gateway={configuration.establishments}
+            organization={organization}
+            owner={owner}
+            onChanged={onChanged}
+            busy={busy}
+          />
+        )}
         renderDestination={() => {
           const id = parseContainerPath(window.location.pathname);
           return id ? (
