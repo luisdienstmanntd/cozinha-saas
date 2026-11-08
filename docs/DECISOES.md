@@ -94,3 +94,10 @@
 - **Motivo:** entregar consulta operacional básica sem inferir validade sanitária nem introduzir movimentações de estoque antes de definir correção e baixa auditáveis.
 - **Consequência:** consulta em páginas ordenadas por ID até 10.000 recebimentos; acima disso a interface mostra erro sem apresentar totais parciais. Não há snapshot entre páginas: inserções antes do cursor podem aparecer somente ao atualizar. Classificação depende do relógio do dispositivo e do fuso atual do estabelecimento, visíveis no painel. ID de recipiente só é pesquisável depois que o recipiente existe.
 - **Revisar quando:** volume exigir mais de 10.000 recebimentos ou consistência transacional de leitura; antes de disponibilizar consumo/descarte, e quando forem aprovados correção auditável e recuperação de tentativas. Ver [Fase 03D](FASE_03D.md).
+
+## D-016 — Base de eventos de saída por recebimento (08/11/2026)
+
+- **Decisão:** registrar consumo e descarte como eventos imutáveis vinculados ao recebimento; owner grava por função autorizada, membro consulta por RLS. A função serializa baixas no recebimento, reautoriza reenvios e impede saldo negativo. A quantidade original e a etiqueta permanecem independentes dos eventos.
+- **Motivo:** manter histórico e quantidades consistentes com o modelo atual de um recipiente integral por recebimento, sem antecipar fracionamento ou conversões.
+- **Consequência:** esta entrega é apenas a base de banco; ainda não há interface de baixa, histórico nem saldo, nem correção auditável de erros. Não está pronta para piloto. A equivalência entre recebimento e recipiente depende do modelo atual. O motivo é obrigatório para descarte.
+- **Revisar quando:** criar a interface, recuperação de tentativas ou correção por evento compensatório; antes de ampliar permissões ou modelar múltiplos recipientes. Ver [plano da Fase 5](FASE_05_PLANO.md).
