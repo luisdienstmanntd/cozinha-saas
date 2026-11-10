@@ -17,4 +17,4 @@
 
 - Os arquivos e pontos de entrada foram verificados com PowerShell (`Test-Path` e leitura das instruções): sucesso. `git diff --cached --check`: sucesso.
 - O commit `8cbc9b8` foi enviado a `origin/main`. Este checkpoint final registra essa evidência; seu próprio commit deve ser conferido pelo próximo assistente usando `git log` e `git status`.
-- Não foram executados testes de produto nem Docker, pois a alteração é somente documental. O PR #1 segue em rascunho e deve ser atualizado com as novas instruções sem integrá-lo à `main`.
+- Não foram executados testes de produto nem Docker, pois a alteração é somente documental. O PR #1 segue em rascunho; as instruções foram incorporadas à sua branch no commit `605f31a`, sem integrá-lo à `main`.
