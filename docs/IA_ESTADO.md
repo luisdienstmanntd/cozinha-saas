@@ -1,0 +1,20 @@
+# Estado compartilhado entre assistentes
+
+Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotografia, não um bloqueio nem garantia de atualidade. Confira sempre o Git e o GitHub; cada tarefa mantém detalhes e checkpoints próprios em `ia-tarefas/`. Para evitar conflitos, edite apenas a linha da tarefa e o resumo necessários, preservando registros de outras sessões.
+
+## Situação verificada em 10/11/2026
+
+- A anulação auditável de movimentações foi publicada na `main` em `f831e22`; a coordenação foi adicionada em `8cbc9b8`. O incremento de anulação foi entregue para aceite humano; não há aceite posterior registrado nesta conversa. Evidências e limitações: `FASE_05_PLANO.md`.
+- O [PR #1](https://github.com/luisdienstmanntd/cozinha-saas/pull/1), branch `claude/revisao-interface-unidades`, estava em rascunho, no commit `103f63a`, fora da `main`. Foi atualizado com a `main` e validado em conjunto; ver relatório da própria branch `docs/REVISAO_INTERFACE_UNIDADES.md`. A integração requer a decisão/aceite humano aplicável. Criação de unidades ainda não é idempotente e a recarga pode descartar formulários não enviados.
+- Havia um worktree separado em `D:/codex-cozinha-revisao` para o PR. `stash@{0}` na cópia principal é um rascunho anterior da fase 03D: preservar, não aplicar nem apagar automaticamente. Caminhos e existência devem ser reconfirmados em cada máquina.
+- Pendências de produto antes do piloto incluem recuperação de tentativas após fechamento da aba, saldo pela rota QR, teste físico de etiqueta e condições operacionais descritas no plano da fase. Não presumir que são autorização para iniciar outra fase.
+
+## Tarefas registradas
+
+| Tarefa | Responsável / estado | Referência | Próximo passo |
+|---|---|---|---|
+| Anulação auditável de movimentações | Codex; aguardando aceite | `ia-tarefas/fase-05-anulacao.md` | Confirmar aceite humano antes da próxima fase. |
+| Revisão de interface e unidades | Claude Code e Codex; PR em rascunho | `ia-tarefas/revisao-interface-unidades.md` | Preservar PR, verificar estado remoto e obter aceite antes de integrar. |
+| Coordenação entre assistentes | Codex; concluída | `ia-tarefas/coordenacao-assistentes.md` | Consultar o protocolo e iniciar um registro para cada nova tarefa. |
+
+Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
