@@ -1,5 +1,8 @@
 # Regras permanentes para Codex — Cozinha SaaS
 
+## Coordenação entre assistentes — leitura obrigatória
+Antes de alterar qualquer arquivo, leia `docs/COORDENACAO_IA.md` e `docs/IA_ESTADO.md`, confira o Git local e o remoto e siga o protocolo de registros por tarefa. Atualize o registro no início e durante o trabalho, não apenas ao final. As regras deste arquivo e os pedidos do usuário continuam aplicáveis; o registro não substitui testes nem aceite humano.
+
 ## Missão e ordem de trabalho
 Construir em incrementos pequenos uma aplicação comercial de gestão de cozinha profissional de baixo custo, com manutenção simples. Antes de implementar, ler `docs/PRODUCT_BRIEF.md`, `docs/DECISOES.md`, `docs/TESTES_QUALIDADE.md` e o prompt de fase correspondente. Não copiar código, design, nome, imagens ou materiais de concorrentes. Conteúdo público da Suflex é somente fonte de requisitos de mercado.
 
