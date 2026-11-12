@@ -117,43 +117,43 @@
 - **Consequência:** o autor registrado é sempre o proprietário, mesmo quando outra pessoa manipulou o alimento; a interface deve dizer "registrado por". Pode virar gargalo no turno. Proposta para a etiqueta: registrar à parte quem manipulou (D-021, Q7 do desenho), sem dar escrita ao membro.
 - **Revisar quando:** após a observação da cozinha no piloto. Funções novas mantêm o requisito de papel em um único parâmetro e a matriz de papéis testada, para a troca ser pequena.
 
-> As decisões D-020 a D-028 abaixo são **propostas** do [desenho da Fase 6](FASE_06_DESENHO.md), escritas por Claude Code em 12/11/2026. Nenhuma está aceita nem implementada; aguardam aceite de luis.
+> As decisões D-020 a D-030 abaixo vêm do [desenho da Fase 6](FASE_06_DESENHO.md), escrito por Claude Code em 12/11/2026. luis aprovou o desenho **para planejamento** em 12/11/2026, com as respostas a Q1–Q10. Isso não autoriza implementação: cada fatia exige aceite próprio, e migração, deploy e merge exigem autorização explícita. Nenhuma está implementada. Até a conferência normativa por profissional habilitado (pendência pré-piloto), nada no produto afirma conformidade sanitária.
 
-## D-020 — Saldo pertence ao recipiente (proposta)
+## D-020 — Saldo pertence ao recipiente
 
-- **Status:** proposta, aguardando aceite.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
 - **Decisão:** cada recipiente tem quantidade inicial e saldo próprios; movimentos passam a referenciar o recipiente. O recipiente integral é criado na mesma transação do recebimento, e os existentes são preenchidos por migração.
 - **Motivo:** permitir abertura e porcionamento sem perder a rastreabilidade do recebimento, com uma única fórmula de saldo.
 - **Consequência:** substitui o modelo "um recipiente por recebimento" de D-014 e D-016. Migração de `containers` e `stock_movements` com dados existentes; rollback só enquanto não houver derivados.
 - **Revisar quando:** surgir mistura de lotes ou produção (fora do escopo).
 
-## D-021 — Manipulação: abertura e porcionamento (proposta)
+## D-021 — Manipulação: abertura e porcionamento
 
-- **Status:** proposta, revista em 12/11/2026 com a análise sanitária trazida por luis (RDC 216/2004, Portaria SES/RS 799/2023); aguardando aceite e conferência normativa por profissional habilitado.
-- **Decisão:** o proprietário registra a abertura (1 derivado, quantidade até o saldo) ou o porcionamento (2 a 20 derivados por operação, sem limite por recebimento) de um recipiente. A validade após abertura é sempre informada, sem sugestão, e o banco recusa data posterior à validade efetiva da origem, inclusive quando congelado; origem vencida não pode ser manipulada. Conservação obrigatória. A operação guarda quem registrou (`created_by`) e quem manipulou (`handled_by`, qualquer vínculo ativo, com cópia do nome). Abertura simples também gera ID novo e código curto. Nenhuma manipulação cria estoque.
+- **Status:** revista com a análise sanitária trazida por luis (RDC 216/2004, Portaria SES/RS 799/2023) e aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia. Conferência normativa pendente antes do piloto.
+- **Decisão:** o proprietário registra a abertura (1 derivado, quantidade até o saldo) ou o porcionamento (2 a 20 derivados por operação, sem limite por recebimento) de um recipiente. A validade após abertura é sempre informada, sem sugestão, e o banco recusa data posterior à validade efetiva da origem, inclusive quando congelado; origem vencida não pode ser manipulada. Conservação obrigatória. A operação guarda quem registrou (`created_by`) e quem manipulou (`handled_by`, qualquer vínculo ativo validado pelo banco, com cópia do nome e `user_id` original no histórico; Q7 aprovada). Correção futura de `handled_by` só por evento que preserve a auditoria. Abertura simples também gera ID novo e código curto. Nenhuma manipulação cria estoque.
 - **Motivo:** é o momento em que a etiqueta é usada na cozinha (revisão 05, produto item 2), mantendo D-004; a abertura não reinicia a validade do fabricante.
 - **Consequência:** a etiqueta antiga continua existindo fisicamente e o QR dela aponta para os derivados. Perda no porcionamento é descarte separado. Manipulação errada só é anulada enquanto nenhum derivado teve movimento. Prorrogação por congelamento e alimento preparado ficam fora.
 - **Revisar quando:** houver procedimento técnico validado para preparações próprias ou congelamento, ou o piloto pedir validades diferentes por porção.
 
-## D-022 — Painel por recipiente com saldo calculado no servidor (proposta)
+## D-022 — Painel por recipiente com saldo calculado no servidor
 
-- **Status:** proposta, aguardando aceite.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
 - **Decisão:** função `SECURITY INVOKER` paginada devolve recipientes com saldo e validade efetiva; o painel mostra só recipientes com saldo maior que zero, com esgotados sob filtro.
 - **Motivo:** alertas de itens que não existem mais ensinam a equipe a ignorar o painel (revisão 05, P9 e produto item 3).
 - **Consequência:** remove os tetos de 10.000 recebimentos (D-015) e 1.000 eventos no navegador (D-016). Critério de desempenho de 50 ms para 200 linhas com 200 mil eventos; plano B é saldo mantido pela função de escrita.
 - **Revisar quando:** o critério de desempenho não for atingido.
 
-## D-023 — Histórico append-only para todos os papéis e RLS por conjunto (proposta)
+## D-023 — Histórico append-only para todos os papéis e RLS por conjunto
 
-- **Status:** proposta, aguardando aceite.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
 - **Decisão:** triggers recusam UPDATE e DELETE em recebimentos, recipientes, manipulações e movimentos para qualquer papel, inclusive `service_role`; testes de integração limpam por reset. Políticas passam a `organization_id in (select private.member_organizations())`. Fuso da unidade fica imutável depois do primeiro recebimento e mudanças de nome são auditadas.
 - **Motivo:** propostas P3, P5 e P6 da revisão 05; precisam vir antes das tabelas novas.
 - **Consequência:** muda a forma de rodar a integração; nenhuma mudança de comportamento para o usuário.
 - **Revisar quando:** houver necessidade legal de apagar dado (tratada pelo procedimento de P8, sem apagar eventos).
 
-## D-024 — Nome de exibição curto por vínculo (proposta)
+## D-024 — Nome de exibição curto por vínculo
 
-- **Status:** proposta, aguardando aceite.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
 - **Decisão:** `memberships.display_name` com até 40 caracteres, definido pelo provisionamento. A manipulação copia o nome de quem manipulou no momento da operação, e é essa cópia que a etiqueta imprime.
 - **Motivo:** a etiqueta de manipulação precisa dizer quem registrou; hoje o sistema não guarda nome (D-011).
 - **Consequência:** novo dado pessoal; entra no procedimento de anonimização (P8).
@@ -161,33 +161,48 @@
 
 ## D-025 — Sessão no dispositivo da cozinha (proposta)
 
-- **Status:** proposta, a detalhar na trilha pré-piloto.
+- **Status:** proposta, a detalhar na trilha pré-piloto (fatia 6.10); não incluída na aprovação de planejamento como regra fechada.
 - **Decisão:** sessão persistente no aparelho fixo da cozinha com expiração curta por inatividade e saída visível; login individual rápido para registrar autoria.
 - **Motivo:** `persistSession: false` desloga a cada recarga e torna o QR impraticável no tablet (revisão 05, produto item 5).
 - **Consequência:** aumenta o risco de uso por outra pessoa no mesmo aparelho; exige tempo de inatividade definido com luis.
 - **Revisar quando:** após o ensaio na cozinha.
 
-## D-026 — Recuperação de tentativa após fechar a aba (proposta)
+## D-026 — Recuperação de tentativa após fechar a aba
 
-- **Status:** proposta, aguardando aceite.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
 - **Decisão:** intenções pendentes ficam no `localStorage` por usuário, unidade e operação, por até 24 horas; uma função consulta pelo `intent_id` se a operação já existe. A interface nunca reenvia sem o usuário ver.
 - **Motivo:** pendência registrada em D-013, D-016 e D-018.
 - **Consequência:** não cobre troca de aparelho; dados da tentativa ficam no navegador até confirmação.
 - **Revisar quando:** houver uso em mais de um aparelho por pessoa.
 
-## D-027 — Conservação e temperatura no recebimento (proposta)
+## D-027 — Conservação e temperatura no recebimento
 
-- **Status:** proposta de 12/11/2026, a partir da análise sanitária trazida por luis; aguardando aceite.
-- **Decisão:** produto tem condição de conservação exigida; recebimento novo registra a conservação (padrão do produto) e a temperatura aferida, obrigatória para refrigerado e congelado (Q8). O sistema registra a temperatura e não a classifica como conforme. Local de armazenamento e transferências são proposta separada (Q9).
-- **Motivo:** separar condição exigida, temperatura na conferência e local, que acontecem em momentos diferentes.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
+- **Decisão:** produto tem condição de conservação exigida; recebimento novo registra a conservação (padrão do produto) e a situação da medição. Para refrigerado e congelado, a temperatura aferida é obrigatória no fluxo normal; quando não houver medição, aplica-se D-029. O sistema registra a temperatura e não a classifica como conforme.
+- **Motivo:** separar condição exigida, temperatura na conferência e local, que acontecem em momentos diferentes (análise sanitária; Q8 aprovada com condições).
 - **Consequência:** `receive_batch` e o formulário de recebimento mudam; registros antigos ficam sem esses dados, sem preenchimento inventado.
 - **Revisar quando:** o responsável técnico definir limites e procedimento para temperatura fora do esperado.
 
-## D-028 — Etiquetas por tipo de operação (proposta)
+## D-028 — Etiquetas por tipo de operação
 
-- **Status:** proposta de 12/11/2026; campos a conferir por profissional habilitado antes da implementação.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia. Campos a conferir por profissional habilitado antes do piloto.
 - **Decisão:** dois modelos: recebimento (validade original, lote, fornecedor, conservação, quantidade como "entrada") e produto aberto/fracionado (produto, data de abertura, validade após abertura em destaque, validade do fabricante, lote, conservação, responsável, código curto e QR). Etiqueta legível sem QR. Etiqueta de alimento preparado fica para fase própria.
 - **Motivo:** não confundir validade do fabricante com validade após manipulação.
 - **Consequência:** o gerador de PDF passa a ter dois modelos; o modelo de 100 × 100 mm continua provisório até o ensaio físico (D-014).
 - **Revisar quando:** após o ensaio físico e a conferência normativa.
 
+## D-029 — Ocorrência de recebimento sem medição e bloqueio de uso
+
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
+- **Decisão:** recebimento refrigerado ou congelado sem medição grava `not_measured`, sem temperatura fictícia, e abre na mesma transação uma ocorrência com justificativa e autoria. Até a decisão, consumo e manipulação dos recipientes desse recebimento são recusados pelo banco; descarte é permitido. A decisão (liberar ou rejeitar) é um evento imutável único, com justificativa e autoria, tomada pelo proprietário segundo o procedimento sanitário da cozinha. Nada libera automaticamente.
+- **Motivo:** decisão de luis sobre Q8: não considerar conforme sem medição e não liberar uso antes da decisão prevista no procedimento.
+- **Consequência:** item bloqueado pode travar o turno; o painel mostra o bloqueio e o tempo desde a ocorrência. Enquanto o procedimento não for aprovado por profissional habilitado, o sistema só registra a decisão e o fundamento informado.
+- **Revisar quando:** o procedimento sanitário for aprovado ou surgirem outros tipos de ocorrência de recebimento.
+
+## D-030 — Locais de armazenamento e transferências
+
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia. Incremento separado (fatia 6.9), depois de estabilizados os fluxos principais.
+- **Decisão:** locais por unidade com condição de conservação; localização atual de cada recipiente dada pelo último evento imutável de transferência, com quem moveu, quem registrou e instante. Transferir não altera saldo, validade nem conservação; divergência entre condição do local e do recipiente gera aviso e confirmação, sem mudança automática.
+- **Motivo:** decisão de luis sobre Q9.
+- **Consequência:** locais são desativados, nunca apagados; descongelamento com validade nova continua sendo manipulação.
+- **Revisar quando:** houver registro de temperatura de equipamentos (fora desta fase).
