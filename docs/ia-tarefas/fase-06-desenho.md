@@ -3,11 +3,11 @@
 - **ID:** fase-06-desenho
 - **Responsável / sessão:** Claude Code (sessão em nuvem, thread "Projetar próxima fase do sistema")
 - **Estado:** aguardando_aceite (desenho aprovado para planejamento em 12/11/2026; sequência de implementação aguardando aceite)
-- **Objetivo e aceite:** documento de desenho da próxima fase (escopo, modelo de dados, RLS, fluxos, aceite, testes de segurança, riscos e fatias) e decisões propostas, sem migração nem tela. Aceite: luis aprova, ajusta ou recusa o desenho e as decisões D-020 a D-030.
+- **Objetivo e aceite:** documento de desenho da próxima fase (escopo, modelo de dados, RLS, fluxos, aceite, testes de segurança, riscos e fatias) e decisões propostas, sem migração nem tela. Aceite: luis aprova, ajusta ou recusa o desenho e as decisões D-020 a D-033.
 - **Branch / worktree / base:** `claude/fase-06-desenho`, a partir de `origin/main` em `4c39e9f`.
-- **Arquivos e recursos em uso:** `docs/FASE_06_DESENHO.md` (novo), `docs/DECISOES.md` (acréscimo de D-019 a D-030 no fim), `docs/BACKLOG.md` (linhas F6 a F8), este registro e uma linha de `IA_ESTADO.md`. Nenhum código, migração ou teste.
+- **Arquivos e recursos em uso:** `docs/FASE_06_DESENHO.md` (novo), `docs/DECISOES.md` (acréscimo de D-019 a D-033 no fim), `docs/BACKLOG.md` (linhas F6 a F8), este registro e uma linha de `IA_ESTADO.md`. Nenhum código, migração ou teste.
 - **Dependências e riscos:** depende do aceite da Fase 5 e do PR #2 antes de qualquer implementação. Conflito provável em `DECISOES.md` com o PR #1 (D-017) e com novas decisões do Codex: conciliar acrescentando, sem descartar entradas. A fatia 6.1 recria funções de movimento; reservar com o Codex antes de iniciar.
-- **Próximo passo:** revisão cruzada do PR #3 pelo Codex (pedido preparado para luis) e aceite da sequência; só então abrir registro da fatia 6.0, depois do aceite da Fase 5 e do PR #2.
+- **Próximo passo:** aguardar aprovação de luis para iniciar a fatia 6.0a, depois do aceite da Fase 5 e da resolução do PR #2.
 
 ## Checkpoints
 
@@ -32,4 +32,12 @@
 - **Testes:** não aplicável (somente documentação).
 - **Pendências / riscos:** revisão cruzada pelo Codex; aceite da sequência; conferência normativa pré-piloto (profissional ainda não escolhido).
 - **Próximo passo:** aguardar revisão cruzada e aceite.
+
+### 12/11/2026 18:50 UTC — Claude Code
+- **Planejado / feito:** incorporadas ao desenho as correções da revisão cruzada (PR #4, `REVISAO_CRUZADA_FASE_06.md`) aprovadas por luis: 6.0 dividida em 6.0a/6.0b/6.0c; estratégia de backfill (suspensão transacional controlada, com verificação final); `handled_at` separado de `created_at` com janela provisória de 2 horas e ocorrência fora dela; adaptação de fixtures sem mudar asserções; 6.4 antiga dividida em banco (6.5a) e interface (6.5b); anulação de manipulação antecipada (6.4); regra da sobra; lacunas I-1 a I-15 e S-1 a S-10. Conflitos entre PRs #1–#4 conferidos com `git merge-tree` (único conflito: `DECISOES.md` entre PR #1 e PR #3/#4). D-021, D-023, D-024, D-029 e D-030 revistas; D-031 a D-033 novas. Desenho reescrito por inteiro para manter coerência; ordem de fatias e critérios na seção 10.
+- **Ressalva de luis:** a revisão cruzada foi feita pelo mesmo assistente em papéis sequenciais e sem executar testes; registrada no desenho (seção 14) e em `DECISOES.md`.
+- **Alterações e commits:** branch `claude/fase-06-desenho`, PR #3. O PR #4 não foi integrado.
+- **Testes:** não aplicável (somente documentação).
+- **Pendências / riscos:** aprovação para iniciar a 6.0a; Fase 5 e PR #2; conferência normativa pré-piloto.
+- **Próximo passo:** aguardar aprovação.
 

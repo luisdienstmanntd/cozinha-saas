@@ -117,7 +117,7 @@
 - **Consequência:** o autor registrado é sempre o proprietário, mesmo quando outra pessoa manipulou o alimento; a interface deve dizer "registrado por". Pode virar gargalo no turno. Proposta para a etiqueta: registrar à parte quem manipulou (D-021, Q7 do desenho), sem dar escrita ao membro.
 - **Revisar quando:** após a observação da cozinha no piloto. Funções novas mantêm o requisito de papel em um único parâmetro e a matriz de papéis testada, para a troca ser pequena.
 
-> As decisões D-020 a D-030 abaixo vêm do [desenho da Fase 6](FASE_06_DESENHO.md), escrito por Claude Code em 12/11/2026. luis aprovou o desenho **para planejamento** em 12/11/2026, com as respostas a Q1–Q10. Isso não autoriza implementação: cada fatia exige aceite próprio, e migração, deploy e merge exigem autorização explícita. Nenhuma está implementada. Até a conferência normativa por profissional habilitado (pendência pré-piloto), nada no produto afirma conformidade sanitária.
+> As decisões D-020 a D-033 abaixo vêm do [desenho da Fase 6](FASE_06_DESENHO.md), escrito por Claude Code em 12/11/2026. luis aprovou o desenho **para planejamento** em 12/11/2026, com as respostas a Q1–Q10 e as correções da revisão cruzada (PR #4), registradas na seção 14 do desenho. Isso não autoriza implementação: cada fatia exige aceite próprio, e migração, deploy e merge exigem autorização explícita. Nenhuma está implementada. Até a conferência normativa por profissional habilitado (pendência pré-piloto), nada no produto afirma conformidade sanitária.
 
 ## D-020 — Saldo pertence ao recipiente
 
@@ -130,9 +130,9 @@
 ## D-021 — Manipulação: abertura e porcionamento
 
 - **Status:** revista com a análise sanitária trazida por luis (RDC 216/2004, Portaria SES/RS 799/2023) e aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia. Conferência normativa pendente antes do piloto.
-- **Decisão:** o proprietário registra a abertura (1 derivado, quantidade até o saldo) ou o porcionamento (2 a 20 derivados por operação, sem limite por recebimento) de um recipiente. A validade após abertura é sempre informada, sem sugestão, e o banco recusa data posterior à validade efetiva da origem, inclusive quando congelado; origem vencida não pode ser manipulada. Conservação obrigatória. A operação guarda quem registrou (`created_by`) e quem manipulou (`handled_by`, qualquer vínculo ativo validado pelo banco, com cópia do nome e `user_id` original no histórico; Q7 aprovada). Correção futura de `handled_by` só por evento que preserve a auditoria. Abertura simples também gera ID novo e código curto. Nenhuma manipulação cria estoque.
+- **Decisão:** o proprietário registra a abertura (1 derivado, quantidade até o saldo) ou o porcionamento (2 a 20 derivados por operação, sem limite por recebimento) de um recipiente, com o horário real da manipulação (D-031). A validade após abertura é sempre informada, sem sugestão, e o banco recusa data posterior à validade efetiva da origem, inclusive quando congelado; origem vencida na data da manipulação não pode ser manipulada; a regra "nunca posterior" é uma restrição `CHECK` sobre a validade da origem copiada e conferida por FK. **Sobra:** só uma embalagem originalmente fechada mantém a condição de origem; a sobra fica na origem apenas quando ela é o recipiente integral e a pessoa confirma que o restante continua fechado. Caso contrário, a sobra vira mais uma porção ou é descartada na mesma operação. Conservação obrigatória. A operação guarda quem registrou (`created_by`) e quem manipulou (`handled_by`, qualquer vínculo ativo validado pelo banco, com cópia do nome e `user_id` original no histórico; Q7 aprovada). Correção futura de `handled_by` só por evento que preserve a auditoria. Abertura simples também gera ID novo e código curto. Nenhuma manipulação cria estoque.
 - **Motivo:** é o momento em que a etiqueta é usada na cozinha (revisão 05, produto item 2), mantendo D-004; a abertura não reinicia a validade do fabricante.
-- **Consequência:** a etiqueta antiga continua existindo fisicamente e o QR dela aponta para os derivados. Perda no porcionamento é descarte separado. Manipulação errada só é anulada enquanto nenhum derivado teve movimento. Prorrogação por congelamento e alimento preparado ficam fora.
+- **Consequência:** a etiqueta antiga continua existindo fisicamente e o QR dela aponta para os derivados. Porcionar uma origem já aberta exige incluir a sobra como porção ou descartá-la; retirar quantidade para uso é consumo, não manipulação. Manipulação errada é anulada por D-032. Prorrogação por congelamento e alimento preparado ficam fora.
 - **Revisar quando:** houver procedimento técnico validado para preparações próprias ou congelamento, ou o piloto pedir validades diferentes por porção.
 
 ## D-022 — Painel por recipiente com saldo calculado no servidor
@@ -146,15 +146,15 @@
 ## D-023 — Histórico append-only para todos os papéis e RLS por conjunto
 
 - **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
-- **Decisão:** triggers recusam UPDATE e DELETE em recebimentos, recipientes, manipulações e movimentos para qualquer papel, inclusive `service_role`; testes de integração limpam por reset. Políticas passam a `organization_id in (select private.member_organizations())`. Fuso da unidade fica imutável depois do primeiro recebimento e mudanças de nome são auditadas.
+- **Decisão:** em três fatias separadas (6.0a, 6.0b, 6.0c, decisão de luis). 6.0a: triggers recusam UPDATE, DELETE e TRUNCATE nas tabelas de histórico para qualquer papel, inclusive `service_role`, com `revoke truncate` e teste de catálogo de trigger habilitado; testes de integração deixam de apagar histórico. 6.0b: RLS por conjunto, mantendo a regra atual de `memberships`. Políticas passam a `organization_id in (select private.member_organizations())`. 6.0c: fuso da unidade imutável depois do primeiro recebimento, com `FOR SHARE` da unidade em `receive_batch`, e mudanças de nome auditadas.
 - **Motivo:** propostas P3, P5 e P6 da revisão 05; precisam vir antes das tabelas novas.
-- **Consequência:** muda a forma de rodar a integração; nenhuma mudança de comportamento para o usuário.
+- **Consequência:** muda a forma de limpar a integração (D-033); nenhuma mudança de comportamento para o usuário. P5 não protege contra o superusuário do banco.
 - **Revisar quando:** houver necessidade legal de apagar dado (tratada pelo procedimento de P8, sem apagar eventos).
 
 ## D-024 — Nome de exibição curto por vínculo
 
 - **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
-- **Decisão:** `memberships.display_name` com até 40 caracteres, definido pelo provisionamento. A manipulação copia o nome de quem manipulou no momento da operação, e é essa cópia que a etiqueta imprime.
+- **Decisão:** `memberships.display_name` com até 40 caracteres, definido por função do proprietário auditada (usada também pelo provisionamento); `handled_by` sem nome é recusado. A lista de pessoas e seus nomes continua visível só ao proprietário. A manipulação copia o nome de quem manipulou no momento da operação, e é essa cópia que a etiqueta imprime.
 - **Motivo:** a etiqueta de manipulação precisa dizer quem registrou; hoje o sistema não guarda nome (D-011).
 - **Consequência:** novo dado pessoal; entra no procedimento de anonimização (P8).
 - **Revisar quando:** houver convite de membros ou perfil editável.
@@ -191,18 +191,45 @@
 - **Consequência:** o gerador de PDF passa a ter dois modelos; o modelo de 100 × 100 mm continua provisório até o ensaio físico (D-014).
 - **Revisar quando:** após o ensaio físico e a conferência normativa.
 
-## D-029 — Ocorrência de recebimento sem medição e bloqueio de uso
+## D-029 — Ocorrências com bloqueio de uso
 
 - **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia.
-- **Decisão:** recebimento refrigerado ou congelado sem medição grava `not_measured`, sem temperatura fictícia, e abre na mesma transação uma ocorrência com justificativa e autoria. Até a decisão, consumo e manipulação dos recipientes desse recebimento são recusados pelo banco; descarte é permitido. A decisão (liberar ou rejeitar) é um evento imutável único, com justificativa e autoria, tomada pelo proprietário segundo o procedimento sanitário da cozinha. Nada libera automaticamente.
-- **Motivo:** decisão de luis sobre Q8: não considerar conforme sem medição e não liberar uso antes da decisão prevista no procedimento.
+- **Decisão:** ocorrência é aberta na mesma transação da operação que a causa, com justificativa e autoria, em dois casos: recebimento refrigerado ou congelado sem medição (gravado como `not_measured`, sem temperatura fictícia; Q8) e manipulação registrada fora da janela de horário (D-031). Até a decisão, consumo, manipulação e transferência de local dos recipientes afetados são recusados pelo banco; descarte é permitido; a etiqueta de derivado com ocorrência tardia não é gerada. A decisão (liberar ou rejeitar) é um evento imutável único, com justificativa e autoria, tomada pelo proprietário seguindo o procedimento sanitário da cozinha, e bloqueia a linha do recebimento. Nada libera automaticamente.
+- **Motivo:** decisão de luis sobre Q8 e sobre B-2 da revisão cruzada.
 - **Consequência:** item bloqueado pode travar o turno; o painel mostra o bloqueio e o tempo desde a ocorrência. Enquanto o procedimento não for aprovado por profissional habilitado, o sistema só registra a decisão e o fundamento informado.
-- **Revisar quando:** o procedimento sanitário for aprovado ou surgirem outros tipos de ocorrência de recebimento.
+- **Revisar quando:** o procedimento sanitário for aprovado ou surgirem outros tipos de ocorrência.
 
 ## D-030 — Locais de armazenamento e transferências
 
-- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia. Incremento separado (fatia 6.9), depois de estabilizados os fluxos principais.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia. Incremento separado (fatia 6.9), depois de estabilizados os fluxos principais. Localização atual pelo evento de maior `seq`; a transferência bloqueia a linha do recebimento.
 - **Decisão:** locais por unidade com condição de conservação; localização atual de cada recipiente dada pelo último evento imutável de transferência, com quem moveu, quem registrou e instante. Transferir não altera saldo, validade nem conservação; divergência entre condição do local e do recipiente gera aviso e confirmação, sem mudança automática.
 - **Motivo:** decisão de luis sobre Q9.
 - **Consequência:** locais são desativados, nunca apagados; descongelamento com validade nova continua sendo manipulação.
 - **Revisar quando:** houver registro de temperatura de equipamentos (fora desta fase).
+
+## D-031 — Horário real da manipulação e janela de registro
+
+- **Status:** aprovada para planejamento por luis em 12/11/2026 (B-2 da revisão cruzada); implementação depende do aceite da fatia.
+- **Decisão:** a manipulação guarda `handled_at` (quando a pessoa abriu ou porcionou, informado) separado de `created_at` (quando foi registrada). A etiqueta imprime `handled_at`. Janela máxima provisória de **2 horas** entre os dois, numa única função; `handled_at` futuro ou anterior à origem é recusado. Fora da janela, o registro só é aceito com justificativa e abre ocorrência (D-029); horário desconhecido não é registrado. Vencimento da origem é avaliado na data de `handled_at`; a validade nova não pode ser anterior à data do registro.
+- **Motivo:** com D-019, o registro acontece depois da abertura física; usar o horário do registro imprimiria uma abertura mais recente que a real.
+- **Consequência:** nenhuma etiqueta sai com horário não aceito; o proprietário pode informar o horário errado, o que é tema de observação do piloto.
+- **Revisar quando:** após validação operacional e sanitária da janela, com a métrica de atraso do piloto.
+
+## D-032 — Anulação de manipulação
+
+- **Status:** aprovada para planejamento por luis em 12/11/2026; antecipada para antes das telas de manipulação (fatia 6.4).
+- **Decisão:** o proprietário anula uma manipulação inteira, com justificativa, enquanto nenhum derivado teve consumo, descarte, manipulação ou transferência de local. Na mesma transação: devolução da transferência à origem, um evento por derivado que zera o saldo dele e anulação do descarte de sobra, se houver. Uma anulação por manipulação; idempotente; bloqueia a linha do recebimento.
+- **Motivo:** validade digitada errada é o erro mais provável; a primeira tela de manipulação já deve sair com a correção.
+- **Consequência:** a origem volta com a própria validade, mesmo vencida; derivados anulados não geram etiqueta.
+- **Revisar quando:** o piloto pedir correção parcial.
+
+## D-033 — Transição segura de esquema e testes
+
+- **Status:** aprovada para planejamento por luis em 12/11/2026 (B-1 e B-3 da revisão cruzada); implementação depende do aceite da fatia.
+- **Decisão:** backfill sob histórico append-only por **suspensão transacional controlada** dos triggers de proteção, na própria migração, com bloco final que verifica que todas as proteções existem e estão habilitadas e aborta a migração se não estiverem; a alternativa de ativar a proteção só depois da migração foi comparada e descartada (deixa tabelas sem proteção entre fatias). Testes existentes preservam comportamento, segurança e rastreabilidade: só fixtures e preparação mudam (limpeza sem apagar histórico, trigger que cria o integral no recebimento, preenchimento de `container_id` em inserções legadas, leitura de movimentos por recipiente no front-end). Nenhum teste é removido, pulado ou enfraquecido.
+- **Motivo:** preservar tudo o que já funciona enquanto o modelo muda.
+- **Consequência:** banco local de testes cresce até um `db:reset`; o preenchimento automático de `container_id` existe só por compatibilidade, e as funções novas não dependem dele.
+- **Revisar quando:** a assinatura antiga de `record_movement` for removida.
+
+> A revisão cruzada que originou D-031 a D-033 foi feita pelo mesmo assistente em papéis sequenciais e sem executar testes (ressalva de luis, 12/11/2026). Cada fatia confirma os achados com teste antes de corrigir.
+
