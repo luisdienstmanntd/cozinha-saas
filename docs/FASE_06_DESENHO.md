@@ -22,7 +22,7 @@ Decisões que este desenho respeita sem rediscutir:
 
 **Mudança de escopo que precisa de aceite explícito:** o [brief](PRODUCT_BRIEF.md) deixa "transformações/fracionamento não modelados" fora da v0.1. Este desenho propõe modelar uma forma mínima de fracionamento (abrir e porcionar uma única origem). Se luis aceitar, o brief deve ser atualizado na fatia 6.3; mistura de lotes, produção e transferências continuam fora.
 
-Decisões registradas a partir deste desenho em [DECISOES.md](DECISOES.md): D-019 (escrita só do proprietário, já decidida) e D-020 a D-026 (propostas).
+Decisões registradas a partir deste desenho em [DECISOES.md](DECISOES.md): D-019 (escrita só do proprietário, já decidida) e D-020 a D-028 (propostas).
 
 ## 2. Objetivo e escopo
 
@@ -40,12 +40,16 @@ Decisões registradas a partir deste desenho em [DECISOES.md](DECISOES.md): D-01
 | F | Recuperação da tentativa após fechar a aba | pendência de D-013, D-016 e D-018 |
 | G | Endurecimento que precisa existir antes das tabelas novas: RLS por conjunto (P3), histórico append-only também para o backend (P5), fuso imutável e auditoria de nome/fuso (P6) | P3, P5, P6 |
 | H | Carregamento de acesso tolerante a uma organização inválida | P7 |
+| J | Conservação e temperatura aferida no recebimento; condição de conservação no cadastro do produto | análise sanitária de 12/11 |
+| K | Local de armazenamento e transferência entre equipamentos (**a decidir**, pode ir para a Fase 7) | análise sanitária de 12/11 |
 | I | Trilha pré-piloto sem tela: configuração de autenticação (P4), política e procedimento de dados pessoais (P8), script de provisionamento e métricas do piloto | P4, P8, produto itens 6 e 7 |
 
 ### Fora do escopo desta fase
 
 - Ampliar escrita para o membro (decisão de luis; reavaliar após observação na cozinha).
-- Regras ou sugestões automáticas de prazo, inclusive "abrir = validade original menos N dias".
+- Regras ou sugestões automáticas de prazo, inclusive "abrir = validade original menos N dias" e limites da Portaria SES/RS 799/2023 aplicados como prazo padrão.
+- Prorrogar validade por congelamento e etiqueta de **alimento preparado** com validade própria. Exigem ficha de preparo, ingredientes rastreados e aprovação de responsável habilitado; ficam para fase própria.
+- Classificação automática de temperatura como conforme ou não conforme.
 - Ficha técnica, produção, receitas, mistura de lotes em um recipiente, transferência entre unidades, conversão de unidade, pesagem por balança, impressora térmica, offline.
 - Correção de recebimento (quantidade, validade ou lote errados no recebimento). Continua exigindo desenho próprio.
 - Convite de membros e criação de empresa pela interface.
@@ -55,11 +59,14 @@ Decisões registradas a partir deste desenho em [DECISOES.md](DECISOES.md): D-01
 - **Recebimento** (`batch_receipts`): entrada imutável, como hoje. Continua sendo a origem da rastreabilidade (produto, fornecedor, lote externo, validade original).
 - **Recipiente integral:** o recipiente que representa o recebimento inteiro. Hoje é criado sob demanda ao gerar a etiqueta (D-014). Proposta: passa a ser **criado no próprio recebimento**, na mesma transação.
 - **Manipulação:** operação única e auditada que retira saldo de um recipiente de origem e cria recipientes derivados. Tem dois tipos:
-  - **abertura:** um derivado com todo o saldo da origem. Na prática é a mesma embalagem com uma etiqueta nova; o sistema dá a ela um ID novo para que a validade e o momento da abertura fiquem registrados e o QR antigo passe a apontar para o novo.
-  - **porcionamento:** de 2 a 20 derivados, cada um com sua quantidade. A soma pode ser menor que o saldo da origem; o restante continua na origem.
+  - **abertura:** um derivado, com quantidade menor ou igual ao saldo da origem. Um recebimento de 10 kg pode ser várias embalagens: abrir uma hoje e outra na semana seguinte gera duas aberturas, cada uma com data, validade e ID próprios, e o restante continua fechado no integral. O ID novo vale também quando a embalagem inteira é aberta sem dividir.
+  - **porcionamento:** de 2 a 20 derivados por operação, cada um com sua quantidade. A soma pode ser menor que o saldo da origem; o restante continua na origem. O limite é por operação, provisório e de usabilidade, não sanitário: 25 porções são feitas em duas operações. Não há limite por recebimento.
+- **Condição de conservação:** ambiente, refrigerado ou congelado. É registrada no recebimento (D-027) e em cada derivado. Não se confunde com o **local** de armazenamento (câmara fria 01, freezer 2), que fica para a fatia 6.10.
 - **Recipiente derivado:** recipiente criado por manipulação. Tem quantidade inicial, validade definida pelo responsável, armazenamento e momento da manipulação próprios. Pertence ao mesmo recebimento (mesmo `batch_id`), então o lote de origem é sempre conhecido. Um derivado pode ser manipulado de novo (por exemplo, porção congelada que depois é descongelada e aberta).
 - **Saldo do recipiente:** quantidade inicial do recipiente, menos consumos, descartes e transferências para derivados, mais anulações. É o "saldo registrado" da Fase 5, agora por recipiente. Não comprova conferência física.
 - **Validade efetiva:** a validade do próprio recipiente. No integral é a do recebimento; no derivado é a que o responsável informou na manipulação.
+
+Nenhuma manipulação cria estoque novo: a soma dos derivados sai do saldo da origem.
 
 Perda no porcionamento (aparas, sobra que não vira porção) **não** é inferida: se a soma das porções for menor que o saldo e a origem estiver vazia na prática, o operador registra um descarte com motivo na origem. A fatia 6.4 avalia oferecer esse descarte na mesma tela, como evento separado.
 
@@ -80,7 +87,8 @@ Colunas novas:
 | `initial_quantity` | `numeric` | `> 0`, até 3 casas, inteira para `un`. No integral é cópia da quantidade do recebimento |
 | `expiry_date` | `date` | no integral, cópia da validade do recebimento; no derivado, a informada |
 | `expiry_origin` | `text` | `'receipt'` no integral; `'responsible'` no derivado |
-| `storage` | `text` | nulo no integral (ver questão Q3); no derivado `'ambient'`, `'refrigerated'` ou `'frozen'` |
+| `storage` | `text` | `'ambient'`, `'refrigerated'` ou `'frozen'`. No integral, cópia da condição registrada no recebimento (nulo só nos recebimentos anteriores à fatia 6.9); no derivado, a informada |
+| `short_code` | `text` | código curto legível gerado pelo servidor, único por unidade (por exemplo `R-00042`), impresso na etiqueta ao lado do QR. O UUID continua sendo a identidade e o que vai no QR |
 | `handled_at` | `timestamptz` | nulo no integral; `now()` do servidor no derivado |
 | `timezone` | `text` | fuso da unidade no momento da criação, como em recebimentos e movimentos |
 
@@ -104,8 +112,9 @@ Uma linha por manipulação. Guarda o que foi decidido uma vez para todas as por
 | `kind` | `'opening'` ou `'portioning'` |
 | `portion_count` | 1 em abertura; 2 a 20 em porcionamento |
 | `total_quantity` | soma das porções; `<=` saldo da origem no momento |
-| `expiry_date` | validade nova informada pelo responsável |
-| `exceeds_source_expiry` | `boolean`; verdadeiro quando a validade nova é posterior à da origem. Só é aceito se a interface enviou confirmação explícita (ver 5.1) |
+| `expiry_date` | validade nova informada pelo responsável; **nunca posterior** à validade efetiva da origem (restrição no banco) |
+| `handled_by` | usuário com vínculo ativo na organização que manipulou fisicamente (pode ser membro); escolhido pelo proprietário que registra |
+| `handled_by_name` | cópia do nome de exibição de `handled_by` no momento da operação, impressa na etiqueta e preservada se o nome mudar ou o vínculo for revogado |
 | `storage` | `'ambient'`, `'refrigerated'` ou `'frozen'` |
 | `note` | opcional, até 200 caracteres visíveis (por exemplo "aberto para o almoço"). Ver risco R6 sobre dados pessoais em texto livre |
 | `intent_id` | `unique (organization_id, establishment_id, intent_id)` |
@@ -134,9 +143,9 @@ Desempenho esperado: o saldo é um `sum` agrupado sobre o índice da 4.3. Crité
 
 ### 4.5 Nome de exibição do responsável
 
-A etiqueta derivada precisa dizer quem manipulou. Hoje o sistema não guarda nome de pessoa (D-011, dados pessoais mínimos). Proposta: coluna `memberships.display_name` (até 40 caracteres visíveis, por exemplo "Ana P."), definida pelo script de provisionamento (fatia 6.8) e editável só pelo proprietário por função auditada em fase posterior. A etiqueta imprime o nome de exibição do autor; sem nome, imprime "Responsável: não cadastrado" e o painel avisa. Ver questão Q4 e P8.
+A etiqueta derivada precisa dizer quem manipulou. Hoje o sistema não guarda nome de pessoa (D-011, dados pessoais mínimos). Proposta (Q4, aprovada na análise de 12/11 e pendente de confirmação de luis): coluna `memberships.display_name` (até 40 caracteres visíveis, por exemplo "Ana M."), definida pelo script de provisionamento (fatia 6.8) e editável só pelo proprietário por função auditada em fase posterior. Ver P8.
 
-Como no piloto só o proprietário escreve, **o autor registrado é sempre o proprietário**, mesmo quando outra pessoa manipulou fisicamente. Isso precisa ser dito na interface ("registrado por") e é um dos pontos a observar no piloto para reavaliar papéis.
+**Quem registra e quem manipulou são coisas diferentes.** Pela D-019, só o proprietário grava; na cozinha, quem abre é o cozinheiro. Para a etiqueta mostrar a pessoa certa sem dar escrita ao membro, a manipulação guarda dois campos: `created_by` (o proprietário que registrou, como hoje) e `handled_by` (quem manipulou, escolhido numa lista dos vínculos ativos da organização), com cópia do nome em `handled_by_name`. O banco recusa `handled_by` sem vínculo ativo na mesma organização. A etiqueta imprime "Responsável: Ana M."; a tela e o histórico mostram também "registrado por". Ver Q7.
 
 ### 4.6 Auditoria de unidade e organização (P6)
 
@@ -151,21 +160,37 @@ Como no piloto só o proprietário escreve, **o autor registrado é sempre o pro
 
 Isso resolve fechamento de aba e recarga. Não resolve troca de aparelho; fica registrado como limite.
 
+### 4.8 Conservação e temperatura no recebimento (D-027, fatia 6.9)
+
+A análise de 12/11 separa três informações; o desenho as trata assim:
+
+| Informação | Onde fica | Regra |
+|---|---|---|
+| Condição de conservação exigida | `products.storage_condition` (`ambient`, `refrigerated`, `frozen`) | definida no cadastro; produtos antigos ficam nulos até o proprietário definir uma vez por função auditada (não há edição livre de cadastro, D-012) |
+| Conservação do recebimento | `batch_receipts.storage_condition` | obrigatória em recebimentos novos; padrão vem do produto, o proprietário confirma |
+| Temperatura aferida no recebimento | `batch_receipts.received_temperature_c` (`numeric(4,1)`, de −50 a 80) | obrigatória quando a conservação é refrigerada ou congelada, opcional em ambiente. O sistema **não** classifica a temperatura como conforme ou não: limites dependem do alimento e do fabricante e ficam com o responsável técnico |
+
+As duas colunas de recebimento são nulas nos registros anteriores (não se inventa dado). A regra existente `expiry_date <= original_expiry_date` do recebimento continua como está.
+
+### 4.9 Local de armazenamento e transferência (proposta, fatia 6.10)
+
+Para "câmara fria 01" e transferências entre equipamentos: tabela `storage_locations` (nome, condição, unidade) e eventos `location_moves` (recipiente, local anterior, local novo, instante, quem). É um registro de onde está, sem efeito no saldo nem na validade. Fica como última fatia porque não é necessário para a etiqueta e amplia o escopo; luis decide se entra na Fase 6 ou na 7 (Q9).
+
 ## 5. Funções de escrita previstas
 
 Todas: `owner` ativo da organização (`private.has_membership(org, true)`), reautorização em replay, `intent_id` obrigatório, erros com os mesmos códigos já usados (`42501`, `22023`, `23503`, `23505`), verificação de vínculo antes de qualquer leitura de dado (para não revelar se um ID de outra empresa existe), bloqueio `FOR UPDATE` na linha do recebimento (mesma ordem de bloqueio da Fase 5, sem risco novo de deadlock).
 
 ### 5.1 `handle_container`
 
-Parâmetros: organização, unidade, recipiente de origem, tipo (`opening`/`portioning`), lista de quantidades (array `numeric[]`), validade nova, armazenamento, confirmação de validade posterior (`boolean`), observação, `intent_id`. Devolve o ID da manipulação; os IDs dos derivados são lidos por `list_containers` com filtro `'batch'`.
+Parâmetros: organização, unidade, recipiente de origem, tipo (`opening`/`portioning`), lista de quantidades (array `numeric[]`), validade nova, armazenamento, quem manipulou (`handled_by`), observação, `intent_id`. Devolve o ID da manipulação; os IDs dos derivados são lidos por `list_containers` com filtro `'batch'`.
 
 Regras:
 
 1. Origem existe no escopo informado e tem saldo maior que zero.
-2. Abertura: exatamente uma quantidade e ela é igual ao saldo da origem. Porcionamento: 2 a 20 quantidades, cada uma válida para a unidade de medida, soma `<=` saldo.
-3. Validade nova obrigatória e dentro dos limites de data já usados. Se for posterior à validade efetiva da origem, exige a confirmação; sem ela, `22023`. O sistema não decide se a data está correta.
-4. Validade nova anterior à data atual da unidade é recusada (não faz sentido etiquetar algo já vencido; se o responsável quiser registrar, deve descartar).
-5. Armazenamento obrigatório.
+2. Origem vencida (validade efetiva anterior à data atual no fuso da unidade) é recusada: manipular não pode servir para recuperar validade.
+3. Abertura: exatamente uma quantidade, `<=` saldo. Porcionamento: 2 a 20 quantidades, cada uma válida para a unidade de medida, soma `<=` saldo.
+4. Validade nova obrigatória, entre a data atual da unidade e a validade efetiva da origem, inclusive. **Posterior à origem é recusada pelo banco**, também quando o armazenamento novo é congelado: a abertura não reinicia a validade do fabricante e o congelamento não prorroga prazo automaticamente. O sistema não decide se a data dentro desse intervalo está correta.
+5. Armazenamento obrigatório. `handled_by` com vínculo ativo na organização.
 6. Na mesma transação: insere a manipulação, os derivados (com `position`), e o movimento `'transfer'` na origem.
 7. Replay: mesmo `intent_id` com mesmos dados e mesmo autor devolve a mesma manipulação; dados diferentes, `23505`.
 
@@ -208,30 +233,35 @@ Interface em português, botões grandes para tablet de bancada, sem informaçã
 Entrada: botão "Abrir / porcionar" na página do recipiente (rota do QR) e na linha do painel. Só aparece para proprietário; para membro, o recipiente é só leitura.
 
 1. **Contexto:** produto, lote, recipiente atual, saldo, validade efetiva e armazenamento atual (se derivado).
-2. **Tipo:** "Abrir embalagem (todo o saldo)" ou "Dividir em porções".
+2. **Tipo e quantidade:** "Abrir embalagem" (quantidade aberta, com atalho "todo o saldo") ou "Dividir em porções".
 3. **Porções** (só porcionamento): número de porções (2 a 20) e quantidade de cada uma, com atalho "dividir igualmente" que só preenche os campos (sem arredondamento escondido: se a divisão não for exata na unidade, o atalho avisa e deixa a última porção com a diferença visível). Mostra a soma e o que sobra na origem.
-4. **Validade nova:** campo de data obrigatório, sem valor sugerido. Texto fixo: "Informe a validade definida pelo responsável. O sistema não calcula prazos." Se a data for posterior à validade da origem, aparece aviso e uma caixa de confirmação obrigatória.
-5. **Armazenamento:** ambiente, refrigerado ou congelado.
-6. **Revisão:** resumo com tudo acima, "registrado por" com o nome de exibição, e o aviso de que a etiqueta da origem continua valendo só para o saldo que sobrou.
+4. **Validade nova:** campo de data obrigatório, sem valor sugerido. Texto fixo: "Informe a validade após a abertura definida pelo responsável. O sistema não calcula prazos." O seletor não aceita data posterior à validade da origem e mostra essa data como limite.
+5. **Conservação e responsável:** ambiente, refrigerado ou congelado; quem manipulou (lista de pessoas da organização, padrão o próprio usuário).
+6. **Revisão:** resumo com tudo acima, "manipulado por" e "registrado por", e o aviso de que a etiqueta da origem continua valendo só para o saldo que sobrou.
 7. **Confirmar.** Em resultado incerto, mantém a intenção (7.5). Em sucesso, vai para a tela de etiquetas das porções.
 
 ### 7.2 Etiquetas das porções
 
 Lista das porções criadas com "Baixar PDF de todas" (uma página por etiqueta) e "Baixar esta". Reimpressão nunca cria registro (D-003).
 
-Campos propostos para a etiqueta derivada, **a validar com o responsável técnico** (Q1):
+Dois modelos de etiqueta (D-028), legíveis sem ler o QR:
 
-- Produto (grande).
-- **Validade** (grande) e "definida pelo responsável".
-- Manipulado em: data e hora, com fuso da unidade.
-- Armazenamento.
-- Responsável: nome de exibição.
-- Quantidade da porção, rotulada "quantidade na criação" (não é saldo atual).
-- Lote externo e data de recebimento.
-- "Porção 2 de 4" e ID curto do recipiente.
-- QR (só URL e ID opaco, como hoje).
+**Produto aberto ou fracionado.** O mínimo da RDC 216/2004 citado na análise de 12/11 (designação do produto, data de fracionamento e validade após abertura) vem primeiro e em destaque; o resto é rastreabilidade:
 
-A etiqueta do integral passa a rotular a quantidade como "entrada" (revisão 05, item 4).
+- Cabeçalho "PRODUTO ABERTO" ou "PRODUTO FRACIONADO".
+- Produto (grande). **Obrigatório.**
+- Abertura/fracionamento: data e hora, com fuso da unidade. **Obrigatório.**
+- **Validade após abertura** (grande). **Obrigatório.**
+- Validade do fabricante (do recebimento), quando a origem for `original`.
+- Lote original.
+- Conservação.
+- Responsável: `handled_by_name`.
+- Código curto (`short_code`), "porção 2 de 4" e QR (só URL e ID opaco, como hoje).
+- Quantidade: opcional no modelo, rotulada "quantidade na criação" (não é saldo atual). Fica fora se faltar espaço.
+
+**Recebimento.** A etiqueta atual do integral passa a ter cabeçalho "RECEBIMENTO", validade original, lote, fornecedor, conservação e quantidade rotulada "entrada" (revisão 05, item 4). Não muda validade.
+
+A etiqueta de **alimento preparado** (preparação da própria cozinha, com validade própria aprovada) fica fora desta fase; ver seção 13.
 
 ### 7.3 Painel de vencimentos
 
@@ -263,12 +293,13 @@ Escritos antes ou junto do código, com falha reproduzida quando possível.
 2. Matriz de papéis em `handle_container` e no novo `record_movement`: anônimo, membro, proprietário revogado, proprietário de outra empresa, proprietário de duas empresas misturando origem de A com unidade de B, unidade de A com recipiente de outra unidade de A. Todos negados com o mesmo erro, sem revelar existência.
 3. Escrita direta negada em `containers`, `container_handlings` e `stock_movements` para `authenticated`; UPDATE e DELETE negados para **todos** os papéis, inclusive `service_role` (P5).
 4. FKs compostas: derivado de outro recebimento, pai de outra unidade, manipulação de outra empresa, movimento apontando recipiente de outro recebimento. Todos recusados pela restrição, não só pela função.
-5. Regras de manipulação: abertura com quantidade diferente do saldo, porcionamento com 1 ou 21 porções, soma acima do saldo, quantidade fracionária em `un`, validade posterior sem confirmação, validade anterior a hoje no fuso da unidade, origem sem saldo, armazenamento inválido, motivo/observação só com espaços invisíveis.
+5. Regras de manipulação: abertura com quantidade acima do saldo, porcionamento com 1, 20 e 21 porções (20 aceito, 21 recusado), soma acima do saldo, quantidade fracionária em `un`, validade posterior à origem (inclusive com armazenamento congelado), validade igual à da origem aceita, validade anterior a hoje no fuso da unidade, origem vencida, origem sem saldo, armazenamento inválido, `handled_by` sem vínculo, revogado ou de outra empresa, nome copiado preservado depois de revogar o vínculo, motivo/observação só com espaços invisíveis.
 6. Idempotência: replay idêntico devolve o mesmo ID; mesmo `intent_id` com quantidade, validade, armazenamento ou autor diferente é recusado.
 7. Conservação: após sequência fixa de recebimento, porcionamento, baixas, anulações e nova abertura de uma porção, as somas da seção 4.3 batem.
 8. `list_containers` e `find_operation` como membro de B não devolvem nada de A, inclusive com IDs de A passados como parâmetro.
 9. P3: cada política reescrita mantém os mesmos resultados positivos e negativos dos testes atuais (a bateria inteira deve passar sem alteração de expectativa).
 10. P6: alteração de fuso recusada após recebimento; alteração de nome gera linha em `entity_changes`; `entity_changes` não é legível por membro nem por outra empresa.
+10a. Recebimento (6.9): temperatura ausente em refrigerado ou congelado recusada; fora de −50 a 80 recusada; conservação inválida recusada; replay com temperatura diferente recusado; recebimentos antigos continuam legíveis com campos nulos; definição única da conservação de produto antigo só pelo proprietário e auditada.
 
 **Integração via API (Node, usuários reais):**
 
@@ -295,9 +326,10 @@ Escritos antes ou junto do código, com falha reproduzida quando possível.
 
 | # | Risco | Gravidade | Mitigação |
 |---|---|---|---|
-| R1 | Validade informada errada na manipulação, com etiqueta de aparência oficial | Crítica | Sem sugestão de prazo; confirmação extra quando posterior à origem; texto fixo; validação dos campos com o responsável técnico antes do piloto |
+| R1 | Validade informada errada na manipulação, com etiqueta de aparência oficial | Crítica | Sem sugestão de prazo; validade após abertura limitada pelo banco à da origem; origem vencida recusada; texto fixo; validação dos campos com o responsável técnico antes do piloto |
 | R2 | Etiqueta antiga continua colada na embalagem aberta e é lida como válida | Alta | Rota do QR destaca "aberto, use a etiqueta nova"; orientação no treinamento; avaliar no ensaio físico se a etiqueta antiga deve ser riscada ou retirada |
-| R3 | Autor registrado (proprietário) não é quem manipulou, por causa da decisão de escrita só do proprietário | Alta | Texto "registrado por" na etiqueta e na tela; tema explícito da observação do piloto e da reavaliação de papéis |
+| R3 | Autor registrado (proprietário) não é quem manipulou, por causa da decisão de escrita só do proprietário | Média | `handled_by` com nome copiado na etiqueta e "registrado por" na tela; o proprietário pode escolher a pessoa errada, então segue como tema da observação do piloto |
+| R11 | Referências normativas da análise de 12/11 (itens da RDC 216/2004, Portaria SES/RS 799/2023, exigências municipais) não foram conferidas no texto oficial neste desenho | Alta | Conferência por profissional habilitado antes da fatia 6.5 (etiqueta) e antes do piloto; o sistema registra, não certifica conformidade |
 | R4 | Migração de `containers` e `stock_movements` com dados existentes | Média | Fatia própria, backfill testado, rollback recusa se houver derivados, ensaio em cópia do banco local com volume |
 | R5 | Cálculo de saldo agregado lento em unidade com muito histórico | Média | Índice dedicado, critério de 50 ms, plano B de saldo mantido pela função |
 | R6 | Observação livre e nome de exibição viram dado pessoal ou sensível | Média | Limite de tamanho, texto de ajuda "não escreva dados de pessoas", nome de exibição curto; incluir no procedimento de P8 |
@@ -315,28 +347,36 @@ Cada fatia é um PR pequeno, com testes antes ou junto, gates completos e parada
 | **6.0** | Endurecimento: P3 (RLS por conjunto em todas as políticas), P5 (append-only e limpeza de testes sem DELETE), P6 (fuso imutável após recebimento e `entity_changes`) | aceite da Fase 5 e do PR #2 | Bateria atual inteira passa sem mudar expectativa; testes novos de P5 e P6; benchmark de RLS registrado |
 | **6.1** | Recipiente integral criado no recebimento, colunas novas de `containers`, `container_id` em `stock_movements` com backfill; `record_movement` antigo opera no integral | 6.0 | Nenhuma mudança visível na interface; conservação verdadeira para todos os dados existentes; rollback testado |
 | **6.2** | `list_containers` (P9) e painel de vencimentos só com saldo; rota do QR com saldo; remoção dos tetos no navegador | 6.1 | Painel não mostra esgotados; contagens só com saldo; critério de 50 ms; E2E de negação no navegador |
-| **6.3** | `container_handlings`, tipo `'transfer'` e `handle_container` só no banco, com pgTAP e integração | 6.1 | Itens 2–7 e 11–15 da seção 8 |
-| **6.4** | Telas de abrir e porcionar, rota do QR com origem e derivados, `display_name` | 6.2, 6.3, respostas Q1–Q4 | Jornada E2E 16 e 18; avaliar descarte de sobra na mesma tela |
-| **6.5** | Etiqueta derivada em PDF e rótulo "entrada" no integral | 6.4, Q1 | Conteúdo e QR verificados por extração; ensaio físico agendado |
+| **6.3** | `container_handlings`, tipo `'transfer'`, `handle_container` só no banco (validade limitada à origem, origem vencida recusada, `handled_by`), `memberships.display_name` e `short_code`, com pgTAP e integração | 6.1 | Itens 2–7 e 11–15 da seção 8 |
+| **6.9** | Conservação no cadastro e no recebimento, temperatura aferida (4.8); `receive_batch` e formulário de recebimento atualizados | 6.1 | Recebimentos antigos intactos; temperatura obrigatória só em refrigerado/congelado; isolamento e idempotência mantidos |
+| **6.4** | Telas de abrir e porcionar com escolha de quem manipulou, rota do QR com origem e derivados | 6.2, 6.3, 6.9, Q7 | Jornada E2E 16 e 18; avaliar descarte de sobra na mesma tela |
+| **6.5** | Dois modelos de etiqueta em PDF (recebimento e produto aberto/fracionado) | 6.4, conferência normativa (R11) | Campos obrigatórios presentes e legíveis sem QR; conteúdo e QR verificados por extração; ensaio físico agendado |
 | **6.6** | Anulação de manipulação enquanto nenhum derivado teve movimento | 6.3 | Anulação única, idempotente, conservação mantida, derivados aparecem como anulados |
 | **6.7** | Recuperação de tentativa (`find_operation`, `localStorage`) e acesso tolerante (P7) | 6.4 | E2E 19; teste de componente para organização inválida |
+| **6.10** | Locais de armazenamento e transferência (4.9), **se luis aprovar nesta fase** | 6.9 | Histórico de local com autoria; sem efeito em saldo ou validade |
 | **6.8** | Trilha pré-piloto sem tela: script de provisionamento testado, `config.toml` de produção documentado (P4), procedimento de dados pessoais (P8), métricas do piloto | pode correr em paralelo a partir de 6.1 | Script cria empresa, unidade, proprietário e membros e é testado na CI; documento P8 revisado por luis |
 
-A Fase 6 do backlog (fluxo E2E completo, revisão de segurança, ensaio de impressão real e piloto privado) fica depois destas fatias, como fase 7 de piloto.
+A ordem de execução é a das linhas da tabela (6.9 entra antes de 6.4). A Fase 6 do backlog (fluxo E2E completo, revisão de segurança, ensaio de impressão real e piloto privado) fica depois destas fatias, como fase 7 de piloto.
 
-## 11. Perguntas abertas
+## 11. Perguntas
 
-Para o responsável técnico do piloto (luis intermedia):
+As questões Q1–Q6 foram respondidas pela análise sanitária trazida por luis em 12/11/2026 (seção 13). As respostas foram incorporadas ao desenho, mas **continuam propostas até luis confirmar**.
 
-- **Q1.** Quais campos a etiqueta de produto aberto ou porcionado precisa ter? A lista da seção 7.2 é uma proposta, não uma norma.
-- **Q2.** Validade nova posterior à original é aceitável em algum caso (congelamento, por exemplo)? O desenho permite com confirmação; se a resposta for "nunca", passa a ser recusada pelo banco.
-- **Q3.** O recipiente integral precisa de armazenamento registrado no recebimento? Hoje não tem; o desenho deixa nulo.
+| # | Pergunta | Resposta da análise | No desenho |
+|---|---|---|---|
+| Q1 | Campos da etiqueta aberta | Produto, data de abertura/fracionamento e validade após abertura obrigatórios; validade do fabricante, lote, conservação, responsável e QR recomendados; quantidade opcional | 7.2 |
+| Q2 | Validade nova pode passar da original? | Não, para produto aberto ou transferido; congelamento não prorroga automaticamente; preparação própria é outra operação | 5.1, regras 2 e 4; restrição no banco |
+| Q3 | Conservação no recebimento? | Sim, separando condição exigida, temperatura aferida e local | 4.8 e 4.9 |
+| Q4 | Nome curto para a etiqueta? | Sim, guardando `user_id` e cópia do nome usado | 4.5 |
+| Q5 | ID novo também na abertura simples? | Sim, com UUID e código curto legível gerado pelo servidor | 3 e 4.1 (`short_code`) |
+| Q6 | Limite de 20 porções? | Sim, por operação e provisório; nunca por lote | 3 e 5.1 |
 
-Para luis:
+Perguntas novas, para luis:
 
-- **Q4.** Aceita guardar um nome de exibição curto por vínculo (seção 4.5)? Sem ele, a etiqueta não diz quem manipulou.
-- **Q5.** Abertura deve gerar ID novo (desenho atual) ou apenas registrar abertura no mesmo recipiente? ID novo é mais simples e consistente; o custo é imprimir uma etiqueta nova também na abertura simples.
-- **Q6.** O limite de 20 porções por manipulação serve para o piloto?
+- **Q7.** Aceita separar "quem registrou" (proprietário) de "quem manipulou" (qualquer pessoa da organização, escolhida pelo proprietário)? É o que permite imprimir o nome certo sem mudar a D-019. A alternativa é reabrir a D-019.
+- **Q8.** Temperatura aferida obrigatória para refrigerados e congelados já no piloto, ou opcional no começo para não travar o recebimento?
+- **Q9.** Locais de armazenamento e transferência (fatia 6.10) entram nesta fase ou ficam para a Fase 7?
+- **Q10.** Quem é o profissional habilitado que vai conferir as referências normativas e as exigências do município antes da etiqueta (R11)?
 
 ## 12. Relação com as propostas da revisão 05
 
@@ -351,3 +391,36 @@ Para luis:
 | P9 saldo no servidor | 6.1 e 6.2 | base de todo o resto da fase |
 
 Melhorias de manutenção da revisão 05 que valem nesta fase, sem fatia própria: `private.visible_text(text)` para os `CHECK` novos (em vez de copiar o conjunto de espaços pela oitava vez), funções SQL formatadas uma condição por linha, tipos gerados do banco ao criar as RPCs novas e `import()` dinâmico do gerador de PDF quando a etiqueta derivada for criada.
+
+## 13. Avaliação da análise sanitária de 12/11/2026
+
+luis trouxe uma análise baseada na RDC 216/2004 da Anvisa e na Portaria SES/RS 799/2023, com respostas a Q1–Q6. Avaliação de Claude Code:
+
+**Responde às dúvidas?** Sim, as seis. As respostas são conservadoras e coerentes com D-004 (nunca calcular prazo) e com o desenho. Os números de itens e o conteúdo das normas citadas não foram conferidos no texto oficial aqui (R11).
+
+**Adotado sem ajuste:**
+
+- Campos mínimos da etiqueta aberta e etiqueta legível sem QR (7.2).
+- Validade após abertura nunca posterior à original, sem exceção para congelamento. Isso **substitui** a regra anterior deste desenho (posterior permitida com confirmação), que era menos segura.
+- Manipular não recupera validade: origem vencida é recusada.
+- ID novo também na abertura simples, sem gerar estoque novo; código curto legível do servidor; idempotência pela chave de intenção que já existe.
+- 20 porções por operação, provisório, sem limite por recebimento.
+- Nome curto com `user_id` e cópia do nome no momento da operação.
+- Manter a regra atual do recebimento (`expiry_date <= original_expiry_date`).
+
+**Adotado com ajuste:**
+
+- **Abertura parcial.** A análise mostrou que um recebimento pode ter várias embalagens abertas em dias diferentes. O desenho anterior obrigava a abertura a levar todo o saldo; agora a abertura leva qualquer quantidade até o saldo.
+- **Responsável na etiqueta x D-019.** A análise pressupõe que quem abre registra. Como só o proprietário escreve, o desenho separa `created_by` de `handled_by` (Q7).
+- **Conservação no recebimento.** Adotada como fatia própria (6.9). Temperatura é registrada, não julgada.
+- **Três tipos de etiqueta.** Recebimento e produto aberto/fracionado entram (D-028). Alimento preparado fica fora: exige produção com vários ingredientes, que o brief exclui do MVP.
+
+**Não adotado agora:**
+
+- Local de armazenamento e transferência entre equipamentos: desenhado (4.9), mas como fatia opcional 6.10, à espera de Q9.
+- Limites da Portaria SES/RS 799/2023 (3 dias refrigerado, 90 dias congelado) como regra no sistema: a própria análise diz que são limites máximos para preparados, não prazo padrão. Não entram como validação nem sugestão. Podem aparecer depois como texto de ajuda, se o responsável técnico pedir.
+
+**Conflitos com a Fase 5:** nenhum. Recebimentos, movimentos e anulações continuam iguais; as mudanças vêm por colunas novas e funções novas, nas fatias já previstas.
+
+**Sobre o comando sugerido para o Codex:** pede a mesma análise de impacto que este desenho já faz. Se for enviado, sugiro como revisão cruzada do PR #3, e não como um plano paralelo, para não ter dois desenhos concorrentes da mesma fase.
+

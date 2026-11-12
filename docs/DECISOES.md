@@ -114,10 +114,10 @@
 - **Status:** decidida por luis em 12/11/2026.
 - **Decisão:** no piloto, só o proprietário registra recebimentos, etiquetas, saídas, anulações e cadastros. Cozinheiro e auxiliar (membros) consultam.
 - **Motivo:** manter o controle de permissão simples enquanto a operação real da cozinha não foi observada. Proposta alternativa (membro registra consumo, descarte e etiqueta) registrada na [revisão 05](REVISAO_05_SEGURANCA_PRODUTO.md).
-- **Consequência:** o autor registrado é sempre o proprietário, mesmo quando outra pessoa manipulou o alimento; a interface deve dizer "registrado por". Pode virar gargalo no turno.
+- **Consequência:** o autor registrado é sempre o proprietário, mesmo quando outra pessoa manipulou o alimento; a interface deve dizer "registrado por". Pode virar gargalo no turno. Proposta para a etiqueta: registrar à parte quem manipulou (D-021, Q7 do desenho), sem dar escrita ao membro.
 - **Revisar quando:** após a observação da cozinha no piloto. Funções novas mantêm o requisito de papel em um único parâmetro e a matriz de papéis testada, para a troca ser pequena.
 
-> As decisões D-020 a D-026 abaixo são **propostas** do [desenho da Fase 6](FASE_06_DESENHO.md), escritas por Claude Code em 12/11/2026. Nenhuma está aceita nem implementada; aguardam aceite de luis.
+> As decisões D-020 a D-028 abaixo são **propostas** do [desenho da Fase 6](FASE_06_DESENHO.md), escritas por Claude Code em 12/11/2026. Nenhuma está aceita nem implementada; aguardam aceite de luis.
 
 ## D-020 — Saldo pertence ao recipiente (proposta)
 
@@ -129,11 +129,11 @@
 
 ## D-021 — Manipulação: abertura e porcionamento (proposta)
 
-- **Status:** proposta, aguardando aceite e validação dos campos com o responsável técnico.
-- **Decisão:** o proprietário abre (1 derivado com todo o saldo) ou porciona (2 a 20 derivados) um recipiente. A validade nova é sempre informada pelo responsável, sem sugestão; data posterior à validade da origem exige confirmação explícita e fica marcada; data anterior a hoje é recusada. Armazenamento obrigatório. Uma operação auditada e idempotente transfere o saldo da origem para os derivados.
-- **Motivo:** é o momento em que a etiqueta é usada na cozinha (revisão 05, produto item 2), mantendo D-004.
-- **Consequência:** abertura gera ID e etiqueta novos; a etiqueta antiga continua existindo fisicamente e o QR dela passa a apontar para os derivados. Perda no porcionamento é registrada como descarte separado. Manipulação errada só pode ser anulada enquanto nenhum derivado teve movimento.
-- **Revisar quando:** o responsável técnico responder às questões Q1–Q3 do desenho, ou o piloto pedir validades diferentes por porção.
+- **Status:** proposta, revista em 12/11/2026 com a análise sanitária trazida por luis (RDC 216/2004, Portaria SES/RS 799/2023); aguardando aceite e conferência normativa por profissional habilitado.
+- **Decisão:** o proprietário registra a abertura (1 derivado, quantidade até o saldo) ou o porcionamento (2 a 20 derivados por operação, sem limite por recebimento) de um recipiente. A validade após abertura é sempre informada, sem sugestão, e o banco recusa data posterior à validade efetiva da origem, inclusive quando congelado; origem vencida não pode ser manipulada. Conservação obrigatória. A operação guarda quem registrou (`created_by`) e quem manipulou (`handled_by`, qualquer vínculo ativo, com cópia do nome). Abertura simples também gera ID novo e código curto. Nenhuma manipulação cria estoque.
+- **Motivo:** é o momento em que a etiqueta é usada na cozinha (revisão 05, produto item 2), mantendo D-004; a abertura não reinicia a validade do fabricante.
+- **Consequência:** a etiqueta antiga continua existindo fisicamente e o QR dela aponta para os derivados. Perda no porcionamento é descarte separado. Manipulação errada só é anulada enquanto nenhum derivado teve movimento. Prorrogação por congelamento e alimento preparado ficam fora.
+- **Revisar quando:** houver procedimento técnico validado para preparações próprias ou congelamento, ou o piloto pedir validades diferentes por porção.
 
 ## D-022 — Painel por recipiente com saldo calculado no servidor (proposta)
 
@@ -154,7 +154,7 @@
 ## D-024 — Nome de exibição curto por vínculo (proposta)
 
 - **Status:** proposta, aguardando aceite.
-- **Decisão:** `memberships.display_name` com até 40 caracteres, definido pelo provisionamento, impresso como responsável na etiqueta derivada.
+- **Decisão:** `memberships.display_name` com até 40 caracteres, definido pelo provisionamento. A manipulação copia o nome de quem manipulou no momento da operação, e é essa cópia que a etiqueta imprime.
 - **Motivo:** a etiqueta de manipulação precisa dizer quem registrou; hoje o sistema não guarda nome (D-011).
 - **Consequência:** novo dado pessoal; entra no procedimento de anonimização (P8).
 - **Revisar quando:** houver convite de membros ou perfil editável.
@@ -174,3 +174,20 @@
 - **Motivo:** pendência registrada em D-013, D-016 e D-018.
 - **Consequência:** não cobre troca de aparelho; dados da tentativa ficam no navegador até confirmação.
 - **Revisar quando:** houver uso em mais de um aparelho por pessoa.
+
+## D-027 — Conservação e temperatura no recebimento (proposta)
+
+- **Status:** proposta de 12/11/2026, a partir da análise sanitária trazida por luis; aguardando aceite.
+- **Decisão:** produto tem condição de conservação exigida; recebimento novo registra a conservação (padrão do produto) e a temperatura aferida, obrigatória para refrigerado e congelado (Q8). O sistema registra a temperatura e não a classifica como conforme. Local de armazenamento e transferências são proposta separada (Q9).
+- **Motivo:** separar condição exigida, temperatura na conferência e local, que acontecem em momentos diferentes.
+- **Consequência:** `receive_batch` e o formulário de recebimento mudam; registros antigos ficam sem esses dados, sem preenchimento inventado.
+- **Revisar quando:** o responsável técnico definir limites e procedimento para temperatura fora do esperado.
+
+## D-028 — Etiquetas por tipo de operação (proposta)
+
+- **Status:** proposta de 12/11/2026; campos a conferir por profissional habilitado antes da implementação.
+- **Decisão:** dois modelos: recebimento (validade original, lote, fornecedor, conservação, quantidade como "entrada") e produto aberto/fracionado (produto, data de abertura, validade após abertura em destaque, validade do fabricante, lote, conservação, responsável, código curto e QR). Etiqueta legível sem QR. Etiqueta de alimento preparado fica para fase própria.
+- **Motivo:** não confundir validade do fabricante com validade após manipulação.
+- **Consequência:** o gerador de PDF passa a ter dois modelos; o modelo de 100 × 100 mm continua provisório até o ensaio físico (D-014).
+- **Revisar quando:** após o ensaio físico e a conferência normativa.
+
