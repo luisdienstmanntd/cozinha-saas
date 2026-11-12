@@ -108,3 +108,69 @@
 - **Motivo:** corrigir registro incorreto sem perder autoria, histórico ou consistência do saldo registrado.
 - **Consequência:** anulação não recupera alimento fisicamente; para substituir quantidade ou tipo é necessário registrar uma nova saída. Não há estorno parcial nem estorno de estorno. A recuperação após fechamento da aba permanece pendente e a rota do QR ainda não exibe saldo.
 - **Revisar quando:** a operação de piloto exigir recuperação durável, substituição atômica ou outras formas de correção. A numeração D-017 está reservada à revisão de unidades na ramificação paralela.
+
+## D-019 — Escrita somente pelo proprietário no piloto (12/11/2026)
+
+- **Status:** decidida por luis em 12/11/2026.
+- **Decisão:** no piloto, só o proprietário registra recebimentos, etiquetas, saídas, anulações e cadastros. Cozinheiro e auxiliar (membros) consultam.
+- **Motivo:** manter o controle de permissão simples enquanto a operação real da cozinha não foi observada. Proposta alternativa (membro registra consumo, descarte e etiqueta) registrada na [revisão 05](REVISAO_05_SEGURANCA_PRODUTO.md).
+- **Consequência:** o autor registrado é sempre o proprietário, mesmo quando outra pessoa manipulou o alimento; a interface deve dizer "registrado por". Pode virar gargalo no turno.
+- **Revisar quando:** após a observação da cozinha no piloto. Funções novas mantêm o requisito de papel em um único parâmetro e a matriz de papéis testada, para a troca ser pequena.
+
+> As decisões D-020 a D-026 abaixo são **propostas** do [desenho da Fase 6](FASE_06_DESENHO.md), escritas por Claude Code em 12/11/2026. Nenhuma está aceita nem implementada; aguardam aceite de luis.
+
+## D-020 — Saldo pertence ao recipiente (proposta)
+
+- **Status:** proposta, aguardando aceite.
+- **Decisão:** cada recipiente tem quantidade inicial e saldo próprios; movimentos passam a referenciar o recipiente. O recipiente integral é criado na mesma transação do recebimento, e os existentes são preenchidos por migração.
+- **Motivo:** permitir abertura e porcionamento sem perder a rastreabilidade do recebimento, com uma única fórmula de saldo.
+- **Consequência:** substitui o modelo "um recipiente por recebimento" de D-014 e D-016. Migração de `containers` e `stock_movements` com dados existentes; rollback só enquanto não houver derivados.
+- **Revisar quando:** surgir mistura de lotes ou produção (fora do escopo).
+
+## D-021 — Manipulação: abertura e porcionamento (proposta)
+
+- **Status:** proposta, aguardando aceite e validação dos campos com o responsável técnico.
+- **Decisão:** o proprietário abre (1 derivado com todo o saldo) ou porciona (2 a 20 derivados) um recipiente. A validade nova é sempre informada pelo responsável, sem sugestão; data posterior à validade da origem exige confirmação explícita e fica marcada; data anterior a hoje é recusada. Armazenamento obrigatório. Uma operação auditada e idempotente transfere o saldo da origem para os derivados.
+- **Motivo:** é o momento em que a etiqueta é usada na cozinha (revisão 05, produto item 2), mantendo D-004.
+- **Consequência:** abertura gera ID e etiqueta novos; a etiqueta antiga continua existindo fisicamente e o QR dela passa a apontar para os derivados. Perda no porcionamento é registrada como descarte separado. Manipulação errada só pode ser anulada enquanto nenhum derivado teve movimento.
+- **Revisar quando:** o responsável técnico responder às questões Q1–Q3 do desenho, ou o piloto pedir validades diferentes por porção.
+
+## D-022 — Painel por recipiente com saldo calculado no servidor (proposta)
+
+- **Status:** proposta, aguardando aceite.
+- **Decisão:** função `SECURITY INVOKER` paginada devolve recipientes com saldo e validade efetiva; o painel mostra só recipientes com saldo maior que zero, com esgotados sob filtro.
+- **Motivo:** alertas de itens que não existem mais ensinam a equipe a ignorar o painel (revisão 05, P9 e produto item 3).
+- **Consequência:** remove os tetos de 10.000 recebimentos (D-015) e 1.000 eventos no navegador (D-016). Critério de desempenho de 50 ms para 200 linhas com 200 mil eventos; plano B é saldo mantido pela função de escrita.
+- **Revisar quando:** o critério de desempenho não for atingido.
+
+## D-023 — Histórico append-only para todos os papéis e RLS por conjunto (proposta)
+
+- **Status:** proposta, aguardando aceite.
+- **Decisão:** triggers recusam UPDATE e DELETE em recebimentos, recipientes, manipulações e movimentos para qualquer papel, inclusive `service_role`; testes de integração limpam por reset. Políticas passam a `organization_id in (select private.member_organizations())`. Fuso da unidade fica imutável depois do primeiro recebimento e mudanças de nome são auditadas.
+- **Motivo:** propostas P3, P5 e P6 da revisão 05; precisam vir antes das tabelas novas.
+- **Consequência:** muda a forma de rodar a integração; nenhuma mudança de comportamento para o usuário.
+- **Revisar quando:** houver necessidade legal de apagar dado (tratada pelo procedimento de P8, sem apagar eventos).
+
+## D-024 — Nome de exibição curto por vínculo (proposta)
+
+- **Status:** proposta, aguardando aceite.
+- **Decisão:** `memberships.display_name` com até 40 caracteres, definido pelo provisionamento, impresso como responsável na etiqueta derivada.
+- **Motivo:** a etiqueta de manipulação precisa dizer quem registrou; hoje o sistema não guarda nome (D-011).
+- **Consequência:** novo dado pessoal; entra no procedimento de anonimização (P8).
+- **Revisar quando:** houver convite de membros ou perfil editável.
+
+## D-025 — Sessão no dispositivo da cozinha (proposta)
+
+- **Status:** proposta, a detalhar na trilha pré-piloto.
+- **Decisão:** sessão persistente no aparelho fixo da cozinha com expiração curta por inatividade e saída visível; login individual rápido para registrar autoria.
+- **Motivo:** `persistSession: false` desloga a cada recarga e torna o QR impraticável no tablet (revisão 05, produto item 5).
+- **Consequência:** aumenta o risco de uso por outra pessoa no mesmo aparelho; exige tempo de inatividade definido com luis.
+- **Revisar quando:** após o ensaio na cozinha.
+
+## D-026 — Recuperação de tentativa após fechar a aba (proposta)
+
+- **Status:** proposta, aguardando aceite.
+- **Decisão:** intenções pendentes ficam no `localStorage` por usuário, unidade e operação, por até 24 horas; uma função consulta pelo `intent_id` se a operação já existe. A interface nunca reenvia sem o usuário ver.
+- **Motivo:** pendência registrada em D-013, D-016 e D-018.
+- **Consequência:** não cobre troca de aparelho; dados da tentativa ficam no navegador até confirmação.
+- **Revisar quando:** houver uso em mais de um aparelho por pessoa.
