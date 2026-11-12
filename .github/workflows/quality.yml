@@ -19,3 +19,21 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
+  banco-api-e2e:
+    # Gates de segurança que dependem do Supabase local descartável (pgTAP, advisors, API e navegador).
+    # Antes só eram executados manualmente; uma regressão de RLS passava pela CI.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:start
+      - run: npm run test:db
+      - run: npx supabase db advisors --type security --level warn --fail-on warn
+      - run: npm run test:integration
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -- --trace off
