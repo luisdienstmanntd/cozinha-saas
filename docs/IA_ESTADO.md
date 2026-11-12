@@ -16,6 +16,7 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 | Anulação auditável de movimentações | Codex; aguardando aceite | `ia-tarefas/fase-05-anulacao.md` | Confirmar aceite humano antes da próxima fase. |
 | Revisão de interface e unidades | Claude Code e Codex; PR em rascunho | `ia-tarefas/revisao-interface-unidades.md` | Preservar PR, verificar estado remoto e obter aceite antes de integrar. |
 | Desenho da Fase 6 | Claude Code; aprovado para planejamento, aguardando aceite da sequência (PR #3 em rascunho, só documentação) | `ia-tarefas/fase-06-desenho.md` | Correções do PR #4 incorporadas; aguardando aprovação de luis para iniciar a 6.0a (depois da Fase 5 e do PR #2). |
+| Revisão cruzada da Fase 6 | Claude Code (sessão independente do desenho); aguardando aceite (PR em rascunho contra `claude/fase-06-desenho`, só documentação) | `ia-tarefas/revisao-cruzada-fase-06.md` | luis decide sobre B-1 a B-3 e demais ajustes; depois atualizar o desenho no PR #3. |
 | Coordenação entre assistentes | Codex; concluída | `ia-tarefas/coordenacao-assistentes.md` | Consultar o protocolo e iniciar um registro para cada nova tarefa. |
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
