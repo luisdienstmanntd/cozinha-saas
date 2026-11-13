@@ -2,12 +2,12 @@
 
 - **ID:** fase-06-2-painel-saldo
 - **Responsável / sessão:** Claude Code (sessão em nuvem, thread "Implementar fatia 6.2")
-- **Estado:** aguardando_aceite
+- **Estado:** aceita (sem merge)
 - **Objetivo e aceite:** seção 10 (6.2) de `FASE_06_DESENHO.md` (PR #3): `list_containers`, painel só com saldo, QR com saldo, remoção dos tetos no navegador; critério de 50 ms; teste 11 (parte de `list_containers`); E2E 32; contagens só com saldo.
 - **Branch / worktree / base:** `claude/fase-06-2-painel-saldo`, a partir de `claude/fase-06-1-saldo-recipiente` (`ef76dff`, PR #8). Ordem de integração: PR #2 → #5 → #6 → #7 → #8 → este.
 - **Arquivos e recursos em uso:** migração `supabase/migrations/20261113060000_list_containers.sql` e rollback `supabase/rollback/list_containers.sql`; `supabase/tests/list_containers.test.sql` (novo) e `rls_set_based.test.sql` (lista de políticas); `tests/integration/list-containers.test.mjs` (novo); `tests/e2e/*.spec.mjs`; `src/features/batches` (painel e gateway novo), `src/features/labels`, `src/features/movements/components/MovementPanel.tsx`, `src/app`, `src/test/fakeContainers.ts`; `docs/FASE_06_2.md`.
 - **Dependências e riscos:** PRs #2, #5, #6, #7 e #8 sem merge; Codex trabalha na `main` (não tocar em `DECISOES.md`; D-038 proposta em `FASE_06_2.md`).
-- **Próximo passo:** aceite de luis; 6.3 exige aprovação própria.
+- **Próximo passo:** integrar depois dos PRs #2, #5, #6, #7 e #8, só com luis.
 
 ## Checkpoints
 
@@ -22,3 +22,7 @@
 - **Estado do ambiente:** banco local da nuvem descartável; nada fora dele.
 - **Pendências / riscos:** D-038 (plano B) aguarda luis; sugestões visuais fora do escopo listadas, não implementadas.
 - **Próximo passo:** aceite de luis.
+
+### 13/11/2026 13:40 UTC — Claude Code
+- **Aceite:** luis aprovou a fatia 6.2 e a D-038 em 13/11/2026 12:35 UTC ("aprovo"). Sem merge.
+- **Próximo passo:** integração na ordem #2 → #5 → #6 → #7 → #8 → #9, só com luis. A 6.3 foi aprovada em seguida e segue em `ia-tarefas/fase-06-3-manipulacao.md`.

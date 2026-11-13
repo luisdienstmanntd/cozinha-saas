@@ -110,8 +110,8 @@ Entra como **D-038** quando os PRs anteriores forem integrados (D-037 é da 6.1)
 - **Motivo:** P9 e o critério de 50 ms, que a agregação a cada leitura não cumpriu (~250 ms contra 6 a 8 ms).
 - **Consequência:** todo tipo de movimento novo precisa de regra de saldo em três lugares (`container_balance`, `stock_conservation_problems` e `apply_movement_to_balance`); backfills terminam também com `container_balance_problems()` vazio.
 - **Revisar quando:** a 6.3 criar `transfer`, ou se luis preferir o saldo calculado a cada leitura aceitando o tempo maior.
-- **Situação:** proposta; aguarda luis.
+- **Situação:** aceita por luis em 13/11/2026.
 
 ## Próximo passo
 
-Aceite de luis para esta fatia e para a D-038. O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6, #7 e #8, nessa ordem, só com luis. A 6.3 (manipulação no banco) exige aprovação própria.
+**Aceita por luis em 13/11/2026 12:35 UTC**, junto com a D-038 (saldo mantido na escrita). O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6, #7 e #8, nessa ordem, só com luis. A 6.3 (manipulação no banco) foi aprovada por luis em 13/11/2026 12:44 UTC, em branch própria.
