@@ -21,8 +21,9 @@ insert into suppliers(id,organization_id,establishment_id,name) values
  ('b5000000-0000-4000-8000-00000000000a','b2000000-0000-4000-8000-00000000000a','b3000000-0000-4000-8000-00000000000a','FA');
 insert into batch_receipts(id,organization_id,establishment_id,product_id,supplier_id,intent_id,source_code,quantity,unit,expiry_date,expiry_origin,original_expiry_date,timezone,created_by) values
  ('b6000000-0000-4000-8000-00000000000a','b2000000-0000-4000-8000-00000000000a','b3000000-0000-4000-8000-00000000000a','b4000000-0000-4000-8000-00000000000a','b5000000-0000-4000-8000-00000000000a','b7000000-0000-4000-8000-000000000001','L1',10,'kg','2027-01-01','original','2027-01-01','UTC','b1000000-0000-4000-8000-000000000001');
-insert into containers(id,organization_id,establishment_id,batch_id,created_by) values
- ('b9000000-0000-4000-8000-00000000000a','b2000000-0000-4000-8000-00000000000a','b3000000-0000-4000-8000-00000000000a','b6000000-0000-4000-8000-00000000000a','b1000000-0000-4000-8000-000000000001');
+-- Fatia 6.1: o recipiente integral nasce com o recebimento (gatilho); as verificações abaixo o
+-- localizam pelo recebimento em vez de inseri-lo com ID fixo.
+select is((select count(*)::int from containers where batch_id='b6000000-0000-4000-8000-00000000000a'), 1, 'recipiente do recebimento existe (as recusas abaixo atingem uma linha real)');
 insert into stock_movements(id,organization_id,establishment_id,batch_id,intent_id,kind,quantity,timezone,created_by) values
  ('b8000000-0000-4000-8000-00000000000a','b2000000-0000-4000-8000-00000000000a','b3000000-0000-4000-8000-00000000000a','b6000000-0000-4000-8000-00000000000a','b7000000-0000-4000-8000-000000000002','consumption',1,'UTC','b1000000-0000-4000-8000-000000000001');
 
@@ -30,9 +31,11 @@ insert into stock_movements(id,organization_id,establishment_id,batch_id,intent_
 select throws_ok($$update batch_receipts set source_code='X' where id='b6000000-0000-4000-8000-00000000000a'$$,'55000',null,'dono não altera recebimento');
 select throws_ok($$delete from batch_receipts where id='b6000000-0000-4000-8000-00000000000a'$$,'55000',null,'dono não apaga recebimento');
 select throws_ok($$truncate batch_receipts cascade$$,'55000',null,'dono não trunca recebimentos');
-select throws_ok($$update containers set created_at=now() where id='b9000000-0000-4000-8000-00000000000a'$$,'55000',null,'dono não altera recipiente');
-select throws_ok($$delete from containers where id='b9000000-0000-4000-8000-00000000000a'$$,'55000',null,'dono não apaga recipiente');
-select throws_ok($$truncate containers$$,'55000',null,'dono não trunca recipientes');
+select throws_ok($$update containers set created_at=now() where batch_id='b6000000-0000-4000-8000-00000000000a'$$,'55000',null,'dono não altera recipiente');
+select throws_ok($$delete from containers where batch_id='b6000000-0000-4000-8000-00000000000a'$$,'55000',null,'dono não apaga recipiente');
+-- Fatia 6.1: movimentos e derivados referenciam recipientes por FK, então TRUNCATE sem CASCADE já pararia
+-- na FK (0A000). Com CASCADE a tentativa é a mais forte possível e o gatilho de proteção recusa.
+select throws_ok($$truncate containers cascade$$,'55000',null,'dono não trunca recipientes');
 select throws_ok($$update stock_movements set quantity=2 where id='b8000000-0000-4000-8000-00000000000a'$$,'55000',null,'dono não altera movimento');
 select throws_ok($$delete from stock_movements where id='b8000000-0000-4000-8000-00000000000a'$$,'55000',null,'dono não apaga movimento');
 select throws_ok($$truncate stock_movements$$,'55000',null,'dono não trunca movimentos');
@@ -74,7 +77,7 @@ select lives_ok($$select private.assert_history_protected()$$,'verificação ace
 
 savepoint b1_disabled;
 alter table containers disable trigger containers_append_only;
-select lives_ok($$update containers set created_at=created_at where id='b9000000-0000-4000-8000-00000000000a'$$,'com o gatilho suspenso o backfill consegue atualizar');
+select lives_ok($$update containers set created_at=created_at where batch_id='b6000000-0000-4000-8000-00000000000a'$$,'com o gatilho suspenso o backfill consegue atualizar');
 select throws_ok($$select private.assert_history_protected()$$,'55000',null,'verificação recusa gatilho desabilitado');
 alter table containers enable always trigger containers_append_only;
 select lives_ok($$select private.assert_history_protected()$$,'verificação aceita depois de reabilitar');

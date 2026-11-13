@@ -138,6 +138,7 @@ select throws_ok($$select receive_batch('a2000000-0000-4000-8000-00000000000a','
 select throws_ok($$select ensure_container('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a','a6000000-0000-4000-8000-00000000000a')$$,'42501',null,'member não cria recipiente');
 select throws_ok($$select record_movement('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a','a6000000-0000-4000-8000-00000000000a','consumption',1,null,'a7000000-0000-4000-8000-000000000011')$$,'42501',null,'member não registra saída');
 select throws_ok($$select reverse_movement('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a','a8000000-0000-4000-8000-00000000000a','Erro','a7000000-0000-4000-8000-000000000012')$$,'42501',null,'member não anula saída');
+select throws_ok($$select record_container_movement('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a',(select id from containers where batch_id='a6000000-0000-4000-8000-00000000000a'),'consumption',1,null,'a7000000-0000-4000-8000-000000000013')$$,'42501',null,'member não registra saída em recipiente');
 select throws_ok($$insert into products(organization_id,establishment_id,name,unit) values ('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a','X','kg')$$,'42501',null,'member não cadastra produto');
 
 -- owner revogado de A: nada lê e nada escreve, mesmo com token válido.
@@ -147,6 +148,7 @@ select throws_ok($$select receive_batch('a2000000-0000-4000-8000-00000000000a','
 select throws_ok($$select ensure_container('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a','a6000000-0000-4000-8000-00000000000a')$$,'42501',null,'revogado não cria recipiente');
 select throws_ok($$select record_movement('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a','a6000000-0000-4000-8000-00000000000a','consumption',1,null,'a7000000-0000-4000-8000-000000000021')$$,'42501',null,'revogado não registra saída');
 select throws_ok($$select reverse_movement('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a','a8000000-0000-4000-8000-00000000000a','Erro','a7000000-0000-4000-8000-000000000022')$$,'42501',null,'revogado não anula saída');
+select throws_ok($$select record_container_movement('a2000000-0000-4000-8000-00000000000a','a3000000-0000-4000-8000-00000000000a','a9000000-0000-4000-8000-00000000000a','consumption',1,null,'a7000000-0000-4000-8000-000000000023')$$,'42501',null,'revogado não registra saída em recipiente');
 
 -- owner de A e B: não mistura registros de uma empresa (ou unidade) com outra.
 select set_config('request.jwt.claims','{"sub":"a1000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
@@ -156,6 +158,7 @@ select throws_ok($$select receive_batch('a2000000-0000-4000-8000-00000000000a','
 select throws_ok($$select ensure_container('a2000000-0000-4000-8000-00000000000b','a3000000-0000-4000-8000-00000000000b','a6000000-0000-4000-8000-00000000000a')$$,'23503',null,'lote de A não gera recipiente em B');
 select throws_ok($$select record_movement('a2000000-0000-4000-8000-00000000000b','a3000000-0000-4000-8000-00000000000b','a6000000-0000-4000-8000-00000000000a','consumption',1,null,'a7000000-0000-4000-8000-000000000033')$$,'23503',null,'lote de A não recebe saída por B');
 select throws_ok($$select reverse_movement('a2000000-0000-4000-8000-00000000000b','a3000000-0000-4000-8000-00000000000b','a8000000-0000-4000-8000-00000000000a','Erro','a7000000-0000-4000-8000-000000000034')$$,'23503',null,'saída de A não é anulada por B');
+select throws_ok($$select record_container_movement('a2000000-0000-4000-8000-00000000000b','a3000000-0000-4000-8000-00000000000b',(select id from containers where batch_id='a6000000-0000-4000-8000-00000000000a'),'consumption',1,null,'a7000000-0000-4000-8000-000000000035')$$,'23503',null,'recipiente de A não recebe saída por B');
 select throws_ok($$insert into products(organization_id,establishment_id,name,unit) values ('a2000000-0000-4000-8000-00000000000b','a3000000-0000-4000-8000-00000000000a','X','kg')$$,'23503',null,'produto não aponta para unidade de outra empresa');
 select is((select count(*) from stock_movements where organization_id='a2000000-0000-4000-8000-00000000000b'), 0::bigint, 'nenhum evento foi criado em B');
 

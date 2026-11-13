@@ -78,6 +78,36 @@ describe('consulta de recebimentos', () => {
       }),
     ).rejects.toThrow('limite de 10.000');
   });
+  it('associa ao recebimento só o recipiente integral (fatia 6.1)', async () => {
+    const rows = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+    };
+    rows.select.mockReturnValue(rows);
+    rows.eq.mockReturnValue(rows);
+    rows.order.mockReturnValue(rows);
+    const access = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi
+        .fn()
+        .mockResolvedValue({ data: { id: 'unit' }, error: null }),
+    };
+    access.select.mockReturnValue(access);
+    access.eq.mockReturnValue(access);
+    const client = {
+      from: vi.fn((table: string) =>
+        table === 'establishments' ? access : rows,
+      ),
+    } as unknown as SupabaseClient;
+    await createBatchGateway(client).list({
+      organizationId: 'org',
+      establishmentId: 'unit',
+    });
+    expect(rows.eq).toHaveBeenCalledWith('containers.kind', 'integral');
+  });
   it('não apresenta resultado parcial se o acesso for revogado durante a consulta', async () => {
     const rows = {
       select: vi.fn(),
