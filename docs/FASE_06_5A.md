@@ -100,8 +100,8 @@ Entra como **D-041** quando os PRs anteriores forem integrados (D-040 é da 6.4)
 - **Motivo:** Q8/D-029, B-2/D-031, seções 4.8 e 5 do desenho, I-6 e S-2 da revisão cruzada; histórico append-only (6.0a); D-019.
 - **Consequência:** escrita nova precisa chamar o bloqueio (`container_blocks`) e cruzar identificadores com `occurrence_decisions`; tabela nova de histórico entra nas listas fixas; a assinatura antiga de `receive_batch` sai na 6.5b.
 - **Revisar quando:** a 6.5b (tela) e a 6.9 (locais) chegarem; quando a nutricionista RT conferir o procedimento (Q10); ou se o piloto mostrar bloqueios sem decisão (R12) ou janela inadequada (R13).
-- **Situação:** proposta, aguardando luis.
+- **Situação:** aceita por luis em 13/11/2026, com os cinco pontos acima.
 
 ## Próximo passo
 
-Aguarda aceite de luis (fatia, D-041 e os cinco pontos acima). O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6, #7, #8, #9, #10 e #11, nessa ordem, só com luis. A 6.5b (recebimento, decisão e bloqueio na interface) exige aprovação própria.
+**Aceita por luis em 13/11/2026 18:07 UTC**, respondendo aos cinco pontos ("1. manter, 2. ok, 3. ok, 4. ok, 5. ok"): conservação do recebimento igual à do produto mantida; assinatura antiga de `receive_batch` até a 6.5b, que a retira; ambiente com temperatura opcional; tardia bloqueia só derivados; rejeição definitiva. A resposta foi interpretada como aceite da fatia e da D-041. CI do GitHub verde no PR #12 (`quality` e `banco-api-e2e`). O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6, #7, #8, #9, #10 e #11, nessa ordem, só com luis. A 6.5b (recebimento, decisão e bloqueio na interface) exige aprovação própria.
