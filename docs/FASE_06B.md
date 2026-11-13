@@ -44,6 +44,8 @@ Supabase local (Postgres 17) com Docker; Node 24.22.3; Playwright com o Chromium
 | `playwright test` | 3 de 3, duas vezes no mesmo banco |
 | Rollback com 1.011 recebimentos de teste no banco, integração com as políticas antigas, reaplicação da migração e `test:db` | rollback devolveu as 10 políticas com `has_membership` em `USING` (as 3 de INSERT só têm `WITH CHECK`); integração 13/13 com elas; depois da reaplicação, PASS 244, integração 13/13 e Playwright 3/3 |
 
+CI no GitHub (PR #6, `8786235`): `quality` e `banco-api-e2e` com sucesso.
+
 ### Benchmark (20 mil recebimentos, proprietário com sessão, `explain analyze`)
 
 | Consulta | Antes (`has_membership` por linha) | Depois (conjunto) |
@@ -73,4 +75,4 @@ Como na 6.0a, o `DECISOES.md` desta base termina na D-018; D-019 a D-033 estão 
 
 ## Próximo passo
 
-Aguardar aceite de luis. O aceite não autoriza merge: integrar depois do PR #2 e do PR #5, quando luis autorizar. A 6.0c (P6, fuso imutável e auditoria) só começa com aprovação própria e depois de reconciliar com o PR #1.
+**Aceita por luis em 13/11/2026.** O aceite não autoriza merge: integrar depois do PR #2 e do PR #5, quando luis autorizar. A 6.0c (P6, fuso imutável e auditoria) só começa com aprovação própria e depois de reconciliar com o PR #1.
