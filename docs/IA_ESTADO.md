@@ -19,5 +19,6 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 | Revisão cruzada da Fase 6 | Claude Code (sessão independente do desenho); aguardando aceite (PR em rascunho contra `claude/fase-06-desenho`, só documentação) | `ia-tarefas/revisao-cruzada-fase-06.md` | luis decide sobre B-1 a B-3 e demais ajustes; depois atualizar o desenho no PR #3. |
 | Coordenação entre assistentes | Codex; concluída | `ia-tarefas/coordenacao-assistentes.md` | Consultar o protocolo e iniciar um registro para cada nova tarefa. |
 | Revisão 05 — segurança, testes e produto | Claude Code; aguardando aceite (PR rascunho) | `ia-tarefas/revisao-05-seguranca-produto.md` | Conferir CI do job `banco-api-e2e` e decidir propostas do relatório `REVISAO_05_SEGURANCA_PRODUTO.md`. |
+| Fase 6, fatia 6.0a — proteção do histórico (P5) | Claude Code; aceita por luis em 13/11/2026 (PR rascunho sobre o PR #2, sem merge) | `ia-tarefas/fase-06a-protecao-historico.md` | Integrar depois do PR #2 quando luis autorizar; 6.0b aguarda aprovação própria. Detalhes em `FASE_06A.md`. |
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
