@@ -79,3 +79,7 @@ No estabelecimento selecionado, membros ativos consultam validade por produto, l
 ## Pesquisa de mercado e módulos futuros
 
 O estudo comparativo de Fixee, Yeschef, ValidaChef e Etiquetador, incluindo recomendações dos quatro agentes, riscos, fronteiras core/premium e roteiro de validação está em [Pesquisa competitiva e opções de módulos](docs/ESTUDO_COMPETITIVO_E_MODULOS.md). Os recursos e preços mencionados ali são descrições dos próprios fornecedores na data de consulta, não validação independente nem proposta comercial aprovada.
+
+## Revisão da interface — gestão de unidades
+
+Proprietários abrem "Gerenciar unidades" na organização para ver a contagem de vínculos ativos, renomear unidades e criar uma nova unidade com fuso brasileiro, após confirmação. O fuso não é alterado depois da criação e a unidade não pode ser excluída. A área logada passou a ter uma coluna, com alvos de toque de 44 px. Ver [relatório da revisão](docs/REVISAO_INTERFACE_UNIDADES.md).

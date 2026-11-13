@@ -148,4 +148,76 @@ describe('acesso multiempresa', () => {
       screen.queryByText('Unidade A — America/Sao_Paulo'),
     ).not.toBeInTheDocument();
   });
+  it('validação local do nome não apaga unidades nem chama o servidor', async () => {
+    const service = gateway();
+    render(<IdentityHome gateway={service} />);
+    const user = await login();
+    await screen.findByText('Unidade A — America/Sao_Paulo');
+    await user.clear(screen.getByLabelText('Nome da organização'));
+    await user.type(screen.getByLabelText('Nome da organização'), '   ');
+    await user.click(screen.getByRole('button', { name: 'Salvar nome' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Informe nome entre 1 e 120 caracteres.',
+    );
+    expect(screen.getByText('Unidade A — America/Sao_Paulo')).toBeVisible();
+    expect(service.rename).not.toHaveBeenCalled();
+    expect(service.load).toHaveBeenCalledTimes(1);
+  });
+  it('ferramentas da organização recebem papel e atualizam o acesso com aviso', async () => {
+    const service = gateway();
+    let changed!: (message: string, kind?: 'notice' | 'error') => void;
+    render(
+      <IdentityHome
+        gateway={service}
+        renderOrganizationTools={(organization, owner, onChanged) => {
+          changed = onChanged;
+          return (
+            <p>
+              Ferramentas de {organization.name}: {owner ? 'dono' : 'membro'}
+            </p>
+          );
+        }}
+      />,
+    );
+    await login();
+    expect(
+      await screen.findByText('Ferramentas de Empresa A: dono'),
+    ).toBeVisible();
+    const { act } = await import('@testing-library/react');
+    await act(async () => changed('Unidade criada.'));
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Unidade criada.',
+    );
+    expect(service.load).toHaveBeenCalledTimes(2);
+    await act(async () => changed('Confira a lista.', 'error'));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Confira a lista.',
+    );
+    expect(screen.getByText('Unidade A — America/Sao_Paulo')).toBeVisible();
+    expect(service.load).toHaveBeenCalledTimes(3);
+  });
+  it('falha ao recarregar após gravação mantém o resultado visível', async () => {
+    const service = gateway();
+    let changed!: (message: string, kind?: 'notice' | 'error') => Promise<void>;
+    let busyNow = false;
+    render(
+      <IdentityHome
+        gateway={service}
+        renderOrganizationTools={(_organization, _owner, onChanged, busy) => {
+          changed = onChanged;
+          busyNow = busy;
+          return null;
+        }}
+      />,
+    );
+    await login();
+    await screen.findByText('Unidade A — America/Sao_Paulo');
+    expect(busyNow).toBe(false);
+    vi.mocked(service.load).mockRejectedValue(new Error('Falha de conexão.'));
+    const { act } = await import('@testing-library/react');
+    await act(async () => changed('Unidade Cozinha 2 criada.'));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Unidade Cozinha 2 criada. Não foi possível atualizar a lista: Falha de conexão.',
+    );
+  });
 });
