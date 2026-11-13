@@ -179,53 +179,68 @@ begin
     v_pattern := '%' || replace(replace(replace(lower(v_search), '\', '\\'), '%', '\%'), '_', '\_') || '%';
   end if;
 
-  -- Dois ramos para o planejador usar o índice parcial (só com saldo) ou o completo, já em ordem.
+  -- A página sai primeiro de container_balances, já na ordem do índice (parcial para "só com saldo"),
+  -- e só depois busca produto e lote. Sem busca, o limite é aplicado antes das junções; com busca, o
+  -- filtro precisa do nome, então o limite fica só no fim (limit null = sem limite).
+  -- Dois ramos para o planejador usar o índice parcial ou o completo. A função fixa plano por chamada
+  -- (os parâmetros decidem o índice) e a ordem das junções escrita (página → recipiente → recebimento →
+  -- produto), para a busca não varrer o histórico inteiro da unidade.
   if p_filter = 'with_balance' then
     return query
+    with page as materialized (
+      select cb.container_id, cb.expiry_date, cb.balance
+        from public.container_balances cb
+       where cb.organization_id = p_organization_id
+         and cb.establishment_id = p_establishment_id
+         and cb.balance > 0
+         and (p_after_expiry is null or (cb.expiry_date, cb.container_id) > (p_after_expiry, p_after_id))
+       order by cb.expiry_date, cb.container_id
+       limit case when v_pattern is null then p_limit end)
     select c.id, c.short_code, c.kind, c.parent_container_id, c.batch_id, b.product_id, p.name, b.unit,
            b.source_code, c.expiry_date, c.expiry_origin, b.expiry_origin, c.initial_quantity,
-           cb.balance, c.timezone, c.created_at
-      from public.container_balances cb
-      join public.containers c on c.id = cb.container_id
+           page.balance, c.timezone, c.created_at
+      from page
+      join public.containers c on c.id = page.container_id
       join public.batch_receipts b on b.id = c.batch_id
       join public.products p on p.id = b.product_id
-     where cb.organization_id = p_organization_id
-       and cb.establishment_id = p_establishment_id
-       and cb.balance > 0
-       and c.organization_id = cb.organization_id and c.establishment_id = cb.establishment_id
-       and b.organization_id = cb.organization_id and b.establishment_id = cb.establishment_id
-       and p.organization_id = cb.organization_id
-       and (p_after_expiry is null or (cb.expiry_date, cb.container_id) > (p_after_expiry, p_after_id))
+     where c.organization_id = p_organization_id and c.establishment_id = p_establishment_id
+       and b.organization_id = p_organization_id and b.establishment_id = p_establishment_id
+       and p.organization_id = p_organization_id
        and (v_pattern is null
             or lower(p.name) like v_pattern
             or lower(b.source_code) like v_pattern
             or lower(c.short_code) like v_pattern
             or c.id::text like v_pattern)
-     order by cb.expiry_date, cb.container_id
+     order by page.expiry_date, page.container_id
      limit p_limit;
   else
     return query
+    with page as materialized (
+      select cb.container_id, cb.expiry_date, cb.balance
+        from public.container_balances cb
+       where cb.organization_id = p_organization_id
+         and cb.establishment_id = p_establishment_id
+         and (p_filter <> 'batch' or cb.batch_id = p_target_id)
+         and (p_filter <> 'container' or cb.container_id = p_target_id)
+         and (p_after_expiry is null or (cb.expiry_date, cb.container_id) > (p_after_expiry, p_after_id))
+       order by cb.expiry_date, cb.container_id
+       limit case when v_pattern is null then p_limit end)
     select c.id, c.short_code, c.kind, c.parent_container_id, c.batch_id, b.product_id, p.name, b.unit,
            b.source_code, c.expiry_date, c.expiry_origin, b.expiry_origin, c.initial_quantity,
-           cb.balance, c.timezone, c.created_at
-      from public.container_balances cb
-      join public.containers c on c.id = cb.container_id
+           page.balance, c.timezone, c.created_at
+      from page
+      join public.containers c on c.id = page.container_id
       join public.batch_receipts b on b.id = c.batch_id
       join public.products p on p.id = b.product_id
-     where cb.organization_id = p_organization_id
-       and cb.establishment_id = p_establishment_id
-       and c.organization_id = cb.organization_id and c.establishment_id = cb.establishment_id
-       and b.organization_id = cb.organization_id and b.establishment_id = cb.establishment_id
-       and p.organization_id = cb.organization_id
-       and (p_filter <> 'batch' or cb.batch_id = p_target_id)
-       and (p_filter <> 'container' or cb.container_id = p_target_id)
-       and (p_after_expiry is null or (cb.expiry_date, cb.container_id) > (p_after_expiry, p_after_id))
+     where c.organization_id = p_organization_id and c.establishment_id = p_establishment_id
+       and b.organization_id = p_organization_id and b.establishment_id = p_establishment_id
+       and p.organization_id = p_organization_id
        and (v_pattern is null
             or lower(p.name) like v_pattern
             or lower(b.source_code) like v_pattern
             or lower(c.short_code) like v_pattern
             or c.id::text like v_pattern)
-     order by cb.expiry_date, cb.container_id
+     order by page.expiry_date, page.container_id
      limit p_limit;
   end if;
 end;

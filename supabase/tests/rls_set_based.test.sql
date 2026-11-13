@@ -44,6 +44,7 @@ select is(
   (select string_agg(format('%s.%s:%s:%s', tablename, policyname, cmd, array_to_string(roles, ',')), ' ' order by tablename, policyname)
     from pg_policies where schemaname = 'public'),
   'batch_receipts.batch_receipts_read:SELECT:authenticated '
+  'container_balances.container_balances_read:SELECT:authenticated '
   'containers.containers_read:SELECT:authenticated '
   'entity_changes.entity_changes_read:SELECT:authenticated '
   'establishments.establishments_insert:INSERT:authenticated '
@@ -57,7 +58,7 @@ select is(
   'stock_movements.stock_movements_read:SELECT:authenticated '
   'suppliers.suppliers_insert:INSERT:authenticated '
   'suppliers.suppliers_read:SELECT:authenticated',
-  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c)');
+  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c) e container_balances_read (6.2)');
 
 select is(
   (select coalesce(string_agg(tablename || '.' || policyname, ',' order by tablename, policyname), '')

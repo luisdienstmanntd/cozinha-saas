@@ -1,5 +1,6 @@
 -- Fase 6, fatia 6.2: painel e QR com saldo calculado no servidor (FASE_06_DESENHO 4.4, 7.3, 7.4; teste 11).
 -- list_containers e container_expiry_summary são SECURITY INVOKER: a RLS é a única barreira.
+-- O saldo lido vem de container_balances (plano B da 4.4), mantido por gatilho e conferido com o histórico.
 -- Datas fixas e data de referência passada como parâmetro: o teste não envelhece (S-6).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -19,7 +20,26 @@ select ok(has_function_privilege('authenticated', 'public.list_containers(uuid,u
 select ok(not has_function_privilege('anon', 'public.list_containers(uuid,uuid,text,uuid,text,date,uuid,integer)', 'execute'), 'anon não executa list_containers');
 select ok(has_function_privilege('authenticated', 'public.container_expiry_summary(uuid,uuid,date)', 'execute'), 'authenticated executa container_expiry_summary');
 select ok(not has_function_privilege('anon', 'public.container_expiry_summary(uuid,uuid,date)', 'execute'), 'anon não executa container_expiry_summary');
-select has_index('public', 'containers', 'containers_scope_expiry_idx', array['organization_id','establishment_id','expiry_date','id'], 'índice do painel por validade efetiva');
+-- Plano B (4.4): saldo mantido na escrita em container_balances.
+select has_table('public', 'container_balances', 'container_balances existe');
+select ok((select relrowsecurity from pg_class where oid = 'public.container_balances'::regclass), 'container_balances tem RLS');
+select is(
+  (select coalesce(string_agg(r || ':' || p, ',' order by r, p), '')
+     from unnest(array['anon','authenticated','service_role']) r
+     cross join unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) p
+    where has_table_privilege(r, 'public.container_balances', p)),
+  'authenticated:SELECT,service_role:SELECT', 'container_balances: só leitura, e nada para anon');
+select is(
+  (select count(*)::int from pg_index i join pg_class c on c.oid = i.indexrelid
+    where c.relname = 'container_balances_live_idx' and i.indpred is not null),
+  1, 'índice parcial do painel só com saldo');
+select has_index('public', 'container_balances', 'container_balances_scope_expiry_idx', array['organization_id','establishment_id','expiry_date','container_id'], 'índice do painel com esgotados');
+select is(
+  (select string_agg(g.tgname || ':' || g.tgenabled::text, ',' order by g.tgname) from pg_trigger g
+    where g.tgname in ('container_balances_guard', 'containers_init_balance', 'stock_movements_apply_balance')),
+  'container_balances_guard:A,containers_init_balance:A,stock_movements_apply_balance:A',
+  'gatilhos do saldo existem e estão ENABLE ALWAYS');
+select is_empty($$select * from private.container_balance_problems()$$, 'saldo registrado coincide com o histórico antes dos dados de teste');
 
 -- Dados ---------------------------------------------------------------------
 -- u1: owner de A; u2: member de A; u3: owner de B; u4: owner revogado de A.
@@ -84,6 +104,27 @@ select is(
   (select count(*)::int from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','all',null,null,null,null,200)),
   6, 'todos os recipientes da unidade aparecem com o filtro all (5 integrais e 1 derivado)');
 
+-- Saldo mantido: coincide com o histórico; só os gatilhos escrevem.
+select is_empty($$select * from private.container_balance_problems()$$, 'saldo registrado coincide com o histórico depois de recebimentos, derivado, saídas e anulação');
+select is(
+  (select balance from container_balances where container_id = 'd9000000-0000-4000-8000-0000000000d1'),
+  3::numeric, 'derivado: 4 iniciais menos 1 descartado');
+select throws_ok($$update container_balances set balance = 99 where container_id = 'd9000000-0000-4000-8000-0000000000d1'$$, '55000', null, 'dono das tabelas não altera saldo diretamente');
+select throws_ok($$delete from container_balances where container_id = 'd9000000-0000-4000-8000-0000000000d1'$$, '55000', null, 'dono das tabelas não apaga saldo');
+select throws_ok($$truncate container_balances$$, '55000', null, 'TRUNCATE de saldo recusado');
+select throws_ok($$insert into container_balances(container_id,organization_id,establishment_id,batch_id,expiry_date,balance)
+  select id,organization_id,establishment_id,batch_id,expiry_date,1 from containers where id='d9000000-0000-4000-8000-0000000000d1'$$, '55000', null, 'INSERT direto de saldo recusado');
+select throws_ok($$insert into stock_movements(organization_id,establishment_id,batch_id,container_id,intent_id,kind,quantity,timezone,created_by) values
+  ('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','d6000000-0000-4000-8000-000000000001','d9000000-0000-4000-8000-0000000000d1','d7000000-0000-4000-8000-0000000001ff','consumption',3.001,'America/Sao_Paulo','d1000000-0000-4000-8000-000000000001')$$,
+  '23514', null, 'movimento inserido direto acima do saldo é recusado pela restrição (saldo nunca negativo)');
+select is(
+  (select balance from container_balances where container_id = 'd9000000-0000-4000-8000-0000000000d1'),
+  3::numeric, 'tentativas recusadas não mudaram o saldo');
+set local role service_role;
+select throws_ok($$update container_balances set balance = 99$$, '42501', null, 'service_role não altera saldo');
+select throws_ok($$delete from container_balances$$, '42501', null, 'service_role não apaga saldo');
+reset role;
+
 -- Proprietário de A ----------------------------------------------------------
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"d1000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
@@ -117,6 +158,10 @@ select results_eq(
   $$select container_id, balance from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','container',(select id from containers where batch_id='d6000000-0000-4000-8000-000000000003'))$$,
   $$values ((select id from containers where batch_id='d6000000-0000-4000-8000-000000000003'), 0::numeric)$$,
   'filtro container (rota do QR): devolve o recipiente mesmo sem saldo, com saldo 0');
+
+select throws_ok($$update container_balances set balance = 99$$, '42501', null, 'proprietário não altera saldo pela API');
+select throws_ok($$insert into container_balances(container_id,organization_id,establishment_id,batch_id,expiry_date,balance) values (gen_random_uuid(),'d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','d6000000-0000-4000-8000-000000000001','2026-11-09',1)$$, '42501', null, 'proprietário não insere saldo pela API');
+select is((select count(*)::int from container_balances), 7, 'proprietário de A lê os saldos das duas unidades de A, e só eles');
 
 -- Paginação por (validade, id), sem repetição nem salto.
 select results_eq(
@@ -212,6 +257,7 @@ reset role;
 -- Owner de B com IDs de A: nada, inclusive pelo ID do recipiente e do recebimento (teste 11).
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"d1000000-0000-4000-8000-000000000003","role":"authenticated"}',true);
+select is((select count(*)::int from container_balances), 1, 'B lê só o próprio saldo na tabela (RLS)');
 select is_empty($$select 1 from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','all')$$, 'B não lista A');
 select is_empty($$select 1 from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','container','d9000000-0000-4000-8000-0000000000d1')$$, 'B não lê recipiente de A pelo ID');
 select is_empty($$select 1 from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','batch','d6000000-0000-4000-8000-000000000001')$$, 'B não lê recebimento de A pelo ID');
@@ -228,6 +274,7 @@ reset role;
 -- Owner revogado de A: nada.
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"d1000000-0000-4000-8000-000000000004","role":"authenticated"}',true);
+select is((select count(*)::int from container_balances), 0, 'revogado não lê saldo na tabela');
 select is_empty($$select 1 from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','all')$$, 'revogado não lista');
 select results_eq(
   $$select overdue, due_today, due_tomorrow, later from container_expiry_summary('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','2026-11-13')$$,
@@ -236,6 +283,7 @@ reset role;
 
 -- Anônimo: não executa.
 set local role anon;
+select throws_ok($$select * from container_balances$$, '42501', null, 'anon não lê saldo');
 select throws_ok($$select * from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a')$$, '42501', null, 'anon não executa list_containers');
 select throws_ok($$select * from container_expiry_summary('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','2026-11-13')$$, '42501', null, 'anon não executa container_expiry_summary');
 reset role;

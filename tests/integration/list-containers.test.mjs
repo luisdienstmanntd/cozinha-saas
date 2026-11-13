@@ -175,10 +175,76 @@ test('painel por recipiente: saldo do servidor, ordem por validade, paginação 
       3,
     );
 
+    // Saldo mantido na escrita (plano B): baixas concorrentes no mesmo recipiente nunca passam do saldo,
+    // e o saldo guardado coincide com o recalculado do histórico.
+    const racing = await Promise.all(
+      Array.from({ length: 6 }, () =>
+        owner.rpc('record_movement', {
+          ...scope,
+          p_batch_id: partial,
+          p_kind: 'consumption',
+          p_quantity: 1,
+          p_reason: null,
+          p_intent_id: randomUUID(),
+        }),
+      ),
+    );
+    assert.equal(racing.filter((r) => !r.error).length, 4);
+    const { admin } = localSupabase();
+    const stored = checked(
+      await admin
+        .from('container_balances')
+        .select('container_id,balance')
+        .eq('organization_id', scopeA.organization_id),
+    );
+    const history = checked(
+      await admin
+        .from('stock_movements')
+        .select('container_id,kind,quantity')
+        .eq('organization_id', scopeA.organization_id),
+    );
+    const initial = checked(
+      await admin
+        .from('containers')
+        .select('id,initial_quantity')
+        .eq('organization_id', scopeA.organization_id),
+    );
+    assert.equal(stored.length, initial.length);
+    for (const { id, initial_quantity } of initial) {
+      const exits = history
+        .filter((m) => m.container_id === id)
+        .reduce(
+          (sum, m) =>
+            sum + (m.kind === 'reversal' ? -1 : 1) * m.quantity * 1000,
+          0,
+        );
+      assert.equal(
+        Math.round(
+          stored.find((row) => row.container_id === id).balance * 1000,
+        ),
+        Math.round(initial_quantity * 1000 - exits),
+      );
+    }
+    assert.deepEqual(
+      checked(await list(owner)).map((row) => row.source_code),
+      ['VENCIDO', 'TARDE'],
+      'recipiente esgotado pelas baixas concorrentes saiu do painel',
+    );
+    // Ninguém escreve saldo pela API, nem o service_role.
+    for (const c of [owner, member, admin])
+      assert.ok(
+        (
+          await c
+            .from('container_balances')
+            .update({ balance: 999 })
+            .eq('organization_id', scopeA.organization_id)
+        ).error,
+      );
+
     // Membro lê igual ao proprietário (D-019 restringe só a escrita).
-    assert.equal(checked(await list(member)).length, 3);
+    assert.equal(checked(await list(member)).length, 2);
     assert.deepEqual(checked(await summary(member, '2027-01-15')), [
-      { overdue: 1, due_today: 1, due_tomorrow: 0, later: 1 },
+      { overdue: 1, due_today: 0, due_tomorrow: 0, later: 1 },
     ]);
 
     // Outra empresa, com os IDs de A: nada, por nenhum filtro.
