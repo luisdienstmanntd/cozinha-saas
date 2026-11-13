@@ -82,10 +82,15 @@ insert into batch_receipts(id,organization_id,establishment_id,product_id,suppli
  ('d6000000-0000-4000-8000-000000000006','d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000c','d4000000-0000-4000-8000-000000000003','d5000000-0000-4000-8000-000000000003','d7000000-0000-4000-8000-000000000006','UA2-1',7,'kg','2026-11-10','original','2026-11-10','America/Manaus','d1000000-0000-4000-8000-000000000001'),
  ('d6000000-0000-4000-8000-000000000007','d2000000-0000-4000-8000-00000000000b','d3000000-0000-4000-8000-00000000000b','d4000000-0000-4000-8000-000000000004','d5000000-0000-4000-8000-000000000004','d7000000-0000-4000-8000-000000000007','B-1',9,'kg','2026-11-10','original','2026-11-10','UTC','d1000000-0000-4000-8000-000000000003');
 
--- Derivado de teste (como em container_balance.test.sql: sem manipulação, inserido pelo dono das tabelas).
-insert into containers(id,organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,created_by) values
+-- Derivado de teste (como em container_balance.test.sql: inserido pelo dono das tabelas, com uma
+-- manipulação de teste sem transferência; a 6.3 exige que todo derivado pertença a uma manipulação).
+insert into container_handlings(id,organization_id,establishment_id,batch_id,source_container_id,source_expiry_date,kind,portion_count,total_quantity,expiry_date,storage,handled_at,remainder,remainder_quantity,handled_by,handled_by_name,intent_id,timezone,created_by) values
+ ('d9000000-0000-4000-8000-0000000000a1','d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','d6000000-0000-4000-8000-000000000001',
+  (select id from containers where batch_id='d6000000-0000-4000-8000-000000000001' and kind='integral'),'2026-11-10','opening',1,4,'2026-11-09','refrigerated','2026-11-01 12:00+00','sealed',6,
+  'd1000000-0000-4000-8000-000000000001','Ana','d7000000-0000-4000-8000-0000000000a1','America/Sao_Paulo','d1000000-0000-4000-8000-000000000001');
+insert into containers(id,organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,handling_id,position,handled_at,storage,created_by) values
  ('d9000000-0000-4000-8000-0000000000d1','d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','d6000000-0000-4000-8000-000000000001','derived',
-  (select id from containers where batch_id='d6000000-0000-4000-8000-000000000001' and kind='integral'),4,'2026-11-09','d1000000-0000-4000-8000-000000000001');
+  (select id from containers where batch_id='d6000000-0000-4000-8000-000000000001' and kind='integral'),4,'2026-11-09','d9000000-0000-4000-8000-0000000000a1',1,'2026-11-01 12:00+00','refrigerated','d1000000-0000-4000-8000-000000000001');
 
 insert into stock_movements(id,organization_id,establishment_id,batch_id,container_id,intent_id,kind,quantity,reason,timezone,created_by,reverses_id) values
  ('d8000000-0000-4000-8000-000000000001','d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','d6000000-0000-4000-8000-000000000001','d9000000-0000-4000-8000-0000000000d1','d7000000-0000-4000-8000-000000000101','discard',1,'Teste','America/Sao_Paulo','d1000000-0000-4000-8000-000000000001',null),

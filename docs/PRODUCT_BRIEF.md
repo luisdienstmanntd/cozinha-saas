@@ -24,8 +24,11 @@ Dar identidade rastreável a cada lote/recipiente, permitir registro responsáve
 - Teste demonstrando isolamento entre duas organizações.
 - Entrada simples, consumo e descarte com unidade de medida única por produto/recipiente, sem conversões automáticas. Origem/fornecedor mínimos preservados, sem módulo comercial amplo.
 
+## Ampliação aprovada na Fase 6 (manipulação de recipientes)
+Aprovada por luis em 12/11/2026 (desenho em `FASE_06_DESENHO.md`, PR #3), implementada por fatias com aceite individual. A partir da fatia 6.3 o banco registra **abertura e porcionamento** de um recipiente: a operação retira saldo da origem e cria recipientes derivados do mesmo lote, com ID e código curto próprios, validade após abertura informada pela pessoa (nunca posterior à da origem, nem com congelamento), hora real da manipulação, quem manipulou e quem registrou. Nada é criado do nada: a soma dos derivados sai da origem. Ainda sem tela (6.6) nem etiqueta de produto aberto (6.7). Alimento preparado, mistura de lotes, ficha técnica e prorrogação por congelamento continuam fora. Nada disso afirma conformidade sanitária; a conferência normativa por profissional habilitado é pendência pré-piloto.
+
 ## Explicitamente fora da v0.1
-Controle de produção automático por ficha técnica, transformações/fracionamento/transferências não modelados, CMV, financeiro/nota fiscal, pagamento automático, IA, OCR, offline com sincronização, gestão de compras, app nativo, integração com impressora térmica, múltiplos idiomas, plano completo de inventário, integrações de PDV/ERP. Não implementar antecipadamente estruturas para essas áreas.
+Controle de produção automático por ficha técnica, transformações e transferências além da abertura e do porcionamento da Fase 6, CMV, financeiro/nota fiscal, pagamento automático, IA, OCR, offline com sincronização, gestão de compras, app nativo, integração com impressora térmica, múltiplos idiomas, plano completo de inventário, integrações de PDV/ERP. Não implementar antecipadamente estruturas para essas áreas.
 
 ## Restrições operacionais
 - Prazo de validade não deve ser gerado automaticamente sem parâmetros aprovados. A decisão de descarte/consumo é de operador autorizado.

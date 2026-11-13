@@ -26,8 +26,8 @@ select hasnt_index('public', 'containers', 'containers_batch_id_key', 'unique (b
 select lives_ok($$select private.assert_history_protected()$$, 'proteção do histórico completa depois do backfill');
 select ok(
   (select pg_get_constraintdef(oid) from pg_constraint where conname = 'stock_movements_kind_check')
-    = $$CHECK ((kind = ANY (ARRAY['consumption'::text, 'discard'::text, 'reversal'::text])))$$,
-  'tipos de movimento conhecidos pelo cálculo de saldo e pela conservação (novo tipo exige atualizar os dois)');
+    = $$CHECK ((kind = ANY (ARRAY['consumption'::text, 'discard'::text, 'reversal'::text, 'transfer'::text])))$$,
+  'tipos de movimento conhecidos pelo cálculo de saldo e pela conservação (novo tipo exige atualizar os dois; transfer entrou na 6.3)');
 
 -- Dados ---------------------------------------------------------------------
 -- u1: owner de A; u2: member de A; u3: owner de B; u4: owner revogado de A.
@@ -70,28 +70,35 @@ select ok(
   'códigos curtos crescem na ordem de criação');
 
 -- Restrições por inserção direta (dono das tabelas).
+-- Fatia 6.3: todo derivado pertence a uma manipulação (mesma validade, conservação e horário). Esta
+-- manipulação de teste, inserida pelo dono das tabelas e sem transferência, só dá aos derivados abaixo
+-- os campos que a 6.3 exige; as verificações continuam as mesmas.
+insert into container_handlings(id,organization_id,establishment_id,batch_id,source_container_id,source_expiry_date,kind,portion_count,total_quantity,expiry_date,storage,handled_at,remainder,remainder_quantity,handled_by,handled_by_name,intent_id,timezone,created_by) values
+ ('c9000000-0000-4000-8000-0000000000a1','c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001',
+  (select id from containers where batch_id='c6000000-0000-4000-8000-000000000001' and kind='integral'),'2027-01-01','opening',1,4,'2026-12-01','refrigerated','2026-11-01 12:00+00','sealed',6,
+  'c1000000-0000-4000-8000-000000000001','Ana','c7000000-0000-4000-8000-0000000000a1','America/Sao_Paulo','c1000000-0000-4000-8000-000000000001');
 select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','c1000000-0000-4000-8000-000000000001')$$,
   '23505', null, 'segundo integral do mesmo recebimento recusado');
 select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,initial_quantity,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000c','c6000000-0000-4000-8000-000000000002','integral',4,'c1000000-0000-4000-8000-000000000001')$$,
   '23514', null, 'integral com quantidade diferente do recebimento recusado');
-select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,initial_quantity,expiry_date,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',1,'2026-12-01','c1000000-0000-4000-8000-000000000001')$$,
+select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,initial_quantity,expiry_date,handling_id,position,handled_at,storage,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',1,'2026-12-01','c9000000-0000-4000-8000-0000000000a1',1,'2026-11-01 12:00+00','refrigerated','c1000000-0000-4000-8000-000000000001')$$,
   '23514', null, 'derivado sem recipiente de origem recusado');
-select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',(select id from containers where batch_id='c6000000-0000-4000-8000-000000000002'),1,'2026-12-01','c1000000-0000-4000-8000-000000000001')$$,
+select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,handling_id,position,handled_at,storage,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',(select id from containers where batch_id='c6000000-0000-4000-8000-000000000002'),1,'2026-12-01','c9000000-0000-4000-8000-0000000000a1',1,'2026-11-01 12:00+00','refrigerated','c1000000-0000-4000-8000-000000000001')$$,
   '23503', null, 'derivado com origem de outro recebimento recusado');
-select throws_ok($$insert into containers(id,organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,created_by) values ('c9000000-0000-4000-8000-0000000000ff','c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived','c9000000-0000-4000-8000-0000000000ff',1,'2026-12-01','c1000000-0000-4000-8000-000000000001')$$,
+select throws_ok($$insert into containers(id,organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,handling_id,position,handled_at,storage,created_by) values ('c9000000-0000-4000-8000-0000000000ff','c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived','c9000000-0000-4000-8000-0000000000ff',1,'2026-12-01','c9000000-0000-4000-8000-0000000000a1',1,'2026-11-01 12:00+00','refrigerated','c1000000-0000-4000-8000-000000000001')$$,
   '23514', null, 'derivado não pode ser a própria origem');
-select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,expiry_origin,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',(select id from containers where batch_id='c6000000-0000-4000-8000-000000000001'),1,'2026-12-01','receipt','c1000000-0000-4000-8000-000000000001')$$,
+select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,expiry_origin,handling_id,position,handled_at,storage,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',(select id from containers where batch_id='c6000000-0000-4000-8000-000000000001'),1,'2026-12-01','receipt','c9000000-0000-4000-8000-0000000000a1',1,'2026-11-01 12:00+00','refrigerated','c1000000-0000-4000-8000-000000000001')$$,
   '23514', null, 'derivado não usa a validade do recebimento como origem');
-select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',(select id from containers where batch_id='c6000000-0000-4000-8000-000000000001'),0.0001,'2026-12-01','c1000000-0000-4000-8000-000000000001')$$,
+select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,handling_id,position,handled_at,storage,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',(select id from containers where batch_id='c6000000-0000-4000-8000-000000000001'),0.0001,'2026-12-01','c9000000-0000-4000-8000-0000000000a1',1,'2026-11-01 12:00+00','refrigerated','c1000000-0000-4000-8000-000000000001')$$,
   '23514', null, 'quantidade inicial com mais de 3 casas recusada');
 select throws_ok($$insert into containers(organization_id,establishment_id,batch_id,short_code,created_by) values ('c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','C-999999','c1000000-0000-4000-8000-000000000001')$$,
   '23514', null, 'código curto não é informado por quem insere (só a sequência gera)');
 
 -- Recipiente derivado de teste (4 kg do integral de L1), sem manipulação: só para exercitar o saldo
 -- por recipiente. A conservação deste recebimento fica propositalmente quebrada (verificado abaixo).
-insert into containers(id,organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,created_by) values
+insert into containers(id,organization_id,establishment_id,batch_id,kind,parent_container_id,initial_quantity,expiry_date,handling_id,position,handled_at,storage,created_by) values
  ('c9000000-0000-4000-8000-0000000000d1','c2000000-0000-4000-8000-00000000000a','c3000000-0000-4000-8000-00000000000a','c6000000-0000-4000-8000-000000000001','derived',
-  (select id from containers where batch_id='c6000000-0000-4000-8000-000000000001' and kind='integral'),4,'2026-12-01','c1000000-0000-4000-8000-000000000001');
+  (select id from containers where batch_id='c6000000-0000-4000-8000-000000000001' and kind='integral'),4,'2026-12-01','c9000000-0000-4000-8000-0000000000a1',1,'2026-11-01 12:00+00','refrigerated','c1000000-0000-4000-8000-000000000001');
 select results_eq(
   $$select expiry_origin, timezone from containers where id='c9000000-0000-4000-8000-0000000000d1'$$,
   $$values ('handling'::text, 'America/Sao_Paulo'::text)$$, 'derivado tem validade de manipulação e o fuso do recebimento');

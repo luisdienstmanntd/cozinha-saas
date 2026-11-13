@@ -294,9 +294,13 @@ export function MovementPanel({
               <li key={item.id}>
                 {item.kind === 'reversal'
                   ? 'Anulação do registro'
-                  : item.kind === 'discard'
-                    ? 'Descarte'
-                    : 'Consumo'}{' '}
+                  : item.kind === 'transfer'
+                    ? 'Transferência para recipientes derivados'
+                    : item.kind === 'discard'
+                      ? item.handlingId
+                        ? 'Descarte de sobra da manipulação'
+                        : 'Descarte'
+                      : 'Consumo'}{' '}
                 — {item.quantity} {batch.unit} — {item.reason ?? 'sem motivo'} —{' '}
                 {item.created_at} — fuso {item.timezone} — autor{' '}
                 {item.created_by} — ID {item.id}
@@ -311,6 +315,8 @@ export function MovementPanel({
                   !stored.invalid &&
                   !pending &&
                   item.kind !== 'reversal' &&
+                  item.kind !== 'transfer' &&
+                  !item.handlingId &&
                   !events.some((event) => event.reverses_id === item.id) && (
                     <button
                       disabled={busy}

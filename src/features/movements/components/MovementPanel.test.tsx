@@ -484,3 +484,58 @@ it('avisa o painel depois de uma saída confirmada, e só depois dela (fatia 6.2
   await vi.waitFor(() => expect(onRecorded).toHaveBeenCalledTimes(1));
   sessionStorage.clear();
 });
+
+it('conta a transferência da manipulação como saída e não oferece anulá-la (fatia 6.3)', async () => {
+  sessionStorage.clear();
+  const base = {
+    reason: null,
+    created_by: 'autor',
+    created_at: '2026-01-01T12:00:00Z',
+    timezone: 'UTC',
+    reverses_id: null,
+  };
+  const list = vi.fn().mockResolvedValue([
+    { ...base, id: 'consumo', kind: 'consumption', quantity: 1 },
+    {
+      ...base,
+      id: 'transferencia',
+      kind: 'transfer',
+      quantity: 4,
+      handlingId: '32345678-1234-4234-8234-123456789abc',
+    },
+    {
+      ...base,
+      id: 'sobra',
+      kind: 'discard',
+      quantity: 0.5,
+      reason: 'Sobra',
+      handlingId: '32345678-1234-4234-8234-123456789abc',
+    },
+  ]);
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Queijo',
+        sourceCode: 'Q1',
+        quantity: 10,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list, record: vi.fn() }}
+    />,
+  );
+  expect(await screen.findByText('Saldo registrado: 4.5 kg')).toBeVisible();
+  expect(
+    screen.getByText(/Transferência para recipientes derivados — 4 kg/),
+  ).toBeVisible();
+  expect(
+    screen.getByText(/Descarte de sobra da manipulação — 0.5 kg/),
+  ).toBeVisible();
+  // Só o consumo comum pode ser anulado aqui; a manipulação é desfeita pela anulação dela (6.4).
+  expect(
+    screen.getAllByRole('button', { name: 'Anular registro' }),
+  ).toHaveLength(1);
+});
