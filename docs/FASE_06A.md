@@ -57,7 +57,7 @@ Supabase local (Postgres 17.11) com Docker; Node 24.22.3; Playwright com o Chrom
 | `playwright test` | 3 de 3, duas vezes seguidas no mesmo banco (antes da correção do ID fixo, a segunda execução falhava) |
 | Rollback com 2.018 recebimentos de teste no banco, conferência dos privilégios, reaplicação e `test:db` | privilégios de `service_role` voltaram exatamente a `rdDxtm` e depois a `rm`; gatilhos `A` nas três tabelas; PASS 198 |
 
-Não executado: o job `banco-api-e2e` da CI no GitHub (roda quando o PR for aberto; o do PR #2 também ainda não tinha resultado registrado).
+CI no GitHub (PR #5, `ac76272`): `quality` e `banco-api-e2e` com sucesso.
 
 ## Riscos e limites
 
@@ -78,4 +78,4 @@ O `DECISOES.md` desta base (PR #2) termina na D-018; D-019 a D-033 estão no PR 
 
 ## Próximo passo
 
-Aceite de luis para a 6.0a. A 6.0b (P3, RLS por conjunto) só começa com aprovação própria.
+**Aceita por luis em 13/11/2026.** O aceite não autoriza merge: integrar depois do PR #2, quando luis autorizar. A 6.0b (P3, RLS por conjunto) só começa com aprovação própria.
