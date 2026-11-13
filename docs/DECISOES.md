@@ -313,3 +313,11 @@
 - **Motivo:** desenho 7.2, 7.3 e 7.6; ponto 2 do aceite da 6.5a; I-15 e S-10 da revisão cruzada; D-019, D-029, D-041.
 - **Consequência:** produto antigo sem conservação precisa ser definido antes de receber; integração e testes chamam só a assinatura nova; nova lista de expressões proibidas vale para toda tela, PDF e mensagem do banco futura.
 - **Revisar quando:** houver mais de um proprietário (nome na decisão), a 6.8 (recuperação de tentativa) ou a conferência normativa (Q10) pedir outro texto.
+
+## D-043 — Telas de abrir, porcionar e anular (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.6 ([registro](FASE_06_6.md), PR #14).
+- **Decisão:** a manipulação entra pela tela em passos (formulário, revisão, confirmação, resultado), só pelo proprietário, sem prazo sugerido ou calculado e sem regra nova fora do banco; a anulação é uma ação explícita da tela do recipiente e do resultado, com motivo; o QR do recipiente mostra origem, derivados, quem manipulou e anulação, e o derivado não gera PDF até a etiqueta própria (6.7).
+- **Motivo:** desenho 7.1 e 7.4; D-019, D-030, D-039, D-040, D-041; Q1–Q10.
+- **Consequência:** nenhum texto novo afirma conformidade (teste 16); mensagem nova do banco precisa entrar em `handling/domain/messages.ts` para aparecer na tela; a 6.7 passa a definir a etiqueta do derivado.
+- **Revisar quando:** a 6.7 (etiquetas), a 6.8 (recuperação de tentativa) ou o piloto mostrar que o formulário é longo demais para a cozinha.

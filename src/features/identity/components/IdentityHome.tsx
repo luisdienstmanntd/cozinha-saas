@@ -48,7 +48,7 @@ export function IdentityHome({
     userId: string,
     timezone: string,
   ) => ReactNode;
-  renderDestination?: (userId: string) => ReactNode;
+  renderDestination?: (userId: string, access: Access) => ReactNode;
   renderOrganizationTools?: RenderOrganizationTools;
 }) {
   const [userId, setUserId] = useState<string | null>(null);
@@ -177,7 +177,7 @@ export function IdentityHome({
         </form>
       ) : (
         <>
-          {!busy && access.length > 0 && renderDestination?.(userId)}
+          {!busy && access.length > 0 && renderDestination?.(userId, access)}
           <button
             disabled={busy}
             onClick={() => void run(() => refresh(generation.current))}

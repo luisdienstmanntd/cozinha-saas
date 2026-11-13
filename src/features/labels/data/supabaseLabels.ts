@@ -8,7 +8,14 @@ const scopeSchema = z.object({
   organization_id: z.uuid(),
   establishment_id: z.uuid(),
 });
-const balanceSchema = z.object({ container_id: z.uuid(), balance: z.number() });
+const balanceSchema = z.object({
+  container_id: z.uuid(),
+  balance: z.number(),
+  kind: z.enum(['integral', 'derived']).optional(),
+  expiry_date: z.iso.date().optional(),
+  expiry_origin: z.enum(['receipt', 'handling']).optional(),
+  initial_quantity: z.number().optional(),
+});
 const blockSchema = z.object({ kind: z.string(), status: z.string() });
 
 export function createLabelGateway(client: SupabaseClient): LabelGateway {
@@ -96,6 +103,19 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
         hold,
         short_code: (data as { short_code: unknown }).short_code,
         balance: row.data[0].balance,
+        kind: row.data[0].kind,
+        organization_id: scope.organization_id,
+        establishment_id: scope.establishment_id,
+        effective:
+          row.data[0].expiry_date &&
+          row.data[0].expiry_origin &&
+          row.data[0].initial_quantity !== undefined
+            ? {
+                expiry_date: row.data[0].expiry_date,
+                expiry_origin: row.data[0].expiry_origin,
+                initial_quantity: row.data[0].initial_quantity,
+              }
+            : undefined,
         batch_receipts: (data as { batch_receipts: unknown }).batch_receipts,
       });
     },

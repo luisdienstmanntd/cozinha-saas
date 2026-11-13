@@ -1,6 +1,10 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
-import { containerPath, LATE_HOLD_MESSAGE } from '../domain/label';
+import {
+  containerPath,
+  DERIVED_LABEL_MESSAGE,
+  LATE_HOLD_MESSAGE,
+} from '../domain/label';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import type { LabelData } from '../domain/label';
 
@@ -14,6 +18,9 @@ export async function makeLabelPdf(
       'Manipulação anulada: este recipiente não vale mais e a etiqueta não pode ser gerada.',
     );
   if (data.late_hold) throw new Error(LATE_HOLD_MESSAGE);
+  // Fatia 6.6: a etiqueta do derivado (validade e nome de quem abriu) é da 6.7; o modelo do recebimento
+  // imprimiria a validade da origem.
+  if (data.kind === 'derived') throw new Error(DERIVED_LABEL_MESSAGE);
   const url = new URL(origin);
   if (
     url.origin !== 'http://127.0.0.1:5173' &&
