@@ -17,6 +17,8 @@ import {
   BLOCK_TEXT,
   blockedContainers,
 } from '../../occurrences/domain/occurrence';
+import type { HandlingGateway } from '../../handling/application/handlingGateway';
+import { HandlingForm } from '../../handling/components/HandlingForm';
 import { OccurrencePanel } from '../../occurrences/components/OccurrencePanel';
 import { storageLabels } from '../../catalog/domain/catalog';
 
@@ -32,6 +34,8 @@ type Props = {
   labels?: LabelGateway;
   movements?: MovementGateway;
   occurrences?: OccurrenceGateway;
+  // Fatia 6.6: abrir / porcionar a partir da linha (só quem escreve vê o botão).
+  handling?: HandlingGateway;
 };
 type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 // key: consulta a que a página pertence; página de outra consulta conta como carregando.
@@ -57,6 +61,7 @@ function BatchContents({
   labels,
   movements,
   occurrences,
+  handling,
 }: Props) {
   const [catalogData, setCatalogData] = useState<Catalog | null>(null);
   const [listing, setListing] = useState<Listing | null>(null);
@@ -72,6 +77,7 @@ function BatchContents({
   const [reviewError, setReviewError] = useState('');
   const [labelId, setLabelId] = useState<string | null>(null);
   const [movementId, setMovementId] = useState<string | null>(null);
+  const [handlingId, setHandlingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [includeDepleted, setIncludeDepleted] = useState(false);
@@ -406,7 +412,15 @@ function BatchContents({
     <section aria-label="Recebimentos de lote">
       <h3>Recebimentos de lote</h3>
       {labelId && labels && (
-        <LabelView key={labelId} id={labelId} gateway={labels} />
+        <LabelView
+          key={labelId}
+          id={labelId}
+          gateway={labels}
+          handling={handling}
+          canHandle={() => canCreate}
+          userId={userId}
+          onOpenContainer={setLabelId}
+        />
       )}
       {error && <p role="alert">{error}</p>}
       {error === 'Esta tentativa já foi usada com outros dados.' && (
@@ -636,6 +650,42 @@ function BatchContents({
                             }}
                           />
                         )}
+                      {canCreate &&
+                        handling &&
+                        !depleted &&
+                        !blocked.has(row.container_id) && (
+                          <>
+                            {' '}
+                            <button
+                              type="button"
+                              onClick={() => setHandlingId(row.container_id)}
+                            >
+                              Abrir / porcionar
+                            </button>
+                          </>
+                        )}
+                      {canCreate &&
+                        handling &&
+                        blocked.has(row.container_id) && (
+                          <em>
+                            {' '}
+                            — manipulação indisponível enquanto o bloqueio durar
+                          </em>
+                        )}
+                      {handling && handlingId === row.container_id && (
+                        <HandlingForm
+                          key={row.container_id}
+                          scope={{ organizationId, establishmentId }}
+                          containerId={row.container_id}
+                          userId={userId}
+                          gateway={handling}
+                          onChanged={() => refreshRow(row.container_id)}
+                          onClose={() => {
+                            setHandlingId(null);
+                            reload();
+                          }}
+                        />
+                      )}
                       {canCreate && labels && row.kind === 'integral' && (
                         <>
                           {' '}

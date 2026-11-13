@@ -4,8 +4,12 @@ import { IdentityHome } from '../features/identity/components/IdentityHome';
 import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
 import { BatchPanel } from '../features/batches/components/BatchPanel';
 import { useState } from 'react';
+import type { Access } from '../features/identity/domain/identity';
 import { LabelView } from '../features/labels/components/LabelView';
-import { parseContainerPath } from '../features/labels/domain/label';
+import {
+  containerPath,
+  parseContainerPath,
+} from '../features/labels/domain/label';
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 
 function Workspace({
@@ -47,8 +51,50 @@ function Workspace({
         labels={configuration.labels}
         movements={configuration.movements}
         occurrences={configuration.occurrences}
+        handling={configuration.handling}
       />
     </>
+  );
+}
+
+// Rota do QR (/recipiente/:id) e navegação entre origem e derivados sem recarregar a página
+// (recarregar encerra a sessão: ela não é persistida).
+function Destination({
+  configuration,
+  userId,
+  access,
+}: {
+  configuration: NonNullable<ReturnType<typeof configureApp>> & {
+    mode: 'local';
+  };
+  userId: string;
+  access: Access;
+}) {
+  const [id, setId] = useState(() =>
+    parseContainerPath(window.location.pathname),
+  );
+  if (!id) return null;
+  const canHandle = (organizationId: string) =>
+    access.some(
+      (organization) =>
+        organization.id === organizationId &&
+        organization.memberships.some(
+          (member) => member.user_id === userId && member.role === 'owner',
+        ),
+    );
+  return (
+    <LabelView
+      key={id}
+      id={id}
+      gateway={configuration.labels}
+      handling={configuration.handling}
+      canHandle={canHandle}
+      userId={userId}
+      onOpenContainer={(next) => {
+        window.history.pushState(null, '', containerPath(next));
+        setId(next);
+      }}
+    />
   );
 }
 
@@ -81,12 +127,13 @@ export function App({
             busy={busy}
           />
         )}
-        renderDestination={() => {
-          const id = parseContainerPath(window.location.pathname);
-          return id ? (
-            <LabelView id={id} gateway={configuration.labels} />
-          ) : null;
-        }}
+        renderDestination={(userId, access) => (
+          <Destination
+            configuration={configuration}
+            userId={userId}
+            access={access}
+          />
+        )}
         renderCatalog={(
           organizationId,
           establishmentId,

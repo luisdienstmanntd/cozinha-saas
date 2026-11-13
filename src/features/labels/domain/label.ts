@@ -14,6 +14,17 @@ export const labelDataSchema = z.object({
   // Fatia 6.5b: recipiente bloqueado por ocorrência (sem decisão ou rejeitada). A etiqueta sai com a
   // faixa de bloqueio; liberada a ocorrência, a reimpressão sai sem a faixa.
   hold: z.enum(['pending', 'rejected']).nullable().optional(),
+  // Fatia 6.6: dados do próprio recipiente (list_containers). Opcionais: sem eles vale o recebimento.
+  kind: z.enum(['integral', 'derived']).optional(),
+  organization_id: uuid.optional(),
+  establishment_id: uuid.optional(),
+  effective: z
+    .object({
+      expiry_date: z.iso.date(),
+      expiry_origin: z.enum(['receipt', 'handling']),
+      initial_quantity: z.number(),
+    })
+    .optional(),
   batch_receipts: z.object({
     source_code: z.string(),
     quantity: z.number(),
@@ -25,6 +36,8 @@ export const labelDataSchema = z.object({
 });
 export const LATE_HOLD_MESSAGE =
   'Manipulação registrada fora da janela de horário, sem liberação do proprietário: a etiqueta não pode ser gerada.';
+export const DERIVED_LABEL_MESSAGE =
+  'A etiqueta de produto aberto ou fracionado chega na próxima fatia. Até lá, anote o código curto no recipiente.';
 export type LabelData = z.infer<typeof labelDataSchema>;
 export function containerPath(id: string) {
   return `/recipiente/${uuid.parse(id)}`;
