@@ -19,7 +19,7 @@
 - **Pendências / riscos:** nenhuma.
 - **Próximo passo:** pgTAP novo falhando primeiro, depois migração.
 
-### 13/11/2026 02:40 UTC — Claude Code
+### 13/11/2026 02:03 UTC — Claude Code
 - **Planejado / feito:** pgTAP novo (46 verificações), migração, rollback e benchmark versionado.
 - **Alterações e commits:** ver PR rascunho da branch `claude/fase-06b-rls` (base `claude/fase-06a-protecao-historico`).
 - **Testes:** falha primeiro reproduzida (rollback + `test:db`: 10 de 11 verificações de catálogo falham e o arquivo aborta). Comportamento equivalente com as políticas antigas (26/26). Depois de `db:reset`: `test:db` 244 PASS; advisors de segurança e desempenho sem ocorrências; `lint`, `typecheck`, `format:check`, `build` ok; `test` 76/76; `test:integration` 13/13 e Playwright 3/3, duas vezes; rollback e reaplicação com dados. Benchmark: ~140–180 ms → ~4,5–6,3 ms. CI do GitHub ainda não executada no momento deste checkpoint.
