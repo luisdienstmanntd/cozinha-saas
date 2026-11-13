@@ -16,6 +16,8 @@ export function createBatchGateway(client: SupabaseClient): BatchGateway {
           )
           .eq('organization_id', scope.organizationId)
           .eq('establishment_id', scope.establishmentId)
+          // Fatia 6.1: o recebimento mostra o seu recipiente integral; derivados (6.3) ficam fora.
+          .eq('containers.kind', 'integral')
           .order('id', { ascending: true });
         if (cursor) query = query.gt('id', cursor);
         const { data, error } = await query.limit(500);

@@ -18,7 +18,7 @@ export function createMovementGateway(client: SupabaseClient): MovementGateway {
       const { data, error, count } = await client
         .from('stock_movements')
         .select(
-          'id,kind,quantity,reason,created_by,created_at,timezone,reverses_id',
+          'id,kind,quantity,reason,created_by,created_at,timezone,reverses_id,containers!inner(kind)',
           {
             count: 'exact',
           },
@@ -26,6 +26,8 @@ export function createMovementGateway(client: SupabaseClient): MovementGateway {
         .eq('organization_id', scope.organizationId)
         .eq('establishment_id', scope.establishmentId)
         .eq('batch_id', batchId)
+        // Fatia 6.1: o saldo exibido é o do recipiente integral (o recebimento inteiro na tela atual).
+        .eq('containers.kind', 'integral')
         .order('created_at', { ascending: true })
         .order('id', { ascending: true })
         .limit(1000);
