@@ -62,18 +62,31 @@ export async function withCatalogFixture(run) {
     }
     await run({ admin, client, users, scopeA, scopeA2, scopeB });
   } finally {
-    for (const table of [
-      'stock_movements',
-      'containers',
-      'batch_receipts',
-      'products',
-      'suppliers',
-      'memberships',
-      'establishments',
-    ]) {
-      checked(await admin.from(table).delete().in('organization_id', orgIds));
-    }
-    checked(await admin.from('organizations').delete().in('id', orgIds));
-    for (const { id } of users) checked(await admin.auth.admin.deleteUser(id));
+    await cleanupCatalogFixture(admin, orgIds, users);
   }
+}
+
+// Recebimentos, recipientes e movimentos são append-only para todos os papéis (Fase 6.0a, P5):
+// a limpeza não apaga histórico nem os usuários e cadastros que ele referencia. Cada execução usa
+// organizações, unidades e e-mails aleatórios, então dados deixados por um teste não aparecem em
+// outro. Para começar de um banco vazio localmente: npm run db:reset (a CI parte de banco novo).
+async function cleanupCatalogFixture(admin, orgIds, users) {
+  for (const table of ['batch_receipts', 'containers', 'stock_movements']) {
+    const result = await admin
+      .from(table)
+      .select('id', { count: 'exact', head: true })
+      .in('organization_id', orgIds);
+    checked(result);
+    if (result.count !== 0) return;
+  }
+  for (const table of [
+    'products',
+    'suppliers',
+    'memberships',
+    'establishments',
+  ]) {
+    checked(await admin.from(table).delete().in('organization_id', orgIds));
+  }
+  checked(await admin.from('organizations').delete().in('id', orgIds));
+  for (const { id } of users) checked(await admin.auth.admin.deleteUser(id));
 }

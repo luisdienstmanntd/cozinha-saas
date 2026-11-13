@@ -54,7 +54,7 @@ O foco aprovado é uma unidade piloto de restaurante independente. Preparação 
 
 Autenticação local e migração de organizações, unidades e vínculos foram verificadas com pgTAP e integração via API Supabase. Veja [o relatório da Fase 2](docs/FASE_2.md). O modo demo permanece padrão.
 
-Com Docker no PATH e Node 24: `npm run db:start`, `npm run test:db` e `npm run test:integration`. Para testar a reaplicação da migração, `npm run db:reset` recria o banco da instância local descartável deste projeto. A integração cria dados sintéticos com credenciais aleatórias e remove suas próprias fixtures; recusa URL diferente de `http://127.0.0.1:54321`. Não vincular projeto remoto para esses testes.
+Com Docker no PATH e Node 24: `npm run db:start`, `npm run test:db` e `npm run test:integration`. Para testar a reaplicação da migração, `npm run db:reset` recria o banco da instância local descartável deste projeto. A integração cria dados sintéticos com credenciais aleatórias, em organizações e unidades aleatórias; como recebimentos, recipientes e movimentos são append-only para todos os papéis (Fase 6.0a), a limpeza só remove fixtures sem histórico, e o restante fica isolado na instância local até o próximo `npm run db:reset` (a CI parte de banco novo); recusa URL diferente de `http://127.0.0.1:54321`. Não vincular projeto remoto para esses testes.
 
 Modo local da interface requer `VITE_APP_MODE=local`, `VITE_SUPABASE_URL=http://127.0.0.1:54321` e `VITE_SUPABASE_PUBLISHABLE_KEY` obtida da instância local em `.env.local` ignorado pelo Git. Nunca colocar chave administrativa no frontend. Não há provisionamento de contas pela interface nem conta de demonstração permanente; a integração cria e remove contas temporárias.
 

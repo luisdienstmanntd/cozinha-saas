@@ -80,6 +80,26 @@ select is(
                    where a.grantee = 0 and a.privilege_type = 'EXECUTE'))),
   '', 'nenhuma função de public/private executável por anon ou PUBLIC');
 
+-- Fase 6.0a (P5): histórico append-only para todos os papéis. Lista fixa: tabela nova de histórico
+-- entra aqui e em private.assert_history_protected().
+select is(
+  (select coalesce(string_agg(t, ',' order by t), '') from unnest(array[
+      'batch_receipts','containers','stock_movements']) t
+    where not exists (select 1 from pg_trigger g
+      where g.tgrelid = ('public.' || t)::regclass and g.tgname = t || '_append_only'
+        and g.tgfoid = 'private.reject_history_change()'::regprocedure
+        and g.tgenabled = 'A' and (g.tgtype & 1) = 0 and (g.tgtype & 58) = 58)),
+  '', 'toda tabela de histórico tem gatilho de proteção existente e habilitado (UPDATE, DELETE, TRUNCATE)');
+
+select is(
+  (select coalesce(string_agg(t || ':' || p.priv, ',' order by t, p.priv), '') from unnest(array[
+      'public.batch_receipts','public.containers','public.stock_movements']) t
+    cross join (values ('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER')) p(priv)
+    where has_table_privilege('service_role', t::regclass, p.priv)),
+  '', 'service_role só lê o histórico');
+
+select lives_ok($$select private.assert_history_protected()$$, 'verificação final do histórico (usada pelos backfills) aceita o estado atual');
+
 select ok(not has_schema_privilege('anon', 'private', 'usage'), 'anon sem acesso ao schema private');
 select ok(not has_schema_privilege('authenticated', 'public', 'create'), 'authenticated não cria objetos em public');
 select ok(not has_schema_privilege('authenticated', 'private', 'create'), 'authenticated não cria objetos em private');
