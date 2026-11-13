@@ -8,7 +8,7 @@
 | F3 | 3 | Produtos, fornecedores e lotes | constraint de datas/quantidades, isolamento multiempresa, formulários |
 | F4 | 4 | Identidade do recipiente, QR, PDF de etiqueta | QR único, impressão/reimpressão sem duplicar estoque, PDF válido |
 | F5 | 5 | Validade e histórico | timezone, filtros, auditoria, consumo/descarte atômicos |
-| F6 | 6 | Manipulação de recipientes (abrir/porcionar), saldo por recipiente no servidor, painel só com saldo, QR com saldo, recuperação de tentativa, endurecimento P3/P5/P6 e trilha pré-piloto. Conservação, temperatura e ocorrência no recebimento; locais e transferências. **Aprovada para planejamento em 12/11/2026, implementação por fatia com aceite**, ver [desenho](FASE_06_DESENHO.md) | pgTAP de papéis, escopo, append-only e conservação; integração concorrente e de propriedade; E2E de jornada e de negação; aceite por fatia (6.0 a 6.10) |
+| F6 | 6 | Manipulação de recipientes (abrir/porcionar), saldo por recipiente no servidor, painel só com saldo, QR com saldo, recuperação de tentativa, endurecimento P3/P5/P6 e trilha pré-piloto. Conservação, temperatura e ocorrência no recebimento; locais e transferências. **Aprovada para planejamento em 12/11/2026, implementação por fatia com aceite**, ver [desenho](FASE_06_DESENHO.md) | pgTAP de papéis, escopo, append-only e conservação; integração concorrente e de propriedade; E2E de jornada e de negação; aceite por fatia (6.0a, 6.0b, 6.0c, 6.1 a 6.4, 6.5a, 6.5b, 6.6 a 6.10), preservando os testes existentes |
 | F7 | 7 | Fluxo E2E e piloto privado | e2e completo, revisão de segurança, auditoria e teste de impressão real |
 | F8 | futuro | Contagem, ficha técnica, CMV, pagamentos, ERP, IA | escopo só após entrevistas e viabilidade |
 

@@ -100,7 +100,19 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     ).toBeVisible();
     await movements.getByLabel('Quantidade da saída').fill('0.5');
     await movements.getByRole('button', { name: 'Registrar saída' }).click();
-    await movements.getByRole('button', { name: 'Confirmar saída' }).click();
+    await page
+      .getByRole('button', { name: 'Gerenciar unidades de Empresa de teste A' })
+      .click();
+    await page
+      .getByRole('button', { name: 'Renomear Cozinha auxiliar' })
+      .click();
+    await expect(page.getByText('Nome da unidade atualizado.')).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Movimentações' }),
+    ).toHaveCount(0);
+    await page.getByRole('button', { name: 'Ver movimentações' }).click();
+    await expect(movements.getByText(/Tentativa pendente/)).toBeVisible();
+    await movements.getByRole('button', { name: 'Repetir tentativa' }).click();
     await expect(
       movements.getByText('Saldo registrado: 0.75 kg'),
     ).toBeVisible();
