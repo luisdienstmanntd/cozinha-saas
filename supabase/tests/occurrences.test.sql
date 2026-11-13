@@ -32,13 +32,15 @@ select ok((select bool_and(not prosecdef) from pg_proc where oid in (
     'public.container_blocks(uuid,uuid,uuid)'::regprocedure)), 'funções públicas novas são SECURITY INVOKER');
 select ok((select bool_and(prosecdef) from pg_proc where oid in (
     'private.receive_batch(uuid,uuid,uuid,uuid,text,numeric,date,text,date,text,text,numeric,text,uuid)'::regprocedure,
-    'private.receive_batch_core(uuid,uuid,uuid,uuid,text,numeric,date,text,date,boolean,text,text,numeric,text,uuid)'::regprocedure,
+    'private.receive_batch_core(uuid,uuid,uuid,uuid,text,numeric,date,text,date,text,text,numeric,text,uuid)'::regprocedure,
     'private.decide_occurrence(uuid,uuid,uuid,text,text,uuid)'::regprocedure,
     'private.set_product_storage_condition(uuid,uuid,uuid,text)'::regprocedure)), 'núcleos novos são SECURITY DEFINER');
-select ok(not has_function_privilege('authenticated', 'private.receive_batch_core(uuid,uuid,uuid,uuid,text,numeric,date,text,date,boolean,text,text,numeric,text,uuid)', 'execute'),
+select ok(not has_function_privilege('authenticated', 'private.receive_batch_core(uuid,uuid,uuid,uuid,text,numeric,date,text,date,text,text,numeric,text,uuid)', 'execute'),
   'núcleo comum de recebimento não é executável pelo cliente');
-select ok(has_function_privilege('authenticated', 'public.receive_batch(uuid,uuid,uuid,uuid,text,numeric,date,text,date,uuid)', 'execute'),
-  'assinatura antiga de receive_batch continua existindo até a 6.5b');
+-- 6.5b: a assinatura antiga (sem conservação nem temperatura) foi retirada, nos dois esquemas.
+select ok(to_regprocedure('public.receive_batch(uuid,uuid,uuid,uuid,text,numeric,date,text,date,uuid)') is null
+      and to_regprocedure('private.receive_batch(uuid,uuid,uuid,uuid,text,numeric,date,text,date,uuid)') is null,
+  'assinatura antiga de receive_batch retirada na 6.5b');
 select is((select count(*)::int from private.occurrence_problems()), 0, 'nenhuma ocorrência incoerente no início');
 
 -- Dados ---------------------------------------------------------------------
@@ -95,10 +97,12 @@ create function pg_temp.rcv(p_product uuid, p_storage text, p_status text, p_tem
 returns uuid language sql as $$
   select public.receive_batch(p_org, p_est, p_product, p_supplier, 'L-' || left(p_intent::text, 8), p_qty,
     current_date+10, 'original', current_date+10, p_storage, p_status, p_temp, p_reason, p_intent) $$;
--- Recebimento pela assinatura antiga (a da tela atual).
+-- Recebimento em ambiente, sem medição exigida: o que a tela anterior à 6.5b gravava pela assinatura
+-- antiga (retirada na 6.5b). Os testes abaixo conferem que esse caminho não serve para refrigerado.
 create function pg_temp.rcv_old(p_product uuid, p_intent uuid) returns uuid language sql as $$
   select public.receive_batch('c2000000-0000-4000-8000-00000000000a', 'c3000000-0000-4000-8000-0000000000a1', p_product,
-    'c5000000-0000-4000-8000-000000000001', 'L-' || left(p_intent::text, 8), 10, current_date+10, 'original', current_date+10, p_intent) $$;
+    'c5000000-0000-4000-8000-000000000001', 'L-' || left(p_intent::text, 8), 10, current_date+10, 'original', current_date+10,
+    'ambient', 'not_required', null, null, p_intent) $$;
 create function pg_temp.mv(p_container uuid, p_kind text, p_qty numeric, p_reason text, p_intent uuid) returns uuid language sql as $$
   select public.record_container_movement('c2000000-0000-4000-8000-00000000000a', 'c3000000-0000-4000-8000-0000000000a1',
     p_container, p_kind, p_qty, p_reason, p_intent) $$;
@@ -197,7 +201,7 @@ select is((select count(*)::int from occurrences where batch_id = pg_temp.batch(
 select throws_ok($$select pg_temp.rcv('c4000000-0000-4000-8000-000000000004','frozen','not_measured',null,'Outro motivo','c7000000-0000-4000-8000-000000000221')$$,'23505',null,'replay com outra justificativa recusado');
 select throws_ok($$select pg_temp.rcv('c4000000-0000-4000-8000-000000000004','frozen','measured',-18,null,'c7000000-0000-4000-8000-000000000221')$$,'23505',null,'replay com temperatura em vez de "não medida" recusado');
 select throws_ok($$select pg_temp.rcv('c4000000-0000-4000-8000-000000000004','refrigerated','not_measured',null,'Termômetro quebrado','c7000000-0000-4000-8000-000000000221')$$,'23505',null,'replay com outra conservação recusado');
-select throws_ok($$select pg_temp.rcv_old('c4000000-0000-4000-8000-000000000004','c7000000-0000-4000-8000-000000000221')$$,'23505',null,'assinatura antiga não reaproveita recebimento que tem situação de medição');
+select throws_ok($$select pg_temp.rcv_old('c4000000-0000-4000-8000-000000000004','c7000000-0000-4000-8000-000000000221')$$,'23505',null,'recebimento em ambiente não reaproveita recebimento que tem situação de medição');
 
 -- Conservação definida no produto ---------------------------------------------
 select throws_ok($$select pg_temp.rcv('c4000000-0000-4000-8000-000000000001','ambient','not_required',null,null,'c7000000-0000-4000-8000-000000000231')$$,
@@ -206,23 +210,23 @@ select throws_ok($$select pg_temp.rcv('c4000000-0000-4000-8000-000000000001','fr
   '22023','A conservação do recebimento precisa ser a definida no produto.','congelar não substitui a conservação do produto');
 select lives_ok($$select pg_temp.rcv('c4000000-0000-4000-8000-000000000001','refrigerated','measured',3,null,'c7000000-0000-4000-8000-000000000231')$$,'recebimento com a conservação do produto aceito');
 
--- Assinatura antiga (tela atual até a 6.5b) ------------------------------------
+-- Caminho sem temperatura (o da assinatura antiga, retirada na 6.5b) -------------
 select throws_ok($$select pg_temp.rcv_old('c4000000-0000-4000-8000-000000000001','c7000000-0000-4000-8000-000000000241')$$,
-  '22023','Este produto exige conservação e temperatura no recebimento.','assinatura antiga recusa produto refrigerado (não tem como informar a temperatura)');
-select lives_ok($$select pg_temp.rcv_old('c4000000-0000-4000-8000-000000000003','c7000000-0000-4000-8000-000000000242')$$,'assinatura antiga aceita produto em ambiente');
+  '22023','A conservação do recebimento precisa ser a definida no produto.','produto refrigerado não é recebido como ambiente sem temperatura');
+select lives_ok($$select pg_temp.rcv_old('c4000000-0000-4000-8000-000000000003','c7000000-0000-4000-8000-000000000242')$$,'produto em ambiente recebido sem medição exigida');
 select results_eq(
   $$select b.storage_condition, b.temperature_status, b.received_temperature_c, c.storage
       from batch_receipts b join containers c on c.batch_id = b.id and c.kind = 'integral'
      where b.intent_id = 'c7000000-0000-4000-8000-000000000242'$$,
   $$values ('ambient'::text, 'not_required'::text, null::numeric, 'ambient'::text)$$,
-  'assinatura antiga grava ambiente sem medição exigida para produto em ambiente');
-select lives_ok($$select pg_temp.rcv_old('c4000000-0000-4000-8000-000000000002','c7000000-0000-4000-8000-000000000243')$$,'assinatura antiga aceita produto sem conservação definida');
+  'grava ambiente sem medição exigida para produto em ambiente');
+select lives_ok($$select pg_temp.rcv_old('c4000000-0000-4000-8000-000000000002','c7000000-0000-4000-8000-000000000243')$$,'produto sem conservação definida recebido com a conservação informada');
 select results_eq(
   $$select b.storage_condition, b.temperature_status, b.received_temperature_c, c.storage
       from batch_receipts b join containers c on c.batch_id = b.id and c.kind = 'integral'
      where b.intent_id = 'c7000000-0000-4000-8000-000000000243'$$,
-  $$values (null::text, null::text, null::numeric, null::text)$$,
-  'produto sem conservação definida: colunas novas nulas, como os recebimentos antigos');
+  $$values ('ambient'::text, 'not_required'::text, null::numeric, 'ambient'::text)$$,
+  'produto sem conservação definida: o recebimento guarda a conservação informada (não há mais recebimento sem ela)');
 select is((select count(*)::int from batch_receipts where id in ('c6000000-0000-4000-8000-000000000001','c6000000-0000-4000-8000-000000000002')
             and storage_condition is null and temperature_status is null and received_temperature_c is null), 2,
   'recebimentos antigos continuam legíveis com os campos novos nulos');
