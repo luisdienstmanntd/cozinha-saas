@@ -22,6 +22,8 @@ import {
   zonedToInstant,
 } from '../domain/handling';
 import { VoidHandling } from './VoidHandling';
+import type { LabelGateway } from '../../labels/application/labelGateway';
+import { DownloadLabels } from '../../labels/components/DownloadLabels';
 
 // Desenho 7.1: abrir embalagem ou dividir em porções. Passos: formulário, revisão, confirmação e
 // resultado (com "Anular manipulação"). Nenhum prazo é sugerido ou calculado; o banco confere tudo.
@@ -47,6 +49,7 @@ export function HandlingForm({
   onClose,
   onChanged,
   onOpenContainer,
+  labels,
 }: {
   scope: CatalogScope;
   containerId: string;
@@ -57,6 +60,8 @@ export function HandlingForm({
   // Algo foi gravado (manipulação ou anulação): a tela de origem relê o que mostra.
   onChanged?: () => void;
   onOpenContainer?: (id: string) => void;
+  // Fatia 6.7: etiquetas de produto aberto ou fracionado dos recipientes criados.
+  labels?: LabelGateway;
 }) {
   const [context, setContext] = useState<HandlingContext | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -350,6 +355,17 @@ export function HandlingForm({
                   </button>
                 </>
               )}
+              {labels && !voided && (
+                <>
+                  {' '}
+                  <DownloadLabels
+                    gateway={labels}
+                    ids={[child.id]}
+                    filename={`etiqueta-${child.id}.pdf`}
+                    label={`Baixar esta (${child.short_code})`}
+                  />
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -364,10 +380,16 @@ export function HandlingForm({
             Sobra de {info.remainder_quantity} {unit} descartada.
           </p>
         )}
-        <p>
-          As etiquetas de produto aberto ou fracionado chegam na próxima fatia;
-          até lá, anote o código curto no recipiente.
-        </p>
+        {labels && !voided && (
+          <p>
+            <DownloadLabels
+              gateway={labels}
+              ids={result.children.map((child) => child.id)}
+              filename={`etiquetas-${info.id}.pdf`}
+              label="Baixar PDF de todas"
+            />
+          </p>
+        )}
         {!voided && (
           <VoidHandling
             scope={scope}

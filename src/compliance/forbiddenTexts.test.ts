@@ -82,8 +82,33 @@ it('texto extraído das etiquetas PDF não afirma conformidade sanitária', asyn
       products: { name: 'Frango' },
     },
   };
-  for (const hold of [null, 'pending', 'rejected'] as const) {
-    const blob = await makeLabelPdf({ ...base, hold }, 'http://127.0.0.1:5173');
+  // Fatia 6.7: também o modelo de produto aberto / fracionado.
+  const opened: LabelData = {
+    ...base,
+    kind: 'derived',
+    storage: 'refrigerated',
+    handling: {
+      kind: 'portioning',
+      handled_at: '2026-11-13T23:22:00Z',
+      timezone: 'America/Sao_Paulo',
+      handled_by_name: 'Ana',
+      expiry_date: '2026-11-18',
+      storage: 'refrigerated',
+      position: 1,
+      siblings: 2,
+    },
+  };
+  for (const [model, hold] of [
+    [base, null],
+    [base, 'pending'],
+    [base, 'rejected'],
+    [opened, null],
+    [opened, 'pending'],
+  ] as const) {
+    const blob = await makeLabelPdf(
+      { ...model, hold },
+      'http://127.0.0.1:5173',
+    );
     const text = new TextDecoder('latin1').decode(await blob.arrayBuffer());
     // Só o texto desenhado (operadores "(...) Tj"), não os metadados do arquivo.
     const drawn = [...text.matchAll(/\(((?:[^()\\]|\\.)*)\)\s*Tj/g)]

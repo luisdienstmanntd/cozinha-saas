@@ -679,6 +679,7 @@ function BatchContents({
                           containerId={row.container_id}
                           userId={userId}
                           gateway={handling}
+                          labels={labels}
                           onChanged={() => refreshRow(row.container_id)}
                           onClose={() => {
                             setHandlingId(null);

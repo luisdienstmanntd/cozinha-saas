@@ -141,3 +141,93 @@ it('marca o integral bloqueado por recebimento sem medição, sem recusar a etiq
     ).hold,
   ).toBe('rejected');
 });
+
+it('lê da manipulação os dados da etiqueta de produto aberto (fatia 6.7)', async () => {
+  const id = '12345678-1234-4234-8234-123456789abc';
+  const handlingId = '42345678-1234-4234-8234-123456789abc';
+  const container = {
+    id,
+    organization_id: '22345678-1234-4234-8234-123456789abc',
+    establishment_id: '32345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000002',
+    handling_id: handlingId,
+    position: 2,
+    storage: 'refrigerated',
+    batch_receipts: {
+      source_code: '0001',
+      quantity: 10,
+      unit: 'kg',
+      expiry_date: '2027-01-01',
+      expiry_origin: 'original',
+      suppliers: { name: 'Granja' },
+      products: { name: 'Frango' },
+    },
+  };
+  const handling = {
+    kind: 'portioning',
+    handled_at: '2026-11-13T23:22:00Z',
+    timezone: 'America/Sao_Paulo',
+    handled_by_name: 'Ana',
+    expiry_date: '2026-11-18',
+    storage: 'refrigerated',
+  };
+  const chain = (single: unknown, many: unknown) => {
+    const q: Record<string, unknown> = {};
+    q.select = vi.fn(() => q);
+    q.eq = vi.fn(() => q);
+    q.maybeSingle = vi.fn().mockResolvedValue({ data: single, error: null });
+    q.then = (resolve: (value: unknown) => unknown) =>
+      resolve({ data: many, error: null });
+    return q;
+  };
+  const from = vi.fn((table: string) =>
+    table === 'container_handlings'
+      ? chain(handling, null)
+      : table === 'handling_voids'
+        ? chain(null, null)
+        : chain(container, [
+            { id: 'a' },
+            { id: 'b' },
+            { id: 'c' },
+            { id: 'd' },
+          ]),
+  );
+  const rpc = vi.fn((name: string) =>
+    Promise.resolve({
+      data:
+        name === 'container_blocks'
+          ? []
+          : [
+              {
+                container_id: id,
+                balance: 2,
+                kind: 'derived',
+                expiry_date: '2026-11-18',
+                expiry_origin: 'handling',
+                initial_quantity: 2,
+              },
+            ],
+      error: null,
+    }),
+  );
+  const label = await createLabelGateway({
+    from,
+    rpc,
+  } as unknown as SupabaseClient).get(id);
+  expect(label.handling).toEqual({
+    ...handling,
+    position: 2,
+    siblings: 4,
+  });
+  expect(label.storage).toBe('refrigerated');
+  expect(label.batch_receipts.suppliers?.name).toBe('Granja');
+  expect(label.effective?.expiry_date).toBe('2026-11-18');
+});
+
+it('dados da manipulação ilegíveis deixam o derivado sem `handling` (o PDF recusa)', async () => {
+  const { client } = clientFor('42345678-1234-4234-8234-123456789abc', null);
+  const label = await createLabelGateway(client).get(
+    '12345678-1234-4234-8234-123456789abc',
+  );
+  expect(label.handling).toBeUndefined();
+});

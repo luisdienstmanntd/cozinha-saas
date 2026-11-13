@@ -321,3 +321,11 @@
 - **Motivo:** desenho 7.1 e 7.4; D-019, D-030, D-039, D-040, D-041; Q1–Q10.
 - **Consequência:** nenhum texto novo afirma conformidade (teste 16); mensagem nova do banco precisa entrar em `handling/domain/messages.ts` para aparecer na tela; a 6.7 passa a definir a etiqueta do derivado.
 - **Revisar quando:** a 6.7 (etiquetas), a 6.8 (recuperação de tentativa) ou o piloto mostrar que o formulário é longo demais para a cozinha.
+
+## D-044 — Etiquetas de recebimento e de produto aberto (13/11/2026)
+
+- **Status:** proposta; implementada na fatia 6.7 ([registro](FASE_06_7.md)), aguardando aceite de luis.
+- **Decisão:** dois modelos de PDF 100 × 100 mm (recebimento; produto aberto ou fracionado), com todos os campos obrigatórios legíveis sem o QR; reimpressão não grava nada; "baixar esta" e "baixar todas"; manipulação anulada, tardia sem liberação ou sem dados da manipulação recusam o arquivo inteiro com mensagem; nenhum texto afirma conformidade sanitária.
+- **Motivo:** desenho 7.2; D-003, D-028, D-043; S-7 e S-9 da revisão cruzada.
+- **Consequência:** campo novo na etiqueta exige teste do texto desenhado e passagem pelo teste 16; ensaio físico segue pendente.
+- **Revisar quando:** o ensaio físico (tamanho, QR, impressora) ou a conferência normativa (Q10) pedirem outro texto ou tamanho.
