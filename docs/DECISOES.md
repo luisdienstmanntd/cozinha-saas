@@ -305,3 +305,11 @@
 - **Motivo:** Q8/D-029, B-2/D-031, seções 4.8 e 5 do desenho, I-6 e S-2 da revisão cruzada; histórico append-only (6.0a); D-019.
 - **Consequência:** escrita nova precisa chamar o bloqueio (`container_blocks`) e cruzar identificadores com `occurrence_decisions`; tabela nova de histórico entra nas listas fixas; a assinatura antiga de `receive_batch` sai na 6.5b.
 - **Revisar quando:** a 6.5b (tela) e a 6.9 (locais) chegarem; quando a nutricionista RT conferir o procedimento (Q10); ou se o piloto mostrar bloqueios sem decisão (R12) ou janela inadequada (R13).
+
+## D-042 — Recebimento, decisão e bloqueio na interface (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.5b ([registro](FASE_06_5B.md), PR #13). Por ora a decisão aparece como "pelo proprietário"; cópia do nome de quem decidiu fica para fatia futura.
+- **Decisão:** todo recebimento informa conservação e situação da medição (assinatura antiga retirada); a conservação do produto é definida no catálogo antes do primeiro recebimento; a tela lê bloqueios do servidor (`list_occurrences`, mesmas ligações de `container_blocks`), mostra-os no topo do painel, na linha, nas movimentações e na etiqueta (faixa), e a decisão é registrada só pelo proprietário com justificativa, sem sugestão de resposta.
+- **Motivo:** desenho 7.2, 7.3 e 7.6; ponto 2 do aceite da 6.5a; I-15 e S-10 da revisão cruzada; D-019, D-029, D-041.
+- **Consequência:** produto antigo sem conservação precisa ser definido antes de receber; integração e testes chamam só a assinatura nova; nova lista de expressões proibidas vale para toda tela, PDF e mensagem do banco futura.
+- **Revisar quando:** houver mais de um proprietário (nome na decisão), a 6.8 (recuperação de tentativa) ou a conferência normativa (Q10) pedir outro texto.

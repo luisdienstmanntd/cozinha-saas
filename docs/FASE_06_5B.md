@@ -47,7 +47,7 @@ Implementada por Claude Code em 13/11/2026, conforme as seções 7.2, 7.3, 7.6, 
 
 ## Decisão proposta para `DECISOES.md`
 
-Entra como **D-042** com o aceite:
+Transcrita em `DECISOES.md` como **D-042** com o aceite:
 
 - **Decisão:** todo recebimento informa conservação e situação da medição (assinatura antiga retirada); a conservação do produto é definida no catálogo antes do primeiro recebimento; a tela lê bloqueios do servidor (`list_occurrences`, mesmas ligações de `container_blocks`), mostra-os no topo do painel, na linha, nas movimentações e na etiqueta (faixa), e a decisão é registrada só pelo proprietário com justificativa, sem sugestão de resposta.
 - **Motivo:** desenho 7.2, 7.3 e 7.6; ponto 2 do aceite da 6.5a; I-15 e S-10 da revisão cruzada; D-019, D-029, D-041.
@@ -56,4 +56,4 @@ Entra como **D-042** com o aceite:
 
 ## Próximo passo
 
-Aceite de luis (pontos 1 a 4 e D-042). Merge e deploy só com luis. A 6.6 (telas de abrir, porcionar e anular) exige aprovação própria.
+**Aceita por luis em 13/11/2026 23:04 UTC**, respondendo "sim" aos quatro pontos ("1 sim, 2 sim, 3 sim, 4 sim"): conservação definida no catálogo antes do recebimento; "pelo proprietário" na decisão por enquanto, com a cópia do nome de quem decidiu considerada numa fatia futura (sugestão: 6.7); rejeitada no topo até o descarte; textos das faixas mantidos. Interpretado como aceite da fatia e da D-042 (transcrita em `DECISOES.md`). O aceite não autoriza merge: integrar só com pedido de luis. A 6.6 (telas de abrir, porcionar e anular) exige aprovação própria.
