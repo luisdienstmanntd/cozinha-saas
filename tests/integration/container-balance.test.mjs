@@ -46,6 +46,10 @@ test('saldo por recipiente: integral no recebimento, código curto único e baix
       p_expiry_date: '2027-03-01',
       p_expiry_origin: 'original',
       p_original_expiry_date: '2027-03-01',
+      p_storage_condition: 'ambient',
+      p_temperature_status: 'not_required',
+      p_received_temperature_c: null,
+      p_temperature_reason: null,
       p_intent_id: intent,
     });
 

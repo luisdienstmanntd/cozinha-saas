@@ -11,6 +11,9 @@ export const labelDataSchema = z.object({
   // Fatia 6.5a: derivado de manipulação tardia sem liberação. A etiqueta não sai: não se imprime um
   // horário de abertura que o proprietário ainda não aceitou (4.8, teste 6).
   late_hold: z.boolean().optional(),
+  // Fatia 6.5b: recipiente bloqueado por ocorrência (sem decisão ou rejeitada). A etiqueta sai com a
+  // faixa de bloqueio; liberada a ocorrência, a reimpressão sai sem a faixa.
+  hold: z.enum(['pending', 'rejected']).nullable().optional(),
   batch_receipts: z.object({
     source_code: z.string(),
     quantity: z.number(),

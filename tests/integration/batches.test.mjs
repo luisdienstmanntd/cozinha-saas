@@ -45,6 +45,10 @@ test('recebimento de lote é atômico, idempotente e isolado', async () => {
         p_expiry_date: '2027-01-01',
         p_expiry_origin: 'original',
         p_original_expiry_date: '2027-01-01',
+        p_storage_condition: 'ambient',
+        p_temperature_status: 'not_required',
+        p_received_temperature_c: null,
+        p_temperature_reason: null,
         p_intent_id: randomUUID(),
       };
       const results = await Promise.all([

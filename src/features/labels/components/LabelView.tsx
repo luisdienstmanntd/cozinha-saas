@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { LabelGateway } from '../application/labelGateway';
 import type { LabelData } from '../domain/label';
 import { LATE_HOLD_MESSAGE } from '../domain/label';
+import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import { makeLabelPdf } from '../application/pdf';
 
 export function LabelView({
@@ -100,6 +101,14 @@ export function LabelView({
             Saldo atual: {data.balance} {data.batch_receipts.unit}
             {data.balance <= 0 && ' — esgotado, sem saldo neste recipiente'}
           </p>
+          {data.hold && !data.voided && !data.late_hold && (
+            <p role="status">
+              <strong>{BLOCK_TEXT[data.hold]}</strong>
+              {data.hold === 'pending'
+                ? ': ocorrência sem decisão do proprietário. Consumo e manipulação ficam recusados; a etiqueta sai com a faixa de bloqueio.'
+                : ': o proprietário rejeitou o uso. Só o descarte é permitido; a etiqueta sai com a faixa.'}
+            </p>
+          )}
           <p>Código: {data.short_code}</p>
           <p>Identificação: {data.id}</p>
           <p>

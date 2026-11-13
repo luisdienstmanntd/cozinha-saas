@@ -269,3 +269,78 @@ it('recusa gerar etiqueta de derivado de manipulação tardia sem liberação (f
   ).toBeNull();
   expect(makeLabelPdf).not.toHaveBeenCalled();
 });
+
+it('mostra a faixa de bloqueio e mantém a etiqueta disponível (fatia 6.5b)', async () => {
+  const base = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000004',
+    balance: 2,
+    batch_receipts: {
+      source_code: '0001',
+      quantity: 2,
+      unit: 'kg',
+      expiry_date: '2027-01-01',
+      expiry_origin: 'original' as const,
+      products: { name: 'Frango' },
+    },
+  };
+  const view = render(
+    <LabelView
+      id={base.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({ ...base, hold: 'pending' }),
+      }}
+    />,
+  );
+  expect(
+    await screen.findByText('BLOQUEADO - aguardando decisão'),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeVisible();
+  view.unmount();
+  render(
+    <LabelView
+      id={base.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({ ...base, hold: 'rejected' }),
+      }}
+    />,
+  );
+  expect(await screen.findByText('REJEITADO - somente descarte')).toBeVisible();
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'Só o descarte é permitido',
+  );
+});
+
+it('derivado tardio sem liberação não mostra a faixa de etiqueta disponível', async () => {
+  render(
+    <LabelView
+      id="12345678-1234-4234-8234-123456789abc"
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({
+          id: '12345678-1234-4234-8234-123456789abc',
+          short_code: 'C-000005',
+          balance: 1,
+          late_hold: true,
+          hold: 'pending',
+          batch_receipts: {
+            source_code: '0001',
+            quantity: 1,
+            unit: 'kg',
+            expiry_date: '2027-01-01',
+            expiry_origin: 'original' as const,
+            products: { name: 'Frango' },
+          },
+        }),
+      }}
+    />,
+  );
+  expect(
+    await screen.findByText(/fora da janela de horário, sem liberação/),
+  ).toBeVisible();
+  expect(screen.queryByText('BLOQUEADO - aguardando decisão')).toBeNull();
+});

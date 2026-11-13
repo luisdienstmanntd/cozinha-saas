@@ -7,7 +7,12 @@ import type {
   MovementGateway,
   MovementInput,
 } from '../application/movementGateway';
-import { MovementRejected } from '../application/movementGateway';
+import {
+  MovementBlocked,
+  MovementRejected,
+} from '../application/movementGateway';
+import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
+import type { BlockStatus } from '../../occurrences/domain/occurrence';
 
 const savedSchema = z
   .object({
@@ -26,6 +31,7 @@ export function MovementPanel({
   canCreate,
   gateway,
   onRecorded,
+  blocked,
 }: {
   scope: CatalogScope;
   userId: string;
@@ -40,6 +46,8 @@ export function MovementPanel({
   gateway: MovementGateway;
   // Fatia 6.2: avisa o painel para reler o saldo do recipiente depois de um registro confirmado.
   onRecorded?: () => void;
+  // Fatia 6.5b: recipiente bloqueado por ocorrência. Só o descarte passa (D-029); o banco recusa o resto.
+  blocked?: BlockStatus;
 }) {
   const key = `movement-intent:${userId}:${scope.organizationId}:${scope.establishmentId}:${batch.id}`;
   const [events, setEvents] = useState<Movement[] | null>(null);
@@ -111,9 +119,11 @@ export function MovementPanel({
       setRejected(cause instanceof MovementRejected);
       setReviewedHistory(false);
       setError(
-        cause instanceof MovementRejected
-          ? `${input.kind === 'reversal' ? 'Anulação' : 'Saída'} recusada. Atualize o histórico e confira o saldo antes de iniciar outra tentativa.`
-          : 'Não foi possível confirmar a saída. Repita a mesma tentativa; não crie outra sem conferir o histórico.',
+        cause instanceof MovementBlocked
+          ? `${cause.message} Atualize o histórico antes de iniciar outra tentativa.`
+          : cause instanceof MovementRejected
+            ? `${input.kind === 'reversal' ? 'Anulação' : 'Saída'} recusada. Atualize o histórico e confira o saldo antes de iniciar outra tentativa.`
+            : 'Não foi possível confirmar a saída. Repita a mesma tentativa; não crie outra sem conferir o histórico.',
       );
       setBusy(false);
       return;
@@ -267,6 +277,14 @@ export function MovementPanel({
         {batch.quantity} {batch.unit}
       </p>
       <p>O saldo registrado não comprova a quantidade física.</p>
+      {blocked && (
+        <p>
+          <strong>{BLOCK_TEXT[blocked]}</strong>:{' '}
+          {blocked === 'pending'
+            ? 'consumo e manipulação ficam recusados até a decisão do proprietário. O descarte continua permitido.'
+            : 'o proprietário rejeitou o uso. Só o descarte é permitido.'}
+        </p>
+      )}
       {notice && <p role="status">{notice}</p>}
       <p>
         Confira a operação antes de confirmar. Se fechar a aba após uma falha,

@@ -79,7 +79,7 @@ const asOwner = (f) => `
   select set_config('request.jwt.claims','{"sub":"${f.user}","role":"authenticated"}',false);
   set role authenticated;`;
 const receive = (f) =>
-  `select public.receive_batch('${f.org}','${f.est}','${f.product}','${f.supplier}','L1',5,'2027-01-01','original','2027-01-01','${f.intent}');`;
+  `select public.receive_batch('${f.org}','${f.est}','${f.product}','${f.supplier}','L1',5,'2027-01-01','original','2027-01-01','ambient','not_required',null,null,'${f.intent}');`;
 const changeZone = (f) =>
   `update public.establishments set timezone='America/Manaus' where id='${f.est}';`;
 const state = (f) => {

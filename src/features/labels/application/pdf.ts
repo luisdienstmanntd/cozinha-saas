@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import { containerPath, LATE_HOLD_MESSAGE } from '../domain/label';
+import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import type { LabelData } from '../domain/label';
 
 export async function makeLabelPdf(
@@ -60,5 +61,17 @@ export async function makeLabelPdf(
     width: 300,
   });
   doc.addImage(qr, 'PNG', 62, 61, 30, 30);
+  // Fatia 6.5b (desenho 7.2): faixa de bloqueio enquanto houver ocorrência sem decisão ou rejeitada.
+  if (data.hold) {
+    doc.setFillColor(0, 0, 0);
+    doc.rect(6, 64, 52, 16, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    const [first, second] = BLOCK_TEXT[data.hold].split(' - ');
+    doc.text([first ?? '', second ?? ''], 9, 70);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+  }
   return doc.output('blob');
 }

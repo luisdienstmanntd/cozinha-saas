@@ -106,12 +106,38 @@ it('marca o derivado de manipulação tardia sem liberação e não o integral (
       )
     ).late_hold,
   ).toBe(false);
+  // Desde a 6.5b o integral também é consultado (recebimento sem medição); sem bloqueio, nada muda.
   const integral = clientFor(null, null);
-  await createLabelGateway(integral.client).get(
+  const free = await createLabelGateway(integral.client).get(
     '12345678-1234-4234-8234-123456789abc',
   );
-  expect(integral.rpc).not.toHaveBeenCalledWith(
-    'container_blocks',
-    expect.anything(),
+  expect(free.late_hold).toBe(false);
+  expect(free.hold).toBeNull();
+});
+
+it('marca o integral bloqueado por recebimento sem medição, sem recusar a etiqueta (fatia 6.5b)', async () => {
+  const pending = clientFor(null, null, [
+    { kind: 'temperature_not_measured', status: 'pending' },
+  ]);
+  const label = await createLabelGateway(pending.client).get(
+    '12345678-1234-4234-8234-123456789abc',
   );
+  expect(pending.rpc).toHaveBeenCalledWith('container_blocks', {
+    p_organization_id: '22345678-1234-4234-8234-123456789abc',
+    p_establishment_id: '32345678-1234-4234-8234-123456789abc',
+    p_container_id: '12345678-1234-4234-8234-123456789abc',
+  });
+  expect(label.hold).toBe('pending');
+  expect(label.late_hold).toBe(false);
+  const rejected = clientFor('42345678-1234-4234-8234-123456789abc', null, [
+    { kind: 'temperature_not_measured', status: 'pending' },
+    { kind: 'temperature_not_measured', status: 'rejected' },
+  ]);
+  expect(
+    (
+      await createLabelGateway(rejected.client).get(
+        '12345678-1234-4234-8234-123456789abc',
+      )
+    ).hold,
+  ).toBe('rejected');
 });

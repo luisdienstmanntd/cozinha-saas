@@ -68,9 +68,11 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
         voided = found.data !== null;
       }
       // Fatia 6.5a: derivado de manipulação registrada fora da janela, sem liberação do proprietário.
-      // O bloqueio vem do banco (container_blocks), pela RLS, como o resto.
+      // O bloqueio vem do banco (container_blocks), pela RLS, como o resto. Desde a 6.5b a consulta vale
+      // para todo recipiente não anulado (recebimento sem medição bloqueia o integral).
       let lateHold = false;
-      if (handlingId && !voided) {
+      let hold: 'pending' | 'rejected' | null = null;
+      if (!voided) {
         const blocks = await client.rpc('container_blocks', {
           p_organization_id: scope.organization_id,
           p_establishment_id: scope.establishment_id,
@@ -80,11 +82,18 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
         if (blocks.error || !rows.success)
           throw new Error('Recipiente indisponível ou sem acesso.');
         lateHold = rows.data.some((row) => row.kind === 'late_handling');
+        // Fatia 6.5b: integral ou derivado bloqueado; rejeitada prevalece sobre aguardando decisão.
+        hold = rows.data.some((row) => row.status === 'rejected')
+          ? 'rejected'
+          : rows.data.length > 0
+            ? 'pending'
+            : null;
       }
       return labelDataSchema.parse({
         id: scope.id,
         voided,
         late_hold: lateHold,
+        hold,
         short_code: (data as { short_code: unknown }).short_code,
         balance: row.data[0].balance,
         batch_receipts: (data as { batch_receipts: unknown }).batch_receipts,

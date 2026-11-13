@@ -1,5 +1,7 @@
 import type { CatalogScope } from '../../catalog/domain/catalog';
 export class MovementRejected extends Error {}
+// Fatia 6.5b: recusa por bloqueio (ocorrência sem decisão ou rejeitada); a mensagem vem do banco.
+export class MovementBlocked extends MovementRejected {}
 export type MovementInput = {
   batchId: string;
   kind: 'consumption' | 'discard' | 'reversal';
