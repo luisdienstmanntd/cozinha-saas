@@ -69,7 +69,7 @@ Supabase local (Postgres 17) com Docker; Node 24.11.0; Playwright com o Chromium
 | `npm run lint`, `typecheck`, `format:check`, `build` | sucesso (build mantém o aviso antigo de chunk grande) |
 | `npm run test` (Vitest) | 95 de 95 |
 
-Não executado: CI do GitHub no momento deste texto.
+CI do GitHub no PR #11: `quality` e `banco-api-e2e` verdes.
 
 ## Riscos e limites
 
@@ -93,8 +93,8 @@ Entra como **D-040** quando os PRs anteriores forem integrados (D-039 é da 6.3)
 - **Motivo:** seção 4.10 e 5.4 do desenho; I-9 da revisão cruzada; histórico append-only (6.0a); D-038; ponto 3 aceito na 6.3.
 - **Consequência:** a fórmula de saldo continua sem exceção; a conservação ganha uma verificação por manipulação anulada. Tipo de movimento novo continua exigindo atualizar os três lugares da D-038. Não criar outra FK de `stock_movements` para `containers` (quebra a junção da API).
 - **Revisar quando:** a 6.6 (tela de anulação) e a 6.9 (transferência de local, que entra na condição) chegarem, ou se a observação no piloto mostrar que a regra estrita do ponto 1 atrapalha.
-- **Situação:** proposta, aguardando luis.
+- **Situação:** aceita por luis em 13/11/2026, com os três pontos acima.
 
 ## Próximo passo
 
-Aguardar o aceite de luis (fatia, D-040 e os três pontos acima). O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6, #7, #8, #9 e #10, nessa ordem, só com luis. A 6.5a (conservação, temperatura e ocorrências no banco) exige aprovação própria.
+**Aceita por luis em 13/11/2026 13:54 UTC** ("aprovado"), junto com a D-040 e os três pontos (regra estrita de "derivado com movimento"; motivo obrigatório; sem anulação parcial). CI do GitHub verde no PR #11 (`quality` e `banco-api-e2e`). O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6, #7, #8, #9 e #10, nessa ordem, só com luis. A 6.5a (conservação, temperatura e ocorrências no banco) exige aprovação própria.

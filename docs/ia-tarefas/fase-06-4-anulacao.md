@@ -2,12 +2,12 @@
 
 - **ID:** fase-06-4-anulacao
 - **Responsável / sessão:** Claude Code (sessão em nuvem, thread "Implementar fatia 6.4 (anulação no banco)")
-- **Estado:** aguardando_aceite
+- **Estado:** aceita (sem merge)
 - **Objetivo e aceite:** seção 10 (6.4) de `FASE_06_DESENHO.md` (PR #3): `handling_voids`, `'transfer_reversal'`, `'handling_void'`, `void_handling` (4.10, 5.4). Aceite: testes 9, 10 (com anulação), 19 (anulação), 24 e 26 com anulação incluída; nenhuma tela de anulação.
 - **Branch / worktree / base:** `claude/fase-06-4-anulacao`, a partir de `claude/fase-06-3-manipulacao` (`e528b1c`, PR #10). Ordem de integração: PR #2 → #5 → #6 → #7 → #8 → #9 → #10 → este.
 - **Arquivos e recursos em uso:** migração `supabase/migrations/20261113080000_handling_void.sql` e rollback `supabase/rollback/handling_void.sql`; `supabase/tests/handling_void.test.sql` (novo); listas fixas em `security_guard.test.sql`, `container_balance.test.sql`, `rls_set_based.test.sql`; `tests/integration/handling-void.test.mjs` (novo); `src/features/movements`, `src/features/labels`; `docs/FASE_06_4.md`, `docs/PRODUCT_BRIEF.md`.
 - **Dependências e riscos:** PRs #2, #5, #6, #7, #8, #9 e #10 sem merge; Codex trabalha na `main` (não tocar em `DECISOES.md`; decisão nova proposta em `FASE_06_4.md` como D-040).
-- **Próximo passo:** aceite de luis (fatia, D-040 e três pontos de `FASE_06_4.md`).
+- **Próximo passo:** integrar depois dos PRs #2, #5, #6, #7, #8, #9 e #10, só com luis; 6.5a exige aprovação própria.
 
 ## Checkpoints
 
@@ -21,3 +21,7 @@
 - **Falha corrigida:** segunda FK de `stock_movements` para `containers` deixou ambígua a junção `containers!inner` da API (`PGRST201`); trocada por gatilho de inserção.
 - **Pendências / riscos:** D-040 e três pontos aguardam luis.
 - **Próximo passo:** aceite de luis.
+
+### 13/11/2026 13:55 UTC — Claude Code
+- **Aceite:** luis aprovou a fatia 6.4, a D-040 e os três pontos em 13/11/2026 13:54 UTC ("aprovado"). CI do PR #11 verde. Sem merge.
+- **Próximo passo:** integração na ordem #2 → #5 → #6 → #7 → #8 → #9 → #10 → #11, só com luis. 6.5a aguarda aprovação própria.
