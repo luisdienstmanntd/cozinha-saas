@@ -106,3 +106,43 @@ it('aceita a transferência de manipulação na leitura e guarda a manipulação
     handlingId: '32345678-1234-4234-8234-123456789abc',
   });
 });
+
+it('aceita a devolução da anulação de manipulação na leitura (fatia 6.4)', async () => {
+  const row = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    kind: 'transfer_reversal',
+    quantity: 4,
+    reason: 'Validade digitada errada',
+    created_by: '22345678-1234-4234-8234-123456789abc',
+    created_at: '2026-01-01T12:00:00Z',
+    timezone: 'UTC',
+    reverses_id: '42345678-1234-4234-8234-123456789abc',
+    handling_id: '32345678-1234-4234-8234-123456789abc',
+    containers: { kind: 'integral' },
+  };
+  const query = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn().mockResolvedValue({ data: [row], error: null, count: 1 }),
+    maybeSingle: vi
+      .fn()
+      .mockResolvedValue({ data: { id: 'unit' }, error: null }),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.order.mockReturnValue(query);
+  const client = {
+    from: vi.fn().mockReturnValue(query),
+  } as unknown as SupabaseClient;
+  const [event] = await createMovementGateway(client).list(
+    { organizationId: 'org', establishmentId: 'unit' },
+    'batch',
+  );
+  expect(event).toMatchObject({
+    kind: 'transfer_reversal',
+    quantity: 4,
+    reverses_id: '42345678-1234-4234-8234-123456789abc',
+    handlingId: '32345678-1234-4234-8234-123456789abc',
+  });
+});

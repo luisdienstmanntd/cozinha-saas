@@ -26,8 +26,8 @@ select hasnt_index('public', 'containers', 'containers_batch_id_key', 'unique (b
 select lives_ok($$select private.assert_history_protected()$$, 'proteção do histórico completa depois do backfill');
 select ok(
   (select pg_get_constraintdef(oid) from pg_constraint where conname = 'stock_movements_kind_check')
-    = $$CHECK ((kind = ANY (ARRAY['consumption'::text, 'discard'::text, 'reversal'::text, 'transfer'::text])))$$,
-  'tipos de movimento conhecidos pelo cálculo de saldo e pela conservação (novo tipo exige atualizar os dois; transfer entrou na 6.3)');
+    = $$CHECK ((kind = ANY (ARRAY['consumption'::text, 'discard'::text, 'reversal'::text, 'transfer'::text, 'transfer_reversal'::text, 'handling_void'::text])))$$,
+  'tipos de movimento conhecidos pelo cálculo de saldo e pela conservação (novo tipo exige atualizar os dois; transfer entrou na 6.3, transfer_reversal e handling_void na 6.4)');
 
 -- Dados ---------------------------------------------------------------------
 -- u1: owner de A; u2: member de A; u3: owner de B; u4: owner revogado de A.

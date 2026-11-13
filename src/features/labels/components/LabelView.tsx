@@ -48,6 +48,11 @@ export function LabelView({
       return;
     }
     if (!isCurrent()) return;
+    if (fresh.voided) {
+      setData(fresh);
+      setBusy(false);
+      return;
+    }
     try {
       setData(fresh);
       const blob = await makeLabelPdf(fresh, window.location.origin);
@@ -108,9 +113,16 @@ export function LabelView({
               dispositivo.
             </p>
           )}
-          <button disabled={busy} onClick={() => void download()}>
-            Gerar etiqueta PDF
-          </button>
+          {data.voided ? (
+            <p role="alert">
+              Manipulação anulada: este recipiente não vale mais e a etiqueta
+              não pode ser gerada.
+            </p>
+          ) : (
+            <button disabled={busy} onClick={() => void download()}>
+              Gerar etiqueta PDF
+            </button>
+          )}
         </>
       )}
     </section>

@@ -12,7 +12,15 @@ export type Movement = {
   id: string;
   // 'transfer' (fatia 6.3): saída para recipientes derivados; só é desfeita pela anulação da
   // manipulação (6.4), nunca por "Anular registro".
-  kind: 'consumption' | 'discard' | 'reversal' | 'transfer';
+  // 'transfer_reversal' (fatia 6.4): devolução da transferência quando a manipulação é anulada;
+  // 'handling_void' (6.4) só aparece nos derivados e zera o saldo deles.
+  kind:
+    | 'consumption'
+    | 'discard'
+    | 'reversal'
+    | 'transfer'
+    | 'transfer_reversal'
+    | 'handling_void';
   quantity: number;
   reason: string | null;
   created_by: string;
