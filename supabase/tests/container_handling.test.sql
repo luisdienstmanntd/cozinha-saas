@@ -250,10 +250,13 @@ select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-00
 select lives_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000001'),'opening','{1}',current_date+5,'sealed','e7000000-0000-4000-8000-000000000502',p_handled_at=>now()-interval '2 hours')$$,
   'exatamente 2 horas antes do registro: aceito');
 select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000001'),'opening','{1}',current_date+5,'sealed','e7000000-0000-4000-8000-000000000503',p_handled_at=>now()-interval '2 hours 1 minute')$$,
-  '22023','Manipulação registrada mais de 2 horas depois de feita ainda não é aceita. Siga o procedimento da cozinha.','2 horas e 1 minuto: recusado nesta fatia (ocorrência só na 6.5a)');
-select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000001'),'opening','{1}',current_date+5,'sealed','e7000000-0000-4000-8000-000000000503',p_handled_at=>now()-interval '3 hours',p_late=>'Esqueci de registrar')$$,
-  '22023',null,'justificativa de atraso ainda não é aceita');
-select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000001'),'opening','{1}',current_date+5,'sealed','e7000000-0000-4000-8000-000000000503',p_late=>'Justificativa')$$,
+  '22023','Manipulação registrada mais de 2 horas depois de feita exige justificativa do atraso. Siga o procedimento da cozinha.','2 horas e 1 minuto sem justificativa: recusado (a partir da 6.5a, com justificativa vira ocorrência; ver occurrences.test.sql)');
+-- 6.5a: com justificativa, a manipulação tardia é aceita e abre ocorrência (detalhes em occurrences.test.sql).
+select lives_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000001'),'opening','{1}',current_date+5,'sealed','e7000000-0000-4000-8000-000000000503',p_handled_at=>now()-interval '3 hours',p_late=>'Esqueci de registrar')$$,
+  'justificativa de atraso aceita a partir da 6.5a');
+select is((select count(*)::int from occurrences o join container_handlings h on h.id=o.handling_id where h.intent_id='e7000000-0000-4000-8000-000000000503' and o.kind='late_handling' and h.late),
+  1, 'manipulação tardia gravada como tardia e com uma ocorrência');
+select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000001'),'opening','{1}',current_date+5,'sealed','e7000000-0000-4000-8000-000000000504',p_late=>'Justificativa')$$,
   '22023',null,'justificativa de atraso dentro da janela também é recusada');
 select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000001'),'opening','{1}',current_date+5,'sealed','e7000000-0000-4000-8000-000000000503',p_handled_at=>'infinity')$$,
   '22023',null,'horário infinito recusado');
@@ -416,7 +419,7 @@ select throws_ok($$insert into container_handlings(organization_id,establishment
   '23503',null,'quem manipulou sem vínculo com a empresa recusado pela FK');
 select throws_ok($$insert into container_handlings(organization_id,establishment_id,batch_id,source_container_id,source_expiry_date,kind,portion_count,total_quantity,expiry_date,storage,handled_at,late,remainder,remainder_quantity,handled_by,handled_by_name,intent_id,timezone,created_by)
   values ('e2000000-0000-4000-8000-00000000000a','e3000000-0000-4000-8000-0000000000a1','e6000000-0000-4000-8000-000000000001',pg_temp.integral('e6000000-0000-4000-8000-000000000001'),current_date+10,'opening',1,1,current_date+5,'ambient',now(),true,'sealed',1,'e1000000-0000-4000-8000-000000000002','Bia',gen_random_uuid(),'America/Sao_Paulo','e1000000-0000-4000-8000-000000000001')$$,
-  '23514',null,'manipulação tardia não existe antes da 6.5a');
+  '23514',null,'manipulação marcada como tardia dentro da janela recusada pela restrição');
 select throws_ok($$insert into container_handlings(organization_id,establishment_id,batch_id,source_container_id,source_expiry_date,kind,portion_count,total_quantity,expiry_date,storage,handled_at,remainder,remainder_quantity,handled_by,handled_by_name,intent_id,timezone,created_by)
   values ('e2000000-0000-4000-8000-00000000000a','e3000000-0000-4000-8000-0000000000a1','e6000000-0000-4000-8000-000000000001',pg_temp.integral('e6000000-0000-4000-8000-000000000001'),current_date+10,'opening',1,1,current_date+5,'ambient',now()+interval '1 minute','sealed',1,'e1000000-0000-4000-8000-000000000002','Bia',gen_random_uuid(),'America/Sao_Paulo','e1000000-0000-4000-8000-000000000001')$$,
   '23514',null,'horário da manipulação depois do registro recusado pela restrição');
