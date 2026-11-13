@@ -40,3 +40,8 @@ it('recusa gerar PDF de recipiente cuja manipulação foi anulada (fatia 6.4)', 
     ),
   ).rejects.toThrow('Manipulação anulada');
 });
+it('recusa gerar PDF de derivado de manipulação tardia sem liberação (fatia 6.5a)', async () => {
+  await expect(
+    makeLabelPdf({ ...label, late_hold: true }, 'http://127.0.0.1:5173'),
+  ).rejects.toThrow('fora da janela de horário');
+});

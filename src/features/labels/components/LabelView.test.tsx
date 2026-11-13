@@ -238,3 +238,34 @@ it('recusa gerar etiqueta de recipiente cuja manipulação foi anulada (fatia 6.
   ).toBeNull();
   expect(makeLabelPdf).not.toHaveBeenCalled();
 });
+
+it('recusa gerar etiqueta de derivado de manipulação tardia sem liberação (fatia 6.5a)', async () => {
+  const data = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000003',
+    balance: 2,
+    late_hold: true,
+    batch_receipts: {
+      source_code: '0001',
+      quantity: 1,
+      unit: 'kg',
+      expiry_date: '2027-01-01',
+      expiry_origin: 'original' as const,
+      products: { name: 'Arroz' },
+    },
+  };
+  vi.mocked(makeLabelPdf).mockClear();
+  render(
+    <LabelView
+      id={data.id}
+      gateway={{ ensure: vi.fn(), get: vi.fn().mockResolvedValue(data) }}
+    />,
+  );
+  expect(
+    await screen.findByText(/fora da janela de horário, sem liberação/),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeNull();
+  expect(makeLabelPdf).not.toHaveBeenCalled();
+});

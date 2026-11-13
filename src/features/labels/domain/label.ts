@@ -8,6 +8,9 @@ export const labelDataSchema = z.object({
   balance: z.number(),
   // Fatia 6.4: recipiente derivado de manipulação anulada. A etiqueta dele é recusada (4.10, teste 9).
   voided: z.boolean().optional(),
+  // Fatia 6.5a: derivado de manipulação tardia sem liberação. A etiqueta não sai: não se imprime um
+  // horário de abertura que o proprietário ainda não aceitou (4.8, teste 6).
+  late_hold: z.boolean().optional(),
   batch_receipts: z.object({
     source_code: z.string(),
     quantity: z.number(),
@@ -17,6 +20,8 @@ export const labelDataSchema = z.object({
     products: z.object({ name: z.string() }),
   }),
 });
+export const LATE_HOLD_MESSAGE =
+  'Manipulação registrada fora da janela de horário, sem liberação do proprietário: a etiqueta não pode ser gerada.';
 export type LabelData = z.infer<typeof labelDataSchema>;
 export function containerPath(id: string) {
   return `/recipiente/${uuid.parse(id)}`;

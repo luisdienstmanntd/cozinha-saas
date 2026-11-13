@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LabelGateway } from '../application/labelGateway';
 import type { LabelData } from '../domain/label';
+import { LATE_HOLD_MESSAGE } from '../domain/label';
 import { makeLabelPdf } from '../application/pdf';
 
 export function LabelView({
@@ -48,7 +49,7 @@ export function LabelView({
       return;
     }
     if (!isCurrent()) return;
-    if (fresh.voided) {
+    if (fresh.voided || fresh.late_hold) {
       setData(fresh);
       setBusy(false);
       return;
@@ -118,6 +119,8 @@ export function LabelView({
               Manipulação anulada: este recipiente não vale mais e a etiqueta
               não pode ser gerada.
             </p>
+          ) : data.late_hold ? (
+            <p role="alert">{LATE_HOLD_MESSAGE}</p>
           ) : (
             <button disabled={busy} onClick={() => void download()}>
               Gerar etiqueta PDF
