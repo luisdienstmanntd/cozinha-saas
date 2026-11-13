@@ -240,3 +240,68 @@
 
 > A revisão cruzada que originou D-031 a D-033 foi feita pelo mesmo assistente em papéis sequenciais e sem executar testes (ressalva de luis, 12/11/2026). Cada fatia confirma os achados com teste antes de corrigir.
 
+> D-034 a D-041 foram propostas nos registros das fatias 6.0a a 6.5a, aceitas por luis uma a uma e integradas à `main` em 13/11/2026 (PRs #5 a #12). O texto abaixo é o do registro de cada fatia.
+
+## D-034 — Histórico append-only verificável (12/11/2026)
+
+- **Status:** aceita por luis em 12/11/2026; implementada na fatia 6.0a ([registro](FASE_06A.md), PR #5).
+- **Decisão:** histórico append-only por gatilho por comando `ENABLE ALWAYS` em recebimentos, recipientes e movimentos; `service_role` só lê; qualquer suspensão para backfill termina com `private.assert_history_protected()` na mesma transação.
+- **Motivo:** P5 (S6) e B-1: chave de serviço e scripts não podem apagar auditoria, e a proteção precisa ser verificável ao fim de cada migração.
+- **Consequência:** testes não limpam histórico; banco local de testes só volta a vazio por `db:reset`; correções continuam por novos eventos.
+- **Revisar quando:** surgir tabela nova de histórico (entra nas duas listas fixas), ou se for necessário um papel de manutenção com escrita.
+
+## D-035 — RLS por conjunto (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.0b ([registro](FASE_06B.md), PR #6).
+- **Decisão:** políticas RLS de `public` usam `organization_id in (select private.member_organizations([true]))`; `has_membership` fica só para funções de escrita que verificam uma organização.
+- **Motivo:** P3 (S4): a função por linha custava ~140–180 ms em 20 mil linhas; o conjunto custa ~5 ms, com a mesma regra de acesso.
+- **Consequência:** política nova segue o padrão (o teste `rls_set_based` recusa `has_membership` em política e escrita sem a variante de proprietário); `memberships_read` mantém a regra própria (I-10b).
+- **Revisar quando:** surgir papel novo com escrita (D-019 reavaliada), ou se usuários com centenas de organizações aparecerem.
+
+## D-036 — Fuso imutável e auditoria de cadastros (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.0c ([registro](FASE_06C.md), PR #7).
+- **Decisão:** o fuso da unidade é imutável a partir do primeiro recebimento, garantido no banco; nome e fuso de organização e unidade são auditados em `entity_changes` (append-only, leitura só do proprietário); `receive_batch` lê a unidade com `FOR SHARE`.
+- **Motivo:** P6 (S8) e I-11: mudar o fuso reclassificaria vencimentos já registrados, e a corrida entre mudança e recebimento deixaria recebimentos com fuso diferente do da unidade.
+- **Consequência:** correção de fuso errado exige procedimento administrativo; toda função futura que leia o fuso para gravar evento deve ler a unidade com `FOR SHARE` quando criar o primeiro registro da unidade (hoje só `receive_batch`; as demais já têm recebimento, logo fuso congelado).
+- **Revisar quando:** o piloto mostrar necessidade de corrigir fuso, ou na 6.3 (nome de exibição).
+
+## D-037 — Saldo por recipiente (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.1 ([registro](FASE_06_1.md), PR #8).
+- **Decisão:** todo recebimento tem exatamente um recipiente integral, criado pelo banco na mesma transação do recebimento (revisa D-014, que criava sob demanda ao gerar a etiqueta); todo movimento pertence a um recipiente do mesmo recebimento e a anulação fica no mesmo recipiente; saldo por recipiente; código curto `C-NNNNNN` por `sequence` global; `record_container_movement` é a escrita por recipiente e `record_movement` opera no integral; backfills futuros terminam com `assert_history_protected()` e a verificação de conservação.
+- **Motivo:** P9 e a base da manipulação (6.3); B-1, B-3, I-5, I-7 e I-14 da revisão cruzada.
+- **Consequência:** a lista de recebimentos mostra o ID do recipiente desde o recebimento, não só depois da etiqueta. Todo tipo de movimento novo precisa de regra de saldo em `container_balance` e `stock_conservation_problems`.
+- **Revisar quando:** a 6.3 criar derivados de verdade, ou se luis preferir esconder o ID até a primeira etiqueta.
+
+## D-038 — Saldo mantido na escrita (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.2 ([registro](FASE_06_2.md), PR #9).
+- **Decisão:** o painel e a rota do QR leem recipientes pelo servidor (`list_containers` e `container_expiry_summary`, `SECURITY INVOKER`), só com saldo por padrão e em ordem de validade efetiva. O saldo atual fica em `container_balances`, mantido por gatilho na transação do movimento (plano B da 4.4), com o histórico como fonte da verdade e `container_balance_problems()` como verificação.
+- **Motivo:** P9 e o critério de 50 ms, que a agregação a cada leitura não cumpriu (~250 ms contra 6 a 8 ms).
+- **Consequência:** todo tipo de movimento novo precisa de regra de saldo em três lugares (`container_balance`, `stock_conservation_problems` e `apply_movement_to_balance`); backfills terminam também com `container_balance_problems()` vazio.
+- **Revisar quando:** a 6.3 criar `transfer`, ou se luis preferir o saldo calculado a cada leitura aceitando o tempo maior.
+
+## D-039 — Manipulação registrada no banco (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.3 ([registro](FASE_06_3.md), PR #10).
+- **Decisão:** abrir e porcionar são uma manipulação única e auditada (`container_handlings` + derivados + `transfer` + descarte de sobra na mesma transação), escrita só por `handle_container`, com validade após abertura nunca posterior à da origem como restrição do banco, janela de 2 horas para `handled_at` (fora dela recusado até a 6.5a), sobra com tratamento obrigatório (`none`, `sealed` só em integral, `discard`, `portion`), `handled_by` com vínculo ativo e nome de exibição copiado, e os três pontos acima.
+- **Motivo:** seções 4.1–4.5 e 5.1 do desenho; B-2, I-2, I-3, I-4, I-10b e I-12 da revisão cruzada; Q2, Q5, Q6 e Q7.
+- **Consequência:** nenhum estoque é criado; a conservação continua fechando por recebimento. Movimentos de manipulação não são anulados individualmente. A 6.5a precisa trocar a restrição `late = false` pela ocorrência tardia e passar a aceitar `p_late_reason`.
+- **Revisar quando:** a 6.4 (anulação) e a 6.5a (ocorrências) chegarem, ou se a observação no piloto mostrar que a janela de 2 horas ou o limite de 20 porções não servem.
+
+## D-040 — Anulação de manipulação no banco (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.4 ([registro](FASE_06_4.md), PR #11).
+- **Decisão:** anular uma manipulação é um registro novo e único (`handling_voids`), escrito só por `void_handling` e só pelo proprietário, com motivo obrigatório. Na mesma transação e com o recebimento bloqueado: `transfer_reversal` na origem (devolve a transferência), `handling_void` em cada derivado (zera o saldo) e a anulação do descarte de sobra, se houve. Só é permitida se nenhum derivado teve qualquer movimento; a origem volta com a validade dela, mesmo vencida. Nenhum desses eventos é desfeito por "Anular registro".
+- **Motivo:** seção 4.10 e 5.4 do desenho; I-9 da revisão cruzada; histórico append-only (6.0a); D-038; ponto 3 aceito na 6.3.
+- **Consequência:** a fórmula de saldo continua sem exceção; a conservação ganha uma verificação por manipulação anulada. Tipo de movimento novo continua exigindo atualizar os três lugares da D-038. Não criar outra FK de `stock_movements` para `containers` (quebra a junção da API).
+- **Revisar quando:** a 6.6 (tela de anulação) e a 6.9 (transferência de local, que entra na condição) chegarem, ou se a observação no piloto mostrar que a regra estrita do ponto 1 atrapalha.
+
+## D-041 — Conservação, temperatura e ocorrências no banco (13/11/2026)
+
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.5a ([registro](FASE_06_5A.md), PR #12).
+- **Decisão:** conservação do produto definida uma vez pelo proprietário, auditada; recebimento com conservação e situação da medição obrigatórias (assinatura nova), temperatura registrada sem classificação. Refrigerado ou congelado sem medição e manipulação registrada mais de 2 horas depois de feita só entram com justificativa e abrem ocorrência na mesma transação. Recipiente com ocorrência aberta ou rejeitada não é consumido nem manipulado; descarte permitido. Só o proprietário decide, uma vez, com justificativa, sob o bloqueio do recebimento; nada é liberado sozinho.
+- **Motivo:** Q8/D-029, B-2/D-031, seções 4.8 e 5 do desenho, I-6 e S-2 da revisão cruzada; histórico append-only (6.0a); D-019.
+- **Consequência:** escrita nova precisa chamar o bloqueio (`container_blocks`) e cruzar identificadores com `occurrence_decisions`; tabela nova de histórico entra nas listas fixas; a assinatura antiga de `receive_batch` sai na 6.5b.
+- **Revisar quando:** a 6.5b (tela) e a 6.9 (locais) chegarem; quando a nutricionista RT conferir o procedimento (Q10); ou se o piloto mostrar bloqueios sem decisão (R12) ou janela inadequada (R13).

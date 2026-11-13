@@ -2,6 +2,11 @@
 
 Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotografia, não um bloqueio nem garantia de atualidade. Confira sempre o Git e o GitHub; cada tarefa mantém detalhes e checkpoints próprios em `ia-tarefas/`. Para evitar conflitos, edite apenas a linha da tarefa e o resumo necessários, preservando registros de outras sessões.
 
+## Situação verificada em 13/11/2026
+
+- Com autorização de luis (13/11/2026), os PRs #1 a #12 foram integrados na `main` com commits de merge, na ordem #2, #1, #3, #4, #5 a #12. Os conflitos foram só em `DECISOES.md` e `IA_ESTADO.md`, conciliados mantendo as duas entradas. D-034 a D-041 passaram dos registros das fatias para `DECISOES.md`.
+- Branches novas partem da `main`. A Fase 5 do Codex (anulação de movimentações) foi aceita por luis em 12/11/2026.
+
 ## Situação verificada em 10/11/2026
 
 - A anulação auditável de movimentações foi publicada na `main` em `f831e22`; a coordenação foi adicionada em `8cbc9b8`. O incremento de anulação foi entregue para aceite humano; não há aceite posterior registrado nesta conversa. Evidências e limitações: `FASE_05_PLANO.md`.
@@ -14,18 +19,19 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 | Tarefa | Responsável / estado | Referência | Próximo passo |
 |---|---|---|---|
 | Anulação auditável de movimentações | Codex; aguardando aceite | `ia-tarefas/fase-05-anulacao.md` | Confirmar aceite humano antes da próxima fase. |
-| Revisão de interface e unidades | Claude Code e Codex; PR em rascunho | `ia-tarefas/revisao-interface-unidades.md` | Preservar PR, verificar estado remoto e obter aceite antes de integrar. |
-| Desenho da Fase 6 | Claude Code; aprovado para planejamento, aguardando aceite da sequência (PR #3 em rascunho, só documentação) | `ia-tarefas/fase-06-desenho.md` | Correções do PR #4 incorporadas; aguardando aprovação de luis para iniciar a 6.0a (depois da Fase 5 e do PR #2). |
-| Revisão cruzada da Fase 6 | Claude Code (sessão independente do desenho); aguardando aceite (PR em rascunho contra `claude/fase-06-desenho`, só documentação) | `ia-tarefas/revisao-cruzada-fase-06.md` | luis decide sobre B-1 a B-3 e demais ajustes; depois atualizar o desenho no PR #3. |
+| Revisão de interface e unidades | Claude Code e Codex; integrada na `main` em 13/11/2026 (PR #1) | `ia-tarefas/revisao-interface-unidades.md` | Nenhum. |
+| Desenho da Fase 6 | Claude Code; aprovado para planejamento e integrado na `main` em 13/11/2026 (PR #3) | `ia-tarefas/fase-06-desenho.md` | Seguir a ordem da seção 10; cada fatia exige aceite próprio. |
+| Revisão cruzada da Fase 6 | Claude Code; B-1 a B-3 decididos por luis e incorporados ao desenho; integrada em 13/11/2026 (PR #4) | `ia-tarefas/revisao-cruzada-fase-06.md` | Nenhum. |
 | Coordenação entre assistentes | Codex; concluída | `ia-tarefas/coordenacao-assistentes.md` | Consultar o protocolo e iniciar um registro para cada nova tarefa. |
-| Revisão 05 — segurança, testes e produto | Claude Code; aguardando aceite (PR rascunho) | `ia-tarefas/revisao-05-seguranca-produto.md` | Conferir CI do job `banco-api-e2e` e decidir propostas do relatório `REVISAO_05_SEGURANCA_PRODUTO.md`. |
-| Fase 6, fatia 6.0a — proteção do histórico (P5) | Claude Code; aceita por luis em 13/11/2026 (PR rascunho sobre o PR #2, sem merge) | `ia-tarefas/fase-06a-protecao-historico.md` | Integrar depois do PR #2 quando luis autorizar; 6.0b aguarda aprovação própria. Detalhes em `FASE_06A.md`. |
-| Fase 6, fatia 6.0b — RLS por conjunto (P3) | Claude Code; aceita por luis em 13/11/2026 (PR rascunho sobre o PR #5, sem merge) | `ia-tarefas/fase-06b-rls-por-conjunto.md` | Integrar depois do PR #2 e do PR #5 quando luis autorizar; 6.0c aguarda aprovação própria. Detalhes em `FASE_06B.md`. |
-| Fase 6, fatia 6.0c — fuso imutável e auditoria (P6) | Claude Code; aceita por luis em 13/11/2026 (PR #7 rascunho sobre o PR #6, sem merge) | `ia-tarefas/fase-06c-fuso-auditoria.md` | Integrar depois dos PRs #2, #5 e #6 quando luis autorizar; 6.1 aguarda aprovação própria. Detalhes em `FASE_06C.md`. |
-| Fase 6, fatia 6.1 — saldo por recipiente | Claude Code; aceita por luis em 13/11/2026 (PR #8 rascunho sobre o PR #7, sem merge) | `ia-tarefas/fase-06-1-saldo-recipiente.md` | Integrar depois dos PRs #2, #5, #6 e #7 quando luis autorizar. 6.2 e 6.3 aguardam aprovação própria. Detalhes em `FASE_06_1.md`. |
-| Fase 6, fatia 6.2 — painel e QR com saldo | Claude Code; aceita por luis em 13/11/2026 com a D-038 (PR #9 rascunho sobre o PR #8, sem merge) | `ia-tarefas/fase-06-2-painel-saldo.md` | Integrar depois dos PRs #2, #5, #6, #7 e #8 quando luis autorizar. Detalhes em `FASE_06_2.md`. |
-| Fase 6, fatia 6.3 — manipulação no banco | Claude Code; aceita por luis em 13/11/2026 com a D-039 (PR #10 rascunho sobre o PR #9, sem merge) | `ia-tarefas/fase-06-3-manipulacao.md` | Integrar depois dos PRs #2, #5, #6, #7, #8 e #9 quando luis autorizar; 6.4 aguarda aprovação própria. Detalhes em `FASE_06_3.md`. |
-| Fase 6, fatia 6.4 — anulação de manipulação no banco | Claude Code; aceita por luis em 13/11/2026 com a D-040 (PR #11 rascunho sobre o PR #10, sem merge) | `ia-tarefas/fase-06-4-anulacao.md` | Integrar depois dos PRs #2, #5, #6, #7, #8, #9 e #10 só com luis; 6.5a aguarda aprovação própria. Detalhes em `FASE_06_4.md`. |
-| Fase 6, fatia 6.5a — conservação, temperatura e ocorrências no banco | Claude Code; aceita por luis em 13/11/2026 com a D-041 (PR #12 rascunho sobre o PR #11, sem merge) | `ia-tarefas/fase-06-5a-conservacao.md` | Integrar depois dos PRs #2, #5, #6, #7, #8, #9, #10 e #11 só com luis; 6.5b aguarda aprovação própria. Detalhes em `FASE_06_5A.md`. |
+| Revisão 05 — segurança, testes e produto | Claude Code; aceita e integrada na `main` em 13/11/2026 (PR #2) | `ia-tarefas/revisao-05-seguranca-produto.md` | Propostas P3, P5 e P6 executadas nas fatias 6.0a a 6.0c; demais seguem no desenho. |
+| Fase 6, fatia 6.0a — proteção do histórico (P5) | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #5, D-034) | `ia-tarefas/fase-06a-protecao-historico.md` | Nenhum. |
+| Fase 6, fatia 6.0b — RLS por conjunto (P3) | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #6, D-035) | `ia-tarefas/fase-06b-rls-por-conjunto.md` | Nenhum. |
+| Fase 6, fatia 6.0c — fuso imutável e auditoria (P6) | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #7, D-036) | `ia-tarefas/fase-06c-fuso-auditoria.md` | Nenhum. |
+| Fase 6, fatia 6.1 — saldo por recipiente | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #8, D-037) | `ia-tarefas/fase-06-1-saldo-recipiente.md` | Nenhum. |
+| Fase 6, fatia 6.2 — painel e QR com saldo | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #9, D-038) | `ia-tarefas/fase-06-2-painel-saldo.md` | Nenhum. |
+| Fase 6, fatia 6.3 — manipulação no banco | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #10, D-039) | `ia-tarefas/fase-06-3-manipulacao.md` | Nenhum. |
+| Fase 6, fatia 6.4 — anulação de manipulação no banco | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #11, D-040) | `ia-tarefas/fase-06-4-anulacao.md` | Nenhum. |
+| Fase 6, fatia 6.5a — conservação, temperatura e ocorrências no banco | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #12, D-041) | `ia-tarefas/fase-06-5a-conservacao.md` | Nenhum. |
+| Fase 6, fatia 6.5b — recebimento com conservação e temperatura, decisão de ocorrência e bloqueio na interface | Claude Code; em andamento (aprovada por luis em 13/11/2026) | `ia-tarefas/fase-06-5b-recebimento-ui.md` | Implementar, rodar a bateria inteira e abrir PR em rascunho para aceite. |
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
