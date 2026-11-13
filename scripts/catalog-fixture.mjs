@@ -66,12 +66,18 @@ export async function withCatalogFixture(run) {
   }
 }
 
-// Recebimentos, recipientes e movimentos são append-only para todos os papéis (Fase 6.0a, P5):
-// a limpeza não apaga histórico nem os usuários e cadastros que ele referencia. Cada execução usa
+// Recebimentos, recipientes e movimentos são append-only para todos os papéis (Fase 6.0a, P5), e
+// a auditoria de cadastros também (Fase 6.0c): a limpeza não apaga histórico nem os usuários e
+// cadastros que ele referencia. Cada execução usa
 // organizações, unidades e e-mails aleatórios, então dados deixados por um teste não aparecem em
 // outro. Para começar de um banco vazio localmente: npm run db:reset (a CI parte de banco novo).
 async function cleanupCatalogFixture(admin, orgIds, users) {
-  for (const table of ['batch_receipts', 'containers', 'stock_movements']) {
+  for (const table of [
+    'batch_receipts',
+    'containers',
+    'stock_movements',
+    'entity_changes',
+  ]) {
     const result = await admin
       .from(table)
       .select('id', { count: 'exact', head: true })
