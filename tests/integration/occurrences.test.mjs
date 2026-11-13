@@ -178,10 +178,11 @@ test('ocorrências: recebimento sem medição, bloqueio, decisão concorrente e 
       p_original_expiry_date: unitDate(10),
       p_intent_id: randomUUID(),
     });
+    // 6.5b: a assinatura sem conservação nem temperatura foi retirada; a API não a encontra.
     assert.equal(
       oldSignature.error?.code,
-      '22023',
-      'assinatura antiga recusa produto congelado',
+      'PGRST202',
+      'assinatura antiga de receive_batch não existe mais',
     );
 
     // Teste 19 (decisão): cinco reenvios concorrentes idênticos, uma decisão.

@@ -52,6 +52,10 @@ test('painel por recipiente: saldo do servidor, ordem por validade, paginação 
           p_expiry_date: expiry,
           p_expiry_origin: 'original',
           p_original_expiry_date: expiry,
+          p_storage_condition: 'ambient',
+          p_temperature_status: 'not_required',
+          p_received_temperature_c: null,
+          p_temperature_reason: null,
           p_intent_id: randomUUID(),
         }),
       );
