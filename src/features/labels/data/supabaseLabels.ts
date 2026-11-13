@@ -9,6 +9,7 @@ const scopeSchema = z.object({
   establishment_id: z.uuid(),
 });
 const balanceSchema = z.object({ container_id: z.uuid(), balance: z.number() });
+const blockSchema = z.object({ kind: z.string(), status: z.string() });
 
 export function createLabelGateway(client: SupabaseClient): LabelGateway {
   return {
@@ -66,9 +67,24 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
           throw new Error('Recipiente indisponível ou sem acesso.');
         voided = found.data !== null;
       }
+      // Fatia 6.5a: derivado de manipulação registrada fora da janela, sem liberação do proprietário.
+      // O bloqueio vem do banco (container_blocks), pela RLS, como o resto.
+      let lateHold = false;
+      if (handlingId && !voided) {
+        const blocks = await client.rpc('container_blocks', {
+          p_organization_id: scope.organization_id,
+          p_establishment_id: scope.establishment_id,
+          p_container_id: scope.id,
+        });
+        const rows = blockSchema.array().safeParse(blocks.data);
+        if (blocks.error || !rows.success)
+          throw new Error('Recipiente indisponível ou sem acesso.');
+        lateHold = rows.data.some((row) => row.kind === 'late_handling');
+      }
       return labelDataSchema.parse({
         id: scope.id,
         voided,
+        late_hold: lateHold,
         short_code: (data as { short_code: unknown }).short_code,
         balance: row.data[0].balance,
         batch_receipts: (data as { batch_receipts: unknown }).batch_receipts,

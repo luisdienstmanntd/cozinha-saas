@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
-import { containerPath } from '../domain/label';
+import { containerPath, LATE_HOLD_MESSAGE } from '../domain/label';
 import type { LabelData } from '../domain/label';
 
 export async function makeLabelPdf(
@@ -12,6 +12,7 @@ export async function makeLabelPdf(
     throw new Error(
       'Manipulação anulada: este recipiente não vale mais e a etiqueta não pode ser gerada.',
     );
+  if (data.late_hold) throw new Error(LATE_HOLD_MESSAGE);
   const url = new URL(origin);
   if (
     url.origin !== 'http://127.0.0.1:5173' &&
