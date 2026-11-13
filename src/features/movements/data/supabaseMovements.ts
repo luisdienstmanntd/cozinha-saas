@@ -5,7 +5,16 @@ import { MovementRejected } from '../application/movementGateway';
 const movementSchema = z.object({
   id: z.uuid(),
   // Fatia 6.3: 'transfer' é a saída da origem para os recipientes derivados de uma manipulação.
-  kind: z.enum(['consumption', 'discard', 'reversal', 'transfer']),
+  // Fatia 6.4: 'transfer_reversal' (devolução na origem) e 'handling_void' (saída do derivado) vêm
+  // da anulação de uma manipulação.
+  kind: z.enum([
+    'consumption',
+    'discard',
+    'reversal',
+    'transfer',
+    'transfer_reversal',
+    'handling_void',
+  ]),
   quantity: z.number(),
   reason: z.string().nullable(),
   created_by: z.uuid(),

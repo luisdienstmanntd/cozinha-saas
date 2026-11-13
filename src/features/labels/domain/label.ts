@@ -6,6 +6,8 @@ export const labelDataSchema = z.object({
   // Fatia 6.2: código curto e saldo calculado no servidor (list_containers), lidos a cada consulta.
   short_code: z.string().regex(/^C-\d{6,}$/),
   balance: z.number(),
+  // Fatia 6.4: recipiente derivado de manipulação anulada. A etiqueta dele é recusada (4.10, teste 9).
+  voided: z.boolean().optional(),
   batch_receipts: z.object({
     source_code: z.string(),
     quantity: z.number(),

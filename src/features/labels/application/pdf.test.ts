@@ -25,3 +25,18 @@ it('recusa gerar QR para host fora da demonstração local', async () => {
     'Endereço de demonstração indisponível',
   );
 });
+it('recusa gerar PDF de recipiente cuja manipulação foi anulada (fatia 6.4)', async () => {
+  await expect(
+    makeLabelPdf(
+      {
+        ...label,
+        voided: true,
+        batch_receipts: {
+          ...label.batch_receipts,
+          products: { name: 'Arroz' },
+        },
+      },
+      'http://127.0.0.1:5173',
+    ),
+  ).rejects.toThrow('Manipulação anulada');
+});

@@ -539,3 +539,80 @@ it('conta a transferência da manipulação como saída e não oferece anulá-la
     screen.getAllByRole('button', { name: 'Anular registro' }),
   ).toHaveLength(1);
 });
+
+it('conta a devolução da manipulação anulada como entrada e não oferece anular os eventos dela (fatia 6.4)', async () => {
+  sessionStorage.clear();
+  const handlingId = '32345678-1234-4234-8234-123456789abc';
+  const base = {
+    reason: null,
+    created_by: 'autor',
+    created_at: '2026-01-01T12:00:00Z',
+    timezone: 'UTC',
+    reverses_id: null,
+  };
+  const list = vi.fn().mockResolvedValue([
+    { ...base, id: 'consumo', kind: 'consumption', quantity: 1 },
+    { ...base, id: 'transferencia', kind: 'transfer', quantity: 4, handlingId },
+    {
+      ...base,
+      id: 'sobra',
+      kind: 'discard',
+      quantity: 0.5,
+      reason: 'Sobra',
+      handlingId,
+    },
+    {
+      ...base,
+      id: 'devolucao',
+      kind: 'transfer_reversal',
+      quantity: 4,
+      reason: 'Validade digitada errada',
+      reverses_id: 'transferencia',
+      handlingId,
+    },
+    {
+      ...base,
+      id: 'sobra-anulada',
+      kind: 'reversal',
+      quantity: 0.5,
+      reason: 'Validade digitada errada',
+      reverses_id: 'sobra',
+      handlingId,
+    },
+  ]);
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Queijo',
+        sourceCode: 'Q1',
+        quantity: 10,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list, record: vi.fn() }}
+    />,
+  );
+  expect(await screen.findByText('Saldo registrado: 9 kg')).toBeVisible();
+  expect(
+    screen.getByText(
+      /Devolução da transferência \(manipulação anulada\) — 4 kg/,
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      /Anulação do descarte de sobra \(manipulação anulada\) — 0.5 kg/,
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByText(
+      /Transferência para recipientes derivados — 4 kg.*anulado/,
+    ),
+  ).toBeVisible();
+  // Só o consumo comum continua anulável aqui.
+  expect(
+    screen.getAllByRole('button', { name: 'Anular registro' }),
+  ).toHaveLength(1);
+});

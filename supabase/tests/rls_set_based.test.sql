@@ -51,6 +51,7 @@ select is(
   'establishments.establishments_insert:INSERT:authenticated '
   'establishments.establishments_read:SELECT:authenticated '
   'establishments.establishments_update:UPDATE:authenticated '
+  'handling_voids.handling_voids_read:SELECT:authenticated '
   'memberships.memberships_read:SELECT:authenticated '
   'organizations.organizations_read:SELECT:authenticated '
   'organizations.organizations_update:UPDATE:authenticated '
@@ -59,7 +60,7 @@ select is(
   'stock_movements.stock_movements_read:SELECT:authenticated '
   'suppliers.suppliers_insert:INSERT:authenticated '
   'suppliers.suppliers_read:SELECT:authenticated',
-  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c), container_balances_read (6.2) e container_handlings_read (6.3)');
+  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c), container_balances_read (6.2), container_handlings_read (6.3) e handling_voids_read (6.4)');
 
 select is(
   (select coalesce(string_agg(tablename || '.' || policyname, ',' order by tablename, policyname), '')

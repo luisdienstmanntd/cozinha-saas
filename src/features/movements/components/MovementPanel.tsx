@@ -245,7 +245,8 @@ export function MovementPanel({
   const total = events?.reduce(
     (sum, item) =>
       sum +
-      (item.kind === 'reversal' ? -1 : 1) * Math.round(item.quantity * 1000),
+      (item.kind === 'reversal' || item.kind === 'transfer_reversal' ? -1 : 1) *
+        Math.round(item.quantity * 1000),
     0,
   );
   const remaining =
@@ -293,14 +294,20 @@ export function MovementPanel({
             {events.map((item) => (
               <li key={item.id}>
                 {item.kind === 'reversal'
-                  ? 'Anulação do registro'
-                  : item.kind === 'transfer'
-                    ? 'Transferência para recipientes derivados'
-                    : item.kind === 'discard'
-                      ? item.handlingId
-                        ? 'Descarte de sobra da manipulação'
-                        : 'Descarte'
-                      : 'Consumo'}{' '}
+                  ? item.handlingId
+                    ? 'Anulação do descarte de sobra (manipulação anulada)'
+                    : 'Anulação do registro'
+                  : item.kind === 'transfer_reversal'
+                    ? 'Devolução da transferência (manipulação anulada)'
+                    : item.kind === 'handling_void'
+                      ? 'Saída por anulação da manipulação'
+                      : item.kind === 'transfer'
+                        ? 'Transferência para recipientes derivados'
+                        : item.kind === 'discard'
+                          ? item.handlingId
+                            ? 'Descarte de sobra da manipulação'
+                            : 'Descarte'
+                          : 'Consumo'}{' '}
                 — {item.quantity} {batch.unit} — {item.reason ?? 'sem motivo'} —{' '}
                 {item.created_at} — fuso {item.timezone} — autor{' '}
                 {item.created_by} — ID {item.id}
@@ -316,6 +323,8 @@ export function MovementPanel({
                   !pending &&
                   item.kind !== 'reversal' &&
                   item.kind !== 'transfer' &&
+                  item.kind !== 'transfer_reversal' &&
+                  item.kind !== 'handling_void' &&
                   !item.handlingId &&
                   !events.some((event) => event.reverses_id === item.id) && (
                     <button

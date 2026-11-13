@@ -7,6 +7,11 @@ export async function makeLabelPdf(
   data: LabelData,
   origin: string,
 ): Promise<Blob> {
+  // Fatia 6.4: recipiente de manipulação anulada não ganha etiqueta, mesmo chamado direto.
+  if (data.voided)
+    throw new Error(
+      'Manipulação anulada: este recipiente não vale mais e a etiqueta não pode ser gerada.',
+    );
   const url = new URL(origin);
   if (
     url.origin !== 'http://127.0.0.1:5173' &&

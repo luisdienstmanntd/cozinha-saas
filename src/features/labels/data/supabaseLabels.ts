@@ -28,7 +28,7 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
       const { data, error } = await client
         .from('containers')
         .select(
-          'id,organization_id,establishment_id,short_code,batch_receipts!inner(source_code,quantity,unit,expiry_date,expiry_origin,products!inner(name))',
+          'id,organization_id,establishment_id,short_code,handling_id,batch_receipts!inner(source_code,quantity,unit,expiry_date,expiry_origin,products!inner(name))',
         )
         .eq('id', id)
         .maybeSingle();
@@ -49,8 +49,26 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
       const row = balanceSchema.array().max(1).safeParse(balance.data);
       if (balance.error || !row.success || !row.data[0])
         throw new Error('Recipiente indisponível ou sem acesso.');
+      // Derivado de manipulação anulada: a anulação é lida pela RLS, como o resto.
+      const handlingId = z
+        .uuid()
+        .nullable()
+        .catch(null)
+        .parse((data as { handling_id?: unknown }).handling_id ?? null);
+      let voided = false;
+      if (handlingId) {
+        const found = await client
+          .from('handling_voids')
+          .select('id')
+          .eq('handling_id', handlingId)
+          .maybeSingle();
+        if (found.error)
+          throw new Error('Recipiente indisponível ou sem acesso.');
+        voided = found.data !== null;
+      }
       return labelDataSchema.parse({
         id: scope.id,
+        voided,
         short_code: (data as { short_code: unknown }).short_code,
         balance: row.data[0].balance,
         batch_receipts: (data as { batch_receipts: unknown }).batch_receipts,
