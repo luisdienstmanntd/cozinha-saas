@@ -45,6 +45,7 @@ select is(
     from pg_policies where schemaname = 'public'),
   'batch_receipts.batch_receipts_read:SELECT:authenticated '
   'containers.containers_read:SELECT:authenticated '
+  'entity_changes.entity_changes_read:SELECT:authenticated '
   'establishments.establishments_insert:INSERT:authenticated '
   'establishments.establishments_read:SELECT:authenticated '
   'establishments.establishments_update:UPDATE:authenticated '
@@ -56,7 +57,7 @@ select is(
   'stock_movements.stock_movements_read:SELECT:authenticated '
   'suppliers.suppliers_insert:INSERT:authenticated '
   'suppliers.suppliers_read:SELECT:authenticated',
-  'conjunto de políticas de public inalterado (nenhuma removida, nenhum comando mudou)');
+  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c)');
 
 select is(
   (select coalesce(string_agg(tablename || '.' || policyname, ',' order by tablename, policyname), '')

@@ -48,7 +48,7 @@ select is(
 
 select is(
   (select coalesce(string_agg(t, ',' order by t), '') from unnest(array[
-      'public.memberships','public.batch_receipts','public.containers','public.stock_movements']) t
+      'public.memberships','public.batch_receipts','public.containers','public.stock_movements','public.entity_changes']) t
     where has_any_column_privilege('authenticated', t::regclass, 'INSERT,UPDATE')),
   '', 'histórico e vínculos só mudam por funções autorizadas (sem INSERT/UPDATE direto)');
 
@@ -84,7 +84,7 @@ select is(
 -- entra aqui e em private.assert_history_protected().
 select is(
   (select coalesce(string_agg(t, ',' order by t), '') from unnest(array[
-      'batch_receipts','containers','stock_movements']) t
+      'batch_receipts','containers','stock_movements','entity_changes']) t
     where not exists (select 1 from pg_trigger g
       where g.tgrelid = ('public.' || t)::regclass and g.tgname = t || '_append_only'
         and g.tgfoid = 'private.reject_history_change()'::regprocedure
@@ -93,7 +93,7 @@ select is(
 
 select is(
   (select coalesce(string_agg(t || ':' || p.priv, ',' order by t, p.priv), '') from unnest(array[
-      'public.batch_receipts','public.containers','public.stock_movements']) t
+      'public.batch_receipts','public.containers','public.stock_movements','public.entity_changes']) t
     cross join (values ('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER')) p(priv)
     where has_table_privilege('service_role', t::regclass, p.priv)),
   '', 'service_role só lê o histórico');

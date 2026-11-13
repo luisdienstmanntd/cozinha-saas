@@ -351,14 +351,23 @@ test('autenticação e isolamento real via API Supabase local', async (t) => {
     );
   } finally {
     // Physical cleanup is restricted to randomly generated disposable fixtures, never application behavior.
-    checked(
-      await admin.from('establishments').delete().in('organization_id', orgs),
-    );
-    checked(
-      await admin.from('memberships').delete().in('organization_id', orgs),
-    );
-    checked(await admin.from('organizations').delete().in('id', orgs));
-    for (const id of users) checked(await admin.auth.admin.deleteUser(id));
+    // A auditoria de nome/fuso é append-only (Fase 6.0c): quem tem auditoria fica no banco local, com
+    // IDs e e-mails aleatórios (mesmo critério da limpeza de histórico da 6.0a).
+    const audited = await admin
+      .from('entity_changes')
+      .select('id', { count: 'exact', head: true })
+      .in('organization_id', orgs);
+    checked(audited);
+    if (audited.count === 0) {
+      checked(
+        await admin.from('establishments').delete().in('organization_id', orgs),
+      );
+      checked(
+        await admin.from('memberships').delete().in('organization_id', orgs),
+      );
+      checked(await admin.from('organizations').delete().in('id', orgs));
+      for (const id of users) checked(await admin.auth.admin.deleteUser(id));
+    }
     for (const c of clients) await c.auth.signOut({ scope: 'local' });
   }
 });
