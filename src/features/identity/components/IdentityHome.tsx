@@ -4,10 +4,41 @@ import type { IdentityGateway } from '../application/identityGateway';
 import type { Access } from '../domain/identity';
 import { credentials, organizationName } from '../domain/identity';
 
+type Organization = Access[number];
+type OrganizationChanged = (
+  message: string,
+  kind?: 'notice' | 'error',
+) => Promise<void>;
+type RenderOrganizationTools = (
+  organization: Organization,
+  owner: boolean,
+  onChanged: OrganizationChanged,
+  busy: boolean,
+) => ReactNode;
+
+// The callback is passed as a prop so it is only ever invoked from the tools'
+// event handlers, never while IdentityHome renders.
+function OrganizationToolsSlot({
+  render,
+  organization,
+  owner,
+  onChanged,
+  busy,
+}: {
+  render: RenderOrganizationTools;
+  organization: Organization;
+  owner: boolean;
+  onChanged: OrganizationChanged;
+  busy: boolean;
+}) {
+  return render(organization, owner, onChanged, busy);
+}
+
 export function IdentityHome({
   gateway,
   renderCatalog,
   renderDestination,
+  renderOrganizationTools,
 }: {
   gateway: IdentityGateway;
   renderCatalog?: (
@@ -18,6 +49,7 @@ export function IdentityHome({
     timezone: string,
   ) => ReactNode;
   renderDestination?: (userId: string) => ReactNode;
+  renderOrganizationTools?: RenderOrganizationTools;
 }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [access, setAccess] = useState<Access>([]);
@@ -72,6 +104,26 @@ export function IdentityHome({
       throw new Error('Nenhum vínculo ativo. Solicite acesso ao responsável.');
     setAccess(rows);
   }
+  function changed(message: string, kind: 'notice' | 'error' = 'notice') {
+    return run(async () => {
+      const current = generation.current;
+      try {
+        await refresh(current);
+      } catch (cause) {
+        // Keep the outcome of the write visible even if reloading fails,
+        // so a confirmed creation is not mistaken for a failure and retried.
+        throw new Error(
+          `${message} Não foi possível atualizar a lista: ${
+            cause instanceof Error ? cause.message : 'tente novamente.'
+          }`,
+          { cause },
+        );
+      }
+      if (current !== generation.current) return;
+      if (kind === 'error') setError(message);
+      else setNotice(message);
+    });
+  }
   function signIn(event: FormEvent) {
     event.preventDefault();
     void run(async () => {
@@ -87,11 +139,11 @@ export function IdentityHome({
   }
 
   return (
-    <main className="page">
-      <h1>Acesso de teste — Cozinha SaaS</h1>
+    <main className="workspace">
+      <h1>Cozinha SaaS — unidades, recebimentos e validade</h1>
       <p>
-        Ambiente local descartável. Contas e vínculos são preparados pelo
-        responsável pelos testes.
+        Ambiente local de demonstração, com dados descartáveis. Contas e
+        vínculos são preparados pelo responsável pelos testes.
       </p>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
@@ -175,6 +227,15 @@ export function IdentityHome({
                     </li>
                   ))}
                 </ul>
+                {renderOrganizationTools && (
+                  <OrganizationToolsSlot
+                    render={renderOrganizationTools}
+                    organization={organization}
+                    owner={owner}
+                    onChanged={changed}
+                    busy={busy}
+                  />
+                )}
                 {renderCatalog &&
                   organization.establishments
                     .filter((unit) => unit.id === catalogUnit)
@@ -203,12 +264,14 @@ export function IdentityHome({
                       const value = new FormData(event.currentTarget).get(
                         'name',
                       );
+                      const parsed = organizationName.safeParse(value);
+                      if (!parsed.success) {
+                        // Local validation never reached the server: keep access visible.
+                        setNotice('');
+                        setError('Informe nome entre 1 e 120 caracteres.');
+                        return;
+                      }
                       void run(async () => {
-                        const parsed = organizationName.safeParse(value);
-                        if (!parsed.success)
-                          throw new Error(
-                            'Informe nome entre 1 e 120 caracteres.',
-                          );
                         const current = generation.current;
                         await gateway.rename(organization.id, parsed.data);
                         await refresh(current);
