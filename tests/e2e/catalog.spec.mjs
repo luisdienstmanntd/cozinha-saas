@@ -31,8 +31,14 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       .click();
     await page.getByLabel('Nome do produto').fill('Arroz de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
+    // Fatia 6.5b: conservação definida no cadastro, exigida no recebimento.
+    await page
+      .getByRole('combobox', { name: 'Conservação', exact: true })
+      .selectOption('ambient');
     await page.getByRole('button', { name: 'Cadastrar produto' }).click();
-    await expect(page.getByText('Arroz de teste — kg')).toBeVisible();
+    await expect(
+      page.getByText('Arroz de teste — kg — Ambiente'),
+    ).toBeVisible();
     await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(

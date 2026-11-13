@@ -1,7 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import type { MovementGateway } from '../application/movementGateway';
-import { MovementRejected } from '../application/movementGateway';
+import {
+  MovementBlocked,
+  MovementRejected,
+} from '../application/movementGateway';
 const movementSchema = z.object({
   id: z.uuid(),
   // Fatia 6.3: 'transfer' é a saída da origem para os recipientes derivados de uma manipulação.
@@ -85,6 +88,12 @@ export function createMovementGateway(client: SupabaseClient): MovementGateway {
         p_reason: input.reason,
         p_intent_id: input.intentId,
       });
+      if (
+        error?.code === '22023' &&
+        typeof error.message === 'string' &&
+        error.message.startsWith('Recipiente bloqueado:')
+      )
+        throw new MovementBlocked(error.message);
       if (error?.code === '22023')
         throw new MovementRejected('Saída recusada.');
       if (error) throw new Error('Não foi possível confirmar a saída.');

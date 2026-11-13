@@ -11,6 +11,14 @@ import { LabelView } from '../../labels/components/LabelView';
 import { getExpiryStatus, localCivilDate } from '../domain/expiryStatus';
 import type { MovementGateway } from '../../movements/application/movementGateway';
 import { MovementPanel } from '../../movements/components/MovementPanel';
+import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
+import type { OccurrenceRow } from '../../occurrences/domain/occurrence';
+import {
+  BLOCK_TEXT,
+  blockedContainers,
+} from '../../occurrences/domain/occurrence';
+import { OccurrencePanel } from '../../occurrences/components/OccurrencePanel';
+import { storageLabels } from '../../catalog/domain/catalog';
 
 type Props = {
   scope: CatalogScope;
@@ -23,6 +31,7 @@ type Props = {
   userId: string;
   labels?: LabelGateway;
   movements?: MovementGateway;
+  occurrences?: OccurrenceGateway;
 };
 type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 // key: consulta a que a página pertence; página de outra consulta conta como carregando.
@@ -47,6 +56,7 @@ function BatchContents({
   userId,
   labels,
   movements,
+  occurrences,
 }: Props) {
   const [catalogData, setCatalogData] = useState<Catalog | null>(null);
   const [listing, setListing] = useState<Listing | null>(null);
@@ -68,6 +78,13 @@ function BatchContents({
   const [moreError, setMoreError] = useState('');
   const [loadingMore, setLoadingMore] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const [occurrenceRows, setOccurrenceRows] = useState<OccurrenceRow[] | null>(
+    null,
+  );
+  const [decidedRows, setDecidedRows] = useState<OccurrenceRow[] | null>(null);
+  const [showDecided, setShowDecided] = useState(false);
+  const [productId, setProductId] = useState('');
+  const [temperatureStatus, setTemperatureStatus] = useState('');
   const intent = useRef<string | null>(null);
   const listVersion = useRef(0);
   let referenceDate: string | null = null;
@@ -96,6 +113,8 @@ function BatchContents({
     setCatalogData(null);
     setListing(null);
     setSummary(null);
+    setOccurrenceRows(null);
+    setDecidedRows(null);
     setLabelId(null);
     setMovementId(null);
     setLoadFailed(true);
@@ -165,6 +184,37 @@ function BatchContents({
       current = false;
     };
   }, [attempt, containers, establishmentId, organizationId, referenceDate]);
+  // Fatia 6.5b: ocorrências abertas (bloqueios) da unidade, lidas do servidor a cada atualização.
+  useEffect(() => {
+    if (!occurrences) return;
+    let current = true;
+    void occurrences.list({ organizationId, establishmentId }, 'open').then(
+      (rows) => {
+        if (current) setOccurrenceRows(rows);
+      },
+      () => {
+        if (current) fail();
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [attempt, occurrences, establishmentId, organizationId]);
+  useEffect(() => {
+    if (!occurrences || !showDecided) return;
+    let current = true;
+    void occurrences.list({ organizationId, establishmentId }, 'all').then(
+      (rows) => {
+        if (current) setDecidedRows(rows);
+      },
+      () => {
+        if (current) fail();
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [attempt, occurrences, establishmentId, organizationId, showDecided]);
 
   function reload() {
     setLoadFailed(false);
@@ -172,6 +222,8 @@ function BatchContents({
     setCatalogData(null);
     setListing(null);
     setSummary(null);
+    setOccurrenceRows(null);
+    setDecidedRows(null);
     setLabelId(null);
     setMovementId(null);
     setError('');
@@ -238,7 +290,13 @@ function BatchContents({
   const ready =
     !loadFailed &&
     catalogData !== null &&
+    (!occurrences || occurrenceRows !== null) &&
     (referenceDate === null || summary !== null);
+  const blocked = blockedContainers(occurrenceRows ?? []);
+  const selectedProduct = catalogData?.products.find(
+    (item) => item.id === productId,
+  );
+  const storage = selectedProduct?.storage_condition ?? null;
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -253,7 +311,28 @@ function BatchContents({
       setError('Não foi possível preparar o reenvio seguro nesta sessão.');
       return;
     }
+    if (!storage) {
+      setNotice('');
+      setError(
+        'Defina a conservação deste produto no catálogo antes de receber.',
+      );
+      return;
+    }
+    const temperature = String(values.get('temperature') ?? '').trim();
+    const status =
+      storage === 'ambient'
+        ? temperature
+          ? 'measured'
+          : 'not_required'
+        : temperatureStatus;
     const input = batchInputSchema.safeParse({
+      storageCondition: storage,
+      temperatureStatus: status,
+      receivedTemperatureC: status === 'measured' ? temperature : null,
+      temperatureReason:
+        status === 'not_measured'
+          ? String(values.get('temperatureReason') ?? '').trim() || null
+          : null,
       productId: values.get('productId'),
       supplierId: values.get('supplierId'),
       sourceCode: values.get('sourceCode'),
@@ -271,7 +350,18 @@ function BatchContents({
     setConflictReviewed(false);
     setReviewError('');
     if (!input.success) {
-      setError('Confira produto, fornecedor, quantidade e datas informadas.');
+      setError(
+        input.error.issues.some((issue) => issue.message === 'temperature') ||
+          input.error.issues.some((issue) =>
+            [
+              'receivedTemperatureC',
+              'temperatureReason',
+              'temperatureStatus',
+            ].includes(String(issue.path[0])),
+          )
+          ? 'Confira a temperatura: informe a medida em °C (de -50 a 80, uma casa decimal) ou, se não foi possível medir, a justificativa.'
+          : 'Confira produto, fornecedor, quantidade e datas informadas.',
+      );
       return;
     }
     try {
@@ -293,11 +383,17 @@ function BatchContents({
       intent.current = null;
       form.reset();
       setOrigin('original');
+      setProductId('');
+      setTemperatureStatus('');
       reload();
+      const held =
+        input.data.temperatureStatus === 'not_measured'
+          ? ' O recebimento ficou bloqueado para uso até a decisão do proprietário.'
+          : '';
       setNotice(
         cleaned
-          ? 'Recebimento registrado.'
-          : 'Recebimento registrado. Não foi possível preparar uma nova tentativa nesta sessão.',
+          ? `Recebimento registrado.${held}`
+          : `Recebimento registrado.${held} Não foi possível preparar uma nova tentativa nesta sessão.`,
       );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Falha no registro.');
@@ -384,6 +480,34 @@ function BatchContents({
       )}
       {ready && catalogData && referenceDate && summary && (
         <>
+          {occurrences && occurrenceRows && (
+            <>
+              <OccurrencePanel
+                rows={occurrenceRows}
+                decided={showDecided ? decidedRows : null}
+                scope={{ organizationId, establishmentId }}
+                gateway={occurrences}
+                canDecide={canCreate}
+                now={now}
+                onDecided={(message) => {
+                  reload();
+                  setNotice(message);
+                }}
+              />
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showDecided}
+                  onChange={(event) => {
+                    setDecidedRows(null);
+                    setShowDecided(event.target.checked);
+                  }}
+                />{' '}
+                Mostrar todas as ocorrências, inclusive decididas
+              </label>
+              {showDecided && !decidedRows && <p>Carregando ocorrências…</p>}
+            </>
+          )}
           <section aria-label="Painel de validade">
             <h4>Validade</h4>
             <p>
@@ -468,6 +592,12 @@ function BatchContents({
                           : 'definida pelo responsável'}
                       ) — {depleted ? 'Esgotado' : statusLabels[status]} —
                       recipiente {row.container_id}
+                      {blocked.has(row.container_id) && (
+                        <strong>
+                          {' '}
+                          — {BLOCK_TEXT[blocked.get(row.container_id)!]}
+                        </strong>
+                      )}
                       {movements && row.kind === 'integral' && (
                         <button
                           type="button"
@@ -492,7 +622,18 @@ function BatchContents({
                             }}
                             canCreate={canCreate}
                             gateway={movements}
-                            onRecorded={() => refreshRow(row.container_id)}
+                            blocked={blocked.get(row.container_id)}
+                            onRecorded={() => {
+                              refreshRow(row.container_id);
+                              // O descarte pode tirar uma rejeitada da lista de bloqueios.
+                              if (blocked.has(row.container_id) && occurrences)
+                                void occurrences
+                                  .list(
+                                    { organizationId, establishmentId },
+                                    'open',
+                                  )
+                                  .then(setOccurrenceRows, () => fail());
+                            }}
                           />
                         )}
                       {canCreate && labels && row.kind === 'integral' && (
@@ -541,7 +682,15 @@ function BatchContents({
                 <p>
                   <label>
                     Produto{' '}
-                    <select name="productId" required defaultValue="">
+                    <select
+                      name="productId"
+                      required
+                      value={productId}
+                      onChange={(event) => {
+                        setProductId(event.target.value);
+                        setTemperatureStatus('');
+                      }}
+                    >
                       <option value="" disabled>
                         Selecione
                       </option>
@@ -553,6 +702,87 @@ function BatchContents({
                     </select>
                   </label>
                 </p>
+                {selectedProduct && !storage && (
+                  <p role="alert">
+                    Defina a conservação deste produto no catálogo antes de
+                    receber.
+                  </p>
+                )}
+                {storage && (
+                  <p>
+                    Conservação: {storageLabels[storage]} (definida no produto)
+                  </p>
+                )}
+                {storage === 'ambient' && (
+                  <p>
+                    <label>
+                      Temperatura medida no recebimento, em °C (opcional){' '}
+                      <input
+                        name="temperature"
+                        inputMode="decimal"
+                        maxLength={5}
+                      />
+                    </label>
+                  </p>
+                )}
+                {(storage === 'refrigerated' || storage === 'frozen') && (
+                  <fieldset>
+                    <legend>Temperatura no recebimento</legend>
+                    <label>
+                      <input
+                        type="radio"
+                        name="temperatureStatus"
+                        value="measured"
+                        checked={temperatureStatus === 'measured'}
+                        onChange={() => setTemperatureStatus('measured')}
+                      />{' '}
+                      Temperatura medida
+                    </label>{' '}
+                    <label>
+                      <input
+                        type="radio"
+                        name="temperatureStatus"
+                        value="not_measured"
+                        checked={temperatureStatus === 'not_measured'}
+                        onChange={() => setTemperatureStatus('not_measured')}
+                      />{' '}
+                      Não foi possível medir
+                    </label>
+                    {temperatureStatus === 'measured' && (
+                      <p>
+                        <label>
+                          Temperatura medida, em °C{' '}
+                          <input
+                            name="temperature"
+                            required
+                            inputMode="decimal"
+                            maxLength={5}
+                          />
+                        </label>{' '}
+                        Use ponto para decimais, por exemplo -18.5. O sistema
+                        registra o valor e não o avalia.
+                      </p>
+                    )}
+                    {temperatureStatus === 'not_measured' && (
+                      <>
+                        <p>
+                          <label>
+                            Justificativa (por que não foi possível medir){' '}
+                            <textarea
+                              name="temperatureReason"
+                              required
+                              maxLength={300}
+                            />
+                          </label>
+                        </p>
+                        <p role="note">
+                          O recebimento ficará bloqueado para uso até a decisão
+                          do responsável.
+                        </p>
+                      </>
+                    )}
+                  </fieldset>
+                )}
                 <p>
                   <label>
                     Fornecedor{' '}
@@ -612,7 +842,9 @@ function BatchContents({
                   A validade deve ser informada ou confirmada pelo profissional
                   responsável.
                 </p>
-                <button disabled={busy}>Registrar recebimento</button>
+                <button disabled={busy || (!!selectedProduct && !storage)}>
+                  Registrar recebimento
+                </button>
               </fieldset>
             </form>
           )}

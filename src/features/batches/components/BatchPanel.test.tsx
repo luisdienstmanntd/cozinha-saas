@@ -13,6 +13,7 @@ it('mantém os dados quando o recebimento falha', async () => {
     id: '10000000-0000-4000-8000-000000000001',
     name: 'Arroz',
     unit: 'kg' as const,
+    storage_condition: 'ambient' as const,
   };
   const supplier = {
     id: '10000000-0000-4000-8000-000000000002',
@@ -23,6 +24,7 @@ it('mantém os dados quando o recebimento falha', async () => {
       kind === 'products' ? [product] : [supplier],
     ),
     create: vi.fn(),
+    setStorageCondition: vi.fn(),
   };
   const batches = {
     list: vi.fn().mockResolvedValue([]),
@@ -62,6 +64,7 @@ it('exige recarregar a lista antes de liberar uma nova tentativa em conflito', a
     id: '10000000-0000-4000-8000-000000000001',
     name: 'Arroz',
     unit: 'kg' as const,
+    storage_condition: 'ambient' as const,
   };
   const supplier = {
     id: '10000000-0000-4000-8000-000000000002',
@@ -72,6 +75,7 @@ it('exige recarregar a lista antes de liberar uma nova tentativa em conflito', a
       kind === 'products' ? [product] : [supplier],
     ),
     create: vi.fn(),
+    setStorageCondition: vi.fn(),
   };
   const batches = {
     list: vi.fn().mockResolvedValue([]),
@@ -121,6 +125,7 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
     id: '10000000-0000-4000-8000-000000000001',
     name: 'Arroz',
     unit: 'kg' as const,
+    storage_condition: 'ambient' as const,
   };
   const supplier = {
     id: '10000000-0000-4000-8000-000000000002',
@@ -131,6 +136,7 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
       kind === 'products' ? [product] : [supplier],
     ),
     create: vi.fn(),
+    setStorageCondition: vi.fn(),
   };
   const receive = vi
     .fn<BatchGateway['receive']>()

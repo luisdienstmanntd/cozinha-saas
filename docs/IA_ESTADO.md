@@ -32,6 +32,6 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 | Fase 6, fatia 6.3 — manipulação no banco | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #10, D-039) | `ia-tarefas/fase-06-3-manipulacao.md` | Nenhum. |
 | Fase 6, fatia 6.4 — anulação de manipulação no banco | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #11, D-040) | `ia-tarefas/fase-06-4-anulacao.md` | Nenhum. |
 | Fase 6, fatia 6.5a — conservação, temperatura e ocorrências no banco | Claude Code; aceita por luis e integrada na `main` em 13/11/2026 (PR #12, D-041) | `ia-tarefas/fase-06-5a-conservacao.md` | Nenhum. |
-| Fase 6, fatia 6.5b — recebimento com conservação e temperatura, decisão de ocorrência e bloqueio na interface | Claude Code; em andamento (aprovada por luis em 13/11/2026) | `ia-tarefas/fase-06-5b-recebimento-ui.md` | Implementar, rodar a bateria inteira e abrir PR em rascunho para aceite. |
+| Fase 6, fatia 6.5b — recebimento com conservação e temperatura, decisão de ocorrência e bloqueio na interface | Claude Code; aguardando aceite (PR em rascunho sobre a `main`, sem merge) | `ia-tarefas/fase-06-5b-recebimento-ui.md` | Aceite de luis (pontos 1 a 4 e D-042); 6.6 exige aprovação própria. |
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.

@@ -1,5 +1,6 @@
 import { parseEnvironment } from '../shared/config/environment';
 import { createIdentityGateway } from '../features/identity/data/supabaseIdentity';
+import { createOccurrenceGateway } from '../features/occurrences/data/supabaseOccurrences';
 import { createCatalogGateway } from '../features/catalog/data/supabaseCatalog';
 import { createClient } from '@supabase/supabase-js';
 import { createBatchGateway } from '../features/batches/data/supabaseBatches';
@@ -27,6 +28,7 @@ export function configureApp(environment: Record<string, unknown>) {
       containers: createContainerGateway(client),
       labels: createLabelGateway(client),
       movements: createMovementGateway(client),
+      occurrences: createOccurrenceGateway(client),
       establishments: createEstablishmentGateway(client),
     };
   } catch {

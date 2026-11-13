@@ -46,6 +46,7 @@ function Workspace({
         userId={userId}
         labels={configuration.labels}
         movements={configuration.movements}
+        occurrences={configuration.occurrences}
       />
     </>
   );

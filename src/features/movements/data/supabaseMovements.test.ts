@@ -1,7 +1,10 @@
 import { expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createMovementGateway } from './supabaseMovements';
-import { MovementRejected } from '../application/movementGateway';
+import {
+  MovementBlocked,
+  MovementRejected,
+} from '../application/movementGateway';
 
 it('trata conflito de anulação como recusa que exige conferência', async () => {
   const client = {
@@ -145,4 +148,36 @@ it('aceita a devolução da anulação de manipulação na leitura (fatia 6.4)',
     reverses_id: '42345678-1234-4234-8234-123456789abc',
     handlingId: '32345678-1234-4234-8234-123456789abc',
   });
+});
+
+it('recusa por bloqueio leva a mensagem do banco; outra recusa continua genérica (fatia 6.5b)', async () => {
+  const blockedMessage =
+    'Recipiente bloqueado: ocorrência rejeitada pelo proprietário. Só o descarte é permitido.';
+  const input = {
+    batchId: '12345678-1234-4234-8234-123456789abc',
+    kind: 'consumption' as const,
+    quantity: '1',
+    reason: null,
+    intentId: '22345678-1234-4234-8234-123456789abc',
+  };
+  const scope = { organizationId: 'org', establishmentId: 'unit' };
+  const blocked = createMovementGateway({
+    rpc: vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '22023', message: blockedMessage },
+    }),
+  } as unknown as SupabaseClient);
+  const error = await blocked.record(scope, input).catch((cause) => cause);
+  expect(error).toBeInstanceOf(MovementBlocked);
+  expect(error).toBeInstanceOf(MovementRejected);
+  expect(error.message).toBe(blockedMessage);
+  const other = createMovementGateway({
+    rpc: vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '22023', message: 'Saldo insuficiente no recipiente.' },
+    }),
+  } as unknown as SupabaseClient);
+  const generic = await other.record(scope, input).catch((cause) => cause);
+  expect(generic).not.toBeInstanceOf(MovementBlocked);
+  expect(generic.message).toBe('Saída recusada.');
 });

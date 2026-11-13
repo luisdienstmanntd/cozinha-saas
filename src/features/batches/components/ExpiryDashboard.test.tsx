@@ -34,7 +34,11 @@ it('oculta etiqueta aberta quando atualizar recebimentos perde autorização', a
       timezone="UTC"
       userId="user"
       canCreate
-      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      catalog={{
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        setStorageCondition: vi.fn(),
+      }}
       batches={batches()}
       containers={containers}
       labels={{
@@ -74,7 +78,11 @@ it('não apresenta painel parcial quando a lista ou as contagens falham', async 
         timezone="UTC"
         userId="user"
         canCreate={false}
-        catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+        catalog={{
+          list: vi.fn().mockResolvedValue([]),
+          create: vi.fn(),
+          setStorageCondition: vi.fn(),
+        }}
         batches={batches()}
         containers={containers}
       />,
@@ -104,7 +112,11 @@ it('carrega a página seguinte a pedido, sem teto no navegador', async () => {
       timezone="UTC"
       userId="user"
       canCreate={false}
-      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      catalog={{
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        setStorageCondition: vi.fn(),
+      }}
       batches={batches()}
       containers={containers}
     />,
@@ -139,7 +151,11 @@ it('informa erro se não conseguir interpretar o fuso da unidade', async () => {
       timezone="Inválido/Fuso"
       userId="user"
       canCreate={false}
-      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      catalog={{
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        setStorageCondition: vi.fn(),
+      }}
       batches={batches()}
       containers={fakeContainers([])}
     />,
@@ -166,7 +182,11 @@ it('atualiza a classificação na virada do dia da cozinha sem interação', asy
           timezone="America/Sao_Paulo"
           userId="user"
           canCreate={false}
-          catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+          catalog={{
+            list: vi.fn().mockResolvedValue([]),
+            create: vi.fn(),
+            setStorageCondition: vi.fn(),
+          }}
           batches={batches()}
           containers={containers}
         />,
@@ -200,7 +220,11 @@ it('busca no servidor pelo nome do produto associado mesmo fora da lista de cat�
       timezone="UTC"
       userId="user"
       canCreate={false}
-      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      catalog={{
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        setStorageCondition: vi.fn(),
+      }}
       batches={batches()}
       containers={containers}
     />,
@@ -266,7 +290,11 @@ it('mostra o resumo de validade e busca produto, lote e recipiente', async () =>
       timezone="America/Sao_Paulo"
       canCreate={false}
       userId="user"
-      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      catalog={{
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        setStorageCondition: vi.fn(),
+      }}
       batches={batches()}
       containers={fakeContainers(rows)}
     />,
@@ -343,7 +371,11 @@ it('ordena por validade, mostra saldo em vez da quantidade recebida e esconde es
       timezone="America/Sao_Paulo"
       canCreate={false}
       userId="user"
-      catalog={{ list: vi.fn().mockResolvedValue([]), create: vi.fn() }}
+      catalog={{
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        setStorageCondition: vi.fn(),
+      }}
       batches={batches()}
       containers={fakeContainers(rows)}
     />,
