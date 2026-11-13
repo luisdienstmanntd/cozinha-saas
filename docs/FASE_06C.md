@@ -61,4 +61,4 @@ O `DECISOES.md` desta base termina na D-018; D-019 a D-033 estão no PR #3, D-03
 
 ## Próximo passo
 
-Aguardando aceite de luis. Aceite não autoriza merge: integrar depois dos PRs #2, #5 e #6. A 6.1 (saldo por recipiente) só começa com aprovação própria.
+**Aceita por luis em 13/11/2026 02:36 UTC.** O aceite não autoriza merge: integrar depois dos PRs #2, #5 e #6. A 6.1 (saldo por recipiente) só começa com aprovação própria.
