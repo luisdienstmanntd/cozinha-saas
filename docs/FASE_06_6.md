@@ -62,4 +62,4 @@ Implementada por Claude Code em 13/11/2026, conforme as seções 7.1, 7.4, 8 (te
 
 ## Próximo passo
 
-Aguardar o aceite de luis (pontos acima). O aceite não autoriza merge: integrar só com pedido de luis, depois do PR #13. A 6.7 (etiquetas de recebimento e produto aberto) exige aprovação própria.
+**Aceita por luis em 13/11/2026 23:42 UTC**, respondendo "1 ok, 2 ok, 3 sim, 4 ok" aos quatro pontos: PDF do derivado bloqueado até a 6.7; nome de exibição definido na própria tela; horário padrão igual ao instante do registro; textos de validade e congelamento mantidos. Interpretado como aceite da fatia e da D-043 (agora aceita em `DECISOES.md`). O aceite não autoriza merge: integrar só com pedido de luis, depois do PR #13. A 6.7 (etiquetas de recebimento e produto aberto) exige aprovação própria.

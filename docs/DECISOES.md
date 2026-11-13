@@ -316,7 +316,7 @@
 
 ## D-043 — Telas de abrir, porcionar e anular (13/11/2026)
 
-- **Status:** proposta; implementada na fatia 6.6 ([registro](FASE_06_6.md)), aguardando aceite de luis.
+- **Status:** aceita por luis em 13/11/2026; implementada na fatia 6.6 ([registro](FASE_06_6.md), PR #14).
 - **Decisão:** a manipulação entra pela tela em passos (formulário, revisão, confirmação, resultado), só pelo proprietário, sem prazo sugerido ou calculado e sem regra nova fora do banco; a anulação é uma ação explícita da tela do recipiente e do resultado, com motivo; o QR do recipiente mostra origem, derivados, quem manipulou e anulação, e o derivado não gera PDF até a etiqueta própria (6.7).
 - **Motivo:** desenho 7.1 e 7.4; D-019, D-030, D-039, D-040, D-041; Q1–Q10.
 - **Consequência:** nenhum texto novo afirma conformidade (teste 16); mensagem nova do banco precisa entrar em `handling/domain/messages.ts` para aparecer na tela; a 6.7 passa a definir a etiqueta do derivado.
