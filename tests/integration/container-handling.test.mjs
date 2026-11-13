@@ -261,7 +261,10 @@ test('manipulação: concorrência, reenvio, revogação e isolamento pela API',
     );
     assert.equal(seen.handled_by_name, 'Bia');
     assert.equal(seen.created_by, users[0].id);
-    assert.deepEqual(checked(await b.from('container_handlings').select('id')), []);
+    assert.deepEqual(
+      checked(await b.from('container_handlings').select('id')),
+      [],
+    );
     assert.equal(
       (await b.rpc('handle_container', handling())).error?.code,
       '42501',
@@ -297,8 +300,8 @@ test('manipulação: concorrência, reenvio, revogação e isolamento pela API',
         .eq('user_id', users[0].id),
     );
     assert.equal(
-      (await a.rpc('handle_container', handling({ p_quantities: [0.5] })))
-        .error?.code,
+      (await a.rpc('handle_container', handling({ p_quantities: [0.5] }))).error
+        ?.code,
       '42501',
     );
     assert.equal(
@@ -311,7 +314,10 @@ test('manipulação: concorrência, reenvio, revogação e isolamento pela API',
       ).error?.code,
       '42501',
     );
-    assert.deepEqual(checked(await a.from('container_handlings').select('id')), []);
+    assert.deepEqual(
+      checked(await a.from('container_handlings').select('id')),
+      [],
+    );
     assert.equal(
       checked(
         await member

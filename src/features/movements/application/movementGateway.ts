@@ -10,13 +10,17 @@ export type MovementInput = {
 };
 export type Movement = {
   id: string;
-  kind: 'consumption' | 'discard' | 'reversal';
+  // 'transfer' (fatia 6.3): saída para recipientes derivados; só é desfeita pela anulação da
+  // manipulação (6.4), nunca por "Anular registro".
+  kind: 'consumption' | 'discard' | 'reversal' | 'transfer';
   quantity: number;
   reason: string | null;
   created_by: string;
   created_at: string;
   timezone: string;
   reverses_id?: string | null;
+  // Manipulação que gerou o movimento (transferência ou descarte de sobra).
+  handlingId?: string | null;
 };
 export interface MovementGateway {
   list(scope: CatalogScope, batchId: string): Promise<Movement[]>;

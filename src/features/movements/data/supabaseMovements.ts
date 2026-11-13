@@ -4,13 +4,15 @@ import type { MovementGateway } from '../application/movementGateway';
 import { MovementRejected } from '../application/movementGateway';
 const movementSchema = z.object({
   id: z.uuid(),
-  kind: z.enum(['consumption', 'discard', 'reversal']),
+  // Fatia 6.3: 'transfer' é a saída da origem para os recipientes derivados de uma manipulação.
+  kind: z.enum(['consumption', 'discard', 'reversal', 'transfer']),
   quantity: z.number(),
   reason: z.string().nullable(),
   created_by: z.uuid(),
   created_at: z.string(),
   timezone: z.string(),
   reverses_id: z.uuid().nullable(),
+  handling_id: z.uuid().nullable(),
 });
 export function createMovementGateway(client: SupabaseClient): MovementGateway {
   return {
@@ -18,7 +20,7 @@ export function createMovementGateway(client: SupabaseClient): MovementGateway {
       const { data, error, count } = await client
         .from('stock_movements')
         .select(
-          'id,kind,quantity,reason,created_by,created_at,timezone,reverses_id,containers!inner(kind)',
+          'id,kind,quantity,reason,created_by,created_at,timezone,reverses_id,handling_id,containers!inner(kind)',
           {
             count: 'exact',
           },
@@ -32,7 +34,13 @@ export function createMovementGateway(client: SupabaseClient): MovementGateway {
         .order('id', { ascending: true })
         .limit(1000);
       if (error) throw new Error('Histórico indisponível.');
-      const rows = movementSchema.array().parse(data);
+      const rows = movementSchema
+        .array()
+        .parse(data)
+        .map(({ handling_id, ...row }) => ({
+          ...row,
+          handlingId: handling_id,
+        }));
       if (count === null || count !== rows.length)
         throw new Error('O histórico excede o limite de 1.000 eventos.');
       const access = await client
