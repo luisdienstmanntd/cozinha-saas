@@ -3,9 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { BatchPanel } from './BatchPanel';
 import type { BatchGateway } from '../application/batchGateway';
+import { fakeContainers } from '../../../test/fakeContainers';
 
 it('mantém os dados quando o recebimento falha', async () => {
   sessionStorage.clear();
+  // Fatia 6.2: a lista do painel vem de list_containers (servidor falso).
+  const containers = fakeContainers([]);
   const product = {
     id: '10000000-0000-4000-8000-000000000001',
     name: 'Arroz',
@@ -34,6 +37,7 @@ it('mantém os dados quando o recebimento falha', async () => {
       userId="user-a"
       catalog={catalog}
       batches={batches}
+      containers={containers}
     />,
   );
   await user.selectOptions(await screen.findByLabelText('Produto'), product.id);
@@ -52,6 +56,8 @@ it('mantém os dados quando o recebimento falha', async () => {
 
 it('exige recarregar a lista antes de liberar uma nova tentativa em conflito', async () => {
   sessionStorage.clear();
+  // Fatia 6.2: a lista do painel vem de list_containers (servidor falso).
+  const containers = fakeContainers([]);
   const product = {
     id: '10000000-0000-4000-8000-000000000001',
     name: 'Arroz',
@@ -84,6 +90,7 @@ it('exige recarregar a lista antes de liberar uma nova tentativa em conflito', a
       canCreate
       catalog={catalog}
       batches={batches}
+      containers={containers}
     />,
   );
   await user.selectOptions(await screen.findByLabelText('Produto'), product.id);
@@ -102,12 +109,14 @@ it('exige recarregar a lista antes de liberar uma nova tentativa em conflito', a
     screen.getByRole('button', { name: 'Atualizar lista para conferência' }),
   );
   expect(start).toBeEnabled();
-  expect(batches.list).toHaveBeenCalledTimes(2);
+  expect(containers.list).toHaveBeenCalledTimes(2);
   sessionStorage.clear();
 });
 
 it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async () => {
   sessionStorage.clear();
+  // Fatia 6.2: a lista do painel vem de list_containers (servidor falso).
+  const containers = fakeContainers([]);
   const product = {
     id: '10000000-0000-4000-8000-000000000001',
     name: 'Arroz',
@@ -151,6 +160,7 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
       userId="user-a"
       catalog={catalog}
       batches={batches}
+      containers={containers}
     />,
   );
   await submit();
@@ -163,6 +173,7 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
       userId="user-a"
       catalog={catalog}
       batches={batches}
+      containers={containers}
     />,
   );
   await submit();
@@ -179,6 +190,7 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
       userId="user-b"
       catalog={catalog}
       batches={batches}
+      containers={containers}
     />,
   );
   await submit();

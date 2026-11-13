@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { URL } from 'node:url';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 import { checked } from '../../scripts/local-supabase.mjs';
 
@@ -55,16 +54,16 @@ test('consulta mais de mil recebimentos e busca produto fora do catálogo carreg
       ],
       { input: sql, stdio: ['pipe', 'pipe', 'pipe'] },
     );
-    // O recebimento concorrente precisa ter ID menor que todos os outros, para ficar atrás do cursor da
-    // paginação. O histórico não é mais apagado entre execuções (Fase 6.0a), então o ID não pode ser fixo:
-    // mantém o prefixo de zeros e sorteia o restante.
-    const concurrentId = `00000000-${randomUUID().slice(9)}`;
+    // Fatia 6.2: o painel pagina no servidor por (validade, ID do recipiente), 100 por vez, sem teto no
+    // navegador. O recebimento concorrente tem validade anterior à de todos os outros, para ficar atrás
+    // do cursor: não pode aparecer duplicado nem deslocar a paginação em andamento.
+    const concurrentId = randomUUID();
     let insertedDuringPagination = false;
-    await page.route('**/rest/v1/batch_receipts*', async (route) => {
-      const cursor = new URL(route.request().url()).searchParams.get('id');
-      if (!insertedDuringPagination && cursor?.startsWith('gt.')) {
+    await page.route('**/rest/v1/rpc/list_containers', async (route) => {
+      const body = route.request().postDataJSON();
+      if (!insertedDuringPagination && body?.p_after_id) {
         insertedDuringPagination = true;
-        const concurrent = `insert into public.batch_receipts(id,organization_id,establishment_id,product_id,supplier_id,intent_id,source_code,quantity,unit,expiry_date,expiry_origin,original_expiry_date,timezone,created_by) values ('${concurrentId}','${org}','${unit}','${productId}','${supplierId}',gen_random_uuid(),'concorrente',1,'kg','2020-01-01','original','2020-01-01','America/Sao_Paulo','${user}')`;
+        const concurrent = `insert into public.batch_receipts(id,organization_id,establishment_id,product_id,supplier_id,intent_id,source_code,quantity,unit,expiry_date,expiry_origin,original_expiry_date,timezone,created_by) values ('${concurrentId}','${org}','${unit}','${productId}','${supplierId}',gen_random_uuid(),'concorrente',1,'kg','2019-01-01','original','2019-01-01','America/Sao_Paulo','${user}')`;
         execFileSync(
           'docker',
           [
@@ -96,28 +95,52 @@ test('consulta mais de mil recebimentos e busca produto fora do catálogo carreg
     await expect(dashboard.getByText(/Vencidos: 1001/)).toBeVisible({
       timeout: 30000,
     });
+    // A busca vai ao servidor depois de uma pausa na digitação: espera a resposta filtrada.
+    const searched = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/rpc/list_containers') &&
+        response.request().postDataJSON()?.p_search === 'Zulu especial',
+    );
     await dashboard.getByRole('searchbox').fill('Zulu especial');
-    await expect(
-      page
-        .getByRole('list', { name: 'Recebimentos e validade' })
-        .getByRole('listitem'),
-    ).toHaveCount(1001);
+    await searched;
+    const items = page
+      .getByRole('list', { name: 'Recipientes e validade' })
+      .getByRole('listitem');
+    await expect(items).toHaveCount(100);
+    const more = page.getByRole('button', {
+      name: 'Carregar mais recipientes',
+    });
+    for (let shown = 200; shown <= 1000; shown += 100) {
+      await more.click();
+      await expect(items).toHaveCount(shown);
+    }
+    await more.click();
+    await expect(items).toHaveCount(1001);
+    await expect(more).toHaveCount(0);
     await expect(
       page.getByText(
         'Exibindo até 1.000 recebimentos; outros podem não aparecer.',
       ),
     ).toHaveCount(0);
     expect(insertedDuringPagination).toBe(true);
+    // Sem repetição: 1001 recipientes distintos, e o concorrente (atrás do cursor) não entrou no meio.
+    const codes = await items.evaluateAll((nodes) =>
+      nodes.map((node) => /C-\d{6,}/.exec(node.textContent ?? '')?.[0]),
+    );
+    expect(new Set(codes).size).toBe(1001);
+    await expect(
+      page
+        .getByRole('list', { name: 'Recipientes e validade' })
+        .getByText(/lote concorrente/),
+    ).toHaveCount(0);
     await dashboard
       .getByRole('button', { name: 'Atualizar recebimentos' })
       .click();
     await expect(dashboard.getByText(/Vencidos: 1002/)).toBeVisible({
       timeout: 30000,
     });
-    await expect(
-      page
-        .getByRole('list', { name: 'Recebimentos e validade' })
-        .getByRole('listitem'),
-    ).toHaveCount(1002);
+    // Depois de atualizar, o concorrente é o mais urgente e aparece no topo da busca.
+    await expect(items.first()).toContainText('lote concorrente');
+    await expect(items).toHaveCount(100);
   });
 });

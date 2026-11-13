@@ -4,7 +4,8 @@ import type { CatalogGateway } from '../../catalog/application/catalogGateway';
 import type { CatalogItem, CatalogScope } from '../../catalog/domain/catalog';
 import type { BatchGateway } from '../application/batchGateway';
 import { batchInputSchema } from '../domain/batch';
-import type { BatchRow } from '../domain/batch';
+import type { ContainerGateway } from '../application/containerGateway';
+import type { ContainerPage, ExpirySummary } from '../domain/container';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { LabelView } from '../../labels/components/LabelView';
 import { getExpiryStatus, localCivilDate } from '../domain/expiryStatus';
@@ -17,17 +18,23 @@ type Props = {
   canCreate: boolean;
   catalog: CatalogGateway;
   batches: BatchGateway;
+  containers: ContainerGateway;
   catalogRevision?: number;
   userId: string;
   labels?: LabelGateway;
   movements?: MovementGateway;
 };
-type Loaded = {
-  products: CatalogItem[];
-  suppliers: CatalogItem[];
-  rows: BatchRow[];
-  fetchedAt: Date;
-};
+type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
+// key: consulta a que a página pertence; página de outra consulta conta como carregando.
+type Listing = ContainerPage & { fetchedAt: Date; key: string };
+const LOAD_ERROR =
+  'Não foi possível carregar todos os recebimentos. Confira o acesso e tente novamente.';
+const statusLabels = {
+  overdue: 'Vencido',
+  today: 'Vence hoje',
+  tomorrow: 'Vence amanhã',
+  upcoming: 'Posterior',
+} as const;
 
 function BatchContents({
   scope: { organizationId, establishmentId },
@@ -35,12 +42,17 @@ function BatchContents({
   canCreate,
   catalog,
   batches,
+  containers,
   catalogRevision,
   userId,
   labels,
   movements,
 }: Props) {
-  const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const [catalogData, setCatalogData] = useState<Catalog | null>(null);
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [summary, setSummary] = useState<ExpirySummary | null>(null);
+  // Uma consulta falhou: nada do painel aparece até nova tentativa, mesmo que outra consulta chegue depois.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
@@ -51,8 +63,13 @@ function BatchContents({
   const [labelId, setLabelId] = useState<string | null>(null);
   const [movementId, setMovementId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
+  const [includeDepleted, setIncludeDepleted] = useState(false);
+  const [moreError, setMoreError] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const intent = useRef<string | null>(null);
+  const listVersion = useRef(0);
   let referenceDate: string | null = null;
   try {
     referenceDate = localCivilDate(now, timezone);
@@ -70,45 +87,158 @@ function BatchContents({
       document.removeEventListener('visibilitychange', update);
     };
   }, []);
+  // A busca vai ao servidor; espera a digitação parar para não consultar a cada tecla.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setQuery(search), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+  function fail() {
+    setCatalogData(null);
+    setListing(null);
+    setSummary(null);
+    setLabelId(null);
+    setMovementId(null);
+    setLoadFailed(true);
+    setError(LOAD_ERROR);
+  }
   useEffect(() => {
     let current = true;
     const scope = { organizationId, establishmentId };
     void Promise.all([
       catalog.list('products', scope),
       catalog.list('suppliers', scope),
-      batches.list(scope),
     ]).then(
-      ([products, suppliers, rows]) => {
-        if (current)
-          setLoaded({ products, suppliers, rows, fetchedAt: new Date() });
+      ([products, suppliers]) => {
+        if (current) setCatalogData({ products, suppliers });
       },
-      (cause: unknown) => {
-        if (current) {
-          setLoaded(null);
-          setLabelId(null);
-          setMovementId(null);
-          setError(
-            cause instanceof Error &&
-              cause.message ===
-                'O limite de 10.000 recebimentos foi excedido; a consulta não foi exibida.'
-              ? cause.message
-              : 'Não foi possível carregar todos os recebimentos. Confira o acesso e tente novamente.',
-          );
-        }
+      () => {
+        if (current) fail();
       },
     );
     return () => {
       current = false;
     };
+  }, [attempt, catalog, establishmentId, organizationId, catalogRevision]);
+  useEffect(() => {
+    let current = true;
+    const version = ++listVersion.current;
+    const key = `${attempt}|${includeDepleted}|${query}`;
+    void containers
+      .list(
+        { organizationId, establishmentId },
+        { includeDepleted, search: query, after: null },
+      )
+      .then(
+        (page) => {
+          if (current && version === listVersion.current)
+            setListing({ ...page, fetchedAt: new Date(), key });
+        },
+        () => {
+          if (current) fail();
+        },
+      );
+    return () => {
+      current = false;
+    };
   }, [
     attempt,
-    batches,
-    catalog,
+    containers,
     establishmentId,
     organizationId,
-    catalogRevision,
+    includeDepleted,
+    query,
   ]);
+  useEffect(() => {
+    if (!referenceDate) return;
+    let current = true;
+    void containers
+      .summary({ organizationId, establishmentId }, referenceDate)
+      .then(
+        (value) => {
+          if (current) setSummary(value);
+        },
+        () => {
+          if (current) fail();
+        },
+      );
+    return () => {
+      current = false;
+    };
+  }, [attempt, containers, establishmentId, organizationId, referenceDate]);
 
+  function reload() {
+    setLoadFailed(false);
+    setMoreError('');
+    setCatalogData(null);
+    setListing(null);
+    setSummary(null);
+    setLabelId(null);
+    setMovementId(null);
+    setError('');
+    setNow(new Date());
+    setAttempt((value) => value + 1);
+  }
+  function loadMore() {
+    if (!listing?.next || listing.key !== listKey || loadingMore) return;
+    const version = listVersion.current;
+    setLoadingMore(true);
+    setMoreError('');
+    void containers
+      .list(
+        { organizationId, establishmentId },
+        { includeDepleted, search: query, after: listing.next },
+      )
+      .then(
+        (page) => {
+          if (version !== listVersion.current) return;
+          setListing((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  rows: [...previous.rows, ...page.rows],
+                  next: page.next,
+                }
+              : previous,
+          );
+        },
+        () => {
+          if (version === listVersion.current)
+            setMoreError(
+              'Não foi possível carregar mais recipientes. Tente novamente.',
+            );
+        },
+      )
+      .finally(() => setLoadingMore(false));
+  }
+  // Depois de uma saída ou anulação, relê o saldo daquele recipiente e as contagens.
+  function refreshRow(containerId: string) {
+    const scope = { organizationId, establishmentId };
+    void containers.get(scope, containerId).then(
+      (row) =>
+        setListing((previous) =>
+          previous
+            ? {
+                ...previous,
+                rows: previous.rows.map((item) =>
+                  item.container_id === containerId && row ? row : item,
+                ),
+              }
+            : previous,
+        ),
+      () => fail(),
+    );
+    if (referenceDate)
+      void containers
+        .summary(scope, referenceDate)
+        .then(setSummary, () => fail());
+  }
+
+  const listKey = `${attempt}|${includeDepleted}|${query}`;
+  const shown = listing?.key === listKey ? listing : null;
+  const ready =
+    !loadFailed &&
+    catalogData !== null &&
+    (referenceDate === null || summary !== null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -163,8 +293,7 @@ function BatchContents({
       intent.current = null;
       form.reset();
       setOrigin('original');
-      setLoaded(null);
-      setAttempt((value) => value + 1);
+      reload();
       setNotice(
         cleaned
           ? 'Recebimento registrado.'
@@ -196,15 +325,20 @@ function BatchContents({
             onClick={() => {
               setBusy(true);
               setReviewError('');
-              void batches
-                .list({ organizationId, establishmentId })
+              const version = ++listVersion.current;
+              void containers
+                .list(
+                  { organizationId, establishmentId },
+                  { includeDepleted, search: query, after: null },
+                )
                 .then(
-                  (rows) => {
-                    setLoaded((previous) =>
-                      previous
-                        ? { ...previous, rows, fetchedAt: new Date() }
-                        : previous,
-                    );
+                  (page) => {
+                    if (version === listVersion.current)
+                      setListing({
+                        ...page,
+                        fetchedAt: new Date(),
+                        key: listKey,
+                      });
                     setConflictReviewed(true);
                   },
                   () =>
@@ -240,186 +374,166 @@ function BatchContents({
         </div>
       )}
       {notice && <p role="status">{notice}</p>}
-      {!loaded && !error && <p>Carregando recebimentos…</p>}
-      {!loaded && error && (
-        <button
-          onClick={() => {
-            setError('');
-            setAttempt((v) => v + 1);
-          }}
-        >
-          Tentar novamente
-        </button>
-      )}
-      {loaded && !referenceDate && (
+      {!ready && !error && <p>Carregando recebimentos…</p>}
+      {!ready && error && <button onClick={reload}>Tentar novamente</button>}
+      {ready && !referenceDate && (
         <p role="alert">
           Não foi possível interpretar o fuso do estabelecimento. Atualize o
           acesso ou corrija o fuso.
         </p>
       )}
-      {loaded && referenceDate && (
+      {ready && catalogData && referenceDate && summary && (
         <>
           <section aria-label="Painel de validade">
             <h4>Validade</h4>
             <p>
-              Contagens de recebimentos registrados; não representam saldo
-              disponível.
+              Recipientes com saldo, do vencimento mais próximo para o mais
+              distante. Recipientes esgotados não entram nas contagens.
             </p>
             <p>
               Fuso: {timezone}. Data de referência: {referenceDate}. Referência:
               relógio deste dispositivo. Novos registros podem exigir
               atualização. Após mudar o fuso da unidade, atualize o acesso.
             </p>
-            <p>
-              Última consulta: {loaded.fetchedAt.toISOString()} (relógio deste
-              dispositivo).
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setLoaded(null);
-                setLabelId(null);
-                setMovementId(null);
-                setError('');
-                setNow(new Date());
-                setAttempt((value) => value + 1);
-              }}
-            >
+            {shown && (
+              <p>
+                Última consulta: {shown.fetchedAt.toISOString()} (relógio deste
+                dispositivo).
+              </p>
+            )}
+            <button type="button" onClick={reload}>
               Atualizar recebimentos
             </button>
-            {(() => {
-              const counts = { overdue: 0, today: 0, tomorrow: 0, upcoming: 0 };
-              for (const row of loaded.rows)
-                counts[getExpiryStatus(row.expiry_date, timezone, now)]++;
-              return (
-                <p>
-                  Vencidos: {counts.overdue} · Vence hoje: {counts.today} ·{' '}
-                  Vence amanhã: {counts.tomorrow} · Posteriores:{' '}
-                  {counts.upcoming}
-                </p>
-              );
-            })()}
+            <p>
+              Vencidos: {summary.overdue} · Vence hoje: {summary.due_today} ·{' '}
+              Vence amanhã: {summary.due_tomorrow} · Posteriores:{' '}
+              {summary.later}
+            </p>
             <label>
-              Buscar por produto, lote ou ID do recipiente{' '}
+              Buscar por produto, lote, código ou ID do recipiente{' '}
               <input
                 type="search"
-                aria-label="Buscar por produto, lote ou ID do recipiente"
+                aria-label="Buscar por produto, lote, código ou ID do recipiente"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                maxLength={120}
+                onChange={(event) => {
+                  setMoreError('');
+                  setSearch(event.target.value);
+                }}
               />
+            </label>{' '}
+            <label>
+              <input
+                type="checkbox"
+                checked={includeDepleted}
+                onChange={(event) => {
+                  setMoreError('');
+                  setIncludeDepleted(event.target.checked);
+                }}
+              />{' '}
+              Mostrar esgotados
             </label>
           </section>
-          {loaded.rows.length === 0 ? (
-            <p>Nenhum recebimento registrado.</p>
+          {!shown ? (
+            <p>Carregando recipientes…</p>
+          ) : shown.rows.length === 0 ? (
+            <p>
+              {query.trim()
+                ? 'Nenhum recipiente corresponde à busca.'
+                : includeDepleted
+                  ? 'Nenhum recebimento registrado.'
+                  : 'Nenhum recipiente com saldo.'}
+            </p>
           ) : (
-            (() => {
-              const normalizedSearch = search.trim().toLocaleLowerCase('pt-BR');
-              const products = new Map(
-                loaded.products.map((product) => [product.id, product.name]),
-              );
-              const visibleRows = loaded.rows.filter((row) => {
-                const productName =
-                  row.product_name ?? products.get(row.product_id) ?? 'Produto';
-                return [productName, row.source_code, row.container_id ?? '']
-                  .join(' ')
-                  .toLocaleLowerCase('pt-BR')
-                  .includes(normalizedSearch);
-              });
-              return visibleRows.length ? (
-                <ul aria-label="Recebimentos e validade">
-                  {visibleRows.map((row) => {
-                    const status = getExpiryStatus(
-                      row.expiry_date,
-                      timezone,
-                      now,
-                    );
-                    const statusLabel = {
-                      overdue: 'Vencido',
-                      today: 'Vence hoje',
-                      tomorrow: 'Vence amanhã',
-                      upcoming: 'Posterior',
-                    }[status];
-                    return (
-                      <li key={row.id}>
-                        {row.product_name ??
-                          products.get(row.product_id) ??
-                          'Produto'}{' '}
-                        — lote {row.source_code} — {row.quantity} {row.unit} —
-                        validade {row.expiry_date} (
-                        {row.expiry_origin === 'original'
+            <>
+              <ul aria-label="Recipientes e validade">
+                {shown.rows.map((row) => {
+                  const depleted = row.balance <= 0;
+                  const status = getExpiryStatus(
+                    row.expiry_date,
+                    timezone,
+                    now,
+                  );
+                  return (
+                    <li key={row.container_id}>
+                      {row.product_name} — {row.short_code}
+                      {row.kind === 'derived' && ' (derivado)'} — lote{' '}
+                      {row.source_code} — saldo {row.balance} {row.unit} de{' '}
+                      {row.initial_quantity} {row.unit} — validade{' '}
+                      {row.expiry_date} (
+                      {row.expiry_origin === 'handling'
+                        ? 'após manipulação'
+                        : row.batch_expiry_origin === 'original'
                           ? 'original'
                           : 'definida pelo responsável'}
-                        ) — {statusLabel}
-                        {row.container_id && (
-                          <> — recipiente {row.container_id}</>
-                        )}
-                        {movements && (
-                          <button
-                            type="button"
-                            onClick={() => setMovementId(row.id)}
-                          >
-                            Ver movimentações
-                          </button>
-                        )}
-                        {movements && movementId === row.id && (
+                      ) — {depleted ? 'Esgotado' : statusLabels[status]} —
+                      recipiente {row.container_id}
+                      {movements && row.kind === 'integral' && (
+                        <button
+                          type="button"
+                          onClick={() => setMovementId(row.container_id)}
+                        >
+                          Ver movimentações
+                        </button>
+                      )}
+                      {movements &&
+                        row.kind === 'integral' &&
+                        movementId === row.container_id && (
                           <MovementPanel
-                            key={row.id}
+                            key={row.container_id}
                             scope={{ organizationId, establishmentId }}
                             userId={userId}
                             batch={{
-                              id: row.id,
-                              productName:
-                                row.product_name ??
-                                products.get(row.product_id) ??
-                                'Produto',
+                              id: row.batch_id,
+                              productName: row.product_name,
                               sourceCode: row.source_code,
-                              quantity: row.quantity,
+                              quantity: row.initial_quantity,
                               unit: row.unit,
                             }}
                             canCreate={canCreate}
                             gateway={movements}
+                            onRecorded={() => refreshRow(row.container_id)}
                           />
                         )}
-                        {canCreate && labels && (
-                          <>
-                            {' '}
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => {
-                                setBusy(true);
-                                setError('');
-                                void labels
-                                  .ensure(
-                                    { organizationId, establishmentId },
-                                    row.id,
-                                  )
-                                  .then(
-                                    (id) => {
-                                      setLabelId(id);
-                                      setLoaded(null);
-                                      setAttempt((value) => value + 1);
-                                    },
-                                    () =>
-                                      setError(
-                                        'Não foi possível preparar o recipiente. Confira seu acesso.',
-                                      ),
-                                  )
-                                  .finally(() => setBusy(false));
-                              }}
-                            >
-                              Abrir etiqueta
-                            </button>
-                          </>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p>Nenhum recebimento corresponde à busca.</p>
-              );
-            })()
+                      {canCreate && labels && row.kind === 'integral' && (
+                        <>
+                          {' '}
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => {
+                              setBusy(true);
+                              setError('');
+                              void labels
+                                .ensure(
+                                  { organizationId, establishmentId },
+                                  row.batch_id,
+                                )
+                                .then(
+                                  (id) => setLabelId(id),
+                                  () =>
+                                    setError(
+                                      'Não foi possível preparar o recipiente. Confira seu acesso.',
+                                    ),
+                                )
+                                .finally(() => setBusy(false));
+                            }}
+                          >
+                            Abrir etiqueta
+                          </button>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {shown.next && (
+                <button type="button" disabled={loadingMore} onClick={loadMore}>
+                  Carregar mais recipientes
+                </button>
+              )}
+              {moreError && <p role="alert">{moreError}</p>}
+            </>
           )}
           {canCreate && (
             <form onSubmit={(event) => void submit(event)}>
@@ -431,7 +545,7 @@ function BatchContents({
                       <option value="" disabled>
                         Selecione
                       </option>
-                      {loaded.products.map((p) => (
+                      {catalogData.products.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} ({p.unit})
                         </option>
@@ -446,7 +560,7 @@ function BatchContents({
                       <option value="" disabled>
                         Selecione
                       </option>
-                      {loaded.suppliers.map((p) => (
+                      {catalogData.suppliers.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name}
                         </option>

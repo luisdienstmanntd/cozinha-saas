@@ -90,6 +90,11 @@ export function LabelView({
               : 'definida pelo responsável'}
             )
           </p>
+          <p>
+            Saldo atual: {data.balance} {data.batch_receipts.unit}
+            {data.balance <= 0 && ' — esgotado, sem saldo neste recipiente'}
+          </p>
+          <p>Código: {data.short_code}</p>
           <p>Identificação: {data.id}</p>
           <p>
             Modelo PDF de demonstração: 100 × 100 mm. A impressão e a leitura

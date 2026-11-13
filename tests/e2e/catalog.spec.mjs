@@ -71,9 +71,9 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     );
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
     const search = page.getByRole('searchbox', {
-      name: 'Buscar por produto, lote ou ID do recipiente',
+      name: 'Buscar por produto, lote, código ou ID do recipiente',
     });
-    const results = page.getByRole('list', { name: 'Recebimentos e validade' });
+    const results = page.getByRole('list', { name: 'Recipientes e validade' });
     await search.fill('arroz de teste');
     await expect(results.getByText(/lote 0001/)).toBeVisible();
     await search.fill('0001');
@@ -117,6 +117,8 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       movements.getByText('Saldo registrado: 0.75 kg'),
     ).toBeVisible();
     await expect(movements.getByText(/Consumo — 0.5 kg/)).toBeVisible();
+    // Fatia 6.2: a linha do painel mostra o saldo do servidor, não a quantidade recebida.
+    await expect(results.getByText(/saldo 0.75 kg de 1.25 kg/)).toBeVisible();
     await page.getByLabel('Nome do fornecedor').fill('HORTA DE TESTE');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(page.getByRole('alert')).toHaveText(
@@ -183,6 +185,10 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(page.getByRole('alert')).toHaveText(
       'Recipiente indisponível ou sem acesso.',
     );
+    // E2E 32: usuário de outra empresa não vê produto, lote nem saldo do recipiente de A.
+    await expect(page.getByText(/Saldo atual/)).toHaveCount(0);
+    await expect(page.getByText(/Arroz de teste/)).toHaveCount(0);
+    await expect(page.getByText(/0001/)).toHaveCount(0);
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn();
     const resolved = page.getByRole('region', {
@@ -190,6 +196,9 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       exact: true,
     });
     await expect(resolved.getByText(`Identificação: ${id}`)).toBeVisible();
+    // Fatia 6.2: a rota do QR mostra o saldo atual (1.25 − 0.5 − 0.75 + 0.5 anulado) e o código curto.
+    await expect(resolved.getByText('Saldo atual: 0.5 kg')).toBeVisible();
+    await expect(resolved.getByText(/^Código: C-\d{6,}$/)).toBeVisible();
     const secondDownload = page.waitForEvent('download');
     await resolved.getByRole('button', { name: 'Gerar etiqueta PDF' }).click();
     expect((await secondDownload).suggestedFilename()).toBe(
@@ -236,6 +245,8 @@ test('modelo PDF comporta nome longo com acentuação', async ({
     const blob = await makeLabelPdf(
       {
         id: '12345678-1234-4234-8234-123456789abc',
+        short_code: 'C-000001',
+        balance: 1.25,
         batch_receipts: {
           source_code: 'REMESSA DE TESTE 0001',
           quantity: 1.25,

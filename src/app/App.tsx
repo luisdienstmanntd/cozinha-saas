@@ -38,6 +38,7 @@ function Workspace({
       <BatchPanel
         catalog={configuration.catalog}
         batches={configuration.batches}
+        containers={configuration.containers}
         scope={scope}
         timezone={timezone}
         canCreate={canCreate}
