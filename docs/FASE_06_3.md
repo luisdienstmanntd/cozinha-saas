@@ -94,8 +94,8 @@ Entra como **D-039** quando os PRs anteriores forem integrados (D-038 é da 6.2)
 - **Motivo:** seções 4.1–4.5 e 5.1 do desenho; B-2, I-2, I-3, I-4, I-10b e I-12 da revisão cruzada; Q2, Q5, Q6 e Q7.
 - **Consequência:** nenhum estoque é criado; a conservação continua fechando por recebimento. Movimentos de manipulação não são anulados individualmente. A 6.5a precisa trocar a restrição `late = false` pela ocorrência tardia e passar a aceitar `p_late_reason`.
 - **Revisar quando:** a 6.4 (anulação) e a 6.5a (ocorrências) chegarem, ou se a observação no piloto mostrar que a janela de 2 horas ou o limite de 20 porções não servem.
-- **Situação:** proposta; aguarda luis.
+- **Situação:** aceita por luis em 13/11/2026, com os três pontos acima.
 
 ## Próximo passo
 
-Aceite de luis para esta fatia, para a D-039 e para os três pontos acima. O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6, #7, #8 e #9, nessa ordem, só com luis. A 6.4 (anulação de manipulação no banco) exige aprovação própria.
+**Aceita por luis em 13/11/2026 13:20 UTC** ("aprovado"), junto com a D-039 e os três pontos de interpretação (sobra como porção até a posição 21; origem derivada conferida pela hora real da manipulação anterior; descarte de sobra só desfeito pela anulação da manipulação). CI do GitHub verde no PR #10 (`quality` e `banco-api-e2e`). O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6, #7, #8 e #9, nessa ordem, só com luis. A 6.4 (anulação de manipulação no banco) exige aprovação própria.

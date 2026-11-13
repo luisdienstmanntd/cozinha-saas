@@ -2,12 +2,12 @@
 
 - **ID:** fase-06-3-manipulacao
 - **Responsável / sessão:** Claude Code (sessão em nuvem, thread "Implementar fatia 6.3 (manipulação no banco)")
-- **Estado:** aguardando_aceite
+- **Estado:** aceita (sem merge)
 - **Objetivo e aceite:** seção 10 (6.3) de `FASE_06_DESENHO.md` (PR #3): `container_handlings`, `'transfer'`, FKs e únicos da 4.2 e 4.3; `handle_container` com a ordem de verificações da seção 5, `handled_at` com janela de 2 horas (fora dela, recusado nesta fatia), regra da sobra, `handled_by` com nome; `memberships.display_name` e `set_member_display_name`; front-end aceita `'transfer'` na leitura; brief atualizado. Aceite: testes 3 a 8, 10, 17, 18, 19 (manipulação) e 20 da seção 8; nenhuma tela de manipulação.
 - **Branch / worktree / base:** `claude/fase-06-3-manipulacao`, a partir de `claude/fase-06-2-painel-saldo` (`0d8ad00`, PR #9). Ordem de integração: PR #2 → #5 → #6 → #7 → #8 → #9 → este.
 - **Arquivos e recursos em uso:** migração `supabase/migrations/20261113070000_container_handling.sql` e rollback `supabase/rollback/container_handling.sql`; `supabase/tests/container_handling.test.sql` (novo); ajustes de lista fixa em `security_guard.test.sql`, `container_balance.test.sql` e fixtures de derivado em `container_balance.test.sql` e `list_containers.test.sql`; `tests/integration/container-handling.test.mjs` (novo); `src/features/movements`; `docs/FASE_06_3.md`, `docs/PRODUCT_BRIEF.md`.
 - **Dependências e riscos:** PRs #2, #5, #6, #7, #8 e #9 sem merge; Codex trabalha na `main` (não tocar em `DECISOES.md`; decisões novas propostas em `FASE_06_3.md`).
-- **Próximo passo:** aceite de luis (fatia, D-039 proposta e três pontos de `FASE_06_3.md`); 6.4 exige aprovação própria.
+- **Próximo passo:** integrar depois dos PRs #2, #5, #6, #7, #8 e #9, só com luis; 6.4 exige aprovação própria.
 
 ## Checkpoints
 
@@ -21,3 +21,7 @@
 - **Falha registrada (preexistente):** `PGRST001` na primeira integração logo após `db:reset`, reproduzida também na base 6.2; esperar alguns segundos resolve.
 - **Pendências / riscos:** D-039 e três pontos de interpretação aguardam luis; relógio do dispositivo × "não futuro" para a 6.6.
 - **Próximo passo:** aceite de luis.
+
+### 13/11/2026 13:25 UTC — Claude Code
+- **Aceite:** luis aprovou a fatia 6.3, a D-039 e os três pontos de interpretação em 13/11/2026 13:20 UTC ("aprovado"). CI do PR #10 verde. Sem merge.
+- **Próximo passo:** integração na ordem #2 → #5 → #6 → #7 → #8 → #9 → #10, só com luis. 6.4 aguarda aprovação própria.
