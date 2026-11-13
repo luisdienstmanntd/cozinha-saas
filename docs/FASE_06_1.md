@@ -77,7 +77,8 @@ O `DECISOES.md` desta base termina na D-018; D-019 a D-033 estão no PR #3, D-03
 - **Motivo:** P9 e a base da manipulação (6.3); B-1, B-3, I-5, I-7 e I-14 da revisão cruzada.
 - **Consequência:** a lista de recebimentos mostra o ID do recipiente desde o recebimento, não só depois da etiqueta. Todo tipo de movimento novo precisa de regra de saldo em `container_balance` e `stock_conservation_problems`.
 - **Revisar quando:** a 6.3 criar derivados de verdade, ou se luis preferir esconder o ID até a primeira etiqueta.
+- **Situação:** aceita por luis em 13/11/2026, mantendo o ID visível desde o recebimento.
 
 ## Próximo passo
 
-Aguarda aceite de luis. O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6 e #7. A 6.2 (painel e QR com saldo) e a 6.3 (manipulação no banco) exigem aprovação própria.
+**Aceita por luis em 13/11/2026 03:33 UTC**, com o ID do recipiente visível desde o recebimento (D-037 aceita como proposta). O aceite não autoriza merge: integrar depois dos PRs #2, #5, #6 e #7, na ordem #2 → #5 → #6 → #7 → #8, só com luis. A 6.2 (painel e QR com saldo) e a 6.3 (manipulação no banco) exigem aprovação própria.
