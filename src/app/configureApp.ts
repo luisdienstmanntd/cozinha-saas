@@ -3,6 +3,7 @@ import { createIdentityGateway } from '../features/identity/data/supabaseIdentit
 import { createCatalogGateway } from '../features/catalog/data/supabaseCatalog';
 import { createClient } from '@supabase/supabase-js';
 import { createBatchGateway } from '../features/batches/data/supabaseBatches';
+import { createContainerGateway } from '../features/batches/data/supabaseContainers';
 import { createLabelGateway } from '../features/labels/data/supabaseLabels';
 import { createMovementGateway } from '../features/movements/data/supabaseMovements';
 
@@ -22,6 +23,7 @@ export function configureApp(environment: Record<string, unknown>) {
       identity: createIdentityGateway(client),
       catalog: createCatalogGateway(client),
       batches: createBatchGateway(client),
+      containers: createContainerGateway(client),
       labels: createLabelGateway(client),
       movements: createMovementGateway(client),
     };

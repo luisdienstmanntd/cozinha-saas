@@ -25,6 +25,7 @@ export function MovementPanel({
   batch,
   canCreate,
   gateway,
+  onRecorded,
 }: {
   scope: CatalogScope;
   userId: string;
@@ -37,6 +38,8 @@ export function MovementPanel({
   };
   canCreate: boolean;
   gateway: MovementGateway;
+  // Fatia 6.2: avisa o painel para reler o saldo do recipiente depois de um registro confirmado.
+  onRecorded?: () => void;
 }) {
   const key = `movement-intent:${userId}:${scope.organizationId}:${scope.establishmentId}:${batch.id}`;
   const [events, setEvents] = useState<Movement[] | null>(null);
@@ -116,6 +119,7 @@ export function MovementPanel({
       return;
     }
     if (!active.current) return;
+    onRecorded?.();
     try {
       const current = savedSchema.parse(
         JSON.parse(sessionStorage.getItem(key) ?? 'null'),

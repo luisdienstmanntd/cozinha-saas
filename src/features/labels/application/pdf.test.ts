@@ -4,6 +4,8 @@ import type { LabelData } from '../domain/label';
 
 const label: LabelData = {
   id: '12345678-1234-4234-8234-123456789abc',
+  short_code: 'C-000001',
+  balance: 1,
   batch_receipts: {
     source_code: '0001',
     quantity: 1.25,

@@ -3,6 +3,9 @@ import { z } from 'zod';
 const uuid = z.uuid();
 export const labelDataSchema = z.object({
   id: uuid,
+  // Fatia 6.2: código curto e saldo calculado no servidor (list_containers), lidos a cada consulta.
+  short_code: z.string().regex(/^C-\d{6,}$/),
+  balance: z.number(),
   batch_receipts: z.object({
     source_code: z.string(),
     quantity: z.number(),

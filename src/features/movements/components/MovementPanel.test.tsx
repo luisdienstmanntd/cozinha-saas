@@ -448,3 +448,39 @@ it('não permite anulação se a tentativa armazenada estiver inválida', async 
   ).not.toBeInTheDocument();
   sessionStorage.clear();
 });
+
+it('avisa o painel depois de uma saída confirmada, e só depois dela (fatia 6.2)', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  const onRecorded = vi.fn();
+  const record = vi
+    .fn()
+    .mockRejectedValueOnce(new Error('falha'))
+    .mockResolvedValueOnce('evento');
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list: vi.fn().mockResolvedValue([]), record }}
+      onRecorded={onRecorded}
+    />,
+  );
+  await user.type(await screen.findByLabelText('Quantidade da saída'), '0.5');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Não foi possível confirmar',
+  );
+  expect(onRecorded).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Repetir tentativa' }));
+  await vi.waitFor(() => expect(onRecorded).toHaveBeenCalledTimes(1));
+  sessionStorage.clear();
+});

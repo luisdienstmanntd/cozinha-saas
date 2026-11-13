@@ -12,6 +12,8 @@ it('não inicia download se a tela for fechada durante a geração do PDF', asyn
   const user = userEvent.setup();
   const data = {
     id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000001',
+    balance: 1,
     batch_receipts: {
       source_code: '0001',
       quantity: 1,
@@ -51,6 +53,8 @@ it('não gera arquivo depois que a visualização foi desmontada durante a consu
   const user = userEvent.setup();
   const data = {
     id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000001',
+    balance: 1,
     batch_receipts: {
       source_code: '0001',
       quantity: 1,
@@ -102,6 +106,8 @@ it('mantém o recipiente e permite tentar novamente se a geração do PDF falha'
   const user = userEvent.setup();
   const data = {
     id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000001',
+    balance: 1,
     batch_receipts: {
       source_code: '0001',
       quantity: 1,
@@ -133,6 +139,8 @@ it('retira os dados se a nova consulta negar acesso ao gerar PDF', async () => {
   const user = userEvent.setup();
   const data = {
     id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000001',
+    balance: 1,
     batch_receipts: {
       source_code: '0001',
       quantity: 1,
@@ -154,4 +162,46 @@ it('retira os dados se a nova consulta negar acesso ao gerar PDF', async () => {
     'Recipiente indisponível ou sem acesso.',
   );
   expect(screen.queryByText(/Arroz — lote 0001/)).not.toBeInTheDocument();
+});
+
+it('mostra o saldo do servidor e o código curto, e avisa quando esgotado (fatia 6.2)', async () => {
+  const base = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000042',
+    batch_receipts: {
+      source_code: '0001',
+      quantity: 5,
+      unit: 'kg',
+      expiry_date: '2027-01-01',
+      expiry_origin: 'original' as const,
+      products: { name: 'Arroz' },
+    },
+  };
+  const { unmount } = render(
+    <LabelView
+      id={base.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({ ...base, balance: 3.5 }),
+      }}
+    />,
+  );
+  expect(await screen.findByText('Saldo atual: 3.5 kg')).toBeVisible();
+  expect(screen.getByText('Código: C-000042')).toBeVisible();
+  expect(screen.queryByText(/esgotado/)).not.toBeInTheDocument();
+  unmount();
+  render(
+    <LabelView
+      id={base.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({ ...base, balance: 0 }),
+      }}
+    />,
+  );
+  expect(
+    await screen.findByText(
+      'Saldo atual: 0 kg — esgotado, sem saldo neste recipiente',
+    ),
+  ).toBeVisible();
 });
