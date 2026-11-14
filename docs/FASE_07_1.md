@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.1 — preparação própria no banco
 
-> Aprovada por luis em 14/11/2026 ("aceito e quero", 14:51 UTC), conforme o [desenho da Fase 7](FASE_07_DESENHO.md) e a D-049. Decisão proposta: **D-050** (abaixo), aguardando aceite. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) continua pendente. Dados de teste sintéticos.
+> Aprovada por luis em 14/11/2026 ("aceito e quero", 14:51 UTC), conforme o [desenho da Fase 7](FASE_07_DESENHO.md) e a D-049. Decisão: **D-050** (abaixo), **aceita por luis em 14/11/2026 (15:50 UTC)** com os 3 pontos. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) continua pendente. Dados de teste sintéticos.
 
 ## O que mudou
 
@@ -47,14 +47,16 @@ Testes existentes alterados: só as listas fixas de `rls_set_based.test.sql` (po
 
 ## Pontos para luis decidir
 
+> Respondidos por luis em 14/11/2026, 15:50 UTC: **sim** aos três. (1) validade do próprio dia continua permitida, com a confirmação da tela; (2) o identificador interno único é o código curto do recipiente; (3) ocultar evita cadastrar preparação como produto de fornecedor.
+
 1. **Validade anterior a hoje recusada** na produção, igual à manipulação (D-031), mesmo que a produção tardia tenha sido de outro dia.
 2. **Lote produzido sem código de lote**; as telas mostram "preparação própria" e a etiqueta usa o código curto do recipiente (C-000123).
 3. **Catálogo e recebimentos escondem as preparações** até a tela própria (7.3).
 
-## Decisão proposta para `DECISOES.md`
+## Decisão registrada em `DECISOES.md`
 
-> **D-050 — Preparação própria registrada no banco (14/11/2026).** Status: proposta; implementada na fatia 7.1 ([registro](FASE_07_1.md)). Decisão: preparação é um item do catálogo de tipo `preparation`, definido na criação; o lote produzido é um `batch_receipts` de origem `produced` sem fornecedor, lote do fabricante ou temperatura de recebimento, com `batch_productions` append-only e escrita só por `register_production` (proprietário, idempotente, janela de 2 horas com ocorrência `late_production` que bloqueia o lote inteiro, validade digitada sem cálculo); abrir preparação é recusado; `find_operation` devolve `production`. Motivo: D-049 e os pontos aceitos em 14/11/2026; D-004, D-019, D-031, D-041, D-045. Consequência: escrita nova em lote precisa considerar a origem; tabela nova de histórico entra na guarda; a 7.2 precisa de tipo de movimento novo (três lugares da D-038). Revisar quando: a 7.2 a 7.5 chegarem ou a nutricionista RT responder a seção 10 do desenho.
+> **D-050 — Preparação própria registrada no banco (14/11/2026).** Status: aceita por luis em 14/11/2026 (15:50 UTC); implementada na fatia 7.1 ([registro](FASE_07_1.md)). Decisão: preparação é um item do catálogo de tipo `preparation`, definido na criação; o lote produzido é um `batch_receipts` de origem `produced` sem fornecedor, lote do fabricante ou temperatura de recebimento, com `batch_productions` append-only e escrita só por `register_production` (proprietário, idempotente, janela de 2 horas com ocorrência `late_production` que bloqueia o lote inteiro, validade digitada sem cálculo); abrir preparação é recusado; `find_operation` devolve `production`. Motivo: D-049 e os pontos aceitos em 14/11/2026; D-004, D-019, D-031, D-041, D-045. Consequência: escrita nova em lote precisa considerar a origem; tabela nova de histórico entra na guarda; a 7.2 precisa de tipo de movimento novo (três lugares da D-038). Revisar quando: a 7.2 a 7.5 chegarem ou a nutricionista RT responder a seção 10 do desenho.
 
 ## Próximo passo
 
-Aceite de luis sobre a fatia, os 3 pontos e a D-050. A 7.2 (anulação de produção) exige aprovação própria. Sem merge sem pedido de luis.
+Fatia aceita. A 7.2 (anulação de produção) exige aprovação própria. Sem merge sem pedido de luis.
