@@ -153,6 +153,8 @@ Cada fatia segue o critério comum da Fase 6: bateria inteira verde, nenhum test
 
 ## 10. Perguntas para a nutricionista RT (Q10)
 
+> luis respondeu estas perguntas em 14/11/2026 como **decisão de produto** (seção 16). As respostas não substituem a conferência normativa pela nutricionista RT, que continua pendente.
+
 Objetivas, para responder sim/não ou com um valor. Nenhuma resposta vira regra no sistema sem decisão de luis.
 
 1. Quais campos **mínimos** a etiqueta de preparação própria precisa ter? A lista da seção 5.2 sobra ou falta algo (por exemplo, alergênicos, lote de origem)?
@@ -209,3 +211,26 @@ Objetivas, para responder sim/não ou com um valor. Nenhuma resposta vira regra 
 ## 15. Próximo passo
 
 Pontos da seção 12 aceitos (14/11/2026). A fatia 7.1 só começa com aprovação própria de luis e depois que a 6.11 estiver integrada.
+
+## 16. Respostas de luis ao questionário (14/11/2026, 15:42 UTC)
+
+> Respostas do **proprietário do produto**, não da nutricionista RT. Valem como entrada de desenho; a Q10 continua pendente e nada aqui declara conformidade sanitária.
+
+| # | Resposta de luis | Efeito no desenho |
+|---|---|---|
+| 1 | Obrigatórios: validade, data de produção, responsável, conservação, quantidade e QR. Opcionais: alergênicos e lote de origem. | Etiqueta da 5.2 mantida (nome da preparação continua, é o que identifica o item). **Alergênicos** viram campo opcional por preparação no catálogo; **lote de origem** opcional depende da opção 8.1 (ingredientes) ou de texto livre curto. |
+| 2 | Qualquer cozinheiro/usuário define a validade. | **Conflito com a D-019** (só o proprietário escreve no piloto). Ver ponto A abaixo. |
+| 3 | Quem define a validade é a pessoa; não limitar pela menor validade dos ingredientes. | Sem mudança: nada é calculado (D-004). A opção 8.1 não aplicará limite. |
+| 4 | Horário de produção = fim do preparo / início do resfriamento; a etiqueta é feita nesse momento. | "Produzido em" passa a ter essa definição no texto da tela e no registro. |
+| 5 | Janela de 2 h adequada, com possibilidade de alterar para alguns alimentos. | Proposta: **janela por preparação no catálogo** (padrão 2 h), definida pelo proprietário e auditada; sem valor sugerido pelo sistema. Fatia própria. |
+| 6 | Porção com validade menor que o lote: **não**. Congelar gera nova validade: **não**. | Leitura proposta: a porção de uma preparação recebe **exatamente** a validade do lote (hoje o banco aceita igual ou menor). Congelamento continua sem prorrogar. **A confirmar com luis** (ponto B). |
+| 7 | Temperatura no fim do resfriamento ou no reaquecimento: não obrigatória, mas a função deve existir. | Opção 8.4 sobe para o planejamento: registro opcional de temperatura do lote (resfriamento, reaquecimento), sem classificar como conforme (como a D-027). Fatia própria. |
+| 8 | Etiqueta pode ser impressa depois de armazenar; até **1 hora** sem etiqueta. | Não há regra equivalente hoje. Proposta: a tela mostra há quanto tempo a produção foi registrada sem etiqueta baixada e avisa acima de 1 h; o banco não bloqueia (o sistema não sabe se a etiqueta foi colada). Exige registrar "etiqueta baixada" (hoje reimpressão não grava nada, D-003). |
+| 9 | Nome **completo** de quem produziu. | Diferente da Q7 e da D-024 (nome curto). Ver ponto C abaixo. |
+
+### Pontos que precisam de decisão de luis
+
+- **A. Quem registra a produção (resposta 2 x D-019).** Opções: (a) manter a D-019: o cozinheiro decide a validade e o proprietário digita, com "produzido por" mostrando o cozinheiro (o que a 7.1 já faz); (b) criar exceção na D-019 só para produção: membro registra a própria produção (validade incluída), mas não decide ocorrência nem anula; (c) revisar a D-019 inteira. Recomendação: **(b)**, porque resolve o gargalo do maior volume de escrita (R-1) sem abrir as demais operações. Exige fatia própria com matriz de papéis testada.
+- **B. Validade da porção (resposta 6).** Confirmar se a porção de preparação deve ter sempre a mesma validade do lote. Se sim, o banco passa a exigir igualdade só para porções de preparação (manipulação de recebimento continua como hoje).
+- **C. Nome completo (resposta 9).** Opções: (a) cadastrar nome completo por vínculo (novo campo, dado pessoal, P8) e imprimir na etiqueta de preparação; (b) manter o nome curto, que pode ser o nome completo se o proprietário o cadastrar assim (até 40 caracteres). Recomendação: **(b)** para o piloto, sem dado pessoal novo; (a) se 40 caracteres não bastarem.
+
