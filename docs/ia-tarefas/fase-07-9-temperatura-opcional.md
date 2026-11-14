@@ -20,3 +20,7 @@
 - **Testes:** bateria completa verde: lint, typecheck, format e build ok; Vitest 319; pgTAP 1412; advisors sem problemas; integração 39; Playwright 21 (config local não versionada).
 - **Achado no E2E, corrigido:** o horário padrão da medição (minuto atual) ficava segundos antes da produção recém-registrada; a regra passou a comparar em minutos, com teste novo. Nenhum teste existente foi enfraquecido.
 - **Próximo passo:** aceite de luis (3 pontos e D-058).
+
+### 14/11/2026 ~21:45 UTC — Claude Code
+- **CI do PR #30 vermelha (`banco-api-e2e`), causa raiz:** o teste de integração da 7.8 (e o da 7.9, com o mesmo desenho) contava movimentos, recipientes e lotes de **todo o banco**, e os arquivos de integração rodam em paralelo; outro teste criou linhas no meio e a comparação "antes e depois" falhou (54, 59, 38 contra 54, 58, 37). Passou antes por sorte de tempo.
+- **Correção:** as mesmas contagens, agora só da empresa do teste. Nenhuma verificação removida. Integração 39 verde, 3 rodadas do teste isolado verdes. Corrigido no #29 e levado ao #30 por merge.
