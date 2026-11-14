@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.4 — etiqueta PDF "Preparação própria"
 
-> Autorizada por luis em 14/11/2026 (16:30 UTC), junto com o aceite da 7.3: "Autorizo o início da Fase 7.4 — Etiqueta PDF de preparação própria, seguindo o desenho aprovado, com testes automatizados e preservação dos controles de segurança e rastreabilidade." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (seção 5.2, critério 12), a D-044, a D-049 e as D-050 a D-052. Decisão proposta: **D-053** (abaixo), **aguardando aceite de luis**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) continua pendente. Dados de teste sintéticos. Sem migração.
+> Autorizada por luis em 14/11/2026 (16:30 UTC), junto com o aceite da 7.3: "Autorizo o início da Fase 7.4 — Etiqueta PDF de preparação própria, seguindo o desenho aprovado, com testes automatizados e preservação dos controles de segurança e rastreabilidade." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (seção 5.2, critério 12), a D-044, a D-049 e as D-050 a D-052. Decisão: **D-053** (abaixo), **aceita por luis em 14/11/2026 (16:41 UTC) com os 3 pontos**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) continua pendente. Dados de teste sintéticos. Sem migração.
 
 ## O que mudou
 
@@ -63,14 +63,16 @@ Testes existentes alterados, sem enfraquecer:
 
 ## Pontos para luis decidir
 
+> Respondidos por luis em 14/11/2026, 16:41 UTC: aprovou os três como propostos. (1) nome como maior texto e validade logo abaixo em negrito; (2) porção mostra o horário da produção, e o do porcionamento fica na página do QR; (3) produção tardia sem liberação não gera etiqueta até decisão explícita, como a manipulação tardia. Aprovou a D-053 mantendo rastreabilidade, histórico imutável e segurança; pediu para registrar **a impressão física e a validação normativa pela nutricionista RT como pendências do piloto** (`PRE_PILOTO.md`, seção 5); autorizou a 7.5.
+
 1. **Tamanhos:** o nome da preparação é o maior texto (16 pt) e a validade vem logo abaixo em negrito (15 pt). Proposta: manter, conforme a ordem do desenho.
 2. **Porção mostra o horário da produção**, não o do porcionamento. Proposta: manter; o porcionamento aparece no QR.
 3. **Produção tardia sem liberação não gera etiqueta**, mesmo com faixa, até a decisão do proprietário. Proposta: manter, igual à manipulação tardia (D-044).
 
-## Decisão proposta para `DECISOES.md`
+## Decisão registrada em `DECISOES.md`
 
-> **D-053 — Etiqueta "Preparação própria" (14/11/2026).** Status: proposta, aguardando aceite de luis; implementada na fatia 7.4 ([registro](FASE_07_4.md)). Decisão: lote produzido e suas porções usam o terceiro modelo de 100 × 100 mm, com os campos da seção 5.2 na ordem do desenho (nome como maior texto, validade em negrito logo abaixo, "Validade informada pelo responsável", produzido em/por, conservação, quantidade e porção X de N, código e QR), sem lote nem fornecedor; o arquivo inteiro é recusado para produção anulada, produção tardia sem liberação ou dados da produção indisponíveis; gerar não grava nada. Motivo: D-003, D-044, D-049, D-050, D-051, D-052. Consequência: a 7.5 ajusta a tela de porcionar preparação sem mudar o modelo. Revisar quando: a impressão física for testada ou a nutricionista RT responder a seção 10 do desenho.
+> **D-053 — Etiqueta "Preparação própria" (14/11/2026).** Status: aceita por luis em 14/11/2026 (16:41 UTC) com os 3 pontos; implementada na fatia 7.4 ([registro](FASE_07_4.md)). Decisão: lote produzido e suas porções usam o terceiro modelo de 100 × 100 mm, com os campos da seção 5.2 na ordem do desenho (nome como maior texto, validade em negrito logo abaixo, "Validade informada pelo responsável", produzido em/por, conservação, quantidade e porção X de N, código e QR), sem lote nem fornecedor; o arquivo inteiro é recusado para produção anulada, produção tardia sem liberação ou dados da produção indisponíveis; gerar não grava nada. Motivo: D-003, D-044, D-049, D-050, D-051, D-052. Consequência: a 7.5 ajusta a tela de porcionar preparação sem mudar o modelo. Revisar quando: a impressão física for testada ou a nutricionista RT responder a seção 10 do desenho.
 
 ## Próximo passo
 
-Aceite de luis (3 pontos e D-053). A 7.5 (porcionar preparação na tela e métrica do piloto) exige aprovação própria. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.
+Aceita. A 7.5 (porcionar preparação na tela e métrica do piloto) foi autorizada por luis em 14/11/2026, 16:41 UTC. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.

@@ -396,8 +396,8 @@
 
 ## D-053 — Etiqueta "Preparação própria" (14/11/2026)
 
-- **Status:** proposta, aguardando aceite de luis; implementada na fatia 7.4 ([registro](FASE_07_4.md)).
+- **Status:** aceita por luis em 14/11/2026 (16:41 UTC) com os 3 pontos; implementada na fatia 7.4 ([registro](FASE_07_4.md)).
 - **Decisão:** lote produzido e suas porções usam o terceiro modelo de 100 × 100 mm, com os campos da seção 5.2 na ordem do desenho (nome como maior texto, validade em negrito logo abaixo, "Validade informada pelo responsável", produzido em/por, conservação, quantidade e porção X de N, código e QR), sem lote nem fornecedor; o arquivo inteiro é recusado para produção anulada, produção tardia sem liberação ou dados da produção indisponíveis; gerar não grava nada.
 - **Motivo:** D-003, D-044, D-049, D-050, D-051, D-052.
 - **Consequência:** a 7.5 ajusta a tela de porcionar preparação sem mudar o modelo.
-- **Revisar quando:** a impressão física for testada ou a nutricionista RT responder a seção 10 do desenho.
+- **Revisar quando:** a impressão física for testada ou a nutricionista RT responder a seção 10 do desenho (ambas pendências do piloto, `PRE_PILOTO.md`, seção 5).
