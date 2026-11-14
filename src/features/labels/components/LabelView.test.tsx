@@ -344,3 +344,56 @@ it('derivado tardio sem liberação não mostra a faixa de etiqueta disponível'
   ).toBeVisible();
   expect(screen.queryByText('BLOQUEADO - aguardando decisão')).toBeNull();
 });
+
+it('mostra a faixa VENCIDO no QR só para recipiente vencido com saldo (fatia 6.11)', async () => {
+  const base = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000011',
+    balance: 2,
+    batch_receipts: {
+      source_code: '0001',
+      quantity: 2,
+      unit: 'kg',
+      expiry_date: '2000-01-01',
+      expiry_origin: 'original' as const,
+      timezone: 'America/Sao_Paulo',
+      products: { name: 'Arroz' },
+    },
+  };
+  const show = (data: object) =>
+    render(
+      <LabelView
+        id={base.id}
+        gateway={{ ensure: vi.fn(), get: vi.fn().mockResolvedValue(data) }}
+      />,
+    );
+  let view = show(base);
+  expect(await screen.findByText('VENCIDO - somente descarte')).toBeVisible();
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'O consumo é recusado; o descarte continua permitido.',
+  );
+  // A etiqueta continua disponível (reimpressão), como no bloqueio.
+  expect(
+    screen.getByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeVisible();
+  view.unmount();
+  // Vale a validade do próprio recipiente (derivado), não a do recebimento.
+  view = show({
+    ...base,
+    effective: {
+      expiry_date: '2999-12-31',
+      expiry_origin: 'handling',
+      initial_quantity: 2,
+    },
+  });
+  expect(await screen.findByText('Saldo atual: 2 kg')).toBeVisible();
+  expect(screen.queryByText(/VENCIDO/)).not.toBeInTheDocument();
+  view.unmount();
+  view = show({ ...base, balance: 0 });
+  expect(await screen.findByText(/esgotado/)).toBeVisible();
+  expect(screen.queryByText(/VENCIDO/)).not.toBeInTheDocument();
+  view.unmount();
+  show({ ...base, voided: true });
+  expect(await screen.findByText(/Manipulação anulada/)).toBeVisible();
+  expect(screen.queryByText(/VENCIDO/)).not.toBeInTheDocument();
+});

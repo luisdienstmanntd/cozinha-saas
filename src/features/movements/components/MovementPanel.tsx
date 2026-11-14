@@ -11,6 +11,7 @@ import {
   MovementBlocked,
   MovementRejected,
 } from '../application/movementGateway';
+import { EXPIRED_NOTE, EXPIRED_TEXT } from '../../batches/domain/expiryStatus';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import type { BlockStatus } from '../../occurrences/domain/occurrence';
 
@@ -32,6 +33,7 @@ export function MovementPanel({
   gateway,
   onRecorded,
   blocked,
+  expired,
 }: {
   scope: CatalogScope;
   userId: string;
@@ -48,6 +50,9 @@ export function MovementPanel({
   onRecorded?: () => void;
   // Fatia 6.5b: recipiente bloqueado por ocorrência. Só o descarte passa (D-029); o banco recusa o resto.
   blocked?: BlockStatus;
+  // Fatia 6.11: validade do recipiente já passou na data da unidade. O banco recusa o consumo; o
+  // formulário só oferece o descarte.
+  expired?: boolean;
 }) {
   const key = `movement-intent:${userId}:${scope.organizationId}:${scope.establishmentId}:${batch.id}`;
   const [events, setEvents] = useState<Movement[] | null>(null);
@@ -285,6 +290,11 @@ export function MovementPanel({
             : 'o proprietário rejeitou o uso. Só o descarte é permitido.'}
         </p>
       )}
+      {expired && (
+        <p className="expired-band">
+          <strong>{EXPIRED_TEXT}</strong>: {EXPIRED_NOTE}
+        </p>
+      )}
       {notice && <p role="status">{notice}</p>}
       <p>
         Confira a operação antes de confirmar. Se fechar a aba após uma falha,
@@ -468,7 +478,7 @@ export function MovementPanel({
             <label>
               Tipo de saída{' '}
               <select name="kind">
-                <option value="consumption">Consumo</option>
+                {!expired && <option value="consumption">Consumo</option>}
                 <option value="discard">Descarte</option>
               </select>
             </label>

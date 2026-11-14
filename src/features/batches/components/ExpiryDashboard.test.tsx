@@ -405,3 +405,78 @@ it('ordena por validade, mostra saldo em vez da quantidade recebida e esconde es
   expect(within(list()).getByText(/Creme/)).toHaveTextContent('Esgotado');
   expect(screen.getByText(/Vencidos: 1 · Vence hoje: 0/)).toBeVisible();
 });
+
+it('linha vencida com saldo mostra a faixa e não oferece manipular nem consumir (fatia 6.11)', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    // 02:30 UTC de 02/01 ainda é 01/01 em São Paulo: 31/12 venceu, 01/01 vence hoje.
+    vi.setSystemTime(new Date('2026-01-02T02:30:00Z'));
+    const user = userEvent.setup();
+    const expiredId = '12345678-1234-4234-8234-000000000001';
+    const todayId = '12345678-1234-4234-8234-000000000002';
+    const containers = fakeContainers([
+      containerRow({
+        container_id: expiredId,
+        product_name: 'Arroz',
+        expiry_date: '2025-12-31',
+      }),
+      containerRow({
+        container_id: todayId,
+        product_name: 'Feijão',
+        expiry_date: '2026-01-01',
+      }),
+    ]);
+    render(
+      <BatchPanel
+        scope={{ organizationId: 'org', establishmentId: 'unit' }}
+        timezone="America/Sao_Paulo"
+        userId="user"
+        canCreate
+        catalog={{
+          list: vi.fn().mockResolvedValue([]),
+          create: vi.fn(),
+          setStorageCondition: vi.fn(),
+        }}
+        batches={batches()}
+        containers={containers}
+        movements={{
+          list: vi.fn().mockResolvedValue([]),
+          record: vi.fn(),
+        }}
+        handling={
+          {} as unknown as NonNullable<
+            Parameters<typeof BatchPanel>[0]['handling']
+          >
+        }
+      />,
+    );
+    const list = await screen.findByRole('list', {
+      name: 'Recipientes e validade',
+    });
+    const items = within(list).getAllByRole('listitem');
+    const expiredRow = items[0]!;
+    const todayRow = items[1]!;
+    expect(
+      within(expiredRow).getByText(/VENCIDO - somente descarte/),
+    ).toBeVisible();
+    expect(
+      within(expiredRow).queryByRole('button', { name: 'Abrir / porcionar' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(expiredRow).getByText(/manipulação indisponível: validade passou/),
+    ).toBeVisible();
+    expect(within(todayRow).queryByText(/VENCIDO/)).not.toBeInTheDocument();
+    expect(
+      within(todayRow).getByRole('button', { name: 'Abrir / porcionar' }),
+    ).toBeVisible();
+    await user.click(
+      within(expiredRow).getByRole('button', { name: 'Ver movimentações' }),
+    );
+    const kind = await within(expiredRow).findByLabelText('Tipo de saída');
+    expect(
+      within(kind).queryByRole('option', { name: 'Consumo' }),
+    ).not.toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
+});

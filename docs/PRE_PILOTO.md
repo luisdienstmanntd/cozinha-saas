@@ -59,7 +59,24 @@ Retenção e backup: **a definir** (prazo, local, quem acessa, teste de restaura
 | Ocorrências (total, tardias, sem decisão) | `occurrences` | peso do bloqueio |
 | Decisões e tempo até a decisão (mediana e máximo) | `occurrence_decisions` | gargalo do proprietário (R15) |
 | Anulações de manipulação; mudanças de local | `handling_voids`, `location_moves` | uso real |
+| Recipientes vencidos que ainda têm saldo (fatia 6.11) | `container_balances` e validade do recipiente | vencidos esquecidos no estoque; fotografia **de agora**, na data da unidade, independente do período pedido |
 
 **Não medido pelo banco** (as recusas não são gravadas e o papel fora do sistema não aparece lá): etiquetas feitas fora do sistema e tentativas de prazo recusadas. Durante a observação, registre à mão por turno: etiquetas feitas à mão, tentativas de "congelar para prorrogar" e pedidos de prazo acima da origem relatados pela equipe. Se o piloto mostrar que isso importa, a recusa passa a ser gravada em uma fatia própria.
+
+### 4.1 Contagem manual de etiquetas fora do sistema (fatia 6.11)
+
+O banco não sabe de etiqueta feita à mão nem de item sem etiqueta. A contagem é feita em papel ou planilha pelo proprietário (ou por quem ele indicar), na mesma ronda, sempre do mesmo jeito:
+
+| Campo | Como preencher |
+|---|---|
+| Data e turno | data da ronda e turno (manhã, tarde, noite) |
+| Local | o mesmo nome do local cadastrado no sistema (ex.: câmara 1, estoque seco) |
+| Itens com etiqueta do sistema | quantos recipientes têm a etiqueta com QR |
+| Itens com etiqueta feita à mão | quantos têm etiqueta fora do sistema |
+| Itens sem etiqueta | quantos não têm etiqueta nenhuma |
+| Itens com etiqueta de validade já passada | quantos, em qualquer tipo de etiqueta |
+| Quem contou | iniciais ou função; **sem nome completo, foto ou outro dado pessoal** |
+
+Regras: só números, sem foto e sem texto das etiquetas de terceiros; uma linha por local e turno; não apagar linha errada, riscar e escrever a correta ao lado. No fim da semana, comparar "etiqueta do sistema" com "à mão + sem etiqueta" e com a métrica de vencidos com saldo do banco. Se esse número for decisivo para o piloto, a contagem vira registro no sistema em fatia própria (ver `FASE_06_11.md`).
 
 As métricas **não** medem segurança do alimento nem conformidade.

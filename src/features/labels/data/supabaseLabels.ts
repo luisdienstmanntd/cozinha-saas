@@ -36,7 +36,7 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
       const { data, error } = await client
         .from('containers')
         .select(
-          'id,organization_id,establishment_id,short_code,handling_id,position,storage,batch_receipts!inner(source_code,quantity,unit,expiry_date,expiry_origin,suppliers(name),products!inner(name))',
+          'id,organization_id,establishment_id,short_code,handling_id,position,storage,batch_receipts!inner(source_code,quantity,unit,expiry_date,expiry_origin,timezone,suppliers(name),products!inner(name))',
         )
         .eq('id', id)
         .maybeSingle();
