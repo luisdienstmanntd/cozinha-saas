@@ -328,15 +328,17 @@ export function MovementPanel({
                     : 'Anulação do registro'
                   : item.kind === 'transfer_reversal'
                     ? 'Devolução da transferência (manipulação anulada)'
-                    : item.kind === 'handling_void'
-                      ? 'Saída por anulação da manipulação'
-                      : item.kind === 'transfer'
-                        ? 'Transferência para recipientes derivados'
-                        : item.kind === 'discard'
-                          ? item.handlingId
-                            ? 'Descarte de sobra da manipulação'
-                            : 'Descarte'
-                          : 'Consumo'}{' '}
+                    : item.kind === 'production_void'
+                      ? 'Produção anulada'
+                      : item.kind === 'handling_void'
+                        ? 'Saída por anulação da manipulação'
+                        : item.kind === 'transfer'
+                          ? 'Transferência para recipientes derivados'
+                          : item.kind === 'discard'
+                            ? item.handlingId
+                              ? 'Descarte de sobra da manipulação'
+                              : 'Descarte'
+                            : 'Consumo'}{' '}
                 — {item.quantity} {batch.unit} — {item.reason ?? 'sem motivo'} —{' '}
                 {item.created_at} — fuso {item.timezone} — autor{' '}
                 {item.created_by} — ID {item.id}
@@ -354,6 +356,7 @@ export function MovementPanel({
                   item.kind !== 'transfer' &&
                   item.kind !== 'transfer_reversal' &&
                   item.kind !== 'handling_void' &&
+                  item.kind !== 'production_void' &&
                   !item.handlingId &&
                   !events.some((event) => event.reverses_id === item.id) && (
                     <button

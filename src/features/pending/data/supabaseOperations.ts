@@ -7,6 +7,8 @@ const rowSchema = z.object({
     'receipt',
     // Fatia 7.1: lote produzido (register_production); a tela de registro chega na 7.3.
     'production',
+    // Fatia 7.2: anulação de produção (void_production).
+    'production_void',
     'handling',
     'handling_void',
     'decision',

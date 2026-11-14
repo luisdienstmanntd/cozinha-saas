@@ -17,6 +17,8 @@ const movementSchema = z.object({
     'transfer',
     'transfer_reversal',
     'handling_void',
+    // Fatia 7.2: anulação de produção (zera o integral do lote produzido).
+    'production_void',
   ]),
   quantity: z.number(),
   reason: z.string().nullable(),
