@@ -380,7 +380,7 @@
 
 ## D-051 — Anulação de produção no banco (14/11/2026)
 
-- **Status:** proposta, aguardando aceite de luis; implementada na fatia 7.2 ([registro](FASE_07_2.md)).
+- **Status:** aceita por luis em 14/11/2026 (16:10 UTC) com os 3 pontos; implementada na fatia 7.2 ([registro](FASE_07_2.md)).
 - **Decisão:** `void_production` (proprietário, idempotente, motivo obrigatório, uma vez por lote, só lote produzido) grava `production_voids` append-only e um movimento `production_void` que zera o saldo do integral; é recusada se o lote teve qualquer movimento (inclusive desfeito), porcionamento ou mudança de local, e aí o caminho é o descarte com motivo; a anulação não se desfaz e não fecha ocorrência de produção tardia.
 - **Motivo:** D-049 (seção 4.6 do desenho), D-019, D-038, D-045.
 - **Consequência:** tipo de movimento novo nos três lugares da D-038; a tela da 7.3 mostra "ANULADO" e a 7.4 recusa o PDF de lote anulado.

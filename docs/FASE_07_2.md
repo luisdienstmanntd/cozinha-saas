@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.2 — anular produção no banco
 
-> Aprovada por luis em 14/11/2026 ("sim e aprovo"), conforme o [desenho da Fase 7](FASE_07_DESENHO.md) (seção 4.6, critério 8) e a D-049. Decisão proposta: **D-051** (abaixo), **aguardando aceite de luis**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) continua pendente. Dados de teste sintéticos.
+> Aprovada por luis em 14/11/2026 ("sim e aprovo"), conforme o [desenho da Fase 7](FASE_07_DESENHO.md) (seção 4.6, critério 8) e a D-049. Decisão: **D-051** (abaixo), **aceita por luis em 14/11/2026 (16:10 UTC) com os 3 pontos**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) continua pendente. Dados de teste sintéticos.
 
 ## O que mudou
 
@@ -45,14 +45,16 @@ Testes existentes alterados, sem remover nem enfraquecer nada:
 
 ## Pontos para luis decidir
 
+> Respondidos por luis em 14/11/2026, 16:10 UTC: aprovou os três como propostos. (1) consumo registrado, mesmo desfeito, fica no histórico e impede a anulação; (2) a ocorrência tardia segue aberta até decisão explícita, com justificativa e rastreabilidade; (3) a anulação é definitiva e o engano se corrige com novo registro de produção. Aprovou a D-051 mantendo histórico imutável, controles de acesso e testes, e autorizou a 7.3 com a tela de anulação.
+
 1. **Regra estrita:** um consumo registrado e depois desfeito ("Anular registro") também conta como movimento, então a produção não pode mais ser anulada; o caminho é o descarte com motivo. Proposta: manter assim, porque o histórico mostra que o lote já foi usado.
 2. **Ocorrência de produção tardia em aberto:** anular a produção não decide a ocorrência sozinha. Proposta: manter, para o proprietário registrar a decisão de propósito.
 3. **Anulação definitiva:** não se desfaz; se anular por engano, registra-se a produção de novo. Proposta: manter.
 
-## Decisão proposta para `DECISOES.md`
+## Decisão registrada em `DECISOES.md`
 
-> **D-051 — Anulação de produção no banco (14/11/2026).** Status: proposta, aguardando aceite de luis; implementada na fatia 7.2 ([registro](FASE_07_2.md)). Decisão: `void_production` (proprietário, idempotente, motivo obrigatório, uma vez por lote, só lote produzido) grava `production_voids` append-only e um movimento `production_void` que zera o integral; é recusada se o lote teve qualquer movimento (inclusive desfeito), porcionamento ou mudança de local; não se desfaz; não fecha ocorrência tardia. Motivo: D-049 (seção 4.6), D-019, D-038, D-045. Consequência: tipo de movimento novo nos três lugares da D-038; a tela da 7.3 mostra "ANULADO". Revisar quando: a 7.3 chegar ou a observação na cozinha mostrar outro erro frequente.
+> **D-051 — Anulação de produção no banco (14/11/2026).** Status: aceita por luis em 14/11/2026 (16:10 UTC) com os 3 pontos; implementada na fatia 7.2 ([registro](FASE_07_2.md)). Decisão: `void_production` (proprietário, idempotente, motivo obrigatório, uma vez por lote, só lote produzido) grava `production_voids` append-only e um movimento `production_void` que zera o integral; é recusada se o lote teve qualquer movimento (inclusive desfeito), porcionamento ou mudança de local; não se desfaz; não fecha ocorrência tardia. Motivo: D-049 (seção 4.6), D-019, D-038, D-045. Consequência: tipo de movimento novo nos três lugares da D-038; a tela da 7.3 mostra "ANULADO". Revisar quando: a 7.3 chegar ou a observação na cozinha mostrar outro erro frequente.
 
 ## Próximo passo
 
-Aceite de luis (3 pontos e D-051). A 7.3 (tela) exige aprovação própria. Sem merge sem pedido de luis.
+Aceita. A 7.3 (tela) foi autorizada por luis em 14/11/2026, 16:10 UTC. Sem merge sem pedido de luis.
