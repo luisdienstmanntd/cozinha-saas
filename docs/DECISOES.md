@@ -192,7 +192,7 @@
 
 ## D-028 — Etiquetas por tipo de operação
 
-- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia. Campos a conferir por profissional habilitado antes do piloto.
+- **Status:** aprovada para planejamento por luis em 12/11/2026; implementação depende do aceite da fatia. Campos a conferir por profissional habilitado antes do piloto. **Alterada pela D-049** (14/11/2026): preparação própria entra com terceiro modelo de etiqueta.
 - **Decisão:** dois modelos: recebimento (validade original, lote, fornecedor, conservação, quantidade como "entrada") e produto aberto/fracionado (produto, data de abertura, validade após abertura em destaque, validade do fabricante, lote, conservação, responsável, código curto e QR). Etiqueta legível sem QR. Etiqueta de alimento preparado fica para fase própria.
 - **Motivo:** não confundir validade do fabricante com validade após manipulação.
 - **Consequência:** o gerador de PDF passa a ter dois modelos; o modelo de 100 × 100 mm continua provisório até o ensaio físico (D-014).
@@ -348,12 +348,11 @@
 
 ## D-047 — Trilha pré-piloto sem tela (14/11/2026)
 
-- **Status:** proposta; implementada na fatia 6.10 ([registro](FASE_06_10.md), [procedimentos](PRE_PILOTO.md)), aguardando aceite de luis.
+- **Status:** aceita por luis em 14/11/2026 11:53 BRT ("aceito os 4 pontos"); implementada na fatia 6.10 ([registro](FASE_06_10.md), [procedimentos](PRE_PILOTO.md), PR #18).
 - **Decisão:** provisionamento só local, com senhas temporárias apenas em arquivo 0600; configuração de autenticação hospedada documentada e protegida por teste, sem ser aplicada; métricas de observação por função de leitura pela RLS; procedimento de dados pessoais só documentado; recusas não são gravadas (métricas manuais).
 - **Motivo:** desenho 6.10; P4 e P8; R6, R12, R13, R15; D-006; Q10 pendente.
 - **Consequência:** MFA obrigatório para proprietários e o destino das cópias de nome em registros imutáveis seguem em aberto; nada afirma conformidade sanitária.
 - **Revisar quando:** o ambiente hospedado for autorizado ou o piloto pedir recusas gravadas.
-
 
 ## D-048 — Consumo de recipiente vencido recusado (14/11/2026)
 
@@ -362,3 +361,11 @@
 - **Motivo:** revisão do relatório sanitário externo (itens com validade passada e sem etiqueta); D-004 (nenhum prazo calculado); a regra só olha o recipiente e cobre a preparação própria.
 - **Consequência:** é regra de uso, não avaliação sanitária; a conferência normativa (Q10) segue pendente. Testes com validade fixa que registram consumo precisam de data futura distante ou relativa ao fuso da unidade.
 - **Revisar quando:** a RT (Q10) se manifestar sobre uso no dia da validade ou o piloto pedir a contagem de etiquetas dentro do sistema.
+
+## D-049 — Preparação própria como lote com validade informada (14/11/2026)
+
+- **Status:** aceita por luis em 14/11/2026 (14:49 UTC), só desenho ([registro](FASE_07_DESENHO.md)); implementação depende da aprovação de cada fatia 7.x. **Altera a D-028**, que deixava alimento preparado para fase própria.
+- **Decisão:** a cozinha registra o que produz como **lote de preparação**: item do catálogo marcado como preparação, produzido em (fuso da unidade, janela de 2 h com ocorrência acima), produzido por (nome curto), quantidade e **validade digitada pela pessoa, sem cálculo nem sugestão**. O lote é um `batch_receipts` de origem `produced` com recipiente integral, e usa saldo, consumo, descarte, porcionamento, ocorrências, vencido, locais, QR e recuperação de tentativa existentes, sem segundo estoque. Só o proprietário escreve. Anulação de produção só antes de qualquer movimento. Terceiro modelo de etiqueta, "Preparação própria", 100 × 100 mm, legível sem QR, sem afirmar conformidade. Ingredientes, origem dos insumos e ficha de preparo ficam fora.
+- **Motivo:** cerca de metade dos itens sem etiqueta observados eram preparações próprias; fluxo descrito por luis em 14/11/2026; D-003, D-004, D-019, D-024, D-031, D-038, D-041, D-044, D-045, D-046.
+- **Consequência:** a etiqueta vira o maior volume de escrita do proprietário (R-1); validade plausível mas errada não é detectada (R-2); o modelo de 100 × 100 mm continua provisório até o ensaio físico.
+- **Revisar quando:** a nutricionista RT responder as perguntas da seção 10 (Q10), o piloto medir o atraso do registro, ou luis pedir ingredientes (8.1).
