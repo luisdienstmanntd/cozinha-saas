@@ -23,4 +23,7 @@ export interface ProductionGateway {
   register(scope: CatalogScope, input: ProductionInput): Promise<string>;
   // Devolve o identificador da anulação.
   void(scope: CatalogScope, input: ProductionVoidInput): Promise<string>;
+  // Fatia 7.8: registra que a etiqueta do recipiente integral foi baixada (não mexe no estoque).
+  // Opcional: tela e testes anteriores seguem válidos.
+  recordLabelDownload?(scope: CatalogScope, containerId: string): Promise<void>;
 }

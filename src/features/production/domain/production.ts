@@ -47,8 +47,25 @@ export const productionRowSchema = z.object({
   container_id: z.uuid().nullable(),
   short_code: z.string().nullable(),
   voided: z.object({ reason: z.string(), created_at: z.string() }).nullable(),
+  // Fatia 7.8: primeira vez em que a etiqueta do integral foi baixada (nulo = ainda não baixada).
+  label_downloaded_at: z.string().nullable().optional(),
 });
 export type ProductionRow = z.infer<typeof productionRowSchema>;
+
+// Fatia 7.8: minutos desde a produção sem a etiqueta ter sido baixada, quando passam do limite da unidade.
+// Nulo = sem aviso (anulada, sem recipiente, etiqueta já baixada ou dentro do limite). É só um aviso: o
+// banco não sabe se a etiqueta foi colada, e nada aqui bloqueia ou calcula validade (D-004).
+export function unlabeledMinutes(
+  row: ProductionRow,
+  limitMinutes: number,
+  now: Date,
+): number | null {
+  if (row.voided || !row.container_id || row.label_downloaded_at) return null;
+  const elapsed = Math.floor(
+    (now.getTime() - new Date(row.produced_at).getTime()) / 60000,
+  );
+  return elapsed > limitMinutes ? elapsed : null;
+}
 
 // Mensagens de recusa do banco que a tela repete. Lista exata; um teste confere que cada uma existe nas
 // migrações.

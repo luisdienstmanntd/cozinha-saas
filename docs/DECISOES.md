@@ -432,3 +432,11 @@
 - **Motivo:** resposta 5 de luis ao questionário (14/11/2026), D-036, D-055.
 - **Consequência:** o aviso de produção sem etiqueta (7.8) e a temperatura opcional (7.9) seguem como fatias próprias.
 - **Revisar quando:** a nutricionista RT avaliar os valores operacionais.
+
+## D-057 — Aviso de produção sem etiqueta (14/11/2026)
+
+- **Status:** proposta; aceite de luis pendente. Implementada na fatia 7.8 ([registro](FASE_07_8.md)).
+- **Decisão:** o download da etiqueta do recipiente integral de uma produção é registrado em tabela append-only, sem criar estoque (D-003), por quem pode registrar produção (D-019 e fatia 7.6). A tela de Produção avisa "sem etiqueta há X" nas produções não anuladas, sem download e acima do tempo máximo configurado na unidade (D-055). O banco não bloqueia nada, porque não sabe se a etiqueta foi colada.
+- **Motivo:** desenho da Fase 7 e resposta de luis ao questionário (aviso de 1 h sem etiqueta).
+- **Consequência:** a temperatura opcional (7.9) segue como fatia própria.
+- **Revisar quando:** a nutricionista RT avaliar o tempo e a observação do piloto mostrar se o aviso ajuda.

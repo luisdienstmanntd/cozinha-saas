@@ -19,6 +19,7 @@ import {
   localDateOf,
   productionInputSchema,
   productionLateText,
+  unlabeledMinutes,
 } from '../domain/production';
 import { VoidProduction } from './VoidProduction';
 import type { LabelGateway } from '../../labels/application/labelGateway';
@@ -182,6 +183,17 @@ function ProductionContents({
     void gateway
       .list({ organizationId, establishmentId })
       .then(setRows, () => setLoadError(LOAD_ERROR));
+  }
+  // Fatia 7.8: o PDF já foi baixado; o horário é registrado para o aviso. Falha aqui não desfaz nada.
+  function recordDownload(containerId: string) {
+    if (!gateway.recordLabelDownload) return;
+    void gateway
+      .recordLabelDownload({ organizationId, establishmentId }, containerId)
+      .then(reloadList, () =>
+        setNotice(
+          'A etiqueta foi baixada, mas não foi possível registrar o horário. O aviso de produção sem etiqueta pode continuar aparecendo.',
+        ),
+      );
   }
   function resetIntent() {
     intent.current = null;
@@ -364,6 +376,12 @@ function ProductionContents({
     }
   }
 
+  const unlabeled = rows.flatMap((row) => {
+    const minutes = unlabeledMinutes(row, rules.unlabeled_limit_minutes, now());
+    return minutes === null ? [] : [{ row, minutes }];
+  });
+  const unlabeledLimit = durationText(rules.unlabeled_limit_minutes);
+
   const created = result
     ? rows.find((row) => row.batch_id === result.batchId)
     : undefined;
@@ -375,6 +393,15 @@ function ProductionContents({
         Preparações feitas na cozinha, com validade informada pelo responsável.
       </p>
       {notice && <p role="status">{notice}</p>}
+      {unlabeled.length > 0 && (
+        <p role="status">
+          {unlabeled.length === 1
+            ? '1 produção está sem etiqueta baixada'
+            : `${unlabeled.length} produções estão sem etiqueta baixada`}{' '}
+          há mais de {unlabeledLimit}. É só um aviso: baixe a etiqueta e cole no
+          recipiente.
+        </p>
+      )}
       <h4>Produções recentes</h4>
       {rows.length === 0 ? (
         <p>Nenhuma produção registrada.</p>
@@ -397,8 +424,23 @@ function ProductionContents({
                     ids={[row.container_id]}
                     filename={`etiqueta-${row.container_id}.pdf`}
                     label={`Baixar etiqueta${row.short_code ? ` (${row.short_code})` : ''}`}
+                    onDownloaded={
+                      canRegister
+                        ? () => recordDownload(row.container_id!)
+                        : undefined
+                    }
                   />
                 </>
+              )}
+              {unlabeled.some((item) => item.row === row) && (
+                <strong>
+                  {' '}
+                  — sem etiqueta há{' '}
+                  {durationText(
+                    unlabeled.find((item) => item.row === row)!.minutes,
+                  )}{' '}
+                  (acima de {unlabeledLimit})
+                </strong>
               )}
               {row.voided ? (
                 <strong>
@@ -458,6 +500,7 @@ function ProductionContents({
                 ids={[created.container_id]}
                 filename={`etiqueta-${created.container_id}.pdf`}
                 label="Baixar etiqueta"
+                onDownloaded={() => recordDownload(created.container_id!)}
               />
             </p>
           )}
