@@ -234,3 +234,34 @@ Pontos da seção 12 aceitos (14/11/2026). A fatia 7.1 só começa com aprovaç�
 - **B. Validade da porção (resposta 6).** Confirmar se a porção de preparação deve ter sempre a mesma validade do lote. Se sim, o banco passa a exigir igualdade só para porções de preparação (manipulação de recebimento continua como hoje).
 - **C. Nome completo (resposta 9).** Opções: (a) cadastrar nome completo por vínculo (novo campo, dado pessoal, P8) e imprimir na etiqueta de preparação; (b) manter o nome curto, que pode ser o nome completo se o proprietário o cadastrar assim (até 40 caracteres). Recomendação: **(b)** para o piloto, sem dado pessoal novo; (a) se 40 caracteres não bastarem.
 
+### Decisões de luis sobre os pontos A, janela e etiqueta (14/11/2026, 15:45 UTC)
+
+luis decidiu que essas regras ficam em **configurações do sistema**, escolhidas pelo proprietário:
+
+1. **Quem define a validade da produção:** opção "só o proprietário" ou "qualquer usuário da unidade". Resolve o ponto A sem revisar a D-019 inteira: a exceção vale só para registrar produção (com a validade). Decidir ocorrência, anular e as demais operações continuam só do proprietário.
+2. **Janela de registro da produção:** hoje 2 horas; configurável, com valor próprio por preparação quando preciso.
+3. **Tempo máximo sem etiqueta:** hoje 1 hora; configurável.
+
+#### Onde ficam (proposta)
+
+| Configuração | Onde mora | Padrão | Quem muda |
+|---|---|---|---|
+| Quem registra produção | **Por unidade** (`establishment_settings`, uma linha por unidade) | Só o proprietário (como a D-019) | Proprietário |
+| Janela de registro da produção | Por unidade, com **valor por preparação no catálogo** que substitui o da unidade | 2 horas | Proprietário |
+| Tempo máximo sem etiqueta | Por unidade | 1 hora | Proprietário |
+
+Por unidade e não por empresa porque cada cozinha tem rotina própria e a regra de fuso (D-036) já é por unidade. Cada troca fica registrada em `entity_changes` (D-036), com valor anterior, novo, quem e quando; a mudança vale para registros novos, nunca reescreve os antigos (o registro de produção guarda a janela usada). O sistema não sugere valores: os padrões são os que luis indicou. Limites técnicos só para recusar o absurdo (por exemplo, janela entre 15 minutos e 24 horas), a confirmar na fatia.
+
+#### Fatias novas (cada uma com aprovação própria)
+
+| Fatia | O quê |
+|---|---|
+| **7.6** | Configurações da unidade no banco e na tela: quem registra produção (com a matriz de papéis testada para "qualquer usuário"), janela da unidade e tempo sem etiqueta. `register_production` passa a ler a configuração. |
+| **7.7** | Janela por preparação no catálogo, auditada. |
+| **7.8** | Aviso de produção sem etiqueta: registrar quando a etiqueta foi baixada (sem criar estoque, D-003) e mostrar no painel as produções acima do tempo configurado. O banco não bloqueia, porque não sabe se a etiqueta foi colada. |
+| **7.9** | Temperatura opcional do lote (fim do resfriamento, reaquecimento), sem classificar como conforme (resposta 7). |
+
+O mínimo continua sendo 7.1 a 7.4; 7.6 é a próxima depois dele, porque o modo "qualquer usuário" muda quem aparece como autor e precisa existir antes do piloto com produção.
+
+Ainda pendentes com luis: ponto B (porção com a mesma validade do lote) e ponto C (nome completo no campo de nome atual).
+
