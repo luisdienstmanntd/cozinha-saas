@@ -1,6 +1,8 @@
 # Fase 7 — desenho: etiqueta de preparação própria
 
-> **Só desenho.** Nenhum código, migração ou teste foi escrito. Cada fatia da seção 9 exige aprovação própria de luis antes de começar. Proposta de decisão: **D-049** (seção 11), que **altera a D-028**.
+> **Só desenho.** Nenhum código, migração ou teste foi escrito. Cada fatia da seção 9 exige aprovação própria de luis antes de começar. Decisão: **D-049** (seção 11), que **altera a D-028**.
+>
+> **Aceite:** luis aceitou os 6 pontos da seção 12 e a D-049 em 14/11/2026, 14:49 UTC ("1. colocar a produção da cozinha dentro do sistema. 2 concordo 3 concordo 4 concordo 5 concordo 6 concordo"). A fatia 7.1 **não** está aprovada: espera a fatia 6.11 (vencido) integrada e aprovação própria.
 >
 > **Sem conformidade sanitária.** Este documento não afirma que o fluxo atende a norma alguma. A conferência normativa pela nutricionista responsável técnica (Q10) continua pendente; as perguntas para ela estão na seção 10. Os exemplos usam dados sintéticos.
 
@@ -163,11 +165,11 @@ Objetivas, para responder sim/não ou com um valor. Nenhuma resposta vira regra 
 8. Para preparação, a **etiqueta impressa depois** (com o produto já guardado) é aceitável, e por quanto tempo o recipiente pode ficar sem etiqueta?
 9. O registro de **quem produziu** precisa de nome completo ou basta o nome curto?
 
-## 11. Decisão proposta — D-049
+## 11. Decisão — D-049
 
 > ## D-049 — Preparação própria como lote com validade informada (14/11/2026)
 >
-> - **Status:** proposta, só desenho ([registro](FASE_07_DESENHO.md)); aguardando aceite de luis. **Altera a D-028**, que deixava alimento preparado para fase própria.
+> - **Status:** aceita por luis em 14/11/2026 (14:49 UTC), só desenho ([registro](FASE_07_DESENHO.md)); implementação depende da aprovação de cada fatia 7.x. **Altera a D-028**, que deixava alimento preparado para fase própria.
 > - **Decisão:** a cozinha registra o que produz como **lote de preparação**: item do catálogo marcado como preparação, produzido em (fuso da unidade, janela de 2 h com ocorrência acima), produzido por (nome curto), quantidade e **validade digitada pela pessoa, sem cálculo nem sugestão**. O lote é um `batch_receipts` de origem `produced` com recipiente integral, e usa saldo, consumo, descarte, porcionamento, ocorrências, vencido, locais, QR e recuperação de tentativa existentes, sem segundo estoque. Só o proprietário escreve. Anulação de produção só antes de qualquer movimento. Terceiro modelo de etiqueta, "Preparação própria", 100 × 100 mm, legível sem QR, sem afirmar conformidade. Ingredientes, origem dos insumos e ficha de preparo ficam fora.
 > - **Motivo:** cerca de metade dos itens sem etiqueta observados eram preparações próprias; fluxo descrito por luis em 14/11/2026; D-003, D-004, D-019, D-024, D-031, D-038, D-041, D-044, D-045, D-046.
 > - **Consequência:** a etiqueta vira o maior volume de escrita do proprietário (R-1); validade plausível mas errada não é detectada (R-2); o modelo de 100 × 100 mm continua provisório até o ensaio físico.
@@ -206,4 +208,4 @@ Objetivas, para responder sim/não ou com um valor. Nenhuma resposta vira regra 
 
 ## 15. Próximo passo
 
-luis responde os pontos da seção 12. Com a D-049 aceita, a fatia 7.1 só começa com aprovação própria e depois que a 6.11 estiver integrada.
+Pontos da seção 12 aceitos (14/11/2026). A fatia 7.1 só começa com aprovação própria de luis e depois que a 6.11 estiver integrada.
