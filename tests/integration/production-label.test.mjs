@@ -90,9 +90,14 @@ test('etiqueta baixada da produção pela API: registro, leitura e isolamento', 
         ...scope,
         p_container_id: container,
       });
+    // Só a empresa deste teste: outros arquivos de teste rodam ao mesmo tempo no mesmo banco.
     const countOf = async (table) =>
-      (await admin.from(table).select('*', { count: 'exact', head: true }))
-        .count;
+      (
+        await admin
+          .from(table)
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', scopeA.organization_id)
+      ).count;
     const before = [
       await countOf('stock_movements'),
       await countOf('containers'),
