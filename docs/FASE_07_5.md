@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.5 — porcionar preparação na tela e métricas do piloto
 
-> Autorizada por luis em 14/11/2026 (16:41 UTC), junto com o aceite da 7.4: "Autorizo o início da Fase 7.5 — Porcionamento de preparações na interface e métricas do piloto, conforme o desenho aprovado." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (seções 4.3, 9 e 16.B), a D-049 e as D-050 a D-053. Decisão proposta: **D-054** (abaixo), **aguardando aceite de luis**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) e a impressão física seguem como pendências do piloto (`PRE_PILOTO.md`, seção 5). Dados de teste sintéticos.
+> Autorizada por luis em 14/11/2026 (16:41 UTC), junto com o aceite da 7.4: "Autorizo o início da Fase 7.5 — Porcionamento de preparações na interface e métricas do piloto, conforme o desenho aprovado." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (seções 4.3, 9 e 16.B), a D-049 e as D-050 a D-053. Decisão: **D-054** (abaixo), **aceita por luis em 14/11/2026, 16:53 UTC**, com os 3 pontos. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) e a impressão física seguem como pendências do piloto (`PRE_PILOTO.md`, seção 5). Dados de teste sintéticos.
 
 ## O que mudou
 
@@ -52,6 +52,10 @@ Na primeira rodada do pgTAP, o teste 54 de `production.test.sql` ("abrir prepara
 
 > **D-054 — Porcionar preparação e métricas de produção (14/11/2026).** Status: proposta, aguardando aceite de luis; implementada na fatia 7.5 ([registro](FASE_07_5.md)). Decisão: preparação própria só é porcionada; o porcionamento do integral vale a partir do horário da produção; a porção leva a mesma validade do recipiente de origem (decisão B, padrão até a configuração da 7.6) e a tela não oferece campo de data; a sobra pode ficar no recipiente da produção; `pilot_metrics` ganha produções, produções tardias, atraso de registro (mediana e máximo), anulações de produção, porcionamentos de preparação e ocorrências de produção tardia. Motivo: D-049, D-050, D-053, decisão B de luis (14/11/2026), R-1 do desenho da Fase 7. Consequência: a 7.6 transforma a regra da porção em configuração ("igual" ou "igual ou menor", nunca maior). Revisar quando: a 7.6 chegar ou a observação do piloto mostrar outra necessidade.
 
+## Aceite de luis (14/11/2026, 16:53 UTC)
+
+luis aprovou os três pontos: (1) validade da porção igual à do lote, sem campo editável nesta etapa; a regra "igual ou menor" poderá ser configurada na 7.6, após avaliação das necessidades operacionais e da nutricionista RT; (2) a sobra pode permanecer no recipiente original da produção, com saldo, identificação, validade e histórico corretos; (3) métricas pela função `pilot_metrics`, sem painel visual nesta fatia; a necessidade de uma tela será avaliada depois. Aprovou a D-054 e autorizou a 7.6, conforme o planejamento existente, sem antecipar 7.7 a 7.9. A validação normativa pela nutricionista RT e os testes físicos de impressão continuam pendentes.
+
 ## Próximo passo
 
-Aceite de luis (3 pontos e D-054). Com a 7.5, o mínimo da Fase 7 (7.1 a 7.4) e o ajuste da 7.5 estão feitos; as fatias 7.6 a 7.9 exigem aprovação própria. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.
+7.6 (configurações da unidade), autorizada. Com a 7.5, o mínimo da Fase 7 (7.1 a 7.4) e o ajuste da 7.5 estão feitos; as fatias 7.6 a 7.9 exigem aprovação própria. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.
