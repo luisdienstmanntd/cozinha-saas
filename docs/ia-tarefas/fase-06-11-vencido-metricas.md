@@ -2,12 +2,12 @@
 
 - **ID:** fase-06-11-vencido-metricas
 - **Responsável / sessão:** Claude Code (sessão de projeto, thread "Bloquear consumo de vencido e medir piloto")
-- **Estado:** aguardando_aceite
+- **Estado:** concluida (aceita por luis; merge pendente de pedido dele)
 - **Objetivo e aceite:** banco recusa consumo de recipiente vencido (validade do recipiente, data da unidade), descarte permitido; faixa VENCIDO no painel e no QR; `pilot_metrics` com vencidos com saldo; procedimento manual para etiquetas fora do sistema. Bateria inteira verde, nenhum teste removido ou enfraquecido.
 - **Branch / worktree / base:** `claude/fase-06-11-vencido-metricas`, base `claude/fase-06-10-pre-piloto` (PR #18, 4571c57).
 - **Arquivos e recursos em uso:** `supabase/migrations/20261114030000_expired_consumption.sql`, `supabase/rollback/expired_consumption.sql`, testes novos e ajustados (ver `FASE_06_11.md`), `BatchPanel`, `MovementPanel`, `LabelView`, `docs/PRE_PILOTO.md`.
 - **Dependências e riscos:** PRs #15 a #18 fora da `main` (ordem #15 → #16 → #17 → #18 → este). PR #19 (desenho da preparação própria) usa recipiente integral e reserva a D-049; esta fatia usa a D-048. Q10 pendente.
-- **Próximo passo:** aceite de luis dos 5 pontos e da D-048; sem merge sem pedido dele.
+- **Próximo passo:** merge só com pedido de luis (ordem #15 → #16 → #17 → #18 → #20).
 
 ## Checkpoints
 
@@ -25,3 +25,7 @@
 - **Feito:** PR #20 em rascunho (base: branch do PR #18), commit 7070bd0. CI verde (quality e banco-api-e2e).
 - **Testes locais:** lint, typecheck, format:check, build ok; Vitest 237; pgTAP 1089; integração 32; E2E 15.
 - **Próximo passo:** aceite de luis dos 5 pontos e da D-048; sem merge sem pedido dele.
+
+### 14/11/2026 14:55 UTC — Claude Code
+- **Feito:** luis aceitou a fatia, os 5 pontos e a D-048 ("aceito", 14:50 UTC). D-048 registrada em `DECISOES.md`.
+- **Próximo passo:** merge só com pedido de luis; a 7.1 exige aprovação própria.

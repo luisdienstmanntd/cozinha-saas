@@ -354,3 +354,11 @@
 - **Consequência:** MFA obrigatório para proprietários e o destino das cópias de nome em registros imutáveis seguem em aberto; nada afirma conformidade sanitária.
 - **Revisar quando:** o ambiente hospedado for autorizado ou o piloto pedir recusas gravadas.
 
+
+## D-048 — Consumo de recipiente vencido recusado (14/11/2026)
+
+- **Status:** aceita por luis em 14/11/2026 14:50 UTC ("aceito"), com os 5 pontos da fatia 6.11 ([registro](FASE_06_11.md)).
+- **Decisão:** o banco recusa consumo de recipiente cuja validade efetiva (a do próprio recipiente) é anterior à data de hoje no fuso da unidade; no dia da validade o consumo vale. Descarte e anulações continuam permitidos; o bloqueio por ocorrência é conferido antes e liberar a ocorrência não libera o vencido. A tela mostra a faixa "VENCIDO - somente descarte" e não oferece consumo nem manipulação; o PDF da etiqueta não muda. `pilot_metrics` conta vencidos com saldo agora; etiquetas fora do sistema ficam em folha de ronda manual.
+- **Motivo:** revisão do relatório sanitário externo (itens com validade passada e sem etiqueta); D-004 (nenhum prazo calculado); a regra só olha o recipiente e cobre a preparação própria.
+- **Consequência:** é regra de uso, não avaliação sanitária; a conferência normativa (Q10) segue pendente. Testes com validade fixa que registram consumo precisam de data futura distante ou relativa ao fuso da unidade.
+- **Revisar quando:** a RT (Q10) se manifestar sobre uso no dia da validade ou o piloto pedir a contagem de etiquetas dentro do sistema.
