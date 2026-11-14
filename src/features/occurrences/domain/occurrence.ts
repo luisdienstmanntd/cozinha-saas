@@ -4,11 +4,15 @@ import { z } from 'zod';
 // bloqueio é do banco (container_blocks); a tela só mostra o que ele devolve.
 export const occurrenceRowSchema = z.object({
   occurrence_id: z.uuid(),
-  kind: z.enum(['temperature_not_measured', 'late_handling']),
+  kind: z.enum([
+    'temperature_not_measured',
+    'late_handling',
+    'late_production',
+  ]),
   batch_id: z.uuid(),
   handling_id: z.uuid().nullable(),
   product_name: z.string().min(1),
-  source_code: z.string(),
+  source_code: z.string().nullable(),
   unit: z.string(),
   reason: z.string().min(1),
   created_at: z.string(),
@@ -41,6 +45,7 @@ export type DecisionInput = z.infer<typeof decisionInputSchema>;
 export const kindLabels = {
   temperature_not_measured: 'Recebimento sem medição de temperatura',
   late_handling: 'Manipulação registrada mais de 2 horas depois de feita',
+  late_production: 'Produção registrada mais de 2 horas depois de feita',
 } as const;
 
 // Texto curto do bloqueio, o mesmo no painel, na etiqueta e no recipiente.

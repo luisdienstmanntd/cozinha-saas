@@ -6,6 +6,7 @@ import type { BatchGateway } from '../application/batchGateway';
 import { batchInputSchema } from '../domain/batch';
 import type { ContainerGateway } from '../application/containerGateway';
 import type { ContainerPage, ExpirySummary } from '../domain/container';
+import { lotText } from '../domain/lot';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { LabelView } from '../../labels/components/LabelView';
 import {
@@ -636,9 +637,9 @@ function BatchContents({
                   return (
                     <li key={row.container_id}>
                       {row.product_name} — {row.short_code}
-                      {row.kind === 'derived' && ' (derivado)'} — lote{' '}
-                      {row.source_code} — saldo {row.balance} {row.unit} de{' '}
-                      {row.initial_quantity} {row.unit} — validade{' '}
+                      {row.kind === 'derived' && ' (derivado)'} —{' '}
+                      {lotText(row.source_code)} — saldo {row.balance}{' '}
+                      {row.unit} de {row.initial_quantity} {row.unit} — validade{' '}
                       {row.expiry_date} (
                       {row.expiry_origin === 'handling'
                         ? 'após manipulação'

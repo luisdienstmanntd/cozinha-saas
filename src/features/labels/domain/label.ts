@@ -41,7 +41,7 @@ export const labelDataSchema = z.object({
     .optional(),
   batch_receipts: z.object({
     suppliers: z.object({ name: z.string() }).nullable().optional(),
-    source_code: z.string(),
+    source_code: z.string().nullable(),
     quantity: z.number(),
     unit: z.string(),
     expiry_date: z.iso.date(),
@@ -52,6 +52,9 @@ export const labelDataSchema = z.object({
     products: z.object({ name: z.string() }),
   }),
 });
+// Fatia 7.1: lote produzido pela cozinha (sem lote do fabricante). O modelo próprio chega na 7.4.
+export const PRODUCED_LABEL_MESSAGE =
+  'Etiqueta de preparação própria ainda não disponível: o modelo próprio chega em fatia futura.';
 export const LATE_HOLD_MESSAGE =
   'Manipulação registrada fora da janela de horário, sem liberação do proprietário: a etiqueta não pode ser gerada.';
 export const DERIVED_DATA_MESSAGE =

@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import {
   containerPath,
   DERIVED_DATA_MESSAGE,
+  PRODUCED_LABEL_MESSAGE,
   LATE_HOLD_MESSAGE,
 } from '../domain/label';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
@@ -45,6 +46,8 @@ function refuse(data: LabelData) {
     throw new Error(
       'Manipulação anulada: este recipiente não vale mais e a etiqueta não pode ser gerada.',
     );
+  if (data.batch_receipts.source_code === null)
+    throw new Error(PRODUCED_LABEL_MESSAGE);
   if (data.late_hold) throw new Error(LATE_HOLD_MESSAGE);
   if (data.kind === 'derived' && !data.handling)
     throw new Error(DERIVED_DATA_MESSAGE);
@@ -145,7 +148,7 @@ function openedPage({ doc }: Page, data: LabelData) {
 function textsOf(data: LabelData): string[] {
   return [
     data.batch_receipts.products.name,
-    data.batch_receipts.source_code,
+    data.batch_receipts.source_code ?? '',
     data.batch_receipts.suppliers?.name ?? '',
     data.handling?.handled_by_name ?? '',
   ];

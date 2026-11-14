@@ -9,7 +9,7 @@ export const contextSchema = z.object({
   kind: z.enum(['integral', 'derived']),
   product_name: z.string().min(1),
   unit: z.string(),
-  source_code: z.string(),
+  source_code: z.string().nullable(),
   expiry_date: z.iso.date(),
   balance: z.number(),
   timezone: z.string(),

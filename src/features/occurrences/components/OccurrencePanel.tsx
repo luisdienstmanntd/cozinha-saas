@@ -4,6 +4,7 @@ import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { OccurrenceGateway } from '../application/occurrenceGateway';
 import { DecisionRejected } from '../application/occurrenceGateway';
 import type { Decision, OccurrenceRow } from '../domain/occurrence';
+import { lotText } from '../../batches/domain/lot';
 import {
   BLOCK_TEXT,
   decisionInputSchema,
@@ -153,8 +154,8 @@ export function OccurrencePanel({
                   ? 'Liberado pelo proprietário'
                   : BLOCK_TEXT[row.status]}
               </strong>{' '}
-              — {kindLabels[row.kind]} — {row.product_name} — lote{' '}
-              {row.source_code}
+              — {kindLabels[row.kind]} — {row.product_name} —{' '}
+              {lotText(row.source_code)}
               <br />
               Motivo registrado: {row.reason} — em{' '}
               {formatAt(row.created_at, row.timezone)} (

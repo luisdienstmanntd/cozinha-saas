@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { z } from 'zod';
 import type { CatalogScope } from '../../catalog/domain/catalog';
+import { lotText } from '../../batches/domain/lot';
 import type {
   Movement,
   MovementGateway,
@@ -40,7 +41,7 @@ export function MovementPanel({
   batch: {
     id: string;
     productName: string;
-    sourceCode: string;
+    sourceCode: string | null;
     quantity: number;
     unit: string;
   };
@@ -278,7 +279,7 @@ export function MovementPanel({
     <section aria-label="Movimentações">
       <h3>Movimentações</h3>
       <p>
-        {batch.productName} — lote {batch.sourceCode} — quantidade inicial{' '}
+        {batch.productName} — {lotText(batch.sourceCode)} — quantidade inicial{' '}
         {batch.quantity} {batch.unit}
       </p>
       <p>O saldo registrado não comprova a quantidade física.</p>

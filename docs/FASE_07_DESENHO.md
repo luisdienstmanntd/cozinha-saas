@@ -153,6 +153,8 @@ Cada fatia segue o critério comum da Fase 6: bateria inteira verde, nenhum test
 
 ## 10. Perguntas para a nutricionista RT (Q10)
 
+> luis respondeu estas perguntas em 14/11/2026 como **decisão de produto** (seção 16). As respostas não substituem a conferência normativa pela nutricionista RT, que continua pendente.
+
 Objetivas, para responder sim/não ou com um valor. Nenhuma resposta vira regra no sistema sem decisão de luis.
 
 1. Quais campos **mínimos** a etiqueta de preparação própria precisa ter? A lista da seção 5.2 sobra ou falta algo (por exemplo, alergênicos, lote de origem)?
@@ -209,3 +211,60 @@ Objetivas, para responder sim/não ou com um valor. Nenhuma resposta vira regra 
 ## 15. Próximo passo
 
 Pontos da seção 12 aceitos (14/11/2026). A fatia 7.1 só começa com aprovação própria de luis e depois que a 6.11 estiver integrada.
+
+## 16. Respostas de luis ao questionário (14/11/2026, 15:42 UTC)
+
+> Respostas do **proprietário do produto**, não da nutricionista RT. Valem como entrada de desenho; a Q10 continua pendente e nada aqui declara conformidade sanitária.
+
+| # | Resposta de luis | Efeito no desenho |
+|---|---|---|
+| 1 | Obrigatórios: validade, data de produção, responsável, conservação, quantidade e QR. Opcionais: alergênicos e lote de origem. | Etiqueta da 5.2 mantida (nome da preparação continua, é o que identifica o item). **Alergênicos** viram campo opcional por preparação no catálogo; **lote de origem** opcional depende da opção 8.1 (ingredientes) ou de texto livre curto. |
+| 2 | Qualquer cozinheiro/usuário define a validade. | **Conflito com a D-019** (só o proprietário escreve no piloto). Ver ponto A abaixo. |
+| 3 | Quem define a validade é a pessoa; não limitar pela menor validade dos ingredientes. | Sem mudança: nada é calculado (D-004). A opção 8.1 não aplicará limite. |
+| 4 | Horário de produção = fim do preparo / início do resfriamento; a etiqueta é feita nesse momento. | "Produzido em" passa a ter essa definição no texto da tela e no registro. |
+| 5 | Janela de 2 h adequada, com possibilidade de alterar para alguns alimentos. | Proposta: **janela por preparação no catálogo** (padrão 2 h), definida pelo proprietário e auditada; sem valor sugerido pelo sistema. Fatia própria. |
+| 6 | Porção com validade menor que o lote: **não**. Congelar gera nova validade: **não**. | Leitura proposta: a porção de uma preparação recebe **exatamente** a validade do lote (hoje o banco aceita igual ou menor). Congelamento continua sem prorrogar. **A confirmar com luis** (ponto B). |
+| 7 | Temperatura no fim do resfriamento ou no reaquecimento: não obrigatória, mas a função deve existir. | Opção 8.4 sobe para o planejamento: registro opcional de temperatura do lote (resfriamento, reaquecimento), sem classificar como conforme (como a D-027). Fatia própria. |
+| 8 | Etiqueta pode ser impressa depois de armazenar; até **1 hora** sem etiqueta. | Não há regra equivalente hoje. Proposta: a tela mostra há quanto tempo a produção foi registrada sem etiqueta baixada e avisa acima de 1 h; o banco não bloqueia (o sistema não sabe se a etiqueta foi colada). Exige registrar "etiqueta baixada" (hoje reimpressão não grava nada, D-003). |
+| 9 | Nome **completo** de quem produziu. | Diferente da Q7 e da D-024 (nome curto). Ver ponto C abaixo. |
+
+### Pontos que precisam de decisão de luis
+
+- **A. Quem registra a produção (resposta 2 x D-019).** Opções: (a) manter a D-019: o cozinheiro decide a validade e o proprietário digita, com "produzido por" mostrando o cozinheiro (o que a 7.1 já faz); (b) criar exceção na D-019 só para produção: membro registra a própria produção (validade incluída), mas não decide ocorrência nem anula; (c) revisar a D-019 inteira. Recomendação: **(b)**, porque resolve o gargalo do maior volume de escrita (R-1) sem abrir as demais operações. Exige fatia própria com matriz de papéis testada.
+- **B. Validade da porção (resposta 6).** Confirmar se a porção de preparação deve ter sempre a mesma validade do lote. Se sim, o banco passa a exigir igualdade só para porções de preparação (manipulação de recebimento continua como hoje).
+- **C. Nome completo (resposta 9).** Opções: (a) cadastrar nome completo por vínculo (novo campo, dado pessoal, P8) e imprimir na etiqueta de preparação; (b) manter o nome curto, que pode ser o nome completo se o proprietário o cadastrar assim (até 40 caracteres). Recomendação: **(b)** para o piloto, sem dado pessoal novo; (a) se 40 caracteres não bastarem.
+
+### Decisões de luis sobre os pontos A, janela e etiqueta (14/11/2026, 15:45 UTC)
+
+luis decidiu que essas regras ficam em **configurações do sistema**, escolhidas pelo proprietário:
+
+1. **Quem define a validade da produção:** opção "só o proprietário" ou "qualquer usuário da unidade". Resolve o ponto A sem revisar a D-019 inteira: a exceção vale só para registrar produção (com a validade). Decidir ocorrência, anular e as demais operações continuam só do proprietário.
+2. **Janela de registro da produção:** hoje 2 horas; configurável, com valor próprio por preparação quando preciso.
+3. **Tempo máximo sem etiqueta:** hoje 1 hora; configurável.
+
+#### Onde ficam (proposta)
+
+| Configuração | Onde mora | Padrão | Quem muda |
+|---|---|---|---|
+| Quem registra produção | **Por unidade** (`establishment_settings`, uma linha por unidade) | Só o proprietário (como a D-019) | Proprietário |
+| Janela de registro da produção | Por unidade, com **valor por preparação no catálogo** que substitui o da unidade | 2 horas | Proprietário |
+| Tempo máximo sem etiqueta | Por unidade | 1 hora | Proprietário |
+
+Por unidade e não por empresa porque cada cozinha tem rotina própria e a regra de fuso (D-036) já é por unidade. Cada troca fica registrada em `entity_changes` (D-036), com valor anterior, novo, quem e quando; a mudança vale para registros novos, nunca reescreve os antigos (o registro de produção guarda a janela usada). O sistema não sugere valores: os padrões são os que luis indicou. Limites técnicos só para recusar o absurdo (por exemplo, janela entre 15 minutos e 24 horas), a confirmar na fatia.
+
+#### Fatias novas (cada uma com aprovação própria)
+
+| Fatia | O quê |
+|---|---|
+| **7.6** | Configurações da unidade no banco e na tela: quem registra produção (com a matriz de papéis testada para "qualquer usuário"), janela da unidade e tempo sem etiqueta. `register_production` passa a ler a configuração. |
+| **7.7** | Janela por preparação no catálogo, auditada. |
+| **7.8** | Aviso de produção sem etiqueta: registrar quando a etiqueta foi baixada (sem criar estoque, D-003) e mostrar no painel as produções acima do tempo configurado. O banco não bloqueia, porque não sabe se a etiqueta foi colada. |
+| **7.9** | Temperatura opcional do lote (fim do resfriamento, reaquecimento), sem classificar como conforme (resposta 7). |
+
+O mínimo continua sendo 7.1 a 7.4; 7.6 é a próxima depois dele, porque o modo "qualquer usuário" muda quem aparece como autor e precisa existir antes do piloto com produção.
+
+### Decisões de luis sobre os pontos B e C (14/11/2026, 15:47 UTC)
+
+- **B. Validade da porção:** por padrão, a porção de preparação recebe **a mesma validade do lote**; uma configuração da unidade permite mudar a regra para "igual ou menor que a do lote". A opção **nunca** permite validade maior que a do lote nem prorrogação por congelamento (D-021, D-039, resposta 6): essas continuam como restrição do banco, fora das configurações. Entra na 7.6 (configuração) e na 7.5 (porcionar preparação na tela e no banco).
+- **C. Nome de quem produziu:** **nome completo**, no campo de nome de exibição que já existe (D-024), sem campo novo. O limite atual é de 40 caracteres; se nomes completos reais não couberem, a 7.6 amplia o limite (por exemplo, para 80) e o modelo de etiqueta da 7.4 é testado com o nome mais longo permitido. O nome copiado nos registros continua imutável (P8, D-047).
+

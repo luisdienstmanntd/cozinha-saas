@@ -369,3 +369,11 @@
 - **Motivo:** cerca de metade dos itens sem etiqueta observados eram preparações próprias; fluxo descrito por luis em 14/11/2026; D-003, D-004, D-019, D-024, D-031, D-038, D-041, D-044, D-045, D-046.
 - **Consequência:** a etiqueta vira o maior volume de escrita do proprietário (R-1); validade plausível mas errada não é detectada (R-2); o modelo de 100 × 100 mm continua provisório até o ensaio físico.
 - **Revisar quando:** a nutricionista RT responder as perguntas da seção 10 (Q10), o piloto medir o atraso do registro, ou luis pedir ingredientes (8.1).
+
+## D-050 — Preparação própria registrada no banco (14/11/2026)
+
+- **Status:** aceita por luis em 14/11/2026 (15:50 UTC); implementada na fatia 7.1 ([registro](FASE_07_1.md)).
+- **Decisão:** preparação é um item do catálogo de tipo `preparation`, definido na criação; o lote produzido é um `batch_receipts` de origem `produced` sem fornecedor, lote do fabricante ou temperatura de recebimento, com `batch_productions` append-only e escrita só por `register_production` (proprietário, idempotente, janela de 2 horas com ocorrência `late_production` que bloqueia o lote inteiro, validade digitada sem cálculo); abrir preparação é recusado; `find_operation` devolve `production`.
+- **Motivo:** D-049 e os pontos aceitos em 14/11/2026; D-004, D-019, D-031, D-041, D-045.
+- **Consequência:** escrita nova em lote precisa considerar a origem; tabela nova de histórico entra na guarda; a 7.2 precisa de tipo de movimento novo (três lugares da D-038).
+- **Revisar quando:** a 7.2 a 7.5 chegarem ou a nutricionista RT responder a seção 10 do desenho.
