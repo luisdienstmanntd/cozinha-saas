@@ -47,8 +47,8 @@ Implementada por Claude Code em 14/11/2026, conforme as seções 4.7, 7.5 e 7.7 
 
 ## Decisão proposta para `DECISOES.md`
 
-**D-045 — Recuperação de tentativa e acesso tolerante (proposta):** a tentativa de escrita é guardada no navegador (por usuário, até 24 horas) antes do envio e apagada por sucesso ou recusa definitiva; ao reabrir, o servidor é consultado por `find_operation` (só leitura, pela RLS) e a tela mostra "Registro confirmado" ou oferece "Enviar novamente" (mesmo identificador) ou "Descartar tentativa", sem nunca reenviar sozinha; uma empresa com dado inesperado não derruba o acesso às demais. **Revisar quando** a 6.9 (transferências) ou o piloto mostrar que 24 horas ou 20 tentativas não servem.
+**D-045 — Recuperação de tentativa e acesso tolerante (aceita por luis em 14/11/2026):** a tentativa de escrita é guardada no navegador (por usuário, até 24 horas) antes do envio e apagada por sucesso ou recusa definitiva; ao reabrir, o servidor é consultado por `find_operation` (só leitura, pela RLS) e a tela mostra "Registro confirmado" ou oferece "Enviar novamente" (mesmo identificador) ou "Descartar tentativa", sem nunca reenviar sozinha; uma empresa com dado inesperado não derruba o acesso às demais. **Revisar quando** a 6.9 (transferências) ou o piloto mostrar que 24 horas ou 20 tentativas não servem.
 
 ## Próximo passo
 
-Aguardar o aceite de luis. Sem merge sem pedido dele. A 6.9 (locais e transferências) exige aprovação própria.
+luis aceitou os 4 pontos e a D-045 em 14/11/2026 00:46 UTC ("aceito todas") e aprovou o início da 6.9 às 00:48 UTC ("6.9 aceito"). Sem merge sem pedido dele.
