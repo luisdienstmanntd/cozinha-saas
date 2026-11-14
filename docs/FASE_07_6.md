@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.6 — configurações da unidade
 
-> Autorizada por luis em 14/11/2026 (16:53 UTC), junto com o aceite da 7.5: "Autorizo o início da Fase 7.6, conforme o planejamento existente, sem antecipar as fatias 7.7 a 7.9." Segue o [desenho da Fase 7](FASE_07_DESENHO.md), seção 16 (decisões A e B de luis, 14/11/2026), e as D-019, D-036 e D-049 a D-054. Decisão proposta: **D-055** (abaixo), **aguardando aceite de luis**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) e o teste físico de impressão seguem pendentes (`PRE_PILOTO.md`, seção 5). Dados de teste sintéticos.
+> Autorizada por luis em 14/11/2026 (16:53 UTC), junto com o aceite da 7.5: "Autorizo o início da Fase 7.6, conforme o planejamento existente, sem antecipar as fatias 7.7 a 7.9." Segue o [desenho da Fase 7](FASE_07_DESENHO.md), seção 16 (decisões A e B de luis, 14/11/2026), e as D-019, D-036 e D-049 a D-054. Decisão: **D-055** (abaixo), **aceita por luis em 14/11/2026, 20:30 UTC, com restrição ao ponto 2**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) e o teste físico de impressão seguem pendentes (`PRE_PILOTO.md`, seção 5). Dados de teste sintéticos.
 
 ## O que mudou
 
@@ -80,13 +80,29 @@ Proposta: uma correção pequena, com aprovação própria, que torna os dois te
 ## Pontos para luis decidir
 
 1. **O colaborador registra só a própria produção**, nunca em nome de outra pessoa, e não anula. Proposta: manter. Assim, "produzido por" é sempre quem registrou, e a correção continua com o proprietário.
-2. **"Igual ou menor" fica disponível, mas o padrão continua "igual à do lote".** Você pediu essa regra só depois da avaliação operacional e da nutricionista RT. Proposta: manter a opção pronta e não ativá-la até essa avaliação. Se preferir, a opção pode ficar escondida na tela até lá.
+2. **"Igual ou menor" fica disponível, mas o padrão continua "igual à do lote".** Você pediu essa regra só depois da avaliação operacional e da nutricionista RT. Proposta: manter a opção pronta e não ativá-la até essa avaliação. Se preferir, a opção pode ficar escondida na tela até lá. *(Decidido por luis: opção oculta, ver "Aceite de luis".)*
 3. **Limites de 15 minutos a 24 horas** para a janela e para o tempo sem etiqueta. Eles servem só para recusar valores absurdos. Proposta: manter.
 
 ## Decisão proposta para `DECISOES.md`
 
 > **D-055 — Configurações da unidade (14/11/2026).** Status: proposta, aguardando aceite de luis; implementada na fatia 7.6 ([registro](FASE_07_6.md)). Decisão: cada unidade tem configurações escolhidas pelo proprietário e auditadas em `entity_changes`: quem registra produção (padrão só o proprietário; opção "cada colaborador registra a própria produção", exceção à D-019 só para o registro da produção, com a validade), janela de registro da produção (padrão 2 horas; 15 minutos a 24 horas; guardada em cada registro), tempo máximo sem etiqueta (padrão 1 hora; usado pela 7.8) e validade da porção de preparação própria (padrão igual à do lote; opção igual ou menor, nunca maior). Mudança vale para os registros novos e nunca reescreve os antigos. Motivo: decisões A e B de luis (14/11/2026), R-1 do desenho da Fase 7, D-036. Consequência: a 7.7 acrescenta a janela por preparação; a 7.8 usa o tempo sem etiqueta. Revisar quando: a observação do piloto ou a nutricionista RT indicarem outra necessidade.
 
+## Aceite de luis (14/11/2026, 20:30 UTC)
+
+1. **Aprovado:** o colaborador registra exclusivamente a própria produção, quando o proprietário habilitar; não registra em nome de terceiros nem anula.
+2. **Aprovado com restrição:** a regra "validade igual ou menor" fica implementada e testada, mas **a opção de ativação fica oculta na interface até a avaliação da nutricionista RT**. O padrão continua "igual à validade do lote" e a opção não é ativada automaticamente.
+3. **Aprovado:** limites técnicos de 15 minutos a 24 horas para a janela e o tempo sem etiqueta. Eles não representam aprovação sanitária; os valores operacionais serão avaliados pela nutricionista RT.
+
+Aprovou a D-055 com a restrição do ponto 2 registrada na decisão e autorizou a 7.7, sem antecipar 7.8 e 7.9. A pergunta sobre corrigir os dois testes instáveis segue sem resposta; eles ficam sem alteração.
+
+### Como a restrição foi aplicada
+
+- A tela de configurações **não oferece mais a escolha** da regra da porção. Ela mostra a regra em vigor e informa que não é alterada por ali. A constante `PORTION_RULE_SELECTABLE` (em `settings.ts`) fica `false`.
+- O banco e a tela de porcionar continuam com a regra implementada e testada (pgTAP, integração e testes de tela), para que a ativação, quando luis decidir, seja só mostrar a opção.
+- Salvar outras configurações preserva a regra gravada, seja ela qual for. Hoje nenhuma unidade sai com "igual ou menor", porque a tela nunca a grava.
+- Teste existente alterado, sem perder rigor: o teste de "recusa do banco volta ao formulário" da tela de configurações escolhia a regra da porção para criar uma mudança; passou a escolher "cada colaborador registra a própria produção". Dois testes novos conferem que a opção não aparece e que a regra gravada é preservada.
+- A escrita pela função `set_establishment_settings` ainda aceita a regra, como na 7.6; a restrição de luis é de interface.
+
 ## Próximo passo
 
-Aceite de luis (3 pontos e D-055). As fatias 7.7 a 7.9 exigem aprovação própria. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.
+7.7 (janela por preparação), autorizada. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.

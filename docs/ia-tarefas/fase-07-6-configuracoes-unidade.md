@@ -2,7 +2,7 @@
 
 - **ID:** fase-07-6-configuracoes-unidade
 - **Responsável / sessão:** Claude Code (conversa "Desenhar etiqueta de preparação própria")
-- **Estado:** aguardando aceite de luis
+- **Estado:** aceita por luis em 14/11/2026, 20:30 UTC (3 pontos e D-055, com restrição ao ponto 2); 7.7 autorizada
 - **Objetivo e aceite:** implementar a 7.6 do `FASE_07_DESENHO.md` (quem registra produção, janela da unidade, tempo sem etiqueta, regra da porção da decisão B), com matriz de papéis testada; D-055 proposta.
 - **Branch / worktree / base:** `claude/fase-07-6-configuracoes-unidade`, sobre `claude/fase-07-5-porcionar-preparacao` (PR #25, sem merge).
 - **Arquivos e recursos em uso:**
@@ -35,3 +35,10 @@
 - **Correção:** o arquivo passou a se chamar `production_settings.test.sql` e roda depois. O teste 26 não foi alterado.
 - **Testes:** pgTAP 1284 passaram 3 vezes seguidas com banco recém-criado.
 - **Pendência:** tornar o teste 26 independente da ordem física. A correção fica proposta a luis, com aprovação própria.
+
+### 14/11/2026 ~20:45 UTC — Claude Code
+- **Aceite de luis registrado** (3 pontos e D-055, com a restrição do ponto 2: opção "igual ou menor" oculta na interface até a avaliação da RT).
+- **Feito:** `PORTION_RULE_SELECTABLE = false`; a tela de configurações mostra a regra em vigor sem oferecer a escolha e preserva a regra gravada. Banco e tela de porcionar seguem com a regra implementada e testada.
+- **Teste existente alterado sem perder rigor:** o teste de recusa/resultado incerto da tela de configurações passou a usar a opção "cada colaborador registra a própria produção" em vez da regra da porção. Dois testes novos conferem a opção oculta e a preservação da regra gravada.
+- **Pergunta aberta a luis:** corrigir os dois testes instáveis (`handling_void` teste 26 e `list_containers` teste 38); sem resposta, ficam sem alteração.
+- **Próximo passo:** 7.7.

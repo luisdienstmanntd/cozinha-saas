@@ -7,6 +7,11 @@ export const portionRules = ['equal', 'equal_or_less'] as const;
 export type Registrar = (typeof registrars)[number];
 export type PortionRule = (typeof portionRules)[number];
 
+// luis, 14/11/2026 (aceite da 7.6, ponto 2): a regra "igual ou menor" fica implementada e testada no
+// banco e na tela de porcionar, mas a opção de ativá-la fica OCULTA até a avaliação da nutricionista RT.
+// O padrão é "igual à validade do lote" e nada ativa a regra sozinho. Só mudar com nova decisão de luis.
+export const PORTION_RULE_SELECTABLE = false;
+
 export const MIN_MINUTES = 15;
 export const MAX_MINUTES = 1440;
 const minutes = z.number().int().min(MIN_MINUTES).max(MAX_MINUTES);

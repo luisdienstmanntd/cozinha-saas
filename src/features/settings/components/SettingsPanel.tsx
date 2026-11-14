@@ -11,6 +11,7 @@ import type {
 import {
   MAX_MINUTES,
   MIN_MINUTES,
+  PORTION_RULE_SELECTABLE,
   durationText,
   portionRuleLabels,
   portionRules,
@@ -274,20 +275,27 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
             {limit !== null && `(${durationText(limit)}) `}Entre 15 minutos e 24
             horas.
           </p>
-          <fieldset disabled={busy}>
-            <legend>Porção de preparação própria</legend>
-            {portionRules.map((value) => (
-              <label key={value}>
-                <input
-                  type="radio"
-                  name="portion"
-                  checked={portion === value}
-                  onChange={() => setPortion(value)}
-                />{' '}
-                {portionRuleLabels[value]}{' '}
-              </label>
-            ))}
-          </fieldset>
+          {PORTION_RULE_SELECTABLE ? (
+            <fieldset disabled={busy}>
+              <legend>Porção de preparação própria</legend>
+              {portionRules.map((value) => (
+                <label key={value}>
+                  <input
+                    type="radio"
+                    name="portion"
+                    checked={portion === value}
+                    onChange={() => setPortion(value)}
+                  />{' '}
+                  {portionRuleLabels[value]}{' '}
+                </label>
+              ))}
+            </fieldset>
+          ) : (
+            <p>
+              Porção de preparação própria: {portionRuleLabels[portion]}. Esta
+              regra não é alterada por aqui.
+            </p>
+          )}
           {error && <p role="alert">{error}</p>}
           <button type="submit">Revisar configurações</button>{' '}
           <button

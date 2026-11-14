@@ -9,6 +9,7 @@ import type { SettingsGateway } from './application/settingsGateway';
 import { createSettingsGateway } from './data/supabaseSettings';
 import {
   DEFAULT_SETTINGS,
+  PORTION_RULE_SELECTABLE,
   SETTINGS_MESSAGES,
   durationText,
   knownSettingsMessage,
@@ -132,6 +133,72 @@ describe('gateway das configurações', () => {
 });
 
 describe('tela de configurações', () => {
+  it('a opção "igual ou menor" fica oculta até a avaliação da RT (luis, 14/11/2026)', async () => {
+    expect(PORTION_RULE_SELECTABLE).toBe(false);
+    const settings = {
+      get: vi.fn().mockResolvedValue(DEFAULT_SETTINGS),
+      save: vi.fn(async (_s: unknown, next: EstablishmentSettings) => next),
+    };
+    const user = userEvent.setup();
+    render(<SettingsPanel scope={scope} gateway={settings} canEdit />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Alterar configurações' }),
+    );
+    expect(
+      screen.queryByLabelText(
+        'Igual ou menor que a validade do lote (nunca maior)',
+      ),
+    ).toBeNull();
+    expect(
+      within(
+        screen.getByRole('form', { name: 'Alterar configurações' }),
+      ).getByText(/Porção de preparação própria: Igual à validade do lote/),
+    ).toBeVisible();
+    // Salvar outra configuração não muda a regra da porção.
+    await user.click(
+      screen.getByLabelText('Cada colaborador registra a própria produção'),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Revisar configurações' }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Confirmar configurações' }),
+    );
+    await waitFor(() => expect(settings.save).toHaveBeenCalledTimes(1));
+    expect(settings.save.mock.calls[0]![1].portion_expiry_rule).toBe('equal');
+  });
+  it('se a regra já estiver gravada como "igual ou menor", a tela a mostra e a preserva', async () => {
+    const settings = {
+      get: vi.fn().mockResolvedValue({
+        ...DEFAULT_SETTINGS,
+        portion_expiry_rule: 'equal_or_less',
+      }),
+      save: vi.fn(async (_s: unknown, next: EstablishmentSettings) => next),
+    };
+    const user = userEvent.setup();
+    render(<SettingsPanel scope={scope} gateway={settings} canEdit />);
+    expect(
+      await screen.findByText(
+        'Porção de preparação própria: Igual ou menor que a validade do lote (nunca maior)',
+      ),
+    ).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'Alterar configurações' }),
+    );
+    await user.click(
+      screen.getByLabelText('Cada colaborador registra a própria produção'),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Revisar configurações' }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Confirmar configurações' }),
+    );
+    await waitFor(() => expect(settings.save).toHaveBeenCalledTimes(1));
+    expect(settings.save.mock.calls[0]![1].portion_expiry_rule).toBe(
+      'equal_or_less',
+    );
+  });
   function gateway(current: EstablishmentSettings = DEFAULT_SETTINGS) {
     return {
       get: vi.fn().mockResolvedValue(current),
@@ -255,9 +322,7 @@ describe('tela de configurações', () => {
       await screen.findByRole('button', { name: 'Alterar configurações' }),
     );
     await user.click(
-      screen.getByLabelText(
-        'Igual ou menor que a validade do lote (nunca maior)',
-      ),
+      screen.getByLabelText('Cada colaborador registra a própria produção'),
     );
     await user.click(
       screen.getByRole('button', { name: 'Revisar configurações' }),
