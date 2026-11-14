@@ -1,0 +1,26 @@
+# Fase 6, fatia 6.10 (P4): configuração de autenticação PARA AMBIENTE HOSPEDADO. É um exemplo documentado:
+# nada aqui é aplicado pelo CLI local nem por esta fatia (D-006: nenhum deploy sem autorização de luis).
+# Ao criar o projeto hospedado, aplique estes valores no painel ou na configuração do projeto e confira
+# a lista de docs/PRE_PILOTO.md. O teste src/compliance/productionAuth.test.ts impede que este exemplo
+# volte a valores fracos sem ninguém notar.
+
+[auth]
+enable_signup = false
+enable_anonymous_sign_ins = false
+minimum_password_length = 12
+password_requirements = "lower_upper_letters_digits_symbols"
+
+[auth.email]
+enable_confirmations = true
+secure_password_change = true
+double_confirm_changes = true
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.rate_limit]
+# Limites mais baixos que os locais; revisar com o uso real do piloto.
+sign_in_sign_ups = 10
+token_verifications = 10
+email_sent = 4
