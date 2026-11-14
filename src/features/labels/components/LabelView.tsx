@@ -4,6 +4,7 @@ import type { LabelGateway } from '../application/labelGateway';
 import type { LabelData } from '../domain/label';
 import {
   LATE_HOLD_MESSAGE,
+  PRODUCTION_HOLD_MESSAGE,
   PRODUCTION_VOIDED_MESSAGE,
   PRODUCTION_VOIDED_TEXT,
 } from '../domain/label';
@@ -102,7 +103,12 @@ export function LabelView({
       return;
     }
     if (!isCurrent()) return;
-    if (fresh.voided || fresh.late_hold || fresh.production?.voided) {
+    if (
+      fresh.voided ||
+      fresh.late_hold ||
+      fresh.production_hold ||
+      fresh.production?.voided
+    ) {
       setData(fresh);
       setBusy(false);
       return;
@@ -202,14 +208,17 @@ export function LabelView({
               <strong>{EXPIRED_TEXT}</strong>: {EXPIRED_NOTE}
             </p>
           )}
-          {data.hold && !data.voided && !data.late_hold && (
-            <p role="status">
-              <strong>{BLOCK_TEXT[data.hold]}</strong>
-              {data.hold === 'pending'
-                ? ': ocorrência sem decisão do proprietário. Consumo e manipulação ficam recusados; a etiqueta sai com a faixa de bloqueio.'
-                : ': o proprietário rejeitou o uso. Só o descarte é permitido; a etiqueta sai com a faixa.'}
-            </p>
-          )}
+          {data.hold &&
+            !data.voided &&
+            !data.late_hold &&
+            !data.production_hold && (
+              <p role="status">
+                <strong>{BLOCK_TEXT[data.hold]}</strong>
+                {data.hold === 'pending'
+                  ? ': ocorrência sem decisão do proprietário. Consumo e manipulação ficam recusados; a etiqueta sai com a faixa de bloqueio.'
+                  : ': o proprietário rejeitou o uso. Só o descarte é permitido; a etiqueta sai com a faixa.'}
+              </p>
+            )}
           <p>Código: {data.short_code}</p>
           <p>Identificação: {data.id}</p>
           <p>
@@ -231,7 +240,9 @@ export function LabelView({
             </p>
           ) : data.late_hold ? (
             <p role="alert">{LATE_HOLD_MESSAGE}</p>
-          ) : productionVoided ? null : (
+          ) : productionVoided ? null : data.production_hold ? (
+            <p role="alert">{PRODUCTION_HOLD_MESSAGE}</p>
+          ) : (
             <button disabled={busy} onClick={() => void download()}>
               Gerar etiqueta PDF
             </button>

@@ -21,6 +21,8 @@ import {
   productionInputSchema,
 } from '../domain/production';
 import { VoidProduction } from './VoidProduction';
+import type { LabelGateway } from '../../labels/application/labelGateway';
+import { DownloadLabels } from '../../labels/components/DownloadLabels';
 
 export const PRODUCTION_EXPIRY_TEXT =
   'Informe a validade definida pelo responsável. O sistema não calcula nem sugere prazos.';
@@ -59,6 +61,8 @@ type Props = {
   catalogRevision?: number;
   reloadToken?: number;
   now?: () => Date;
+  // Fatia 7.4: etiqueta "Preparação própria" do recipiente integral.
+  labels?: LabelGateway;
   // Algo foi gravado: a lista de recipientes relê o saldo.
   onChanged?: () => void;
 };
@@ -77,6 +81,7 @@ function ProductionContents({
   catalogRevision,
   reloadToken,
   now = () => new Date(),
+  labels,
   onChanged,
 }: Props) {
   const [preparations, setPreparations] = useState<CatalogItem[] | null>(null);
@@ -333,7 +338,6 @@ function ProductionContents({
       <h3>Produção da cozinha</h3>
       <p>
         Preparações feitas na cozinha, com validade informada pelo responsável.
-        A etiqueta própria chega em fatia futura.
       </p>
       {notice && <p role="status">{notice}</p>}
       <h4>Produções recentes</h4>
@@ -349,6 +353,17 @@ function ProductionContents({
               por {row.handled_by_name} — validade {formatDate(row.expiry_date)}{' '}
               (definida pelo responsável)
               {row.late && ' — registrada fora da janela de 2 horas'}
+              {labels && row.container_id && !row.voided && (
+                <>
+                  {' '}
+                  <DownloadLabels
+                    gateway={labels}
+                    ids={[row.container_id]}
+                    filename={`etiqueta-${row.container_id}.pdf`}
+                    label={`Baixar etiqueta${row.short_code ? ` (${row.short_code})` : ''}`}
+                  />
+                </>
+              )}
               {row.voided ? (
                 <strong>
                   {' '}
@@ -392,6 +407,16 @@ function ProductionContents({
             {result.late &&
               ' O lote fica bloqueado até a decisão do proprietário (veja Bloqueios e ocorrências).'}
           </p>
+          {labels && created?.container_id && (
+            <p>
+              <DownloadLabels
+                gateway={labels}
+                ids={[created.container_id]}
+                filename={`etiqueta-${created.container_id}.pdf`}
+                label="Baixar etiqueta"
+              />
+            </p>
+          )}
           <p>
             Para corrigir um erro de digitação, anule a produção na lista acima
             antes de qualquer uso e registre de novo.

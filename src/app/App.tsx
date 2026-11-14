@@ -111,6 +111,7 @@ function Workspace({
           setDisplayName={tracked.handling.setDisplayName}
           catalogRevision={revision}
           reloadToken={pendingToken}
+          labels={configuration.labels}
           onChanged={() => setStockToken((value) => value + 1)}
         />
       )}

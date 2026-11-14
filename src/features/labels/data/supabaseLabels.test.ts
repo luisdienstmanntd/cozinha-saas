@@ -232,7 +232,11 @@ it('dados da manipulação ilegíveis deixam o derivado sem `handling` (o PDF re
   expect(label.handling).toBeUndefined();
 });
 
-function producedClient(production: unknown, voidRow: unknown) {
+function producedClient(
+  production: unknown,
+  voidRow: unknown,
+  blocks: unknown[] = [],
+) {
   const container = {
     id: '12345678-1234-4234-8234-123456789abc',
     organization_id: '22345678-1234-4234-8234-123456789abc',
@@ -269,7 +273,7 @@ function producedClient(production: unknown, voidRow: unknown) {
   const rpc = vi.fn((name: string) =>
     Promise.resolve(
       name === 'container_blocks'
-        ? { data: [], error: null }
+        ? { data: blocks, error: null }
         : { data: [{ container_id: container.id, balance: 0 }], error: null },
     ),
   );
@@ -316,4 +320,29 @@ it('lote produzido sem dados da produção legíveis fica indisponível (fail cl
   await expect(
     createLabelGateway(client).get('12345678-1234-4234-8234-123456789abc'),
   ).rejects.toThrow('Recipiente indisponível ou sem acesso.');
+});
+
+it('produção tardia sem liberação marca a etiqueta como retida (fatia 7.4)', async () => {
+  const made = {
+    produced_at: '2026-11-14T10:00:00+00:00',
+    handled_by_name: 'Bruno Lima',
+    timezone: 'America/Sao_Paulo',
+    late: true,
+  };
+  const held = producedClient(made, null, [
+    { kind: 'late_production', status: 'pending' },
+  ]);
+  const label = await createLabelGateway(held.client).get(
+    '12345678-1234-4234-8234-123456789abc',
+  );
+  expect(label.production_hold).toBe(true);
+  expect(label.late_hold).toBe(false);
+  const released = producedClient(made, null, []);
+  expect(
+    (
+      await createLabelGateway(released.client).get(
+        '12345678-1234-4234-8234-123456789abc',
+      )
+    ).production_hold,
+  ).toBe(false);
 });

@@ -46,7 +46,9 @@ it('recusa gerar PDF de derivado de manipulação tardia sem liberação (fatia 
   ).rejects.toThrow('fora da janela de horário');
 });
 
-it('recusa a etiqueta de lote produzido até o modelo próprio (fatia 7.1)', async () => {
+// Fatia 7.1 recusava todo lote produzido; desde a 7.4 o modelo próprio existe e a recusa fica para lote
+// produzido sem os dados da produção (falha fechada).
+it('lote produzido sem os dados da produção é recusado (fatia 7.1, falha fechada desde a 7.4)', async () => {
   await expect(
     makeLabelPdf(
       {
@@ -60,7 +62,7 @@ it('recusa a etiqueta de lote produzido até o modelo próprio (fatia 7.1)', asy
       },
       'http://127.0.0.1:5173',
     ),
-  ).rejects.toThrow('Etiqueta de preparação própria ainda não disponível');
+  ).rejects.toThrow('Dados da produção indisponíveis');
 });
 
 // Fatia 6.5b (desenho 7.2): etiqueta de recipiente bloqueado sai com a faixa; liberado, sai sem ela.
@@ -202,4 +204,135 @@ it('PDF de várias etiquetas tem uma página por recipiente e recusa o arquivo t
   await expect(makeLabelsPdf([], 'http://127.0.0.1:5173')).rejects.toThrow(
     'Nenhuma etiqueta',
   );
+});
+
+// Fatia 7.4 (desenho da Fase 7, seção 5.2): modelo "Preparação própria".
+const prepared: LabelData = {
+  id: '42345678-1234-4234-8234-123456789abc',
+  short_code: 'C-000123',
+  balance: 6,
+  kind: 'integral',
+  storage: 'refrigerated',
+  effective: {
+    expiry_date: '2026-11-16',
+    expiry_origin: 'receipt',
+    initial_quantity: 6,
+  },
+  production: {
+    produced_at: '2026-11-14T14:30:00Z',
+    handled_by_name: 'Bruno Lima',
+    timezone: 'America/Sao_Paulo',
+    late: false,
+    voided: null,
+  },
+  batch_receipts: {
+    source_code: null,
+    quantity: 6,
+    unit: 'l',
+    expiry_date: '2026-11-16',
+    expiry_origin: 'responsible',
+    products: { name: 'Caldo de legumes' },
+  },
+};
+const preparedPortion: LabelData = {
+  ...prepared,
+  id: '52345678-1234-4234-8234-123456789abc',
+  short_code: 'C-000124',
+  kind: 'derived',
+  balance: 1,
+  effective: {
+    expiry_date: '2026-11-15',
+    expiry_origin: 'handling',
+    initial_quantity: 1,
+  },
+  handling: {
+    kind: 'portioning',
+    handled_at: '2026-11-14T15:00:00Z',
+    timezone: 'America/Sao_Paulo',
+    handled_by_name: 'Ana',
+    expiry_date: '2026-11-15',
+    storage: 'refrigerated',
+    position: 2,
+    siblings: 6,
+  },
+};
+it('etiqueta de preparação própria traz os campos da seção 5.2, na ordem, legíveis sem o QR', async () => {
+  const text = await drawn(prepared);
+  const expected = [
+    'PREPARAÇÃO PRÓPRIA',
+    'Caldo de legumes',
+    'VALIDADE',
+    '16/11/2026',
+    'Validade informada pelo responsável',
+    'Produzido em: 14/11/2026 11:30 (America/Sao_Paulo)',
+    'Produzido por: Bruno Lima',
+    'Conservação: Refrigerado',
+    'Quantidade produzida: 6 l',
+    'C-000123',
+  ];
+  for (const item of expected) expect(text, item).toContain(item);
+  const order = expected.map((item) => text.indexOf(item));
+  expect(order).toEqual([...order].sort((a, b) => a - b));
+  // Sem lote do fabricante, fornecedor nem modelo de recebimento.
+  for (const absent of ['RECEBIMENTO', 'Lote', 'Fornecedor', 'Porção'])
+    expect(text.join(' ')).not.toContain(absent);
+});
+it('o nome da preparação é o maior texto da etiqueta', async () => {
+  const blob = await makeLabelPdf(prepared, 'http://127.0.0.1:5173');
+  const raw = new TextDecoder('latin1').decode(await blob.arrayBuffer());
+  const sizes = [
+    ...raw.matchAll(/\/F\d+ ([\d.]+) Tf[^]*?\(((?:[^()\\]|\\.)*)\)\s*Tj/g),
+  ].map((m) => ({ size: Number(m[1]), text: m[2]! }));
+  const name = sizes.find((item) => item.text === 'Caldo de legumes')!;
+  expect(name).toBeDefined();
+  for (const item of sizes) expect(item.size).toBeLessThanOrEqual(name.size);
+});
+it('porção de preparação usa o mesmo modelo, com a quantidade e "porção X de N"', async () => {
+  const text = await drawn(preparedPortion);
+  for (const item of [
+    'PREPARAÇÃO PRÓPRIA',
+    '15/11/2026',
+    'Produzido em: 14/11/2026 11:30 (America/Sao_Paulo)',
+    'Produzido por: Bruno Lima',
+    'Quantidade da porção: 1 l',
+    'Porção 2 de 6',
+    'C-000124',
+  ])
+    expect(text, item).toContain(item);
+  expect(text.join(' ')).not.toContain('PRODUTO FRACIONADO');
+});
+it('recusa preparação anulada, tardia sem liberação ou sem conservação, e o arquivo inteiro', async () => {
+  const origin = 'http://127.0.0.1:5173';
+  await expect(
+    makeLabelPdf(
+      {
+        ...prepared,
+        production: {
+          ...prepared.production!,
+          voided: { reason: 'erro', created_at: '2026-11-14T15:00:00Z' },
+        },
+      },
+      origin,
+    ),
+  ).rejects.toThrow('Produção anulada');
+  await expect(
+    makeLabelPdf({ ...prepared, production_hold: true }, origin),
+  ).rejects.toThrow('Produção registrada fora da janela');
+  await expect(
+    makeLabelPdf({ ...prepared, storage: null }, origin),
+  ).rejects.toThrow('Dados da produção indisponíveis');
+  const { makeLabelsPdf } = await import('./pdf');
+  await expect(
+    makeLabelsPdf(
+      [preparedPortion, { ...preparedPortion, production_hold: true }],
+      origin,
+    ),
+  ).rejects.toThrow('Produção registrada fora da janela');
+  const blob = await makeLabelsPdf([prepared, preparedPortion], origin);
+  const raw = new TextDecoder('latin1').decode(await blob.arrayBuffer());
+  expect(raw.match(/\/Type \/Page\b/g)).toHaveLength(2);
+});
+it('preparação bloqueada liberável leva a faixa e cabe na página', async () => {
+  const text = await pdfText({ ...prepared, hold: 'pending' });
+  expect(text).toContain('(BLOQUEADO)');
 });
