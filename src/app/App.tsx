@@ -16,6 +16,7 @@ import {
 } from '../features/labels/domain/label';
 import { ProductionPanel } from '../features/production/components/ProductionPanel';
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
+import { SettingsPanel } from '../features/settings/components/SettingsPanel';
 
 function Workspace({
   configuration,
@@ -38,6 +39,8 @@ function Workspace({
   const [pendingToken, setPendingToken] = useState(0);
   // Fatia 7.3: produção registrada ou anulada muda a lista de recipientes.
   const [stockToken, setStockToken] = useState(0);
+  // Fatia 7.6: configuração salva muda quem registra produção e a janela.
+  const [settingsToken, setSettingsToken] = useState(0);
   const scope = { organizationId, establishmentId };
   // Escritas passam pelo decorador: tentativa de resultado incerto fica guardada até ser conferida.
   const tracked = useMemo(
@@ -99,6 +102,12 @@ function Workspace({
         canCreate={canCreate}
         onCreated={() => setRevision((value) => value + 1)}
       />
+      <SettingsPanel
+        scope={scope}
+        gateway={configuration.settings}
+        canEdit={canCreate}
+        onSaved={() => setSettingsToken((value) => value + 1)}
+      />
       {tracked.production && (
         <ProductionPanel
           scope={scope}
@@ -113,6 +122,8 @@ function Workspace({
           reloadToken={pendingToken}
           labels={configuration.labels}
           onChanged={() => setStockToken((value) => value + 1)}
+          settings={configuration.settings}
+          settingsRevision={settingsToken}
         />
       )}
       <BatchPanel

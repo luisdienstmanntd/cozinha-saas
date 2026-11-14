@@ -7,7 +7,6 @@ import type { Member } from '../../handling/domain/family';
 import {
   formatDate,
   instantToZoned,
-  isLate,
   isQuantity,
   zonedToInstant,
 } from '../../handling/domain/handling';
@@ -19,15 +18,21 @@ import {
   expiryInWords,
   localDateOf,
   productionInputSchema,
+  productionLateText,
 } from '../domain/production';
 import { VoidProduction } from './VoidProduction';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { DownloadLabels } from '../../labels/components/DownloadLabels';
+import type { SettingsGateway } from '../../settings/application/settingsGateway';
+import type { EstablishmentSettings } from '../../settings/domain/settings';
+import { DEFAULT_SETTINGS, durationText } from '../../settings/domain/settings';
 
 export const PRODUCTION_EXPIRY_TEXT =
   'Informe a validade definida pelo responsável. O sistema não calcula nem sugere prazos.';
 export const PRODUCTION_LATE_TEXT =
   'Registro mais de 2 horas depois da produção. O lote ficará bloqueado até a decisão do proprietário.';
+export const OWN_NAME_TEXT =
+  'Peça ao proprietário para definir o seu nome de exibição antes de registrar a produção.';
 export const SAME_DAY_TEXT =
   'A validade é no mesmo dia da produção. Confirmo que é isso mesmo.';
 const LOAD_ERROR =
@@ -65,10 +70,14 @@ type Props = {
   labels?: LabelGateway;
   // Algo foi gravado: a lista de recipientes relê o saldo.
   onChanged?: () => void;
+  // Fatia 7.6: quem registra e a janela vêm da configuração da unidade.
+  settings?: SettingsGateway;
+  settingsRevision?: number;
 };
 
 // Fatia 7.3 (desenho 5.1, D-043): produção da cozinha em passos (formulário, revisão, confirmação e
-// resultado) e lista das produções recentes com "Anular produção". Só o proprietário escreve (D-019).
+// resultado) e lista das produções recentes com "Anular produção". Só o proprietário escreve (D-019),
+// exceto no modo da 7.6 em que cada colaborador registra a própria produção; anular segue do proprietário.
 function ProductionContents({
   scope,
   timezone,
@@ -83,10 +92,13 @@ function ProductionContents({
   now = () => new Date(),
   labels,
   onChanged,
+  settings,
+  settingsRevision,
 }: Props) {
   const [preparations, setPreparations] = useState<CatalogItem[] | null>(null);
   const [rows, setRows] = useState<ProductionRow[] | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [rules, setRules] = useState<EstablishmentSettings | null>(null);
   const [loadError, setLoadError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [stage, setStage] = useState<Stage>('closed');
@@ -116,27 +128,38 @@ function ProductionContents({
   useEffect(() => {
     let current = true;
     const target = { organizationId, establishmentId };
-    void Promise.all([
-      catalog.list('preparations', target),
-      gateway.list(target),
-      canCreate ? loadMembers(target) : Promise.resolve([]),
-    ]).then(
-      ([items, listed, people]) => {
-        if (!current) return;
-        setPreparations(items);
-        setRows(listed);
-        setMembers(people);
-        setLoadError('');
-        setHandledBy((previous) => {
-          if (previous) return previous;
-          const self = people.find((person) => person.user_id === userId);
-          return self?.display_name ? userId : '';
-        });
-      },
-      () => {
-        if (current) setLoadError(LOAD_ERROR);
-      },
-    );
+    void (settings ? settings.get(target) : Promise.resolve(DEFAULT_SETTINGS))
+      .then((loaded) =>
+        Promise.all([
+          catalog.list('preparations', target),
+          gateway.list(target),
+          canCreate || loaded.production_registrar === 'member'
+            ? loadMembers(target)
+            : Promise.resolve([]),
+          loaded,
+        ]),
+      )
+      .then(
+        ([items, listed, people, loaded]) => {
+          if (!current) return;
+          setPreparations(items);
+          setRows(listed);
+          setRules(loaded);
+          // Quem não é proprietário registra só a própria produção.
+          setMembers(
+            canCreate ? people : people.filter((p) => p.user_id === userId),
+          );
+          setLoadError('');
+          setHandledBy((previous) => {
+            if (previous) return previous;
+            const self = people.find((person) => person.user_id === userId);
+            return self?.display_name ? userId : '';
+          });
+        },
+        () => {
+          if (current) setLoadError(LOAD_ERROR);
+        },
+      );
     return () => {
       current = false;
     };
@@ -151,6 +174,8 @@ function ProductionContents({
     userId,
     catalogRevision,
     reloadToken,
+    settings,
+    settingsRevision,
   ]);
 
   function reloadList() {
@@ -205,7 +230,7 @@ function ProductionContents({
         </button>
       </section>
     );
-  if (!preparations || !rows)
+  if (!preparations || !rows || !rules)
     return (
       <section aria-label="Produção da cozinha">
         <h3>Produção da cozinha</h3>
@@ -220,7 +245,12 @@ function ProductionContents({
   const instant = producedTouched
     ? zonedToInstant(producedAt, timezone)
     : now().toISOString();
-  const late = instant ? isLate(instant, now()) : false;
+  const windowMinutes = rules.production_window_minutes;
+  const late = instant
+    ? now().getTime() - new Date(instant).getTime() > windowMinutes * 60000
+    : false;
+  const lateText = productionLateText(windowMinutes);
+  const canRegister = canCreate || rules.production_registrar === 'member';
   const producedDate = producedTouched
     ? localDateOf(producedAt)
     : localDateOf(instantToZoned(now(), timezone));
@@ -262,7 +292,7 @@ function ProductionContents({
       return setError('O horário da produção não pode estar no futuro.');
     if (late && !lateReason.trim())
       return setError(
-        'Produção registrada mais de 2 horas depois de feita exige justificativa do atraso.',
+        `Produção registrada mais de ${durationText(windowMinutes)} depois de feita exige justificativa do atraso.`,
       );
     if (!expiry) return setError('Informe a validade.');
     if (days === null) return setError('Informe uma validade válida.');
@@ -274,7 +304,9 @@ function ProductionContents({
       );
     if (!selected?.display_name)
       return setError(
-        'Defina o nome de exibição da pessoa que produziu antes de registrar.',
+        canCreate
+          ? 'Defina o nome de exibição da pessoa que produziu antes de registrar.'
+          : OWN_NAME_TEXT,
       );
     const parsed = build();
     if (!parsed?.success)
@@ -352,7 +384,8 @@ function ProductionContents({
               {row.unit} — produzida em {when(row.produced_at, row.timezone)}{' '}
               por {row.handled_by_name} — validade {formatDate(row.expiry_date)}{' '}
               (definida pelo responsável)
-              {row.late && ' — registrada fora da janela de 2 horas'}
+              {row.late &&
+                ` — registrada fora da janela de ${durationText(row.late_window_minutes ?? 120)}`}
               {labels && row.container_id && !row.voided && (
                 <>
                   {' '}
@@ -397,8 +430,16 @@ function ProductionContents({
       {rows.length >= 50 && (
         <p role="status">A lista mostra as 50 produções mais recentes.</p>
       )}
-      {!canCreate && <p>Somente o proprietário registra ou anula produção.</p>}
-      {canCreate && stage === 'done' && result && (
+      {!canRegister && (
+        <p>Somente o proprietário registra ou anula produção.</p>
+      )}
+      {canRegister && !canCreate && (
+        <p>
+          Você registra só a própria produção. Somente o proprietário anula
+          produção.
+        </p>
+      )}
+      {canRegister && stage === 'done' && result && (
         <section aria-label="Resultado da produção">
           <h4>Produção registrada</h4>
           <p role="status">
@@ -429,7 +470,7 @@ function ProductionContents({
           </button>
         </section>
       )}
-      {canCreate && stage === 'review' && selectedPreparation && (
+      {canRegister && stage === 'review' && selectedPreparation && (
         <section aria-label="Revisão da produção">
           <h4>Revise antes de confirmar</h4>
           <ul>
@@ -439,9 +480,7 @@ function ProductionContents({
             </li>
             <li>
               Produzida em: {shownProducedAt.replace('T', ' ')} (fuso {timezone}
-              )
-              {late &&
-                ` — ${PRODUCTION_LATE_TEXT} Justificativa: ${lateReason.trim()}`}
+              ){late && ` — ${lateText} Justificativa: ${lateReason.trim()}`}
             </li>
             <li>
               <strong>
@@ -484,12 +523,12 @@ function ProductionContents({
           </button>
         </section>
       )}
-      {canCreate && stage === 'closed' && (
+      {canRegister && stage === 'closed' && (
         <button type="button" onClick={startForm}>
           Registrar produção
         </button>
       )}
-      {canCreate && stage === 'form' && (
+      {canRegister && stage === 'form' && (
         <form aria-label="Registrar produção" onSubmit={review}>
           <h4>Registrar produção</h4>
           {preparations.length === 0 && (
@@ -551,7 +590,7 @@ function ProductionContents({
             </p>
             {late && (
               <>
-                <p role="note">{PRODUCTION_LATE_TEXT}</p>
+                <p role="note">{lateText}</p>
                 <p>
                   <label>
                     Justificativa do atraso{' '}
@@ -593,7 +632,10 @@ function ProductionContents({
                 </select>
               </label>
             </p>
-            {members.some((member) => !member.display_name) && (
+            {!canCreate && !selected?.display_name && (
+              <p role="alert">{OWN_NAME_TEXT}</p>
+            )}
+            {canCreate && members.some((member) => !member.display_name) && (
               <p>
                 <label>
                   Pessoa sem nome de exibição{' '}

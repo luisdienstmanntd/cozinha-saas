@@ -49,6 +49,7 @@ select is(
   'container_handlings.container_handlings_read:SELECT:authenticated '
   'containers.containers_read:SELECT:authenticated '
   'entity_changes.entity_changes_read:SELECT:authenticated '
+  'establishment_settings.establishment_settings_read:SELECT:authenticated '
   'establishments.establishments_insert:INSERT:authenticated '
   'establishments.establishments_read:SELECT:authenticated '
   'establishments.establishments_update:UPDATE:authenticated '
@@ -66,7 +67,7 @@ select is(
   'storage_locations.storage_locations_read:SELECT:authenticated '
   'suppliers.suppliers_insert:INSERT:authenticated '
   'suppliers.suppliers_read:SELECT:authenticated',
-  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c), container_balances_read (6.2), container_handlings_read (6.3), handling_voids_read (6.4), occurrences_read e occurrence_decisions_read (6.5a), storage_locations_read e location_moves_read (6.9), batch_productions_read (7.1), production_voids_read (7.2)');
+  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c), container_balances_read (6.2), container_handlings_read (6.3), handling_voids_read (6.4), occurrences_read e occurrence_decisions_read (6.5a), storage_locations_read e location_moves_read (6.9), batch_productions_read (7.1), production_voids_read (7.2), establishment_settings_read (7.6)');
 
 select is(
   (select coalesce(string_agg(tablename || '.' || policyname, ',' order by tablename, policyname), '')

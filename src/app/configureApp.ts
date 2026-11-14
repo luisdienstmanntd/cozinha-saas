@@ -12,6 +12,7 @@ import { createLocationGateway } from '../features/locations/data/supabaseLocati
 import { createOperationGateway } from '../features/pending/data/supabaseOperations';
 import { createProductionGateway } from '../features/production/data/supabaseProduction';
 import { createEstablishmentGateway } from '../features/establishments/data/supabaseEstablishments';
+import { createSettingsGateway } from '../features/settings/data/supabaseSettings';
 
 export function configureApp(environment: Record<string, unknown>) {
   try {
@@ -38,6 +39,7 @@ export function configureApp(environment: Record<string, unknown>) {
       operations: createOperationGateway(client),
       production: createProductionGateway(client),
       establishments: createEstablishmentGateway(client),
+      settings: createSettingsGateway(client),
     };
   } catch {
     return null;
