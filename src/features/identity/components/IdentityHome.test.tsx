@@ -221,3 +221,28 @@ describe('acesso multiempresa', () => {
     );
   });
 });
+
+// P7 (fatia 6.8): uma empresa com dado inesperado não esconde as outras.
+describe('acesso tolerante a empresa inválida', () => {
+  it('mostra as válidas e avisa quantas não foram carregadas', async () => {
+    const service = gateway();
+    service.loadReport = vi.fn().mockResolvedValue({ access, skipped: 1 });
+    render(<IdentityHome gateway={service} />);
+    await login();
+    expect(
+      await screen.findByText('Unidade A — America/Sao_Paulo'),
+    ).toBeVisible();
+    expect(screen.getByRole('note')).toHaveTextContent(
+      'Não foi possível carregar 1 empresa.',
+    );
+  });
+  it('sem nenhuma válida, diz que não carregou em vez de "sem vínculo"', async () => {
+    const service = gateway();
+    service.loadReport = vi.fn().mockResolvedValue({ access: [], skipped: 2 });
+    render(<IdentityHome gateway={service} />);
+    await login();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Não foi possível carregar sua empresa.',
+    );
+  });
+});

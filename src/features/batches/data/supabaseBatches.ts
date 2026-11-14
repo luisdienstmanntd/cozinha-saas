@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { BatchRejected } from '../application/batchGateway';
 import type { BatchGateway } from '../application/batchGateway';
 import { batchInputSchema, batchRowSchema } from '../domain/batch';
 
@@ -75,20 +76,23 @@ export function createBatchGateway(client: SupabaseClient): BatchGateway {
         p_intent_id: v.intentId,
       });
       if (error?.code === '23505')
-        throw new Error('Esta tentativa já foi usada com outros dados.');
+        throw new BatchRejected(
+          'Esta tentativa já foi usada com outros dados.',
+        );
       // A conservação do produto foi definida ou difere da tela: mensagem do banco, sem detalhe interno.
       if (
         error?.code === '22023' &&
         error.message ===
           'A conservação do recebimento precisa ser a definida no produto.'
       )
-        throw new Error(
+        throw new BatchRejected(
           'A conservação do recebimento precisa ser a definida no produto. Atualize a lista de produtos.',
         );
-      if (error)
-        throw new Error(
-          'Não foi possível registrar o recebimento. Confira os dados e o acesso.',
-        );
+      if (error) {
+        const message =
+          'Não foi possível registrar o recebimento. Confira os dados e o acesso.';
+        throw error.code ? new BatchRejected(message) : new Error(message);
+      }
       return zUuid(data);
     },
   };
