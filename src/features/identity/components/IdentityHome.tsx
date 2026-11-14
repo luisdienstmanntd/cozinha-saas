@@ -53,6 +53,8 @@ export function IdentityHome({
 }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [access, setAccess] = useState<Access>([]);
+  // Empresas que o servidor devolveu com dado inesperado e que não foram carregadas (P7).
+  const [skipped, setSkipped] = useState(0);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -67,6 +69,7 @@ export function IdentityHome({
         generation.current++;
         setUserId(null);
         setAccess([]);
+        setSkipped(0);
         setCatalogUnit(null);
         setPassword('');
         setBusy(false);
@@ -98,11 +101,20 @@ export function IdentityHome({
   }
   async function refresh(current: number) {
     setAccess([]);
-    const rows = await gateway.load();
+    setSkipped(0);
+    const report = gateway.loadReport
+      ? await gateway.loadReport()
+      : { access: await gateway.load(), skipped: 0 };
     if (current !== generation.current) return;
+    const rows = report.access;
     if (rows.length === 0)
-      throw new Error('Nenhum vínculo ativo. Solicite acesso ao responsável.');
+      throw new Error(
+        report.skipped > 0
+          ? 'Não foi possível carregar sua empresa. Atualize o acesso ou avise o responsável.'
+          : 'Nenhum vínculo ativo. Solicite acesso ao responsável.',
+      );
     setAccess(rows);
+    setSkipped(report.skipped);
   }
   function changed(message: string, kind: 'notice' | 'error' = 'notice') {
     return run(async () => {
@@ -147,6 +159,13 @@ export function IdentityHome({
       </p>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
+      {skipped > 0 && (
+        <p role="note">
+          Não foi possível carregar {skipped}{' '}
+          {skipped === 1 ? 'empresa' : 'empresas'}. As demais aparecem
+          normalmente; atualize o acesso ou avise o responsável.
+        </p>
+      )}
       {!userId ? (
         <form onSubmit={signIn}>
           <p>

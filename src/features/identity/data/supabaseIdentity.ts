@@ -7,6 +7,28 @@ import {
 } from '../domain/identity';
 
 export function createIdentityGateway(client: SupabaseClient): IdentityGateway {
+  async function loadReport() {
+    const { data, error } = await client
+      .from('organizations')
+      .select(
+        'id,name,establishments(id,name,timezone),memberships(user_id,role)',
+      );
+    if (error)
+      throw new Error(
+        'Não foi possível consultar o acesso. Confira a sessão e a conexão.',
+      );
+    // Uma empresa com dado inesperado não esconde as outras (P7): cada uma é validada separadamente.
+    const rows = Array.isArray(data) ? data : [];
+    const valid = rows.flatMap((row) => {
+      const parsed = accessSchema.element.safeParse(row);
+      return parsed.success ? [parsed.data] : [];
+    });
+    if (!Array.isArray(data))
+      throw new Error(
+        'Não foi possível consultar o acesso. Confira a sessão e a conexão.',
+      );
+    return { access: valid, skipped: rows.length - valid.length };
+  }
   return {
     async signIn(email, password) {
       const input = credentials.parse({ email, password });
@@ -22,17 +44,9 @@ export function createIdentityGateway(client: SupabaseClient): IdentityGateway {
       if (error)
         throw new Error('Não foi possível encerrar a sessão. Tente novamente.');
     },
+    loadReport,
     async load() {
-      const { data, error } = await client
-        .from('organizations')
-        .select(
-          'id,name,establishments(id,name,timezone),memberships(user_id,role)',
-        );
-      if (error)
-        throw new Error(
-          'Não foi possível consultar o acesso. Confira a sessão e a conexão.',
-        );
-      return accessSchema.parse(data);
+      return (await loadReport()).access;
     },
     async rename(organizationId, name) {
       const { data, error } = await client

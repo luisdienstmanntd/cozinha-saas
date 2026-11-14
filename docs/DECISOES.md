@@ -329,3 +329,11 @@
 - **Motivo:** desenho 7.2; D-003, D-028, D-043; S-7 e S-9 da revisão cruzada.
 - **Consequência:** campo novo na etiqueta exige teste do texto desenhado e passagem pelo teste 16; ensaio físico segue pendente.
 - **Revisar quando:** o ensaio físico (tamanho, QR, impressora) ou a conferência normativa (Q10) pedirem outro texto ou tamanho.
+
+## D-045 — Recuperação de tentativa e acesso tolerante (14/11/2026)
+
+- **Status:** aceita por luis em 14/11/2026 ("aceito todas", 00:46 UTC); implementada na fatia 6.8 ([registro](FASE_06_8.md), PR #16).
+- **Decisão:** a tentativa de escrita é guardada no navegador (por usuário, até 24 horas) antes do envio e apagada por sucesso ou recusa definitiva; ao reabrir, o servidor é consultado por `find_operation` (só leitura, pela RLS) e a tela mostra "Registro confirmado" ou oferece "Enviar novamente" (mesmo identificador) ou "Descartar tentativa", sem nunca reenviar sozinha; uma empresa com dado inesperado não derruba o acesso às demais.
+- **Motivo:** desenho 4.7, 7.5 e 7.7; I-3; P7 da revisão 05; D-019.
+- **Consequência:** operação nova de escrita precisa passar por `trackGateways` e ter o `intent_id` em `find_operation`; recusa do banco precisa ser uma classe de recusa (código de erro) para não deixar tentativa pendente.
+- **Revisar quando:** a 6.9 (transferências) ou o piloto mostrar que 24 horas ou 20 tentativas não servem.

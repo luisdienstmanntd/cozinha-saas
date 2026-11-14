@@ -268,3 +268,44 @@ describe('consulta de recebimentos', () => {
     ]);
   });
 });
+
+// Fatia 6.8: recusa com código do banco é definitiva; erro sem código (conexão) deixa o resultado
+// incerto e a tentativa fica guardada para conferência.
+describe('recusa definitiva x resultado incerto no recebimento', () => {
+  const input = {
+    productId: '10000000-0000-4000-8000-000000000001',
+    supplierId: '10000000-0000-4000-8000-000000000002',
+    sourceCode: 'L-1',
+    quantity: '1',
+    expiryDate: '2027-01-01',
+    expiryOrigin: 'original',
+    originalExpiryDate: '2027-01-01',
+    storageCondition: 'ambient',
+    temperatureStatus: 'not_required',
+    receivedTemperatureC: null,
+    temperatureReason: null,
+    intentId: '10000000-0000-4000-8000-000000000003',
+  };
+  const scope = {
+    organizationId: '10000000-0000-4000-8000-000000000004',
+    establishmentId: '10000000-0000-4000-8000-000000000005',
+  };
+  const gatewayFor = (error: unknown) =>
+    createBatchGateway({
+      rpc: vi.fn().mockResolvedValue({ data: null, error }),
+    } as unknown as SupabaseClient);
+  it('código do banco vira BatchRejected; sem código fica erro comum', async () => {
+    const { BatchRejected } = await import('../application/batchGateway');
+    for (const code of ['23505', '22023', '42501'])
+      await expect(
+        gatewayFor({ code, message: 'x' }).receive(scope, input as never),
+      ).rejects.toBeInstanceOf(BatchRejected);
+    const uncertain = await gatewayFor({
+      message: 'TypeError: Failed to fetch',
+    })
+      .receive(scope, input as never)
+      .catch((cause: unknown) => cause);
+    expect(uncertain).toBeInstanceOf(Error);
+    expect(uncertain).not.toBeInstanceOf(BatchRejected);
+  });
+});
