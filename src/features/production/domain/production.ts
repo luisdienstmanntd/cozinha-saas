@@ -31,6 +31,32 @@ export const productionVoidInputSchema = z.object({
 });
 export type ProductionVoidInput = z.infer<typeof productionVoidInputSchema>;
 
+// Fatia 7.9: temperatura opcional da produção. Só registra o que a pessoa mediu; o sistema não avalia.
+export const TEMPERATURE_MOMENTS = {
+  cooling_end: 'Fim do resfriamento',
+  reheating: 'Reaquecimento',
+} as const;
+export type TemperatureMoment = keyof typeof TEMPERATURE_MOMENTS;
+
+export const temperatureInputSchema = z.object({
+  batchId: z.uuid(),
+  moment: z.enum(['cooling_end', 'reheating']),
+  // Ponto decimal, uma casa, de -50 a 80 °C (a tela troca a vírgula por ponto).
+  temperature: z
+    .string()
+    .regex(/^-?(?:0|[1-9]\d?)(?:\.\d)?$/)
+    .refine((value) => Number(value) >= -50 && Number(value) <= 80),
+  measuredAt: z.iso.datetime({ offset: true }),
+});
+export type TemperatureInput = z.infer<typeof temperatureInputSchema>;
+
+export function formatTemperature(value: number): string {
+  return `${new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(value)} °C`;
+}
+
 export const productionRowSchema = z.object({
   batch_id: z.uuid(),
   product_name: z.string().min(1),
@@ -47,6 +73,17 @@ export const productionRowSchema = z.object({
   container_id: z.uuid().nullable(),
   short_code: z.string().nullable(),
   voided: z.object({ reason: z.string(), created_at: z.string() }).nullable(),
+  // Fatia 7.9: quem produziu (para a tela oferecer a temperatura só a quem pode registrá-la).
+  handled_by: z.uuid().optional(),
+  temperatures: z
+    .object({
+      moment: z.enum(['cooling_end', 'reheating']),
+      temperature_c: z.number(),
+      measured_at: z.string(),
+      recorded_by_name: z.string(),
+    })
+    .array()
+    .optional(),
   // Fatia 7.8: primeira vez em que a etiqueta do integral foi baixada (nulo = ainda não baixada).
   label_downloaded_at: z.string().nullable().optional(),
 });
@@ -81,6 +118,11 @@ export const PRODUCTION_MESSAGES = [
   'A pessoa que produziu precisa ter vínculo ativo com a empresa.',
   'Defina o nome de exibição da pessoa que produziu antes de registrar.',
   'Quem não é proprietário registra só a própria produção.',
+  'Quem não é proprietário registra só a temperatura da própria produção.',
+  'Produção anulada: não há temperatura a registrar.',
+  'O horário da medição não pode estar no futuro.',
+  'O horário da medição não pode ser anterior à produção.',
+  'Defina o nome de exibição de quem registra a temperatura antes de registrar.',
   'Informe o motivo da anulação.',
   'Esta produção já foi anulada.',
   'Só lote produzido pela cozinha é anulado por aqui; recebimento usa o descarte com motivo.',

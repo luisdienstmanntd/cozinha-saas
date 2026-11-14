@@ -495,3 +495,47 @@ test('produção sem etiqueta baixada é avisada e o download tira o aviso', asy
     );
   });
 });
+
+test('registrar a temperatura opcional da produção pela tela, sem avaliação', async ({
+  page,
+}) => {
+  page.setDefaultTimeout(5000);
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    const panel = await produce(page);
+    await expect(
+      panel.getByRole('region', { name: 'Resultado da produção' }),
+    ).toContainText(/Produção registrada no recipiente C-\d{6}/);
+    const productions = panel.getByRole('list', { name: 'Produções recentes' });
+    await productions
+      .getByRole('button', { name: /^Registrar temperatura C-/ })
+      .click();
+    const form = panel.getByRole('form', { name: /^Registrar temperatura C-/ });
+    await expect(form).toContainText('O sistema não avalia');
+    await form.getByLabel('Momento da medição').selectOption('cooling_end');
+    await form.getByLabel('Temperatura medida (°C)').fill('4,5');
+    await form
+      .getByRole('button', { name: 'Registrar temperatura medida' })
+      .click();
+    await expect(panel).toContainText('Temperatura registrada.');
+    await expect(
+      productions.getByRole('list', { name: /^Temperaturas de C-/ }),
+    ).toContainText(
+      /Fim do resfriamento: 4,5 °C, medida em .* registrada por Ana Teste \(informada; o sistema não avalia\)/,
+    );
+    // Valores extremos também só são registrados.
+    await productions
+      .getByRole('button', { name: /^Registrar temperatura C-/ })
+      .click();
+    await form.getByLabel('Momento da medição').selectOption('reheating');
+    await form.getByLabel('Temperatura medida (°C)').fill('80');
+    await form
+      .getByRole('button', { name: 'Registrar temperatura medida' })
+      .click();
+    await expect(
+      productions.getByRole('list', { name: /^Temperaturas de C-/ }),
+    ).toContainText('Reaquecimento: 80,0 °C');
+    await expect(panel).not.toContainText(/conforme/i);
+  });
+});

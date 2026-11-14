@@ -117,6 +117,9 @@ select throws_ok(format($$select pg_temp.temp(%L, 'cooling_end', 4.0, now() + in
   'O horário da medição não pode estar no futuro.', 'horário no futuro');
 select throws_ok(format($$select pg_temp.temp(%L, 'cooling_end', 4.0, now() - interval '2 hours')$$, :'lote_dono'), '22023',
   'O horário da medição não pode ser anterior à produção.', 'horário antes da produção');
+select ok(pg_temp.temp(:'lote_dono', 'cooling_end', 4.0,
+  date_trunc('minute', (select produced_at from public.batch_productions where batch_id = :'lote_dono'))) is not null,
+  'medir no mesmo minuto da produção é válido (a tela trabalha em minutos)');
 select throws_ok(format($$select pg_temp.temp(%L, 'cooling_end', 4.0, null)$$, :'lote_dono'), '22023', 'Dados inválidos.', 'horário nulo');
 
 -- 3) O lote certo ----------------------------------------------------------------------------------------------

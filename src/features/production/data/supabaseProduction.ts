@@ -7,6 +7,7 @@ import {
   productionInputSchema,
   productionRowSchema,
   productionVoidInputSchema,
+  temperatureInputSchema,
 } from '../domain/production';
 
 export const PRODUCTION_LIMIT = 50;
@@ -33,6 +34,16 @@ const listedSchema = z.object({
       })
       .array(),
   }),
+  handled_by: z.uuid().optional(),
+  production_temperatures: z
+    .object({
+      moment: z.enum(['cooling_end', 'reheating']),
+      temperature_c: z.number(),
+      measured_at: z.string(),
+      recorded_by_name: z.string(),
+    })
+    .array()
+    .optional(),
   production_label_downloads: z
     .object({ downloaded_at: z.string() })
     .array()
@@ -78,7 +89,7 @@ export function createProductionGateway(
       const { data, error } = await client
         .from('batch_productions')
         .select(
-          'batch_id,produced_at,late,late_window_minutes,handled_by_name,note,timezone,batch_receipts!batch_productions_batch_fk!inner(quantity,unit,expiry_date,products!inner(name),containers(id,short_code,kind)),production_voids!production_voids_production_fk(reason,created_at),production_label_downloads!production_label_downloads_production_fk(downloaded_at)',
+          'batch_id,produced_at,late,late_window_minutes,handled_by,handled_by_name,note,timezone,batch_receipts!batch_productions_batch_fk!inner(quantity,unit,expiry_date,products!inner(name),containers(id,short_code,kind)),production_voids!production_voids_production_fk(reason,created_at),production_label_downloads!production_label_downloads_production_fk(downloaded_at),production_temperatures!production_temperatures_production_fk(moment,temperature_c,measured_at,recorded_by_name)',
         )
         .eq('organization_id', scope.organizationId)
         .eq('establishment_id', scope.establishmentId)
@@ -113,6 +124,10 @@ export function createProductionGateway(
             container_id: integral?.id ?? null,
             short_code: integral?.short_code ?? null,
             voided,
+            handled_by: row.handled_by,
+            temperatures: [...(row.production_temperatures ?? [])].sort(
+              (a, b) => Date.parse(a.measured_at) - Date.parse(b.measured_at),
+            ),
             label_downloaded_at:
               (row.production_label_downloads ?? [])
                 .map((download) => download.downloaded_at)
@@ -154,6 +169,26 @@ export function createProductionGateway(
         throw refuse(
           error,
           'Não foi possível anular a produção. Atualize a lista e confira.',
+        );
+      return z.uuid().parse(data);
+    },
+    async recordTemperature(scope, input) {
+      const v = temperatureInputSchema.parse(input);
+      const { data, error } = await client.rpc(
+        'record_production_temperature',
+        {
+          p_organization_id: scope.organizationId,
+          p_establishment_id: scope.establishmentId,
+          p_batch_id: v.batchId,
+          p_moment: v.moment,
+          p_temperature_c: Number(v.temperature),
+          p_measured_at: v.measuredAt,
+        },
+      );
+      if (error)
+        throw refuse(
+          error,
+          'Não foi possível registrar a temperatura. Confira o valor (de -50 a 80 °C, uma casa decimal) e o horário.',
         );
       return z.uuid().parse(data);
     },

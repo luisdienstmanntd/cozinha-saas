@@ -440,3 +440,11 @@
 - **Motivo:** desenho da Fase 7 e resposta de luis ao questionário (aviso de 1 h sem etiqueta).
 - **Consequência:** a temperatura opcional (7.9) segue como fatia própria.
 - **Revisar quando:** a nutricionista RT avaliar o tempo e a observação do piloto mostrar se o aviso ajuda.
+
+## D-058 — Temperatura opcional da produção (14/11/2026)
+
+- **Status:** proposta; aceite de luis pendente. Implementada na fatia 7.9 ([registro](FASE_07_9.md)).
+- **Decisão:** a produção da cozinha pode ter temperaturas registradas (fim do resfriamento, reaquecimento), de forma opcional, em tabela append-only, por quem pode registrar produção (D-019 e fatia 7.6; o colaborador só da própria). O sistema não classifica, não usa faixa, não cria ocorrência, não bloqueia e não mexe no estoque (D-003, como a D-027).
+- **Motivo:** resposta 7 de luis ao questionário (temperatura não obrigatória, mas a função deve existir) e desenho da Fase 7.
+- **Consequência:** fecha as fatias 7.1 a 7.9 do desenho; o que sobrar fica em `FASE_07_DESENHO.md`, seção 8.
+- **Revisar quando:** a nutricionista RT definir faixas e a observação do piloto mostrar se falta correção ou anulação de medição.

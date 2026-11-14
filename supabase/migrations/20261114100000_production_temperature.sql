@@ -84,7 +84,8 @@ begin
   if p_measured_at > now() then
     raise exception 'O horário da medição não pode estar no futuro.' using errcode = '22023';
   end if;
-  if p_measured_at < v_production.produced_at then
+  -- A tela trabalha em minutos: medir no mesmo minuto da produção é válido.
+  if date_trunc('minute', p_measured_at) < date_trunc('minute', v_production.produced_at) then
     raise exception 'O horário da medição não pode ser anterior à produção.' using errcode = '22023';
   end if;
 
