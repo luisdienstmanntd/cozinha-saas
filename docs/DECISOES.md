@@ -401,3 +401,11 @@
 - **Motivo:** D-003, D-044, D-049, D-050, D-051, D-052.
 - **Consequência:** a 7.5 ajusta a tela de porcionar preparação sem mudar o modelo.
 - **Revisar quando:** a impressão física for testada ou a nutricionista RT responder a seção 10 do desenho (ambas pendências do piloto, `PRE_PILOTO.md`, seção 5).
+
+## D-054 — Porcionar preparação e métricas de produção (14/11/2026)
+
+- **Status:** proposta, aguardando aceite de luis; implementada na fatia 7.5 ([registro](FASE_07_5.md)).
+- **Decisão:** preparação própria só é porcionada; o porcionamento do integral vale a partir do horário da produção; a porção leva a mesma validade do recipiente de origem (decisão B, padrão até a configuração da 7.6) e a tela não oferece campo de data; a sobra pode ficar no recipiente da produção; `pilot_metrics` ganha produções, produções tardias, atraso de registro (mediana e máximo), anulações de produção, porcionamentos de preparação e ocorrências de produção tardia.
+- **Motivo:** D-049, D-050, D-053, decisão B de luis (14/11/2026), R-1 do desenho da Fase 7.
+- **Consequência:** a 7.6 transforma a regra da porção em configuração ("igual" ou "igual ou menor", nunca maior).
+- **Revisar quando:** a 7.6 chegar ou a observação do piloto mostrar outra necessidade.

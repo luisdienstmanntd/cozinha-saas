@@ -32,6 +32,10 @@ export const EXPIRY_TEXT =
   'Informe a validade após a abertura definida pelo responsável. O sistema não calcula prazos.';
 export const LATE_TEXT =
   'Registro fora da janela. Ficará bloqueado até a decisão do responsável.';
+// Fatia 7.5 (decisão B de luis, 14/11/2026): a porção de preparação própria leva a mesma validade do
+// lote; a pessoa não digita outra data. "Igual ou menor" é configuração da 7.6.
+export const PREPARATION_EXPIRY_TEXT =
+  'A porção de preparação própria leva a mesma validade do lote, informada pelo responsável na produção.';
 export const FREEZE_TEXT =
   'Congelar não prorroga a validade nesta versão. Não registre um recebimento novo para isso.';
 type Remainder = 'none' | 'sealed' | 'discard' | 'portion';
@@ -101,6 +105,12 @@ export function HandlingForm({
       ([loaded, people]) => {
         if (!current) return;
         setContext(loaded);
+        // Preparação própria (lote sem código de fabricante, D-050): só porcionar, com a validade do lote.
+        if (loaded.source_code === null) {
+          setKind('portioning');
+          setQuantities(Array(2).fill(''));
+          setExpiry(loaded.expiry_date);
+        }
         setMembers(people);
         setStorage(loaded.storage ?? '');
         setHandledAt(instantToZoned(now(), loaded.timezone));
@@ -128,12 +138,16 @@ export function HandlingForm({
   if (!context) return <p>Consultando recipiente…</p>;
   const unit = context.unit;
   const integral = context.kind === 'integral';
+  const preparation = context.source_code === null;
+  const title = preparation ? 'Porcionar' : 'Abrir / porcionar';
   const wholeUnits = unit === 'un';
 
   if (context.block)
     return (
       <section aria-label="Abrir ou porcionar">
-        <h4>Abrir / porcionar {context.short_code}</h4>
+        <h4>
+          {title} {context.short_code}
+        </h4>
         <p role="status">
           <strong>{BLOCK_TEXT[context.block]}</strong>: este recipiente não pode
           ser manipulado. Só o descarte é permitido.
@@ -146,7 +160,9 @@ export function HandlingForm({
   if (context.balance <= 0)
     return (
       <section aria-label="Abrir ou porcionar">
-        <h4>Abrir / porcionar {context.short_code}</h4>
+        <h4>
+          {title} {context.short_code}
+        </h4>
         <p role="status">Recipiente sem saldo registrado.</p>
         <button type="button" onClick={onClose}>
           Fechar
@@ -260,6 +276,10 @@ export function HandlingForm({
         'Manipulação registrada mais de 2 horas depois de feita exige justificativa do atraso.',
       );
     if (!expiry) return setError('Informe a validade após a abertura.');
+    if (preparation && expiry !== context?.expiry_date)
+      return setError(
+        'A porção de preparação própria leva a mesma validade do recipiente de origem.',
+      );
     if (!storage) return setError('Selecione a conservação.');
     if (!handledBy)
       return setError(
@@ -436,10 +456,15 @@ export function HandlingForm({
                 }`}
           </li>
           <li>
-            Aberto em: {handledAt.replace('T', ' ')} (fuso {context.timezone})
+            {preparation ? 'Porcionado em' : 'Aberto em'}:{' '}
+            {handledAt.replace('T', ' ')} (fuso {context.timezone})
             {late && ` — ${LATE_TEXT} Justificativa: ${lateReason.trim()}`}
           </li>
-          <li>Validade após a abertura: {formatDate(expiry)}</li>
+          <li>
+            {preparation
+              ? `Validade da porção: ${formatDate(expiry)} (a mesma do lote)`
+              : `Validade após a abertura: ${formatDate(expiry)}`}
+          </li>
           <li>Conservação: {storage ? storageLabels[storage] : ''}</li>
           <li>Manipulado por: {selected?.display_name ?? ''}</li>
           <li>Registrado por: {memberName(members, userId) ?? 'você'}</li>
@@ -459,7 +484,7 @@ export function HandlingForm({
   return (
     <section aria-label="Abrir ou porcionar">
       <h4>
-        Abrir / porcionar {context.short_code} — {context.product_name}
+        {title} {context.short_code} — {context.product_name}
       </h4>
       <p>
         {lotText(context.source_code, true)} — saldo {context.balance} {unit} —
@@ -468,14 +493,21 @@ export function HandlingForm({
           ? storageLabels[context.storage]
           : 'conservação não registrada'}{' '}
         —{' '}
-        {integral
-          ? 'embalagem fechada (integral)'
-          : 'recipiente já aberto (derivado)'}
+        {preparation
+          ? integral
+            ? 'preparação própria (recipiente da produção)'
+            : 'porção de preparação própria'
+          : integral
+            ? 'embalagem fechada (integral)'
+            : 'recipiente já aberto (derivado)'}
       </p>
       <form onSubmit={review}>
         <fieldset disabled={busy}>
           <legend>Tipo e quantidade</legend>
-          <label>
+          {preparation && (
+            <p>Preparação própria não é aberta: divida em porções.</p>
+          )}
+          <label hidden={preparation}>
             <input
               type="radio"
               name="kind"
@@ -547,7 +579,11 @@ export function HandlingForm({
             </legend>
             {integral && (
               <>
-                <p>O restante continua fechado na embalagem original?</p>
+                <p>
+                  {preparation
+                    ? 'O restante continua no recipiente da produção?'
+                    : 'O restante continua fechado na embalagem original?'}
+                </p>
                 <label>
                   <input
                     type="radio"
@@ -558,7 +594,9 @@ export function HandlingForm({
                       setRemainder('sealed');
                     }}
                   />{' '}
-                  Sim, continua fechado
+                  {preparation
+                    ? 'Sim, continua no recipiente'
+                    : 'Sim, continua fechado'}
                 </label>{' '}
                 <label>
                   <input
@@ -613,7 +651,8 @@ export function HandlingForm({
           <legend>Quando e como</legend>
           <p>
             <label>
-              Aberto em (fuso {context.timezone}){' '}
+              {preparation ? 'Porcionado em' : 'Aberto em'} (fuso{' '}
+              {context.timezone}){' '}
               <input
                 type="datetime-local"
                 value={handledAt}
@@ -639,21 +678,30 @@ export function HandlingForm({
               </p>
             </>
           )}
-          <p>
-            <label>
-              Validade após a abertura{' '}
-              <input
-                type="date"
-                value={expiry}
-                onChange={(event) => setExpiry(event.target.value)}
-              />
-            </label>
-          </p>
-          <p>
-            {EXPIRY_TEXT} A validade da origem é{' '}
-            {formatDate(context.expiry_date)}: a validade após a abertura não
-            pode passar dela.
-          </p>
+          {preparation ? (
+            <p>
+              Validade da porção: {formatDate(context.expiry_date)}.{' '}
+              {PREPARATION_EXPIRY_TEXT}
+            </p>
+          ) : (
+            <>
+              <p>
+                <label>
+                  Validade após a abertura{' '}
+                  <input
+                    type="date"
+                    value={expiry}
+                    onChange={(event) => setExpiry(event.target.value)}
+                  />
+                </label>
+              </p>
+              <p>
+                {EXPIRY_TEXT} A validade da origem é{' '}
+                {formatDate(context.expiry_date)}: a validade após a abertura
+                não pode passar dela.
+              </p>
+            </>
+          )}
           <p>
             <label>
               Conservação{' '}

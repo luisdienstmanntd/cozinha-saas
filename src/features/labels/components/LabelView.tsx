@@ -303,7 +303,7 @@ export function LabelView({
                         type="button"
                         onClick={() => setHandlingOpen(true)}
                       >
-                        Abrir / porcionar
+                        {data.production ? 'Porcionar' : 'Abrir / porcionar'}
                       </button>
                     )}
                     {handlingOpen && (
