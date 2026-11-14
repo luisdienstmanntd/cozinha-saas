@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.3 — tela de produção da cozinha
 
-> Autorizada por luis em 14/11/2026 (16:10 UTC), junto com o aceite da 7.2: "Autorizo o início da Fase 7.3, incluindo a interface de anulação, conforme o planejamento aprovado." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (seções 4.6, 4.7, 5.1 e 5.3), a D-049, a D-050 e a D-051. Decisão proposta: **D-052** (abaixo), **aguardando aceite de luis**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) continua pendente. Dados de teste sintéticos. Sem migração.
+> Autorizada por luis em 14/11/2026 (16:10 UTC), junto com o aceite da 7.2: "Autorizo o início da Fase 7.3, incluindo a interface de anulação, conforme o planejamento aprovado." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (seções 4.6, 4.7, 5.1 e 5.3), a D-049, a D-050 e a D-051. Decisão: **D-052** (abaixo), **aceita por luis em 14/11/2026 (16:30 UTC) com os 3 pontos**. **Nada aqui afirma conformidade sanitária**; a conferência pela nutricionista RT (Q10) continua pendente. Dados de teste sintéticos. Sem migração.
 
 ## O que mudou
 
@@ -56,14 +56,16 @@ Teste existente alterado, sem enfraquecer: em `CatalogPanel.test.tsx`, o aviso d
 
 ## Pontos para luis decidir
 
+> Respondidos por luis em 14/11/2026, 16:30 UTC: aprovou os três como propostos. (1) formulários fechados até o clique; (2) lista das 50 produções mais recentes no piloto, sem busca, com **todos os registros anteriores preservados no banco** e a **pesquisa histórica por data, preparação e lote registrada como melhoria futura** (`BACKLOG.md`); (3) produção anulada fora da lista principal, acessível por "Mostrar esgotados", com ANULADA na lista de produções e no QR. Aprovou a D-052 e autorizou a 7.4 (etiqueta PDF de preparação própria).
+
 1. **Formulários que abrem por botão:** "Nova preparação" e "Registrar produção" ficam fechados até a pessoa escolher, para a tela não repetir os campos do recebimento. Proposta: manter.
 2. **Lista de produções com as 50 mais recentes**, sem busca. Proposta: manter no piloto; busca e filtro entram se a cozinha pedir.
 3. **Lote anulado fora da lista de recipientes** (aparece com "Mostrar esgotados"), com a faixa ANULADA na lista de produções e no QR. Proposta: manter.
 
-## Decisão proposta para `DECISOES.md`
+## Decisão registrada em `DECISOES.md`
 
-> **D-052 — Tela de produção da cozinha (14/11/2026).** Status: proposta, aguardando aceite de luis; implementada na fatia 7.3 ([registro](FASE_07_3.md)). Decisão: preparação própria tem seção própria no catálogo; a produção é registrada em passos (formulário, revisão por extenso com dia da semana e contagem de dias só para conferência, confirmação extra para validade no mesmo dia, resultado), com validade vazia e sem sugestão; "Anular produção" fica na lista das 50 produções mais recentes; registro e anulação entram na recuperação de tentativa; a página do recipiente mostra "Preparação própria", quem produziu e a faixa ANULADO, sem etiqueta para lote anulado. Motivo: D-049, D-050, D-051, D-043, D-045, D-004, D-019. Consequência: a 7.4 desenha o PDF a partir dos mesmos dados (`production` na etiqueta). Revisar quando: a 7.4 e a 7.5 chegarem ou a observação na cozinha pedir outro fluxo.
+> **D-052 — Tela de produção da cozinha (14/11/2026).** Status: aceita por luis em 14/11/2026 (16:30 UTC) com os 3 pontos; implementada na fatia 7.3 ([registro](FASE_07_3.md)). Decisão: preparação própria tem seção própria no catálogo; a produção é registrada em passos (formulário, revisão por extenso com dia da semana e contagem de dias só para conferência, confirmação extra para validade no mesmo dia, resultado), com validade vazia e sem sugestão; "Anular produção" fica na lista das 50 produções mais recentes; registro e anulação entram na recuperação de tentativa; a página do recipiente mostra "Preparação própria", quem produziu e a faixa ANULADO, sem etiqueta para lote anulado. Motivo: D-049, D-050, D-051, D-043, D-045, D-004, D-019. Consequência: a 7.4 desenha o PDF a partir dos mesmos dados (`production` na etiqueta). Revisar quando: a 7.4 e a 7.5 chegarem ou a observação na cozinha pedir outro fluxo.
 
 ## Próximo passo
 
-Aceite de luis (3 pontos e D-052). A 7.4 (etiqueta "Preparação própria") exige aprovação própria. Sem merge sem pedido de luis.
+Aceita. A 7.4 (etiqueta "Preparação própria") foi autorizada por luis em 14/11/2026, 16:30 UTC. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.
