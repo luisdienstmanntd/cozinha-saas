@@ -324,7 +324,7 @@
 
 ## D-044 — Etiquetas de recebimento e de produto aberto (13/11/2026)
 
-- **Status:** proposta; implementada na fatia 6.7 ([registro](FASE_06_7.md)), aguardando aceite de luis.
+- **Status:** aceita por luis em 14/11/2026; implementada na fatia 6.7 ([registro](FASE_06_7.md), PR #15). Data em dd/mm/aaaa nos dois modelos.
 - **Decisão:** dois modelos de PDF 100 × 100 mm (recebimento; produto aberto ou fracionado), com todos os campos obrigatórios legíveis sem o QR; reimpressão não grava nada; "baixar esta" e "baixar todas"; manipulação anulada, tardia sem liberação ou sem dados da manipulação recusam o arquivo inteiro com mensagem; nenhum texto afirma conformidade sanitária.
 - **Motivo:** desenho 7.2; D-003, D-028, D-043; S-7 e S-9 da revisão cruzada.
 - **Consequência:** campo novo na etiqueta exige teste do texto desenhado e passagem pelo teste 16; ensaio físico segue pendente.

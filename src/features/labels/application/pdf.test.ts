@@ -164,7 +164,7 @@ it('etiqueta de recebimento traz cabeçalho, fornecedor, conservação e entrada
     'Fornecedor: Horta',
     'Conservação: Ambiente',
     'Quantidade inicial: 1.25 kg (entrada)',
-    'Validade: 2027-01-01 (original)',
+    'Validade: 01/01/2027 (original)',
   ])
     expect(text, item).toContain(item);
 });

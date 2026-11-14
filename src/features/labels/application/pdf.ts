@@ -83,7 +83,7 @@ function receiptPage({ doc }: Page, data: LabelData) {
     `Quantidade inicial: ${data.effective?.initial_quantity ?? batch.quantity} ${batch.unit} (entrada)`,
   );
   row(
-    `Validade: ${batch.expiry_date} (${batch.expiry_origin === 'original' ? 'original' : 'responsável'})`,
+    `Validade: ${day(batch.expiry_date)} (${batch.expiry_origin === 'original' ? 'original' : 'responsável'})`,
   );
   if (y > 60) throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
 }
