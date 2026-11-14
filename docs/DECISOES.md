@@ -409,3 +409,17 @@
 - **Motivo:** D-049, D-050, D-053, decisão B de luis (14/11/2026), R-1 do desenho da Fase 7.
 - **Consequência:** a 7.6 transforma a regra da porção em configuração ("igual" ou "igual ou menor", nunca maior).
 - **Revisar quando:** a 7.6 chegar ou a observação do piloto mostrar outra necessidade.
+
+## D-055 — Configurações da unidade (14/11/2026)
+
+- **Status:** proposta, aguardando aceite de luis; implementada na fatia 7.6 ([registro](FASE_07_6.md)).
+- **Decisão:** cada unidade tem configurações escolhidas pelo proprietário e auditadas em `entity_changes`:
+  - **Quem registra produção:** padrão só o proprietário. A opção "cada colaborador registra a própria produção" é uma exceção à D-019 só para o registro da produção, com a validade.
+  - **Janela de registro da produção:** padrão 2 horas, de 15 minutos a 24 horas, guardada em cada registro.
+  - **Tempo máximo sem etiqueta:** padrão 1 hora, usado pela 7.8.
+  - **Validade da porção de preparação própria:** padrão igual à do lote; opção igual ou menor, nunca maior.
+
+  A mudança vale para os registros novos e nunca reescreve os antigos.
+- **Motivo:** decisões A e B de luis (14/11/2026), R-1 do desenho da Fase 7, D-036.
+- **Consequência:** a 7.7 acrescenta a janela por preparação; a 7.8 usa o tempo sem etiqueta.
+- **Revisar quando:** a observação do piloto ou a nutricionista RT indicarem outra necessidade.
