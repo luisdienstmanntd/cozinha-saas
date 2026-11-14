@@ -265,7 +265,7 @@ const derivedFamily: Family = {
   partial: false,
 };
 
-it('derivado mostra origem, validade efetiva e não gera PDF', async () => {
+it('derivado mostra origem, validade efetiva e gera a etiqueta de produto aberto', async () => {
   const user = userEvent.setup();
   const open = vi.fn();
   render(
@@ -281,10 +281,9 @@ it('derivado mostra origem, validade efetiva e não gera PDF', async () => {
   expect(
     await screen.findByText(/validade 2026-12-01 \(após manipulação\)/),
   ).toBeVisible();
-  expect(screen.getByText(/chega na próxima fatia/)).toBeVisible();
   expect(
-    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
-  ).toBeNull();
+    screen.getByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeVisible();
   await user.click(
     await screen.findByRole('button', { name: 'Abrir C-000001' }),
   );
@@ -292,6 +291,7 @@ it('derivado mostra origem, validade efetiva e não gera PDF', async () => {
   expect(
     screen.getByRole('button', { name: 'Anular manipulação' }),
   ).toBeVisible();
+  // Gerar a etiqueta só acontece quando alguém pede.
   expect(makeLabelPdf).not.toHaveBeenCalled();
 });
 

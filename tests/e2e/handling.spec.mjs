@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { Buffer } from 'node:buffer';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.6, E2E 27, 28, 30, 31 e 33 do desenho (seção 8): abrir embalagem com sobra fechada,
@@ -12,6 +14,17 @@ async function signIn(page, user) {
     page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
   ).toBeVisible();
 }
+
+// Baixa o PDF pelo botão e devolve os bytes; o texto desenhado em ASCII pode ser procurado neles.
+async function download(page, testInfo, button, name) {
+  const waiting = page.waitForEvent('download');
+  await button.click();
+  const file = await waiting;
+  const path = testInfo.outputPath(name);
+  await file.saveAs(path);
+  return { bytes: await readFile(path), name: file.suggestedFilename() };
+}
+const has = (bytes, text) => bytes.includes(Buffer.from(text));
 
 function ymd(offsetDays) {
   const date = new Date(Date.now() + offsetDays * 86400000);
@@ -51,7 +64,7 @@ async function receive(page, quantity) {
 
 test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', async ({
   page,
-}) => {
+}, testInfo) => {
   page.setDefaultTimeout(5000);
   await withCatalogFixture(async ({ users }) => {
     await page.goto('/');
@@ -100,6 +113,24 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
       result.getByRole('list', { name: 'Recipientes criados' }),
     ).toContainText('4 kg');
     await expect(result).not.toContainText(/aprovad|conform/i);
+    // Fatia 6.7: etiqueta de produto aberto do recipiente criado.
+    const opened = await download(
+      page,
+      testInfo,
+      result.getByRole('button', { name: /^Baixar esta/ }),
+      'aberto.pdf',
+    );
+    expect(opened.bytes.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(opened.name).toMatch(/^etiqueta-.+\.pdf$/);
+    for (const text of [
+      'PRODUTO ABERTO',
+      'Arroz de teste',
+      'Manipulado por: Ana',
+      'Lote original: 0001',
+      'Aberto em:',
+    ])
+      expect(has(opened.bytes, text), text).toBe(true);
+    expect(has(opened.bytes, 'PRODUTO FRACIONADO')).toBe(false);
     await result.getByRole('button', { name: 'Fechar' }).click();
     await expect(origin).toContainText('saldo 6 kg');
     const derived = rows
@@ -127,6 +158,24 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
     await form.getByRole('button', { name: 'Revisar registro' }).click();
     await review.getByRole('button', { name: 'Confirmar registro' }).click();
     await expect(result).toContainText('Sobra de 1 kg descartada.');
+    const all = await download(
+      page,
+      testInfo,
+      result.getByRole('button', { name: 'Baixar PDF de todas' }),
+      'fracionado.pdf',
+    );
+    expect(all.name).toMatch(/^etiquetas-.+\.pdf$/);
+    expect(all.bytes.toString('latin1').match(/\/Type \/Page\b/g)).toHaveLength(
+      3,
+    );
+    for (const text of [
+      'PRODUTO FRACIONADO',
+      'Porcao 1 de 3'.replace('Porcao', 'Por\xe7\xe3o'),
+    ])
+      expect(
+        has(all.bytes, text) || all.bytes.toString('latin1').includes(text),
+        text,
+      ).toBe(true);
     await result.getByRole('button', { name: 'Fechar' }).click();
 
     // E2E 31: QR da origem avisa que foi aberta e leva aos derivados.
@@ -142,12 +191,16 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
       .click();
     await expect(label).toContainText('Recipiente derivado');
     await expect(label).toContainText('(após manipulação)');
-    await expect(label).toContainText(
-      'A etiqueta de produto aberto ou fracionado chega na próxima fatia',
-    );
-    await expect(
+    const derivedPdf = await download(
+      page,
+      testInfo,
       label.getByRole('button', { name: 'Gerar etiqueta PDF' }),
-    ).toHaveCount(0);
+      'derivado.pdf',
+    );
+    expect(has(derivedPdf.bytes, 'PRODUTO ABERTO')).toBe(true);
+    await expect(
+      label.getByRole('button', { name: 'Baixar PDF de todas' }),
+    ).toBeVisible();
     await expect(label).toContainText('Origem:');
     // Do derivado à primeira porção.
     await label

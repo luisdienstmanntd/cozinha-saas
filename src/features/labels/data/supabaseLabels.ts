@@ -36,7 +36,7 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
       const { data, error } = await client
         .from('containers')
         .select(
-          'id,organization_id,establishment_id,short_code,handling_id,batch_receipts!inner(source_code,quantity,unit,expiry_date,expiry_origin,products!inner(name))',
+          'id,organization_id,establishment_id,short_code,handling_id,position,storage,batch_receipts!inner(source_code,quantity,unit,expiry_date,expiry_origin,suppliers(name),products!inner(name))',
         )
         .eq('id', id)
         .maybeSingle();
@@ -74,6 +74,35 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
           throw new Error('Recipiente indisponível ou sem acesso.');
         voided = found.data !== null;
       }
+      // Fatia 6.7: dados da manipulação que criou o derivado, para a etiqueta de produto aberto.
+      let handling: unknown;
+      if (handlingId) {
+        const made = await client
+          .from('container_handlings')
+          .select(
+            'kind,handled_at,timezone,handled_by_name,expiry_date,storage',
+          )
+          .eq('id', handlingId)
+          .maybeSingle();
+        const siblings = await client
+          .from('containers')
+          .select('id')
+          .eq('handling_id', handlingId);
+        const position = (data as { position?: unknown }).position;
+        // Sem os dados da manipulação o derivado fica sem `handling` e o PDF é recusado (fail closed).
+        const parsed = labelDataSchema.shape.handling.safeParse(
+          made.data
+            ? {
+                ...(made.data as object),
+                position: typeof position === 'number' ? position : null,
+                siblings: Array.isArray(siblings?.data)
+                  ? siblings.data.length
+                  : null,
+              }
+            : undefined,
+        );
+        if (parsed.success) handling = parsed.data;
+      }
       // Fatia 6.5a: derivado de manipulação registrada fora da janela, sem liberação do proprietário.
       // O bloqueio vem do banco (container_blocks), pela RLS, como o resto. Desde a 6.5b a consulta vale
       // para todo recipiente não anulado (recebimento sem medição bloqueia o integral).
@@ -104,6 +133,8 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
         short_code: (data as { short_code: unknown }).short_code,
         balance: row.data[0].balance,
         kind: row.data[0].kind,
+        storage: (data as { storage?: unknown }).storage ?? null,
+        handling,
         organization_id: scope.organization_id,
         establishment_id: scope.establishment_id,
         effective:

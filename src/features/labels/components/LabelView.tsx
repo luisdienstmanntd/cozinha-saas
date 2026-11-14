@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { LabelGateway } from '../application/labelGateway';
 import type { LabelData } from '../domain/label';
-import { DERIVED_LABEL_MESSAGE, LATE_HOLD_MESSAGE } from '../domain/label';
+import { LATE_HOLD_MESSAGE } from '../domain/label';
 import type { HandlingGateway } from '../../handling/application/handlingGateway';
 import type { Family } from '../../handling/domain/family';
 import { HandlingForm } from '../../handling/components/HandlingForm';
 import { VoidHandling } from '../../handling/components/VoidHandling';
 import { formatDate, kindLabels } from '../../handling/domain/handling';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
-import { makeLabelPdf } from '../application/pdf';
+import { DownloadLabels } from './DownloadLabels';
 
 export function LabelView({
   id,
@@ -92,13 +92,14 @@ export function LabelView({
       return;
     }
     if (!isCurrent()) return;
-    if (fresh.voided || fresh.late_hold || fresh.kind === 'derived') {
+    if (fresh.voided || fresh.late_hold) {
       setData(fresh);
       setBusy(false);
       return;
     }
     try {
       setData(fresh);
+      const { makeLabelPdf } = await import('../application/pdf');
       const blob = await makeLabelPdf(fresh, window.location.origin);
       if (!isCurrent()) return;
       const href = URL.createObjectURL(blob);
@@ -179,8 +180,6 @@ export function LabelView({
             </p>
           ) : data.late_hold ? (
             <p role="alert">{LATE_HOLD_MESSAGE}</p>
-          ) : data.kind === 'derived' ? (
-            <p role="status">{DERIVED_LABEL_MESSAGE}</p>
           ) : (
             <button disabled={busy} onClick={() => void download()}>
               Gerar etiqueta PDF
@@ -220,6 +219,7 @@ export function LabelView({
                 <FamilyOpenings
                   family={family}
                   data={data}
+                  gateway={gateway}
                   onOpen={onOpenContainer}
                 />
               )}
@@ -249,6 +249,7 @@ export function LabelView({
                         containerId={id}
                         userId={userId}
                         gateway={handling}
+                        labels={gateway}
                         onClose={() => setHandlingOpen(false)}
                         onChanged={() => setReload((value) => value + 1)}
                         onOpenContainer={onOpenContainer}
@@ -337,10 +338,12 @@ function FamilyOrigin({
 function FamilyOpenings({
   family,
   data,
+  gateway,
   onOpen,
 }: {
   family: Family;
   data: LabelData;
+  gateway: LabelGateway;
   onOpen?: (id: string) => void;
 }) {
   const unit = data.batch_receipts.unit;
@@ -366,6 +369,16 @@ function FamilyOpenings({
             {h.remainder === 'sealed' &&
               !voided &&
               ` — sobra de ${h.remainder_quantity} ${unit} segue fechada`}
+            {!voided && children.length > 0 && (
+              <p>
+                <DownloadLabels
+                  gateway={gateway}
+                  ids={children.map((child) => child.id)}
+                  filename={`etiquetas-${h.id}.pdf`}
+                  label="Baixar PDF de todas"
+                />
+              </p>
+            )}
             <ul>
               {children.map((child) => (
                 <li key={child.id}>

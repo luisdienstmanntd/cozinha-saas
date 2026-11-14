@@ -25,7 +25,22 @@ export const labelDataSchema = z.object({
       initial_quantity: z.number(),
     })
     .optional(),
+  // Fatia 6.7: conservação do recipiente e, no derivado, a manipulação que o criou (lida pela RLS).
+  storage: z.enum(['ambient', 'refrigerated', 'frozen']).nullable().optional(),
+  handling: z
+    .object({
+      kind: z.enum(['opening', 'portioning']),
+      handled_at: z.string(),
+      timezone: z.string(),
+      handled_by_name: z.string(),
+      expiry_date: z.iso.date(),
+      storage: z.enum(['ambient', 'refrigerated', 'frozen']),
+      position: z.number().int().nullable(),
+      siblings: z.number().int().nullable(),
+    })
+    .optional(),
   batch_receipts: z.object({
+    suppliers: z.object({ name: z.string() }).nullable().optional(),
     source_code: z.string(),
     quantity: z.number(),
     unit: z.string(),
@@ -36,8 +51,8 @@ export const labelDataSchema = z.object({
 });
 export const LATE_HOLD_MESSAGE =
   'Manipulação registrada fora da janela de horário, sem liberação do proprietário: a etiqueta não pode ser gerada.';
-export const DERIVED_LABEL_MESSAGE =
-  'A etiqueta de produto aberto ou fracionado chega na próxima fatia. Até lá, anote o código curto no recipiente.';
+export const DERIVED_DATA_MESSAGE =
+  'Dados da manipulação indisponíveis: a etiqueta de produto aberto não pode ser gerada.';
 export type LabelData = z.infer<typeof labelDataSchema>;
 export function containerPath(id: string) {
   return `/recipiente/${uuid.parse(id)}`;
