@@ -223,5 +223,47 @@ it('avisa quando a lista atinge o limite da API', async () => {
         'A lista mostra até 1.000 itens; outros itens podem não aparecer.',
       )
     ).length,
-  ).toBe(2);
+    // Uma por seção: produtos, fornecedores e (desde a 7.3) preparações próprias.
+  ).toBe(3);
+});
+
+it('cadastra preparação própria em seção separada, com unidade e conservação (fatia 7.3)', async () => {
+  const caldo = { id: 'p9', name: 'Caldo de legumes', unit: 'l' as const };
+  const gateway: CatalogGateway = {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn().mockResolvedValue(caldo),
+    setStorageCondition: vi.fn().mockResolvedValue('refrigerated'),
+  };
+  const user = userEvent.setup();
+  render(<CatalogPanel scope={scope} gateway={gateway} canCreate />);
+  const section = within(
+    screen.getByRole('region', { name: 'Preparações próprias' }),
+  );
+  await section.findByText('Nenhuma preparação cadastrada.');
+  expect(gateway.list).toHaveBeenCalledWith('preparations', scope);
+  // Os campos só aparecem por escolha, para não repetir os do produto na tela.
+  expect(section.queryByLabelText('Unidade de medida')).not.toBeInTheDocument();
+  await user.click(section.getByRole('button', { name: 'Nova preparação' }));
+  await user.type(
+    section.getByLabelText('Nome da preparação'),
+    'Caldo de legumes',
+  );
+  await user.selectOptions(section.getByLabelText('Unidade de medida'), 'l');
+  await user.selectOptions(
+    section.getByLabelText('Conservação'),
+    'refrigerated',
+  );
+  await user.click(
+    section.getByRole('button', { name: 'Cadastrar preparação' }),
+  );
+  expect(
+    await section.findByText('Caldo de legumes — l — Refrigerado'),
+  ).toBeVisible();
+  expect(section.getByRole('status')).toHaveTextContent(
+    'Preparação cadastrada.',
+  );
+  expect(gateway.create).toHaveBeenCalledWith('preparations', scope, {
+    name: 'Caldo de legumes',
+    unit: 'l',
+  });
 });

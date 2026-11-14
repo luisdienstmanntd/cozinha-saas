@@ -385,3 +385,11 @@
 - **Motivo:** D-049 (seção 4.6 do desenho), D-019, D-038, D-045.
 - **Consequência:** tipo de movimento novo nos três lugares da D-038; a tela da 7.3 mostra "ANULADO" e a 7.4 recusa o PDF de lote anulado.
 - **Revisar quando:** a 7.3 chegar ou a observação na cozinha mostrar outro erro frequente.
+
+## D-052 — Tela de produção da cozinha (14/11/2026)
+
+- **Status:** proposta, aguardando aceite de luis; implementada na fatia 7.3 ([registro](FASE_07_3.md)).
+- **Decisão:** preparação própria tem seção própria no catálogo; a produção é registrada em passos (formulário, revisão por extenso com dia da semana e contagem de dias só para conferência, confirmação extra para validade no mesmo dia, resultado), com validade vazia e sem sugestão; "Anular produção" fica na lista das 50 produções mais recentes; registro e anulação entram na recuperação de tentativa; a página do recipiente mostra "Preparação própria", quem produziu e a faixa ANULADO, sem etiqueta para lote anulado.
+- **Motivo:** D-049, D-050, D-051, D-043, D-045, D-004, D-019.
+- **Consequência:** a 7.4 desenha o PDF a partir dos mesmos dados (`production` na etiqueta).
+- **Revisar quando:** a 7.4 e a 7.5 chegarem ou a observação na cozinha pedir outro fluxo.

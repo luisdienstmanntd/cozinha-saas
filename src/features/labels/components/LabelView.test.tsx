@@ -397,3 +397,47 @@ it('mostra a faixa VENCIDO no QR só para recipiente vencido com saldo (fatia 6.
   expect(await screen.findByText(/Manipulação anulada/)).toBeVisible();
   expect(screen.queryByText(/VENCIDO/)).not.toBeInTheDocument();
 });
+
+it('preparação própria mostra quem produziu e, anulada, a faixa ANULADO sem etiqueta (fatia 7.3)', async () => {
+  const data = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000003',
+    balance: 0,
+    production: {
+      produced_at: '2026-11-14T14:30:00.000Z',
+      handled_by_name: 'Bruno Lima',
+      timezone: 'America/Sao_Paulo',
+      late: false,
+      voided: {
+        reason: 'Validade digitada errada',
+        created_at: '2026-11-14T15:00:00.000Z',
+      },
+    },
+    batch_receipts: {
+      source_code: null,
+      quantity: 6,
+      unit: 'l',
+      expiry_date: '2026-11-16',
+      expiry_origin: 'responsible' as const,
+      timezone: 'America/Sao_Paulo',
+      products: { name: 'Caldo de legumes' },
+    },
+  };
+  render(
+    <LabelView
+      id={data.id}
+      gateway={{ ensure: vi.fn(), get: vi.fn().mockResolvedValue(data) }}
+    />,
+  );
+  expect(await screen.findByText('Preparação própria')).toBeVisible();
+  expect(
+    screen.getByText('Um recipiente integral corresponde a esta produção.'),
+  ).toBeVisible();
+  expect(screen.getByText(/Produzida em .* por Bruno Lima/)).toBeVisible();
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    /ANULADO: produção anulada em .*Validade digitada errada/,
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).not.toBeInTheDocument();
+});

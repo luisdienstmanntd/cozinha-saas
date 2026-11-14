@@ -14,14 +14,18 @@ const PRODUCT_COLUMNS = 'id,name,unit,storage_condition';
 export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
   return {
     async list(kind, scope) {
-      const product = kind === 'products';
+      const product = kind !== 'suppliers';
       let query = client
-        .from(kind)
+        .from(product ? 'products' : 'suppliers')
         .select(product ? PRODUCT_COLUMNS : 'id,name')
         .eq('organization_id', scope.organizationId)
         .eq('establishment_id', scope.establishmentId);
-      // Fatia 7.1: preparações próprias (D-049) não entram no recebimento; a tela delas chega na 7.3.
-      if (product) query = query.eq('kind', 'product');
+      // Fatia 7.1/7.3: preparações próprias (D-049) não entram no recebimento; têm lista própria.
+      if (product)
+        query = query.eq(
+          'kind',
+          kind === 'preparations' ? 'preparation' : 'product',
+        );
       const { data, error } = await query.order('name');
       if (error)
         throw new Error(
@@ -30,11 +34,13 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
       return (product ? productRow : catalogRow).array().parse(data);
     },
     async create(kind, scope, input) {
-      const product = kind === 'products';
+      const product = kind !== 'suppliers';
       const { data, error } = await client
-        .from(kind)
+        .from(product ? 'products' : 'suppliers')
         .insert({
           ...parseCatalogInput(kind, input.name, input.unit),
+          // O tipo é escolhido só na criação (o cliente não tem UPDATE da coluna).
+          ...(kind === 'preparations' ? { kind: 'preparation' } : {}),
           organization_id: scope.organizationId,
           establishment_id: scope.establishmentId,
         })

@@ -36,7 +36,7 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
       const { data, error } = await client
         .from('containers')
         .select(
-          'id,organization_id,establishment_id,short_code,handling_id,position,storage,batch_receipts!inner(source_code,quantity,unit,expiry_date,expiry_origin,timezone,suppliers(name),products!inner(name))',
+          'id,organization_id,establishment_id,short_code,batch_id,handling_id,position,storage,batch_receipts!inner(origin,source_code,quantity,unit,expiry_date,expiry_origin,timezone,suppliers(name),products!inner(name))',
         )
         .eq('id', id)
         .maybeSingle();
@@ -103,6 +103,38 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
         );
         if (parsed.success) handling = parsed.data;
       }
+      // Fatia 7.3: lote produzido pela cozinha; a produção e a anulação são lidas pela RLS. Sem elas o
+      // recipiente fica indisponível (fail closed), em vez de aparecer como um recebimento.
+      let production: unknown;
+      const receipt = (data as { batch_receipts?: { origin?: unknown } })
+        .batch_receipts;
+      if (receipt?.origin === 'produced') {
+        const batchId = z
+          .uuid()
+          .parse((data as { batch_id?: unknown }).batch_id);
+        const [made, voidRow] = await Promise.all([
+          client
+            .from('batch_productions')
+            .select('produced_at,handled_by_name,timezone,late')
+            .eq('organization_id', scope.organization_id)
+            .eq('batch_id', batchId)
+            .maybeSingle(),
+          client
+            .from('production_voids')
+            .select('reason,created_at')
+            .eq('organization_id', scope.organization_id)
+            .eq('batch_id', batchId)
+            .maybeSingle(),
+        ]);
+        const parsed = labelDataSchema.shape.production.safeParse(
+          made.data
+            ? { ...(made.data as object), voided: voidRow.data ?? null }
+            : undefined,
+        );
+        if (made.error || voidRow.error || !made.data || !parsed.success)
+          throw new Error('Recipiente indisponível ou sem acesso.');
+        production = parsed.data;
+      }
       // Fatia 6.5a: derivado de manipulação registrada fora da janela, sem liberação do proprietário.
       // O bloqueio vem do banco (container_blocks), pela RLS, como o resto. Desde a 6.5b a consulta vale
       // para todo recipiente não anulado (recebimento sem medição bloqueia o integral).
@@ -135,6 +167,7 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
         kind: row.data[0].kind,
         storage: (data as { storage?: unknown }).storage ?? null,
         handling,
+        production,
         organization_id: scope.organization_id,
         establishment_id: scope.establishment_id,
         effective:

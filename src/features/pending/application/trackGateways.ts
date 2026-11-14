@@ -9,6 +9,8 @@ import type { MovementGateway } from '../../movements/application/movementGatewa
 import { MovementRejected } from '../../movements/application/movementGateway';
 import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
 import { DecisionRejected } from '../../occurrences/application/occurrenceGateway';
+import type { ProductionGateway } from '../../production/application/productionGateway';
+import { ProductionRejected } from '../../production/application/productionGateway';
 import { pendingStore } from '../domain/pending';
 import type { PendingKind } from '../domain/pending';
 
@@ -18,6 +20,7 @@ export type TrackedGateways = {
   occurrences: OccurrenceGateway;
   handling: HandlingGateway;
   locations?: LocationGateway;
+  production?: ProductionGateway;
 };
 
 // Recusa definitiva do banco: a operação não foi gravada e não há o que conferir depois.
@@ -27,7 +30,8 @@ function definitive(cause: unknown) {
     cause instanceof MovementRejected ||
     cause instanceof DecisionRejected ||
     cause instanceof HandlingRejected ||
-    cause instanceof LocationRejected
+    cause instanceof LocationRejected ||
+    cause instanceof ProductionRejected
   );
 }
 
@@ -125,6 +129,25 @@ export function trackGateways(
           input as unknown as Input,
           'Mudança de local',
           () => gateways.locations!.move(scope, input),
+        ),
+    },
+    production: gateways.production && {
+      ...gateways.production,
+      register: (scope, input) =>
+        track(
+          'production',
+          scope,
+          input as unknown as Input,
+          `Produção de ${input.quantity} (validade ${input.expiryDate})`,
+          () => gateways.production!.register(scope, input),
+        ),
+      void: (scope, input) =>
+        track(
+          'production_void',
+          scope,
+          input as unknown as Input,
+          'Anulação de produção',
+          () => gateways.production!.void(scope, input),
         ),
     },
     handling: {
