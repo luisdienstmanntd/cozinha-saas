@@ -20,3 +20,8 @@
 - **Feito:** integração e E2E novos; testes antigos com datas fixas de 2027 ajustados (ver `FASE_06_11.md`); "Abrir / porcionar" escondido também no QR do vencido; procedimento manual em `PRE_PILOTO.md` 4.1; D-048 proposta.
 - **Testes:** ver PR (bateria completa).
 - **Próximo passo:** PR em rascunho e CI.
+
+### 14/11/2026 03:51 UTC — Claude Code
+- **Feito:** PR #20 em rascunho (base: branch do PR #18), commit 7070bd0. CI verde (quality e banco-api-e2e).
+- **Testes locais:** lint, typecheck, format:check, build ok; Vitest 237; pgTAP 1089; integração 32; E2E 15.
+- **Próximo passo:** aceite de luis dos 5 pontos e da D-048; sem merge sem pedido dele.
