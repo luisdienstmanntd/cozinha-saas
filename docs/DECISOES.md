@@ -346,3 +346,11 @@
 - **Consequência:** tabela nova de histórico entra na guarda (`assert_history_protected`, pgTAP de segurança); anular manipulação é recusado depois que um derivado mudou de local.
 - **Revisar quando:** o piloto pedir local na etiqueta, local inicial no recebimento ou histórico de locais na tela.
 
+## D-047 — Trilha pré-piloto sem tela (14/11/2026)
+
+- **Status:** proposta; implementada na fatia 6.10 ([registro](FASE_06_10.md), [procedimentos](PRE_PILOTO.md)), aguardando aceite de luis.
+- **Decisão:** provisionamento só local, com senhas temporárias apenas em arquivo 0600; configuração de autenticação hospedada documentada e protegida por teste, sem ser aplicada; métricas de observação por função de leitura pela RLS; procedimento de dados pessoais só documentado; recusas não são gravadas (métricas manuais).
+- **Motivo:** desenho 6.10; P4 e P8; R6, R12, R13, R15; D-006; Q10 pendente.
+- **Consequência:** MFA obrigatório para proprietários e o destino das cópias de nome em registros imutáveis seguem em aberto; nada afirma conformidade sanitária.
+- **Revisar quando:** o ambiente hospedado for autorizado ou o piloto pedir recusas gravadas.
+
