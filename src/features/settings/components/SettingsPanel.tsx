@@ -22,7 +22,7 @@ import {
 export const MEMBER_MODE_TEXT =
   'Cada colaborador registra só a própria produção, com a validade. Decidir ocorrência, anular, porcionar e as demais operações continuam só do proprietário.';
 export const UNLABELED_TEXT =
-  'Guardado para o aviso de produção sem etiqueta, que ainda não está disponível.';
+  'Usado no aviso de produção sem download de etiqueta registrado (não confirma impressão nem aplicação).';
 const LOAD_ERROR =
   'Não foi possível carregar as configurações da unidade. Tente novamente.';
 

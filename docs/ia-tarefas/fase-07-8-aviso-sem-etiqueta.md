@@ -2,7 +2,7 @@
 
 - **ID:** fase-07-8-aviso-sem-etiqueta
 - **Responsável / sessão:** Claude Code (conversa "Desenhar etiqueta de preparação própria")
-- **Estado:** pronta, aguardando aceite de luis (D-057 proposta, 3 pontos)
+- **Estado:** pronta, aceita por luis em 14/11/2026, 21:20 UTC (3 pontos e D-057, com observação sobre o texto do aviso)
 - **Objetivo e aceite:** implementar a 7.8 do `FASE_07_DESENHO.md`: registrar quando a etiqueta do recipiente integral da produção foi baixada (sem criar estoque, D-003) e avisar na tela de Produção "sem etiqueta há X" acima do tempo configurado (D-055). O banco não bloqueia. Autorizada por luis em 14/11/2026, 20:47 UTC, sem antecipar a 7.9.
 - **Branch / worktree / base:** `claude/fase-07-8-aviso-sem-etiqueta`, sobre `claude/fase-07-7-janela-por-preparacao` (PR #27, sem merge). Inclui a correção dos testes instáveis (PR #28).
 - **Arquivos e recursos em uso:**
@@ -20,3 +20,7 @@
 - **Falhas no caminho (corrigidas no próprio teste novo):** contagem de recipientes novos errada (2 em vez de 4) e verificação dependente da ordem de duas linhas da mesma transação. Nenhum teste existente foi enfraquecido; só duas listas fixas de segurança cresceram.
 - **Limites:** download pela página do QR não é registrado; o aviso só aparece na tela de Produção.
 - **Próximo passo:** aceite de luis (3 pontos e D-057).
+
+### 14/11/2026 ~21:30 UTC — Claude Code
+- **Aceite de luis registrado** (3 pontos e D-057). Texto do aviso trocado por "sem download de etiqueta registrado" (tela, testes, docs). Limitações do ponto 3 registradas para o piloto; melhoria futura em `BACKLOG.md`. 7.9 autorizada.
+- **Próximo passo:** 7.9 sobre este PR.

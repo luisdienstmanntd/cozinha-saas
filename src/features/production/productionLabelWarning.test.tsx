@@ -137,13 +137,17 @@ describe('aviso de produção sem etiqueta (7.8)', () => {
       await screen.findByRole('list', { name: 'Produções recentes' }),
     );
     expect(
-      list.getByText(/sem etiqueta há 2 horas e 30 minutos/),
+      list.getByText(
+        /sem download de etiqueta registrado há 2 horas e 30 minutos/,
+      ),
     ).toBeVisible();
     expect(list.getByText(/acima de 1 hora\)/)).toBeVisible();
-    expect(list.getAllByText(/sem etiqueta há/)).toHaveLength(1);
+    expect(
+      list.getAllByText(/sem download de etiqueta registrado há/),
+    ).toHaveLength(1);
     expect(
       screen.getByText(
-        /1 produção está sem etiqueta baixada há mais de 1 hora\. É só um aviso/,
+        /1 produção está sem download de etiqueta registrado há mais de 1 hora\. É só um aviso: o sistema registra o download, não a impressão nem a aplicação da etiqueta\./,
       ),
     ).toBeVisible();
   });
@@ -161,8 +165,12 @@ describe('aviso de produção sem etiqueta (7.8)', () => {
       { settings: { unlabeled_limit_minutes: 150 } },
     );
     await screen.findByRole('list', { name: 'Produções recentes' });
-    expect(screen.queryByText(/sem etiqueta há/)).toBeNull();
-    expect(screen.queryByText(/está sem etiqueta baixada/)).toBeNull();
+    expect(
+      screen.queryByText(/sem download de etiqueta registrado há/),
+    ).toBeNull();
+    expect(
+      screen.queryByText(/está sem download de etiqueta registrado/),
+    ).toBeNull();
   });
   it('não avisa de produção anulada', async () => {
     render8([
@@ -172,7 +180,9 @@ describe('aviso de produção sem etiqueta (7.8)', () => {
       }),
     ]);
     await screen.findByRole('list', { name: 'Produções recentes' });
-    expect(screen.queryByText(/sem etiqueta há/)).toBeNull();
+    expect(
+      screen.queryByText(/sem download de etiqueta registrado há/),
+    ).toBeNull();
   });
   it('registra o download depois que o PDF é gerado e relê a lista', async () => {
     const { gateway } = render8([row()]);

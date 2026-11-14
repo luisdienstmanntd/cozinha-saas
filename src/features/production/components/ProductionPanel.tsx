@@ -191,7 +191,7 @@ function ProductionContents({
       .recordLabelDownload({ organizationId, establishmentId }, containerId)
       .then(reloadList, () =>
         setNotice(
-          'A etiqueta foi baixada, mas não foi possível registrar o horário. O aviso de produção sem etiqueta pode continuar aparecendo.',
+          'A etiqueta foi baixada, mas não foi possível registrar o horário. O aviso de produção sem download de etiqueta registrado pode continuar aparecendo.',
         ),
       );
   }
@@ -396,10 +396,10 @@ function ProductionContents({
       {unlabeled.length > 0 && (
         <p role="status">
           {unlabeled.length === 1
-            ? '1 produção está sem etiqueta baixada'
-            : `${unlabeled.length} produções estão sem etiqueta baixada`}{' '}
-          há mais de {unlabeledLimit}. É só um aviso: baixe a etiqueta e cole no
-          recipiente.
+            ? '1 produção está sem download de etiqueta registrado'
+            : `${unlabeled.length} produções estão sem download de etiqueta registrado`}{' '}
+          há mais de {unlabeledLimit}. É só um aviso: o sistema registra o
+          download, não a impressão nem a aplicação da etiqueta.
         </p>
       )}
       <h4>Produções recentes</h4>
@@ -435,7 +435,7 @@ function ProductionContents({
               {unlabeled.some((item) => item.row === row) && (
                 <strong>
                   {' '}
-                  — sem etiqueta há{' '}
+                  — sem download de etiqueta registrado há{' '}
                   {durationText(
                     unlabeled.find((item) => item.row === row)!.minutes,
                   )}{' '}

@@ -475,10 +475,10 @@ test('produção sem etiqueta baixada é avisada e o download tira o aviso', asy
     const panel = page.getByRole('region', { name: 'Produção da cozinha' });
     const productions = panel.getByRole('list', { name: 'Produções recentes' });
     await expect(productions).toContainText(
-      /sem etiqueta há 1 hora e 3\d minutos \(acima de 1 hora\)/,
+      /sem download de etiqueta registrado há 1 hora e 3\d minutos \(acima de 1 hora\)/,
     );
     await expect(panel).toContainText(
-      '1 produção está sem etiqueta baixada há mais de 1 hora',
+      '1 produção está sem download de etiqueta registrado há mais de 1 hora',
     );
 
     await download(
@@ -487,7 +487,11 @@ test('produção sem etiqueta baixada é avisada e o download tira o aviso', asy
       productions.getByRole('button', { name: /^Baixar etiqueta \(C-/ }),
       'aviso.pdf',
     );
-    await expect(productions).not.toContainText('sem etiqueta há');
-    await expect(panel).not.toContainText('está sem etiqueta baixada');
+    await expect(productions).not.toContainText(
+      'sem download de etiqueta registrado há',
+    );
+    await expect(panel).not.toContainText(
+      'está sem download de etiqueta registrado',
+    );
   });
 });

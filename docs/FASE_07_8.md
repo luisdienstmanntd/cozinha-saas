@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.8 — aviso de produção sem etiqueta
 
-> Autorizada por luis em 14/11/2026 (20:47 UTC), junto com o aceite da 7.7: "Autorizo o início da Fase 7.8, conforme o desenho existente, sem antecipar a 7.9." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (7.8: "registrar quando a etiqueta foi baixada, sem criar estoque, D-003, e mostrar no painel as produções acima do tempo configurado; o banco não bloqueia, porque não sabe se a etiqueta foi colada") e a D-055 (tempo máximo sem etiqueta, padrão 1 hora). Decisão: **D-057** (abaixo), **proposta, aceite de luis pendente**. **Nada aqui afirma conformidade sanitária**: o aviso é um lembrete operacional, não prova que a etiqueta foi colada, e o tempo configurado depende da nutricionista RT (Q10, pendente). O teste físico de impressão também segue pendente. Dados de teste sintéticos.
+> Autorizada por luis em 14/11/2026 (20:47 UTC), junto com o aceite da 7.7: "Autorizo o início da Fase 7.8, conforme o desenho existente, sem antecipar a 7.9." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (7.8: "registrar quando a etiqueta foi baixada, sem criar estoque, D-003, e mostrar no painel as produções acima do tempo configurado; o banco não bloqueia, porque não sabe se a etiqueta foi colada") e a D-055 (tempo máximo sem etiqueta, padrão 1 hora). Decisão: **D-057** (abaixo), **aceita por luis em 14/11/2026, 21:20 UTC, com uma observação sobre o texto do aviso**. **Nada aqui afirma conformidade sanitária**: o aviso é um lembrete operacional, não prova que a etiqueta foi colada, e o tempo configurado depende da nutricionista RT (Q10, pendente). O teste físico de impressão também segue pendente. Dados de teste sintéticos.
 
 ## O que mudou
 
@@ -16,8 +16,8 @@
 ### Tela (Produção da cozinha)
 
 - **Registro ao baixar:** depois que o PDF é gerado e baixado, a tela registra o download e relê a lista. Se o PDF falha (por exemplo, lote bloqueado), nada é registrado. Se só o registro falha, a tela avisa que a etiqueta foi baixada mas o horário não foi registrado; o PDF não é desfeito.
-- **Aviso por produção:** "— sem etiqueta há 1 hora e 35 minutos (acima de 1 hora)", quando a produção não está anulada, tem recipiente, ainda não teve a etiqueta baixada e passou do tempo configurado na unidade.
-- **Resumo no alto:** "1 produção está sem etiqueta baixada há mais de 1 hora. É só um aviso: baixe a etiqueta e cole no recipiente."
+- **Aviso por produção:** "— sem download de etiqueta registrado há 1 hora e 35 minutos (acima de 1 hora)", quando a produção não está anulada, tem recipiente, ainda não teve a etiqueta baixada e passou do tempo configurado na unidade.
+- **Resumo no alto:** "1 produção está sem download de etiqueta registrado há mais de 1 hora. É só um aviso: o sistema registra o download, não a impressão nem a aplicação da etiqueta."
 - A tela usa o tempo da unidade (7.6). Nada calcula ou sugere validade (D-004).
 
 ## Testes
@@ -57,8 +57,16 @@ O arquivo de teste novo se chama `production_label.test.sql` para rodar depois d
 
 ## Decisão proposta para `DECISOES.md`
 
-> **D-057 — Aviso de produção sem etiqueta (14/11/2026).** Status: proposta; aceite de luis pendente. Implementada na fatia 7.8 ([registro](FASE_07_8.md)). Decisão: o download da etiqueta do recipiente integral de uma produção é registrado em tabela append-only, sem criar estoque (D-003), por quem pode registrar produção (D-019 e 7.6). A tela de Produção avisa "sem etiqueta há X" nas produções não anuladas, sem download e acima do tempo máximo configurado na unidade (D-055). O banco não bloqueia nada. Motivo: desenho da Fase 7 e resposta de luis ao questionário (aviso de 1 h sem etiqueta). Consequência: a temperatura opcional (7.9) segue como fatia própria. Revisar quando: a nutricionista RT avaliar o tempo e a observação do piloto mostrar se o aviso ajuda.
+> **D-057 — Aviso de produção sem etiqueta (14/11/2026).** Status: aceita por luis em 14/11/2026, 21:20 UTC (com observação sobre o texto do aviso). Implementada na fatia 7.8 ([registro](FASE_07_8.md)). Decisão: o download da etiqueta do recipiente integral de uma produção é registrado em tabela append-only, sem criar estoque (D-003), por quem pode registrar produção (D-019 e 7.6). A tela de Produção avisa "sem download de etiqueta registrado há X" nas produções não anuladas, sem download e acima do tempo máximo configurado na unidade (D-055). O banco não bloqueia nada. Motivo: desenho da Fase 7 e resposta de luis ao questionário (aviso de 1 h sem etiqueta). Consequência: a temperatura opcional (7.9) segue como fatia própria. Revisar quando: a nutricionista RT avaliar o tempo e a observação do piloto mostrar se o aviso ajuda.
+
+## Aceite de luis (14/11/2026, 21:20 UTC)
+
+1. **Aprovado:** o registro do download fica com o proprietário e com os colaboradores autorizados a registrar produção, seguindo as permissões da unidade.
+2. **Aprovado:** o aviso encerra no primeiro download registrado; as reimpressões continuam no histórico sem reabrir o aviso.
+3. **Aceito provisoriamente:** download feito pela página do QR não é registrado e o aviso aparece só na tela de Produção. **Essas limitações ficam registradas para avaliação durante o piloto.**
+
+Aprovou a D-057 **com a observação** de que o sistema distinga etiqueta não baixada de etiqueta não impressa ou não colada, porque não há confirmação física. Por isso os avisos dizem **"sem download de etiqueta registrado"** (texto ajustado neste PR, na tela, nos testes e na D-057). Pediu como **melhoria futura** acompanhar os downloads feitos por diferentes telas e usuários autorizados, sem enfraquecer os controles de acesso (anotada em `BACKLOG.md`). Autorizou a 7.9 exclusivamente conforme o desenho existente. A validação normativa da nutricionista RT e o teste físico de impressão seguem obrigatórios antes do piloto operacional.
 
 ## Próximo passo
 
-Aceite de luis. A 7.9 exige aprovação própria. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.
+7.9 (temperatura opcional), autorizada. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.
