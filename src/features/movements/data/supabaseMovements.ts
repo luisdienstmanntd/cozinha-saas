@@ -91,7 +91,8 @@ export function createMovementGateway(client: SupabaseClient): MovementGateway {
       if (
         error?.code === '22023' &&
         typeof error.message === 'string' &&
-        error.message.startsWith('Recipiente bloqueado:')
+        (error.message.startsWith('Recipiente bloqueado:') ||
+          error.message.startsWith('Recipiente vencido:'))
       )
         throw new MovementBlocked(error.message);
       if (error?.code === '22023')

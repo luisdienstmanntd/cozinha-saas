@@ -46,6 +46,9 @@ export const labelDataSchema = z.object({
     unit: z.string(),
     expiry_date: z.iso.date(),
     expiry_origin: z.enum(['original', 'responsible']),
+    // Fatia 6.11: fuso da unidade no recebimento, para a faixa de vencido no QR. Opcional: sem ele a
+    // faixa não aparece, e o banco continua recusando o consumo.
+    timezone: z.string().optional(),
     products: z.object({ name: z.string() }),
   }),
 });

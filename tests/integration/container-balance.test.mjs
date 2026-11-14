@@ -43,9 +43,9 @@ test('saldo por recipiente: integral no recebimento, código curto único e baix
       p_supplier_id: supplier.id,
       p_source_code: 'L-' + intent.slice(0, 8),
       p_quantity: quantity,
-      p_expiry_date: '2027-03-01',
+      p_expiry_date: '2030-03-01',
       p_expiry_origin: 'original',
-      p_original_expiry_date: '2027-03-01',
+      p_original_expiry_date: '2030-03-01',
       p_storage_condition: 'ambient',
       p_temperature_status: 'not_required',
       p_received_temperature_c: null,
@@ -83,7 +83,7 @@ test('saldo por recipiente: integral no recebimento, código curto único e baix
       assert.equal(c.kind, 'integral');
       assert.equal(c.parent_container_id, null);
       assert.equal(c.initial_quantity, 1);
-      assert.equal(c.expiry_date, '2027-03-01');
+      assert.equal(c.expiry_date, '2030-03-01');
       assert.equal(c.expiry_origin, 'receipt');
       assert.equal(c.timezone, 'America/Sao_Paulo');
       assert.match(c.short_code, /^C-[0-9]{6,}$/);

@@ -32,3 +32,17 @@ export function getExpiryStatus(
   if (expiryDate === nextCivilDate(today)) return 'tomorrow';
   return 'upcoming';
 }
+
+// Fatia 6.11: faixa de recipiente vencido. Só compara a validade registrada com a data de hoje no fuso
+// da unidade (a mesma regra do banco, que recusa o consumo); não calcula prazo nem avalia o alimento.
+export const EXPIRED_TEXT = 'VENCIDO - somente descarte';
+export const EXPIRED_NOTE =
+  'a validade registrada já passou na data da unidade. O consumo é recusado; o descarte continua permitido.';
+
+export function isExpired(
+  expiryDate: string,
+  timezone: string,
+  now: Date = new Date(),
+): boolean {
+  return getExpiryStatus(expiryDate, timezone, now) === 'overdue';
+}

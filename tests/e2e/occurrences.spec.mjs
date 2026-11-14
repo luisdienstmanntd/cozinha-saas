@@ -64,7 +64,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
       .selectOption({ label: 'Granja de teste' });
     await page.getByLabel('Lote de origem').fill('F-29');
     await page.getByLabel('Quantidade recebida').fill('4');
-    await page.getByLabel('Data de validade').fill('2027-01-01');
+    await page.getByLabel('Data de validade').fill('2030-01-01');
     await page.getByLabel('Não foi possível medir').check();
     await expect(page.getByRole('note')).toHaveText(
       'O recebimento ficará bloqueado para uso até a decisão do responsável.',

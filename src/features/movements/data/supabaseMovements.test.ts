@@ -181,3 +181,28 @@ it('recusa por bloqueio leva a mensagem do banco; outra recusa continua genéric
   expect(generic).not.toBeInstanceOf(MovementBlocked);
   expect(generic.message).toBe('Saída recusada.');
 });
+
+it('recusa por vencimento leva a mensagem do banco (fatia 6.11)', async () => {
+  const message =
+    'Recipiente vencido: a validade registrada (01/01/2026) já passou na data da unidade. Consumo recusado; o descarte continua permitido.';
+  const gateway = createMovementGateway({
+    rpc: vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '22023', message },
+    }),
+  } as unknown as SupabaseClient);
+  const error = await gateway
+    .record(
+      { organizationId: 'org', establishmentId: 'unit' },
+      {
+        batchId: '12345678-1234-4234-8234-123456789abc',
+        kind: 'consumption',
+        quantity: '1',
+        reason: null,
+        intentId: '22345678-1234-4234-8234-123456789abc',
+      },
+    )
+    .catch((cause) => cause);
+  expect(error).toBeInstanceOf(MovementBlocked);
+  expect(error.message).toBe(message);
+});

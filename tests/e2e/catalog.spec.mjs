@@ -64,7 +64,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       .selectOption({ label: 'Horta de teste' });
     await page.getByLabel('Lote de origem').fill('0001');
     await page.getByLabel('Quantidade recebida').fill('1.25');
-    await page.getByLabel('Data de validade').fill('2027-01-01');
+    await page.getByLabel('Data de validade').fill('2030-01-01');
     await page.getByRole('button', { name: 'Registrar recebimento' }).click();
     await expect(page.getByText('Recebimento registrado.')).toBeVisible();
     await expect(page.getByText(/lote 0001/)).toBeVisible();
@@ -96,7 +96,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
     expect(bytes.includes(Buffer.from('Arroz de teste'))).toBe(true);
     expect(bytes.includes(Buffer.from('0001'))).toBe(true);
-    expect(bytes.includes(Buffer.from('Validade: 01/01/2027'))).toBe(true);
+    expect(bytes.includes(Buffer.from('Validade: 01/01/2030'))).toBe(true);
     expect(bytes.includes(Buffer.from('Quantidade inicial:'))).toBe(true);
     expect(pdf.suggestedFilename()).toBe(`etiqueta-${id}.pdf`);
     await page.getByRole('button', { name: 'Ver movimentações' }).click();
