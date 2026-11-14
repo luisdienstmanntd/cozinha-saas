@@ -2,6 +2,7 @@ import type { configureApp } from './configureApp';
 import { DemoHome } from '../features/demo/components/DemoHome';
 import { IdentityHome } from '../features/identity/components/IdentityHome';
 import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
+import { LocationsPanel } from '../features/locations/components/LocationsPanel';
 import { BatchPanel } from '../features/batches/components/BatchPanel';
 import { useMemo, useState } from 'react';
 import { trackGateways } from '../features/pending/application/trackGateways';
@@ -44,6 +45,7 @@ function Workspace({
           movements: configuration.movements,
           occurrences: configuration.occurrences,
           handling: configuration.handling,
+          locations: configuration.locations,
         },
         userId,
       ),
@@ -67,6 +69,10 @@ function Workspace({
         return tracked.occurrences.decide(target, input);
       case 'movement':
         return tracked.movements.record(target, input);
+      case 'location_move':
+        return tracked.locations!.move(target, input);
+      case 'location':
+        return tracked.locations!.create(target, input);
     }
   }
   return (
@@ -99,7 +105,15 @@ function Workspace({
         movements={tracked.movements}
         occurrences={tracked.occurrences}
         handling={tracked.handling}
+        locations={tracked.locations}
       />
+      {tracked.locations && (
+        <LocationsPanel
+          scope={scope}
+          gateway={tracked.locations}
+          canManage={canCreate}
+        />
+      )}
     </>
   );
 }

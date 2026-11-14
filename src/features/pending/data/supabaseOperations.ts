@@ -9,6 +9,8 @@ const rowSchema = z.object({
     'handling_void',
     'decision',
     'movement',
+    'location_move',
+    'location',
   ]),
   id: z.uuid(),
   created_at: z.string(),

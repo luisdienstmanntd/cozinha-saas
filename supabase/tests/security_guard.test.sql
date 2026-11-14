@@ -49,7 +49,8 @@ select is(
 select is(
   (select coalesce(string_agg(t, ',' order by t), '') from unnest(array[
       'public.memberships','public.batch_receipts','public.containers','public.stock_movements','public.entity_changes',
-      'public.container_handlings','public.handling_voids','public.occurrences','public.occurrence_decisions']) t
+      'public.container_handlings','public.handling_voids','public.occurrences','public.occurrence_decisions',
+      'public.location_moves','public.storage_locations']) t
     where has_any_column_privilege('authenticated', t::regclass, 'INSERT,UPDATE')),
   '', 'histórico e vínculos só mudam por funções autorizadas (sem INSERT/UPDATE direto)');
 
@@ -86,7 +87,7 @@ select is(
 select is(
   (select coalesce(string_agg(t, ',' order by t), '') from unnest(array[
       'batch_receipts','containers','stock_movements','entity_changes','container_handlings','handling_voids',
-      'occurrences','occurrence_decisions']) t
+      'occurrences','occurrence_decisions','location_moves']) t
     where not exists (select 1 from pg_trigger g
       where g.tgrelid = ('public.' || t)::regclass and g.tgname = t || '_append_only'
         and g.tgfoid = 'private.reject_history_change()'::regprocedure
@@ -96,7 +97,8 @@ select is(
 select is(
   (select coalesce(string_agg(t || ':' || p.priv, ',' order by t, p.priv), '') from unnest(array[
       'public.batch_receipts','public.containers','public.stock_movements','public.entity_changes',
-      'public.container_handlings','public.handling_voids','public.occurrences','public.occurrence_decisions']) t
+      'public.container_handlings','public.handling_voids','public.occurrences','public.occurrence_decisions',
+      'public.location_moves']) t
     cross join (values ('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER')) p(priv)
     where has_table_privilege('service_role', t::regclass, p.priv)),
   '', 'service_role só lê o histórico');
