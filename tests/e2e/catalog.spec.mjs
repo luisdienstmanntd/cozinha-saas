@@ -96,7 +96,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
     expect(bytes.includes(Buffer.from('Arroz de teste'))).toBe(true);
     expect(bytes.includes(Buffer.from('0001'))).toBe(true);
-    expect(bytes.includes(Buffer.from('2027-01-01'))).toBe(true);
+    expect(bytes.includes(Buffer.from('Validade: 01/01/2027'))).toBe(true);
     expect(bytes.includes(Buffer.from('Quantidade inicial:'))).toBe(true);
     expect(pdf.suggestedFilename()).toBe(`etiqueta-${id}.pdf`);
     await page.getByRole('button', { name: 'Ver movimentações' }).click();
