@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.7 — janela de registro por preparação
 
-> Autorizada por luis em 14/11/2026 (20:30 UTC), junto com o aceite da 7.6: "Autorizo o início da Fase 7.7, conforme o desenho existente. Não antecipar as fatias 7.8 e 7.9." Segue o [desenho da Fase 7](FASE_07_DESENHO.md), seção 16 (resposta 5 de luis: "janela de 2 h adequada, com possibilidade de alterar para alguns alimentos"), e as D-036, D-055. Decisão proposta: **D-056** (abaixo), **aguardando aceite de luis**. **Nada aqui afirma conformidade sanitária**: os limites de 15 minutos a 24 horas só recusam valor absurdo, e os valores operacionais dependem da nutricionista RT (Q10, pendente). O teste físico de impressão também segue pendente. Dados de teste sintéticos.
+> Autorizada por luis em 14/11/2026 (20:30 UTC), junto com o aceite da 7.6: "Autorizo o início da Fase 7.7, conforme o desenho existente. Não antecipar as fatias 7.8 e 7.9." Segue o [desenho da Fase 7](FASE_07_DESENHO.md), seção 16 (resposta 5 de luis: "janela de 2 h adequada, com possibilidade de alterar para alguns alimentos"), e as D-036, D-055. Decisão: **D-056** (abaixo), **aceita por luis em 14/11/2026, 20:47 UTC, com os 3 pontos**. **Nada aqui afirma conformidade sanitária**: os limites de 15 minutos a 24 horas só recusam valor absurdo, e os valores operacionais dependem da nutricionista RT (Q10, pendente). O teste físico de impressão também segue pendente. Dados de teste sintéticos.
 
 ## O que mudou
 
@@ -50,8 +50,16 @@ O arquivo de teste novo se chama `production_window.test.sql` de propósito, par
 
 ## Decisão proposta para `DECISOES.md`
 
-> **D-056 — Janela de registro por preparação (14/11/2026).** Status: proposta, aguardando aceite de luis; implementada na fatia 7.7 ([registro](FASE_07_7.md)). Decisão: cada preparação própria pode ter uma janela de registro da produção, definida só pelo proprietário e auditada em `entity_changes`; ela substitui a janela da unidade (D-055) só para aquela preparação e, sem ela, vale a da unidade. Limites de 15 minutos a 24 horas, só para recusar o absurdo e sem aprovação sanitária. O registro de produção guarda a janela usada; mudar a janela nunca reescreve registro antigo. Motivo: resposta 5 de luis ao questionário (14/11/2026), D-036, D-055. Consequência: o aviso de produção sem etiqueta (7.8) e a temperatura opcional (7.9) seguem como fatias próprias. Revisar quando: a nutricionista RT avaliar os valores operacionais.
+> **D-056 — Janela de registro por preparação (14/11/2026).** Status: aceita por luis em 14/11/2026, 20:47 UTC; implementada na fatia 7.7 ([registro](FASE_07_7.md)). Decisão: cada preparação própria pode ter uma janela de registro da produção, definida só pelo proprietário e auditada em `entity_changes`; ela substitui a janela da unidade (D-055) só para aquela preparação e, sem ela, vale a da unidade. Limites de 15 minutos a 24 horas, só para recusar o absurdo e sem aprovação sanitária. O registro de produção guarda a janela usada; mudar a janela nunca reescreve registro antigo. Motivo: resposta 5 de luis ao questionário (14/11/2026), D-036, D-055. Consequência: o aviso de produção sem etiqueta (7.8) e a temperatura opcional (7.9) seguem como fatias próprias. Revisar quando: a nutricionista RT avaliar os valores operacionais.
+
+## Aceite de luis (14/11/2026, 20:47 UTC)
+
+1. **Aprovado:** preparação sem janela própria usa a janela da unidade e acompanha as mudanças futuras dela; os registros antigos preservam a janela usada originalmente.
+2. **Aprovado:** só o proprietário define ou altera a janela de cada preparação; colaboradores só consultam.
+3. **Aprovado:** limites técnicos de 15 minutos a 24 horas, **sem representar validação sanitária**; os valores operacionais dependem da avaliação da nutricionista RT.
+
+Aprovou a D-056, **autorizou a correção dos dois testes instáveis** (sem reduzir o rigor, remover verificações ou alterar regra de negócio, com causa e solução registradas) e autorizou a 7.8, sem antecipar a 7.9.
 
 ## Próximo passo
 
-Aceite de luis (3 pontos e D-056). As fatias 7.8 e 7.9 exigem aprovação própria. Pergunta ainda aberta a luis: corrigir os dois testes instáveis (`handling_void` teste 26 e `list_containers` teste 38), que seguem sem alteração. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.
+7.8 (aviso de produção sem etiqueta), autorizada. A 7.9 exige aprovação própria. Sem merge, deploy ou mudança fora do escopo sem autorização específica de luis.

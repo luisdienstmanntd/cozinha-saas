@@ -427,7 +427,7 @@
 
 ## D-056 — Janela de registro por preparação (14/11/2026)
 
-- **Status:** proposta, aguardando aceite de luis; implementada na fatia 7.7 ([registro](FASE_07_7.md)).
+- **Status:** aceita por luis em 14/11/2026, 20:47 UTC ("Aprovo a decisão D-056", com os 3 pontos da 7.7); implementada na fatia 7.7 ([registro](FASE_07_7.md)).
 - **Decisão:** cada preparação própria pode ter uma janela de registro da produção, definida só pelo proprietário e auditada em `entity_changes`. Ela substitui a janela da unidade (D-055) só para aquela preparação; sem ela, vale a da unidade. Limites de 15 minutos a 24 horas, só para recusar o absurdo, sem aprovação sanitária. O registro de produção guarda a janela usada, e mudar a janela nunca reescreve registro antigo.
 - **Motivo:** resposta 5 de luis ao questionário (14/11/2026), D-036, D-055.
 - **Consequência:** o aviso de produção sem etiqueta (7.8) e a temperatura opcional (7.9) seguem como fatias próprias.

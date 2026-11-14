@@ -2,7 +2,7 @@
 
 - **ID:** fase-07-7-janela-por-preparacao
 - **Responsável / sessão:** Claude Code (conversa "Desenhar etiqueta de preparação própria")
-- **Estado:** aguardando aceite de luis
+- **Estado:** aceita por luis em 14/11/2026, 20:47 UTC (3 pontos e D-056); 7.8 autorizada
 - **Objetivo e aceite:** implementar a 7.7 do `FASE_07_DESENHO.md` (janela por preparação no catálogo, auditada); D-056 proposta.
 - **Branch / worktree / base:** `claude/fase-07-7-janela-por-preparacao`, sobre `claude/fase-07-6-configuracoes-unidade` (PR #26, sem merge).
 - **Arquivos e recursos em uso:**
@@ -21,3 +21,7 @@
 - **Cuidado de ordem:** o arquivo pgTAP novo se chama `production_window.test.sql` para rodar depois de `handling_void` (teste 26 depende da ordem física).
 - **Pendência aberta com luis:** corrigir os dois testes instáveis; sem resposta, ficam sem alteração.
 - **Próximo passo:** aceite de luis.
+
+### 14/11/2026 ~21:30 UTC — Claude Code
+- **Aceite de luis registrado** (3 pontos e D-056). Autorizou também corrigir os dois testes instáveis e iniciar a 7.8, sem antecipar a 7.9.
+- **Próximo passo:** correção dos testes (`ia-tarefas/fase-07-8-aviso-sem-etiqueta.md`) e 7.8.
