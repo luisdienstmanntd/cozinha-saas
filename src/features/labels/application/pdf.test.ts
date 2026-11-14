@@ -46,6 +46,23 @@ it('recusa gerar PDF de derivado de manipulação tardia sem liberação (fatia 
   ).rejects.toThrow('fora da janela de horário');
 });
 
+it('recusa a etiqueta de lote produzido até o modelo próprio (fatia 7.1)', async () => {
+  await expect(
+    makeLabelPdf(
+      {
+        ...label,
+        batch_receipts: {
+          ...label.batch_receipts,
+          source_code: null,
+          expiry_origin: 'responsible',
+          products: { name: 'Caldo de legumes' },
+        },
+      },
+      'http://127.0.0.1:5173',
+    ),
+  ).rejects.toThrow('Etiqueta de preparação própria ainda não disponível');
+});
+
 // Fatia 6.5b (desenho 7.2): etiqueta de recipiente bloqueado sai com a faixa; liberado, sai sem ela.
 async function pdfText(data: LabelData) {
   const blob = await makeLabelPdf(data, 'http://127.0.0.1:5173');

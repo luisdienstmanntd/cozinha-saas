@@ -17,6 +17,8 @@ export function createBatchGateway(client: SupabaseClient): BatchGateway {
           )
           .eq('organization_id', scope.organizationId)
           .eq('establishment_id', scope.establishmentId)
+          // Fatia 7.1: esta lista é de recebimentos; lotes produzidos ganham tela própria (7.3).
+          .eq('origin', 'received')
           // Fatia 6.1: o recebimento mostra o seu recipiente integral; derivados (6.3) ficam fora.
           .eq('containers.kind', 'integral')
           .order('id', { ascending: true });

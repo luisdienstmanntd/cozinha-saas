@@ -4,6 +4,7 @@ import type { CatalogScope } from '../../catalog/domain/catalog';
 import { storageLabels, storageConditions } from '../../catalog/domain/catalog';
 import type { StorageCondition } from '../../catalog/domain/catalog';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
+import { lotText } from '../../batches/domain/lot';
 import type { HandlingGateway } from '../application/handlingGateway';
 import { HandlingRejected } from '../application/handlingGateway';
 import type { HandlingContext, Member, OpeningInfo } from '../domain/family';
@@ -414,8 +415,8 @@ export function HandlingForm({
         <h4>Revise antes de confirmar</h4>
         <ul>
           <li>
-            {context.product_name} — {context.short_code} — lote{' '}
-            {context.source_code}
+            {context.product_name} — {context.short_code} —{' '}
+            {lotText(context.source_code)}
           </li>
           <li>
             {kind === 'opening' ? 'Abrir embalagem' : 'Dividir em porções'}:{' '}
@@ -461,8 +462,8 @@ export function HandlingForm({
         Abrir / porcionar {context.short_code} — {context.product_name}
       </h4>
       <p>
-        Lote {context.source_code} — saldo {context.balance} {unit} — validade{' '}
-        {formatDate(context.expiry_date)} —{' '}
+        {lotText(context.source_code, true)} — saldo {context.balance} {unit} —
+        validade {formatDate(context.expiry_date)} —{' '}
         {context.storage
           ? storageLabels[context.storage]
           : 'conservação não registrada'}{' '}

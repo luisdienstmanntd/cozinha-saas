@@ -15,12 +15,14 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
   return {
     async list(kind, scope) {
       const product = kind === 'products';
-      const { data, error } = await client
+      let query = client
         .from(kind)
         .select(product ? PRODUCT_COLUMNS : 'id,name')
         .eq('organization_id', scope.organizationId)
-        .eq('establishment_id', scope.establishmentId)
-        .order('name');
+        .eq('establishment_id', scope.establishmentId);
+      // Fatia 7.1: preparações próprias (D-049) não entram no recebimento; a tela delas chega na 7.3.
+      if (product) query = query.eq('kind', 'product');
+      const { data, error } = await query.order('name');
       if (error)
         throw new Error(
           'Não foi possível consultar o catálogo. Confira seu acesso e tente novamente.',

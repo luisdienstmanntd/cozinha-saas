@@ -10,7 +10,7 @@ export const containerRowSchema = z.object({
   product_id: z.uuid(),
   product_name: z.string().min(1),
   unit: z.string(),
-  source_code: z.string(),
+  source_code: z.string().nullable(),
   expiry_date: z.iso.date(),
   expiry_origin: z.enum(['receipt', 'handling']),
   batch_expiry_origin: z.enum(['original', 'responsible']),

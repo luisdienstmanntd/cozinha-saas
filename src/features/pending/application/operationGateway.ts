@@ -2,7 +2,7 @@ import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { PendingKind } from '../domain/pending';
 
 export type FoundOperation = {
-  kind: PendingKind | 'handling_void';
+  kind: PendingKind | 'handling_void' | 'production';
   id: string;
   createdAt: string;
 };

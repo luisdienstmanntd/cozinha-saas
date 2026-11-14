@@ -5,6 +5,8 @@ import type { OperationGateway } from '../application/operationGateway';
 const rowSchema = z.object({
   kind: z.enum([
     'receipt',
+    // Fatia 7.1: lote produzido (register_production); a tela de registro chega na 7.3.
+    'production',
     'handling',
     'handling_void',
     'decision',

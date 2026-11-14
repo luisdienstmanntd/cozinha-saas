@@ -27,7 +27,7 @@ const listedSchema = z.object({
   batch_id: z.uuid(),
   product_name: z.string(),
   unit: z.string(),
-  source_code: z.string(),
+  source_code: z.string().nullable(),
   expiry_date: z.iso.date(),
   initial_quantity: z.number(),
   balance: z.number(),

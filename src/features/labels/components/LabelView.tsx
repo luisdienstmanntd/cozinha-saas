@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { LabelGateway } from '../application/labelGateway';
 import type { LabelData } from '../domain/label';
 import { LATE_HOLD_MESSAGE } from '../domain/label';
+import { lotText } from '../../batches/domain/lot';
 import type { HandlingGateway } from '../../handling/application/handlingGateway';
 import type { Family } from '../../handling/domain/family';
 import { HandlingForm } from '../../handling/components/HandlingForm';
@@ -149,8 +150,8 @@ export function LabelView({
               : 'Um recipiente integral corresponde a este recebimento.'}
           </p>
           <p>
-            {data.batch_receipts.products.name} — lote{' '}
-            {data.batch_receipts.source_code}
+            {data.batch_receipts.products.name} —{' '}
+            {lotText(data.batch_receipts.source_code)}
           </p>
           <p>
             Quantidade inicial:{' '}
