@@ -3,7 +3,10 @@ import { DemoHome } from '../features/demo/components/DemoHome';
 import { IdentityHome } from '../features/identity/components/IdentityHome';
 import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
 import { BatchPanel } from '../features/batches/components/BatchPanel';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { trackGateways } from '../features/pending/application/trackGateways';
+import { PendingAttempts } from '../features/pending/components/PendingAttempts';
+import type { PendingAttempt } from '../features/pending/domain/pending';
 import type { Access } from '../features/identity/domain/identity';
 import { LabelView } from '../features/labels/components/LabelView';
 import {
@@ -30,9 +33,52 @@ function Workspace({
   timezone: string;
 }) {
   const [revision, setRevision] = useState(0);
+  const [pendingToken, setPendingToken] = useState(0);
   const scope = { organizationId, establishmentId };
+  // Escritas passam pelo decorador: tentativa de resultado incerto fica guardada até ser conferida.
+  const tracked = useMemo(
+    () =>
+      trackGateways(
+        {
+          batches: configuration.batches,
+          movements: configuration.movements,
+          occurrences: configuration.occurrences,
+          handling: configuration.handling,
+        },
+        userId,
+      ),
+    [configuration, userId],
+  );
+  function resend(attempt: PendingAttempt) {
+    const target = {
+      organizationId: attempt.organizationId,
+      establishmentId: attempt.establishmentId,
+    };
+    // O mesmo identificador e os mesmos dados da tentativa; o gateway valida de novo.
+    const input = attempt.input as never;
+    switch (attempt.kind) {
+      case 'receipt':
+        return tracked.batches.receive(target, input);
+      case 'handling':
+        return tracked.handling.handle(target, input);
+      case 'void':
+        return tracked.handling.void(target, input);
+      case 'decision':
+        return tracked.occurrences.decide(target, input);
+      case 'movement':
+        return tracked.movements.record(target, input);
+    }
+  }
   return (
     <>
+      <PendingAttempts
+        scope={scope}
+        userId={userId}
+        timezone={timezone}
+        operations={configuration.operations}
+        resend={resend}
+        onResolved={() => setPendingToken((value) => value + 1)}
+      />
       <CatalogPanel
         gateway={configuration.catalog}
         scope={scope}
@@ -41,17 +87,18 @@ function Workspace({
       />
       <BatchPanel
         catalog={configuration.catalog}
-        batches={configuration.batches}
+        batches={tracked.batches}
         containers={configuration.containers}
         scope={scope}
         timezone={timezone}
         canCreate={canCreate}
         catalogRevision={revision}
+        reloadToken={pendingToken}
         userId={userId}
         labels={configuration.labels}
-        movements={configuration.movements}
-        occurrences={configuration.occurrences}
-        handling={configuration.handling}
+        movements={tracked.movements}
+        occurrences={tracked.occurrences}
+        handling={tracked.handling}
       />
     </>
   );

@@ -8,6 +8,7 @@ import { createContainerGateway } from '../features/batches/data/supabaseContain
 import { createLabelGateway } from '../features/labels/data/supabaseLabels';
 import { createMovementGateway } from '../features/movements/data/supabaseMovements';
 import { createHandlingGateway } from '../features/handling/data/supabaseHandling';
+import { createOperationGateway } from '../features/pending/data/supabaseOperations';
 import { createEstablishmentGateway } from '../features/establishments/data/supabaseEstablishments';
 
 export function configureApp(environment: Record<string, unknown>) {
@@ -31,6 +32,7 @@ export function configureApp(environment: Record<string, unknown>) {
       movements: createMovementGateway(client),
       occurrences: createOccurrenceGateway(client),
       handling: createHandlingGateway(client),
+      operations: createOperationGateway(client),
       establishments: createEstablishmentGateway(client),
     };
   } catch {

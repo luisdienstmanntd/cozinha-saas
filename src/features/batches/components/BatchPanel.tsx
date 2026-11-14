@@ -30,6 +30,8 @@ type Props = {
   batches: BatchGateway;
   containers: ContainerGateway;
   catalogRevision?: number;
+  // Fatia 6.8: muda quando uma tentativa pendente foi conferida ou reenviada; a lista é relida.
+  reloadToken?: number;
   userId: string;
   labels?: LabelGateway;
   movements?: MovementGateway;
@@ -57,6 +59,7 @@ function BatchContents({
   batches,
   containers,
   catalogRevision,
+  reloadToken,
   userId,
   labels,
   movements,
@@ -222,6 +225,12 @@ function BatchContents({
     };
   }, [attempt, occurrences, establishmentId, organizationId, showDecided]);
 
+  const firstToken = useRef(reloadToken);
+  useEffect(() => {
+    if (reloadToken === firstToken.current) return;
+    firstToken.current = reloadToken;
+    reload();
+  }, [reloadToken]);
   function reload() {
     setLoadFailed(false);
     setMoreError('');
