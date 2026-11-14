@@ -2,7 +2,7 @@
 
 - **ID:** fase-07-9-temperatura-opcional
 - **Responsável / sessão:** Claude Code (conversa "Desenhar etiqueta de preparação própria")
-- **Estado:** pronta, aguardando aceite de luis (D-058 proposta, 3 pontos)
+- **Estado:** pronta, aceita por luis em 14/11/2026, 21:42 UTC (3 pontos e D-058)
 - **Objetivo e aceite:** implementar a 7.9 do `FASE_07_DESENHO.md`: registro opcional de temperatura (fim do resfriamento, reaquecimento) da produção, sem classificar como conforme (D-027), sem estoque (D-003). Autorizada por luis em 14/11/2026, 21:20 UTC, exclusivamente conforme o desenho existente.
 - **Branch / worktree / base:** `claude/fase-07-9-temperatura-opcional`, sobre `claude/fase-07-8-aviso-sem-etiqueta` (PR #29, sem merge).
 - **Arquivos e recursos em uso:**
@@ -24,3 +24,7 @@
 ### 14/11/2026 ~21:45 UTC — Claude Code
 - **CI do PR #30 vermelha (`banco-api-e2e`), causa raiz:** o teste de integração da 7.8 (e o da 7.9, com o mesmo desenho) contava movimentos, recipientes e lotes de **todo o banco**, e os arquivos de integração rodam em paralelo; outro teste criou linhas no meio e a comparação "antes e depois" falhou (54, 59, 38 contra 54, 58, 37). Passou antes por sorte de tempo.
 - **Correção:** as mesmas contagens, agora só da empresa do teste. Nenhuma verificação removida. Integração 39 verde, 3 rodadas do teste isolado verdes. Corrigido no #29 e levado ao #30 por merge.
+
+### 14/11/2026 ~22:00 UTC — Claude Code
+- **Aceite de luis registrado** (3 pontos e D-058), com a faixa de -50 a 80 °C só como validação de entrada. Desenvolvimento funcional das fatias 7.1 a 7.9 dado por aceito, sujeito à integração, revisão final e testes completos. Invalidação de medição no `BACKLOG.md`.
+- **Próximo passo:** relatório de encerramento técnico da Fase 7 (`docs/FASE_07_ENCERRAMENTO.md`); sem merge.

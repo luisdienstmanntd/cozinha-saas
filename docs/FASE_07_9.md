@@ -1,6 +1,6 @@
 # Fase 7, fatia 7.9 — temperatura opcional da produção
 
-> Autorizada por luis em 14/11/2026 (21:20 UTC), junto com o aceite da 7.8: "Autorizo o início da Fase 7.9, exclusivamente conforme o desenho existente." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (7.9 e resposta 7 de luis: "temperatura no fim do resfriamento ou no reaquecimento: não obrigatória, mas a função deve existir"; "sem classificar como conforme", como a D-027). Decisão: **D-058** (abaixo), **proposta, aceite de luis pendente**. **Nada aqui afirma conformidade sanitária**: o sistema só guarda o número que a pessoa mediu, não diz se está adequado e não usa faixa alguma, porque nenhuma faixa foi aprovada pela nutricionista RT (Q10, pendente). O teste físico de impressão também segue pendente. Dados de teste sintéticos.
+> Autorizada por luis em 14/11/2026 (21:20 UTC), junto com o aceite da 7.8: "Autorizo o início da Fase 7.9, exclusivamente conforme o desenho existente." Segue o [desenho da Fase 7](FASE_07_DESENHO.md) (7.9 e resposta 7 de luis: "temperatura no fim do resfriamento ou no reaquecimento: não obrigatória, mas a função deve existir"; "sem classificar como conforme", como a D-027). Decisão: **D-058** (abaixo), **aceita por luis em 14/11/2026, 21:42 UTC (3 pontos)**. **Nada aqui afirma conformidade sanitária**: o sistema só guarda o número que a pessoa mediu, não diz se está adequado e não usa faixa alguma, porque nenhuma faixa foi aprovada pela nutricionista RT (Q10, pendente). O teste físico de impressão também segue pendente. Dados de teste sintéticos.
 
 ## O que mudou
 
@@ -57,8 +57,16 @@ O arquivo de teste novo se chama `production_temperature.test.sql`, depois de `h
 
 ## Decisão proposta para `DECISOES.md`
 
-> **D-058 — Temperatura opcional da produção (14/11/2026).** Status: proposta; aceite de luis pendente. Implementada na fatia 7.9 ([registro](FASE_07_9.md)). Decisão: a produção da cozinha pode ter temperaturas registradas (fim do resfriamento, reaquecimento), de forma opcional, em tabela append-only, por quem pode registrar produção (D-019 e 7.6; o colaborador só da própria). O sistema não classifica, não usa faixa, não cria ocorrência, não bloqueia e não mexe no estoque (D-003, como a D-027). Motivo: resposta 7 de luis ao questionário e desenho da Fase 7. Consequência: encerra o mínimo e as fatias 7.1 a 7.9 do desenho; o que sobrar fica em `FASE_07_DESENHO.md`, seção 8. Revisar quando: a nutricionista RT definir faixas e a observação do piloto mostrar se falta correção ou anulação de medição.
+> **D-058 — Temperatura opcional da produção (14/11/2026).** Status: aceita por luis em 14/11/2026, 21:42 UTC (3 pontos). Implementada na fatia 7.9 ([registro](FASE_07_9.md)). Decisão: a produção da cozinha pode ter temperaturas registradas (fim do resfriamento, reaquecimento), de forma opcional, em tabela append-only, por quem pode registrar produção (D-019 e 7.6; o colaborador só da própria). O sistema não classifica, não usa faixa, não cria ocorrência, não bloqueia e não mexe no estoque (D-003, como a D-027). Motivo: resposta 7 de luis ao questionário e desenho da Fase 7. Consequência: encerra o mínimo e as fatias 7.1 a 7.9 do desenho; o que sobrar fica em `FASE_07_DESENHO.md`, seção 8. Revisar quando: a nutricionista RT definir faixas e a observação do piloto mostrar se falta correção ou anulação de medição.
+
+## Aceite de luis (14/11/2026, 21:42 UTC)
+
+1. **Aprovado:** o proprietário registra temperatura em qualquer produção da unidade; o colaborador só na própria produção, quando a permissão da unidade (7.6) estiver habilitada.
+2. **Aprovado:** a faixa técnica de -50 a 80 °C vale **exclusivamente como validação de entrada**. O sistema não usa esses valores para afirmar conformidade sanitária, liberar produtos nem definir condições adequadas de conservação.
+3. **Aprovado provisoriamente:** medição incorreta permanece no histórico e pode-se registrar nova medição. A futura funcionalidade de **invalidar uma medição, com motivo obrigatório e sem excluir nem alterar o registro original**, está no `BACKLOG.md`.
+
+Aprovou a D-058 e deu por **aceito o desenvolvimento funcional das fatias 7.1 a 7.9**, sujeito à integração dos PRs, à revisão final e aos testes completos. Pediu o relatório de encerramento técnico da Fase 7 ([FASE_07_ENCERRAMENTO.md](FASE_07_ENCERRAMENTO.md)). A validação sanitária e a impressão física seguem pendentes antes do piloto operacional.
 
 ## Próximo passo
 
-Aceite de luis. Sem merge, deploy ou mudança fora do escopo sem autorização específica. A validação normativa da nutricionista RT e o teste físico de impressão seguem obrigatórios antes do piloto operacional.
+Relatório de encerramento (feito). Sem merge, deploy ou mudança fora do escopo sem autorização específica. A validação normativa da nutricionista RT e o teste físico de impressão seguem obrigatórios antes do piloto operacional.
