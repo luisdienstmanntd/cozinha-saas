@@ -50,8 +50,8 @@ Implementada por Claude Code em 14/11/2026, conforme a seção 4.9, a fatia 6.9 
 
 ## Decisão proposta para `DECISOES.md`
 
-**D-046 — Locais de armazenamento e mudança de local (proposta):** locais por unidade (nome único, condição, ativo; criados e desativados pelo proprietário, nunca apagados) e eventos imutáveis de mudança de local com autoria; o local atual é o evento de maior `seq`; mudar de local não altera saldo, validade nem conservação; derivado herda o local da origem; recipiente sem saldo ou bloqueado não muda de local; divergência de condição exige confirmação registrada. **Revisar quando** o piloto pedir local na etiqueta, local inicial no recebimento ou histórico de locais na tela.
+**D-046 — Locais de armazenamento e mudança de local (aceita por luis em 14/11/2026):** locais por unidade (nome único, condição, ativo; criados e desativados pelo proprietário, nunca apagados) e eventos imutáveis de mudança de local com autoria; o local atual é o evento de maior `seq`; mudar de local não altera saldo, validade nem conservação; derivado herda o local da origem; recipiente sem saldo ou bloqueado não muda de local; divergência de condição exige confirmação registrada. **Revisar quando** o piloto pedir local na etiqueta, local inicial no recebimento ou histórico de locais na tela.
 
 ## Próximo passo
 
-Aceite de luis dos 4 pontos e da D-046. Sem merge sem pedido dele. A 6.10 (trilha pré-piloto, sem tela) exige aprovação própria.
+luis aceitou os 4 pontos e a D-046 em 14/11/2026 01:42 UTC ("1OK2ok3ok4ok") e aprovou a 6.10 na mesma mensagem. Sem merge sem pedido dele.
