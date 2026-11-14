@@ -9,7 +9,8 @@ import {
 } from '../domain/catalog';
 import { z } from 'zod';
 
-const PRODUCT_COLUMNS = 'id,name,unit,storage_condition';
+const PRODUCT_COLUMNS =
+  'id,name,unit,storage_condition,production_window_minutes';
 
 export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
   return {
@@ -73,6 +74,32 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
           'Não foi possível definir a conservação. Confira seu acesso e tente novamente.',
         );
       return storageConditionSchema.parse(data);
+    },
+    async setProductionWindow(scope, productId, minutes) {
+      const value = z
+        .number()
+        .int()
+        .min(15)
+        .max(1440)
+        .nullable()
+        .parse(minutes);
+      const { data, error } = await client.rpc('set_preparation_window', {
+        p_organization_id: scope.organizationId,
+        p_establishment_id: scope.establishmentId,
+        p_product_id: z.uuid().parse(productId),
+        p_minutes: value,
+      });
+      if (error?.code === '22023' || error?.code === '23514')
+        throw new Error(
+          'A janela deve ficar entre 15 minutos e 24 horas, em minutos inteiros, e só vale para preparação própria.',
+        );
+      if (error?.code === '42501')
+        throw new Error('Somente o proprietário muda a janela da preparação.');
+      if (error)
+        throw new Error(
+          'Não foi possível salvar a janela. Atualize a lista e confira.',
+        );
+      return z.number().int().nullable().parse(data);
     },
   };
 }

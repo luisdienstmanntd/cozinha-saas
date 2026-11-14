@@ -346,3 +346,69 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
     ).toHaveCount(0);
   });
 });
+
+// Fatia 7.7: o proprietário define a janela de uma preparação no catálogo e a tela de produção passa a
+// usar essa janela no lugar da janela da unidade.
+test('janela de registro própria da preparação vale na tela de produção', async ({
+  page,
+}) => {
+  page.setDefaultTimeout(5000);
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await page
+      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
+      .click();
+    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    await catalog.getByRole('button', { name: 'Nova preparação' }).click();
+    await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
+    await catalog.getByLabel('Unidade de medida').selectOption('l');
+    await catalog
+      .getByRole('combobox', { name: 'Conservação', exact: true })
+      .selectOption('refrigerated');
+    await catalog.getByRole('button', { name: 'Cadastrar preparação' }).click();
+    await expect(catalog).toContainText('janela de registro: a da unidade');
+    await catalog
+      .getByRole('button', { name: 'Janela de registro de Caldo de teste' })
+      .click();
+    await catalog
+      .getByLabel('Janela de registro da produção de Caldo de teste (minutos)')
+      .fill('240');
+    await catalog
+      .getByRole('button', { name: 'Salvar janela de Caldo de teste' })
+      .click();
+    await expect(catalog).toContainText('janela de registro: 4 horas');
+
+    const panel = page.getByRole('region', { name: 'Produção da cozinha' });
+    await panel.getByRole('button', { name: 'Registrar produção' }).click();
+    const form = panel.getByRole('form', { name: 'Registrar produção' });
+    await form
+      .getByLabel('Preparação')
+      .selectOption({ label: 'Caldo de teste (l)' });
+    // Três horas antes do registro: dentro da janela de 4 horas do caldo, fora da de 2 horas da unidade.
+    const three = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    const local = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    })
+      .format(three)
+      .replace(' ', 'T');
+    await form.getByLabel(/^Produzida em/).fill(local);
+    await expect(form.getByLabel('Justificativa do atraso')).toHaveCount(0);
+    const five = new Date(Date.now() - 5 * 60 * 60 * 1000);
+    await form.getByLabel(/^Produzida em/).fill(
+      new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'America/Sao_Paulo',
+        dateStyle: 'short',
+        timeStyle: 'short',
+      })
+        .format(five)
+        .replace(' ', 'T'),
+    );
+    await expect(
+      form.getByText(/Registro mais de 4 horas depois da produção/),
+    ).toBeVisible();
+    await expect(form.getByLabel('Justificativa do atraso')).toBeVisible();
+  });
+});

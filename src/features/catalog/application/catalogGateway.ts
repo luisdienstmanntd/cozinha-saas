@@ -19,4 +19,11 @@ export interface CatalogGateway {
     productId: string,
     condition: StorageCondition,
   ): Promise<StorageCondition>;
+  // Fatia 7.7: janela de registro da produção da preparação, em minutos (null = volta à da unidade).
+  // Só o proprietário; auditada no banco. Opcional na interface para não obrigar os dublês de teste.
+  setProductionWindow?(
+    scope: CatalogScope,
+    productId: string,
+    minutes: number | null,
+  ): Promise<number | null>;
 }

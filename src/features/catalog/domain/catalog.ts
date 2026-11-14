@@ -20,10 +20,13 @@ export const storageLabels: Record<StorageCondition, string> = {
 export const productRow = catalogRow.extend({
   unit: unitSchema,
   storage_condition: storageConditionSchema.nullable(),
+  // Fatia 7.7: janela de registro da produção própria da preparação (nulo = a da unidade).
+  production_window_minutes: z.number().int().nullable().optional(),
 });
 export type CatalogItem = CatalogInput & {
   id: string;
   storage_condition?: StorageCondition | null;
+  production_window_minutes?: number | null;
 };
 
 export function parseStorageCondition(value: unknown): StorageCondition {

@@ -210,3 +210,67 @@ describe('produção com a configuração da unidade (7.6)', () => {
       expect(knownProductionMessage(message)).toBeNull();
   });
 });
+
+describe('janela por preparação (7.7)', () => {
+  it('a janela da preparação vale no lugar da janela da unidade', async () => {
+    const own = { ...caldo, production_window_minutes: 240 };
+    const gateway: ProductionGateway = {
+      list: vi.fn().mockResolvedValue([]),
+      register: vi.fn().mockResolvedValue(id(20)),
+      void: vi.fn(),
+    };
+    const items: CatalogGateway = {
+      list: vi.fn().mockResolvedValue([own]),
+      create: vi.fn(),
+      setStorageCondition: vi.fn(),
+    };
+    render(
+      <ProductionPanel
+        scope={scope}
+        timezone={timezone}
+        userId={id(3)}
+        canCreate
+        catalog={items}
+        gateway={gateway}
+        loadMembers={vi
+          .fn()
+          .mockResolvedValue([
+            { user_id: id(3), display_name: 'Ana Souza', role: 'owner' },
+          ])}
+        setDisplayName={vi.fn()}
+        now={() => NOW}
+        settings={{
+          get: vi.fn().mockResolvedValue(DEFAULT_SETTINGS),
+          save: vi.fn(),
+        }}
+      />,
+    );
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole('button', { name: 'Registrar produção' }),
+    );
+    const form = within(
+      screen.getByRole('form', { name: 'Registrar produção' }),
+    );
+    await user.selectOptions(form.getByLabelText('Preparação'), own.id);
+    const when = form.getByLabelText(`Produzida em (fuso ${timezone})`);
+    // 3 horas antes do registro (12:00 em São Paulo): tardia na unidade (2 h), dentro da janela do caldo (4 h).
+    fireEvent.change(when, { target: { value: '2026-11-14T09:00' } });
+    expect(form.queryByLabelText('Justificativa do atraso')).toBeNull();
+    // 5 horas antes: acima da janela do caldo, com a duração dela no aviso.
+    fireEvent.change(when, { target: { value: '2026-11-14T07:00' } });
+    expect(
+      form.getByText(
+        'Registro mais de 4 horas depois da produção. O lote ficará bloqueado até a decisão do proprietário.',
+      ),
+    ).toBeVisible();
+    expect(form.getByLabelText('Justificativa do atraso')).toBeVisible();
+  });
+  it('repete a mensagem do banco com a janela da preparação', () => {
+    expect(
+      knownProductionMessage(
+        'Produção registrada mais de 4 horas depois de feita exige justificativa do atraso. Siga o procedimento da cozinha.',
+      ),
+    ).not.toBeNull();
+  });
+});
