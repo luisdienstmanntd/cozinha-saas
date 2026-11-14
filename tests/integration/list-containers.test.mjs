@@ -76,8 +76,10 @@ test('painel por recipiente: saldo do servidor, ordem por validade, paginação 
     const gone = await receive('ESGOTADO', 3, '2020-01-02');
     const partial = await receive('PARCIAL', 6, '2027-01-15');
     await move(gone, 'discard', 3);
-    await move(partial, 'consumption', 2);
-    const reversed = await move(later, 'consumption', 4);
+    // Fatia 6.11: as validades fixas (2027) vão passar e o consumo de vencido passou a ser recusado;
+    // descarte baixa o saldo do mesmo jeito e não depende da data em que o teste roda.
+    await move(partial, 'discard', 2);
+    const reversed = await move(later, 'discard', 4);
     checked(
       await owner.rpc('reverse_movement', {
         ...scope,
@@ -166,8 +168,10 @@ test('painel por recipiente: saldo do servidor, ordem por validade, paginação 
     ]);
 
     // Saída concorrente com a leitura: o saldo lido nunca é negativo nem maior que o inicial.
+    // Fatia 6.11: o recipiente é vencido, e o consumo dele passou a ser recusado; a saída concorrente
+    // é um descarte, que continua permitido.
     const reads = await Promise.all([
-      move(expired, 'consumption', 1),
+      move(expired, 'discard', 1),
       ...Array.from({ length: 8 }, () => list(owner)),
     ]);
     for (const read of reads.slice(1))

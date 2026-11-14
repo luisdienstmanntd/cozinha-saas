@@ -124,6 +124,18 @@ export function LabelView({
       if (isCurrent()) setBusy(false);
     }
   }
+  // Fatia 6.11: vencido com saldo (validade do próprio recipiente, data da unidade). O banco recusa
+  // consumo e manipulação; a tela mostra a faixa e não oferece abrir / porcionar.
+  const expired = Boolean(
+    data &&
+    !data.voided &&
+    data.balance > 0 &&
+    data.batch_receipts.timezone &&
+    isExpired(
+      data.effective?.expiry_date ?? data.batch_receipts.expiry_date,
+      data.batch_receipts.timezone,
+    ),
+  );
   return (
     <section aria-label="Recipiente">
       <h2>Recipiente</h2>
@@ -156,17 +168,11 @@ export function LabelView({
             Saldo atual: {data.balance} {data.batch_receipts.unit}
             {data.balance <= 0 && ' — esgotado, sem saldo neste recipiente'}
           </p>
-          {!data.voided &&
-            data.balance > 0 &&
-            data.batch_receipts.timezone &&
-            isExpired(
-              data.effective?.expiry_date ?? data.batch_receipts.expiry_date,
-              data.batch_receipts.timezone,
-            ) && (
-              <p role="status" className="expired-band">
-                <strong>{EXPIRED_TEXT}</strong>: {EXPIRED_NOTE}
-              </p>
-            )}
+          {expired && (
+            <p role="status" className="expired-band">
+              <strong>{EXPIRED_TEXT}</strong>: {EXPIRED_NOTE}
+            </p>
+          )}
           {data.hold && !data.voided && !data.late_hold && (
             <p role="status">
               <strong>{BLOCK_TEXT[data.hold]}</strong>
@@ -247,7 +253,12 @@ export function LabelView({
                 !data.voided &&
                 data.balance > 0 && (
                   <>
-                    {!handlingOpen && (
+                    {expired && (
+                      <p>
+                        <em>Manipulação indisponível: validade passou.</em>
+                      </p>
+                    )}
+                    {!handlingOpen && !expired && (
                       <button
                         type="button"
                         onClick={() => setHandlingOpen(true)}
