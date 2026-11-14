@@ -19,6 +19,9 @@ import {
 } from '../../occurrences/domain/occurrence';
 import type { HandlingGateway } from '../../handling/application/handlingGateway';
 import { HandlingForm } from '../../handling/components/HandlingForm';
+import type { LocationGateway } from '../../locations/application/locationGateway';
+import { MoveContainer } from '../../locations/components/MoveContainer';
+import type { CurrentLocation } from '../../locations/domain/locations';
 import { OccurrencePanel } from '../../occurrences/components/OccurrencePanel';
 import { storageLabels } from '../../catalog/domain/catalog';
 
@@ -38,6 +41,7 @@ type Props = {
   occurrences?: OccurrenceGateway;
   // Fatia 6.6: abrir / porcionar a partir da linha (só quem escreve vê o botão).
   handling?: HandlingGateway;
+  locations?: LocationGateway;
 };
 type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 // key: consulta a que a página pertence; página de outra consulta conta como carregando.
@@ -65,6 +69,7 @@ function BatchContents({
   movements,
   occurrences,
   handling,
+  locations,
 }: Props) {
   const [catalogData, setCatalogData] = useState<Catalog | null>(null);
   const [listing, setListing] = useState<Listing | null>(null);
@@ -81,6 +86,8 @@ function BatchContents({
   const [labelId, setLabelId] = useState<string | null>(null);
   const [movementId, setMovementId] = useState<string | null>(null);
   const [handlingId, setHandlingId] = useState<string | null>(null);
+  const [moveId, setMoveId] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<Map<string, CurrentLocation>>(new Map());
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [includeDepleted, setIncludeDepleted] = useState(false);
@@ -224,6 +231,25 @@ function BatchContents({
       current = false;
     };
   }, [attempt, occurrences, establishmentId, organizationId, showDecided]);
+
+  function loadPlaces() {
+    if (!locations) return () => undefined;
+    let current = true;
+    void locations.currents({ organizationId, establishmentId }).then(
+      (rows) => {
+        if (current)
+          setPlaced(new Map(rows.map((row) => [row.container_id, row])));
+      },
+      // Os locais são informação extra: sem eles a lista continua funcionando.
+      () => {
+        if (current) setPlaced(new Map());
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }
+  useEffect(loadPlaces, [attempt, locations, establishmentId, organizationId]);
 
   const firstToken = useRef(reloadToken);
   useEffect(() => {
@@ -615,11 +641,48 @@ function BatchContents({
                           : 'definida pelo responsável'}
                       ) — {depleted ? 'Esgotado' : statusLabels[status]} —
                       recipiente {row.container_id}
+                      {placed.has(row.container_id) && !depleted && (
+                        <>
+                          {' '}
+                          — local: {placed.get(row.container_id)!.location_name}
+                        </>
+                      )}
                       {blocked.has(row.container_id) && (
                         <strong>
                           {' '}
                           — {BLOCK_TEXT[blocked.get(row.container_id)!]}
                         </strong>
+                      )}
+                      {canCreate &&
+                        locations &&
+                        handling &&
+                        !depleted &&
+                        !blocked.has(row.container_id) && (
+                          <>
+                            {' '}
+                            <button
+                              type="button"
+                              onClick={() => setMoveId(row.container_id)}
+                            >
+                              Mudar de local
+                            </button>
+                          </>
+                        )}
+                      {locations && handling && moveId === row.container_id && (
+                        <MoveContainer
+                          key={row.container_id}
+                          scope={{ organizationId, establishmentId }}
+                          containerId={row.container_id}
+                          userId={userId}
+                          gateway={locations}
+                          loadMembers={(target) => handling.members(target)}
+                          setDisplayName={(target, id, name) =>
+                            handling.setDisplayName(target, id, name)
+                          }
+                          current={placed.get(row.container_id)}
+                          onMoved={() => loadPlaces()}
+                          onClose={() => setMoveId(null)}
+                        />
                       )}
                       {movements && row.kind === 'integral' && (
                         <button

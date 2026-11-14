@@ -19,6 +19,7 @@ export const HANDLING_MESSAGES = [
   'Recipiente bloqueado: ocorrência aguardando decisão do proprietário. Só o descarte é permitido.',
   'Recipiente bloqueado: ocorrência rejeitada pelo proprietário. Só o descarte é permitido.',
   'Algum recipiente desta manipulação já teve movimentação; a manipulação não pode ser anulada.',
+  'Algum recipiente desta manipulação já mudou de local; a manipulação não pode ser anulada.',
   'Manipulação já anulada.',
 ] as const;
 

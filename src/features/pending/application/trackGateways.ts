@@ -3,6 +3,8 @@ import { BatchRejected } from '../../batches/application/batchGateway';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { HandlingGateway } from '../../handling/application/handlingGateway';
 import { HandlingRejected } from '../../handling/application/handlingGateway';
+import type { LocationGateway } from '../../locations/application/locationGateway';
+import { LocationRejected } from '../../locations/application/locationGateway';
 import type { MovementGateway } from '../../movements/application/movementGateway';
 import { MovementRejected } from '../../movements/application/movementGateway';
 import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
@@ -15,6 +17,7 @@ export type TrackedGateways = {
   movements: MovementGateway;
   occurrences: OccurrenceGateway;
   handling: HandlingGateway;
+  locations?: LocationGateway;
 };
 
 // Recusa definitiva do banco: a operação não foi gravada e não há o que conferir depois.
@@ -23,7 +26,8 @@ function definitive(cause: unknown) {
     cause instanceof BatchRejected ||
     cause instanceof MovementRejected ||
     cause instanceof DecisionRejected ||
-    cause instanceof HandlingRejected
+    cause instanceof HandlingRejected ||
+    cause instanceof LocationRejected
   );
 }
 
@@ -102,6 +106,25 @@ export function trackGateways(
           input as unknown as Input,
           `Decisão de ocorrência: ${input.decision === 'released' ? 'liberar' : 'rejeitar'}`,
           () => gateways.occurrences.decide(scope, input),
+        ),
+    },
+    locations: gateways.locations && {
+      ...gateways.locations,
+      create: (scope, input) =>
+        track(
+          'location',
+          scope,
+          input as unknown as Input,
+          `Local ${input.name}`,
+          () => gateways.locations!.create(scope, input),
+        ),
+      move: (scope, input) =>
+        track(
+          'location_move',
+          scope,
+          input as unknown as Input,
+          'Mudança de local',
+          () => gateways.locations!.move(scope, input),
         ),
     },
     handling: {
