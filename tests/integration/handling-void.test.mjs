@@ -54,7 +54,9 @@ test('anulação de manipulação: concorrência, reenvio, revogação e isolame
         p_product_id: product.id,
         p_supplier_id: supplier.id,
         p_source_code: 'Q-' + randomUUID().slice(0, 8),
-        p_quantity: 20,
+        // 24 e não 20: se as quatro rodadas do teste 24 terminarem com a baixa vencendo, o integral
+        // perde 16 e ainda precisa sobrar mais que 4 para o porcionamento com sobra lacrada do fim.
+        p_quantity: 24,
         p_expiry_date: expiry,
         p_expiry_origin: 'original',
         p_original_expiry_date: expiry,
@@ -149,7 +151,7 @@ test('anulação de manipulação: concorrência, reenvio, revogação e isolame
       events.map((e) => `${e.kind}:${e.quantity}`),
       ['handling_void:2', 'handling_void:2', 'transfer_reversal:4'],
     );
-    assert.equal(await balanceOf(integral), 20);
+    assert.equal(await balanceOf(integral), 24);
     for (const id of await derivedOf(h1)) assert.equal(await balanceOf(id), 0);
 
     // Anulações concorrentes diferentes da mesma manipulação: só uma passa.
@@ -160,7 +162,7 @@ test('anulação de manipulação: concorrência, reenvio, revogação e isolame
     ]);
     assert.equal(pairVoid.filter((x) => !x.error).length, 1);
     assert.equal(pairVoid.filter((x) => x.error?.code === '23505').length, 1);
-    assert.equal(await balanceOf(integral), 20);
+    assert.equal(await balanceOf(integral), 24);
 
     // Teste 24: anulação × baixa num derivado, várias rodadas. Ou a baixa entra e a anulação é recusada,
     // ou a anulação entra e a baixa é recusada (sem saldo); nunca as duas, saldo nunca negativo.
