@@ -337,3 +337,12 @@
 - **Motivo:** desenho 4.7, 7.5 e 7.7; I-3; P7 da revisão 05; D-019.
 - **Consequência:** operação nova de escrita precisa passar por `trackGateways` e ter o `intent_id` em `find_operation`; recusa do banco precisa ser uma classe de recusa (código de erro) para não deixar tentativa pendente.
 - **Revisar quando:** a 6.9 (transferências) ou o piloto mostrar que 24 horas ou 20 tentativas não servem.
+
+## D-046 — Locais de armazenamento e mudança de local (14/11/2026)
+
+- **Status:** proposta; implementada na fatia 6.9 ([registro](FASE_06_9.md)), aguardando aceite de luis.
+- **Decisão:** locais por unidade (nome único, condição, ativo; criados e desativados pelo proprietário, nunca apagados) e eventos imutáveis de mudança de local com autoria; o local atual é o evento de maior `seq`; mudar de local não altera saldo, validade nem conservação; o derivado herda o local da origem; recipiente sem saldo ou bloqueado não muda de local; divergência de condição exige confirmação registrada.
+- **Motivo:** desenho 4.9 e 4.10; D-019, D-030; teste 15.
+- **Consequência:** tabela nova de histórico entra na guarda (`assert_history_protected`, pgTAP de segurança); anular manipulação é recusado depois que um derivado mudou de local.
+- **Revisar quando:** o piloto pedir local na etiqueta, local inicial no recebimento ou histórico de locais na tela.
+

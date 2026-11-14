@@ -77,6 +77,9 @@ async function cleanupCatalogFixture(admin, orgIds, users) {
     'containers',
     'stock_movements',
     'entity_changes',
+    // Locais (6.9): service_role só lê; locais e eventos de local ficam, como o histórico.
+    'storage_locations',
+    'location_moves',
   ]) {
     const result = await admin
       .from(table)
