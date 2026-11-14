@@ -263,5 +263,8 @@ Por unidade e não por empresa porque cada cozinha tem rotina própria e a regra
 
 O mínimo continua sendo 7.1 a 7.4; 7.6 é a próxima depois dele, porque o modo "qualquer usuário" muda quem aparece como autor e precisa existir antes do piloto com produção.
 
-Ainda pendentes com luis: ponto B (porção com a mesma validade do lote) e ponto C (nome completo no campo de nome atual).
+### Decisões de luis sobre os pontos B e C (14/11/2026, 15:47 UTC)
+
+- **B. Validade da porção:** por padrão, a porção de preparação recebe **a mesma validade do lote**; uma configuração da unidade permite mudar a regra para "igual ou menor que a do lote". A opção **nunca** permite validade maior que a do lote nem prorrogação por congelamento (D-021, D-039, resposta 6): essas continuam como restrição do banco, fora das configurações. Entra na 7.6 (configuração) e na 7.5 (porcionar preparação na tela e no banco).
+- **C. Nome de quem produziu:** **nome completo**, no campo de nome de exibição que já existe (D-024), sem campo novo. O limite atual é de 40 caracteres; se nomes completos reais não couberem, a 7.6 amplia o limite (por exemplo, para 80) e o modelo de etiqueta da 7.4 é testado com o nome mais longo permitido. O nome copiado nos registros continua imutável (P8, D-047).
 
