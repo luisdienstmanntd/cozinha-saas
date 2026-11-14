@@ -8,7 +8,11 @@ import type { ContainerGateway } from '../application/containerGateway';
 import type { ContainerPage, ExpirySummary } from '../domain/container';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { LabelView } from '../../labels/components/LabelView';
-import { getExpiryStatus, localCivilDate } from '../domain/expiryStatus';
+import {
+  EXPIRED_TEXT,
+  getExpiryStatus,
+  localCivilDate,
+} from '../domain/expiryStatus';
 import type { MovementGateway } from '../../movements/application/movementGateway';
 import { MovementPanel } from '../../movements/components/MovementPanel';
 import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
@@ -627,6 +631,8 @@ function BatchContents({
                     timezone,
                     now,
                   );
+                  // Fatia 6.11: vencido com saldo. O banco recusa o consumo e a manipulação; só o descarte passa.
+                  const expired = !depleted && status === 'overdue';
                   return (
                     <li key={row.container_id}>
                       {row.product_name} — {row.short_code}
@@ -646,6 +652,12 @@ function BatchContents({
                           {' '}
                           — local: {placed.get(row.container_id)!.location_name}
                         </>
+                      )}
+                      {expired && (
+                        <strong className="expired-band">
+                          {' '}
+                          — {EXPIRED_TEXT}
+                        </strong>
                       )}
                       {blocked.has(row.container_id) && (
                         <strong>
@@ -709,6 +721,7 @@ function BatchContents({
                             canCreate={canCreate}
                             gateway={movements}
                             blocked={blocked.get(row.container_id)}
+                            expired={expired}
                             onRecorded={() => {
                               refreshRow(row.container_id);
                               // O descarte pode tirar uma rejeitada da lista de bloqueios.
@@ -725,7 +738,8 @@ function BatchContents({
                       {canCreate &&
                         handling &&
                         !depleted &&
-                        !blocked.has(row.container_id) && (
+                        !blocked.has(row.container_id) &&
+                        !expired && (
                           <>
                             {' '}
                             <button
@@ -743,6 +757,12 @@ function BatchContents({
                             {' '}
                             — manipulação indisponível enquanto o bloqueio durar
                           </em>
+                        )}
+                      {canCreate &&
+                        handling &&
+                        expired &&
+                        !blocked.has(row.container_id) && (
+                          <em> — manipulação indisponível: validade passou</em>
                         )}
                       {handling && handlingId === row.container_id && (
                         <HandlingForm

@@ -269,3 +269,10 @@ footer {
   border-left: 3px solid #bd5b19;
   background: #fbf3ea;
 }
+/* Fatia 6.11: faixa de recipiente vencido (texto neutro; o banco recusa o consumo). */
+.expired-band {
+  background: #fdecea;
+  color: #7a1d12;
+  border-left: 4px solid #9b261a;
+  padding: 0.15rem 0.4rem;
+}

@@ -87,7 +87,13 @@ function renderPanel({
       catalog={catalog(products)}
       batches={batches}
       containers={fakeContainers([
-        containerRow({ container_id: containerId, product_name: 'Frango' }),
+        // Fatia 6.11: validade futura; um recipiente vencido não oferece consumo (o padrão do
+        // servidor falso, 01/01/2026, já passou).
+        containerRow({
+          container_id: containerId,
+          product_name: 'Frango',
+          expiry_date: '2999-12-31',
+        }),
       ])}
       occurrences={occurrences}
       movements={movements}

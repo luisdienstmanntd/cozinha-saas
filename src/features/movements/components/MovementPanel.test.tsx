@@ -1,8 +1,11 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { MovementPanel } from './MovementPanel';
-import { MovementRejected } from '../application/movementGateway';
+import {
+  MovementBlocked,
+  MovementRejected,
+} from '../application/movementGateway';
 
 it('apresenta o saldo registrado e reenvia a mesma tentativa após falha', async () => {
   sessionStorage.clear();
@@ -615,4 +618,75 @@ it('conta a devolução da manipulação anulada como entrada e não oferece anu
   expect(
     screen.getAllByRole('button', { name: 'Anular registro' }),
   ).toHaveLength(1);
+});
+
+it('recipiente vencido: mostra a faixa e só oferece descarte (fatia 6.11)', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  const list = vi.fn().mockResolvedValue([]);
+  const record = vi.fn().mockResolvedValue('evento');
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list, record }}
+      expired
+    />,
+  );
+  expect(await screen.findByText('VENCIDO - somente descarte')).toBeVisible();
+  expect(
+    screen.getByText(/O consumo é recusado; o descarte continua permitido/),
+  ).toBeVisible();
+  const kind = screen.getByLabelText('Tipo de saída');
+  expect(
+    within(kind).queryByRole('option', { name: 'Consumo' }),
+  ).not.toBeInTheDocument();
+  await user.type(screen.getByLabelText('Quantidade da saída'), '0.5');
+  await user.type(
+    screen.getByLabelText('Motivo (obrigatório para descarte)'),
+    'Validade passou',
+  );
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(record.mock.calls.at(0)?.[1]).toMatchObject({
+    kind: 'discard',
+    quantity: '0.5',
+  });
+});
+
+it('recusa de consumo por vencimento mostra a mensagem do banco (fatia 6.11)', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  const list = vi.fn().mockResolvedValue([]);
+  const message =
+    'Recipiente vencido: a validade registrada (01/01/2026) já passou na data da unidade. Consumo recusado; o descarte continua permitido.';
+  const record = vi.fn().mockRejectedValue(new MovementBlocked(message));
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list, record }}
+    />,
+  );
+  await screen.findByText(/Saldo registrado: 1 kg/);
+  await user.type(screen.getByLabelText('Quantidade da saída'), '0.5');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(message);
 });
