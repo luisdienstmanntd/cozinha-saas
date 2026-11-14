@@ -47,7 +47,7 @@ Todos executados neste ambiente, com o banco local recém-recriado (`npm run db:
 |---|---|
 | `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm run build` | ok |
 | `npm run test` (Vitest) | 289 passaram (14 novos: configurações, produção pelo colaborador, janela, mensagens, porção "igual ou menor") |
-| `npm run test:db` (pgTAP) | 1284 (23 arquivos; `establishment_settings.test.sql` com 61 novos). Ver a observação sobre o teste 26 abaixo |
+| `npm run test:db` (pgTAP) | 1284 passaram, 3 vezes seguidas com banco recém-criado (23 arquivos; `production_settings.test.sql` com 61 novos) |
 | `npx supabase db advisors --type security --level warn --fail-on warn` | sem problemas |
 | `npm run test:integration` | 36 passaram (`establishment-settings.test.mjs` novo) |
 | Playwright (config local com o Chromium do ambiente) | 18 passaram (1 novo: proprietário libera, colaborador registra a própria produção) |
@@ -61,7 +61,10 @@ Nenhum teste existente foi enfraquecido ou alterado.
 Na primeira rodada, o teste 67 de `production.test.sql` ("membro não registra produção") recebeu uma mensagem nova de recusa. A função voltou a usar "Acesso negado." no padrão, e o teste passou sem mudança.
 
 **Testes instáveis que já existiam antes desta fatia** (não alterados, fora do escopo):
-1. **`handling_void.test.sql`, teste 26** ("a sequência inclui anulações de manipulação bem-sucedidas"). O sorteio usa `order by random()` sobre linhas com IDs aleatórios, então o número de anulações bem-sucedidas varia de uma rodada para outra, mesmo com `setseed`. Em 12 rodadas na branch da 7.5, sem esta migração, variou de 2 a 11; o teste exige pelo menos 5 e falhou 3 vezes. Nesta branch, a bateria passou em 2 de 3 rodadas seguidas, com só esse teste falhando na outra.
+1. **`handling_void.test.sql`, teste 26** ("a sequência inclui anulações de manipulação bem-sucedidas"). O sorteio usa `setseed`, mas escolhe linhas com `order by random()`, e o resultado depende da ordem física das linhas. Essa ordem muda com as linhas desfeitas pelos arquivos de teste que rodam antes.
+   - **Banco recém-criado** (caso da CI): o resultado é sempre o mesmo. Com o arquivo novo desta fatia chamado `establishment_settings.test.sql`, que roda antes de `handling_void`, o sorteio passou a dar 4 anulações em vez de pelo menos 5, e a CI do PR #26 falhou duas vezes.
+   - **Correção nesta fatia:** o arquivo novo passou a se chamar `production_settings.test.sql`, que roda depois. Com isso a bateria passou 3 vezes seguidas com banco recém-criado. O teste 26 não foi alterado.
+   - **Banco reaproveitado** (uso local): o resultado continua variando; em 12 rodadas na branch da 7.5 deu de 2 a 11 anulações.
 2. **`list_containers.test.sql`, teste 38** ("busca por lote"). Falhou na CI do PR #25 porque a busca "f-78" também pode casar com o ID aleatório de outro recipiente.
 
 Proposta: uma correção pequena, com aprovação própria, que torna os dois testes determinísticos sem afrouxar o que conferem.

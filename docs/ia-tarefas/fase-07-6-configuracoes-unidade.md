@@ -6,7 +6,7 @@
 - **Objetivo e aceite:** implementar a 7.6 do `FASE_07_DESENHO.md` (quem registra produção, janela da unidade, tempo sem etiqueta, regra da porção da decisão B), com matriz de papéis testada; D-055 proposta.
 - **Branch / worktree / base:** `claude/fase-07-6-configuracoes-unidade`, sobre `claude/fase-07-5-porcionar-preparacao` (PR #25, sem merge).
 - **Arquivos e recursos em uso:**
-  - Banco: migração `20261114070000_establishment_settings.sql`; testes `supabase/tests/establishment_settings.test.sql` e `tests/integration/establishment-settings.test.mjs`.
+  - Banco: migração `20261114070000_establishment_settings.sql`; testes `supabase/tests/production_settings.test.sql` e `tests/integration/establishment-settings.test.mjs`.
   - Tela: `src/features/settings/*`; `ProductionPanel.tsx`, `production.ts`, `supabaseProduction.ts`; `HandlingForm.tsx`, `supabaseHandling.ts`, `family.ts`; `App.tsx`, `configureApp.ts`.
   - Testes de tela: `productionSettings.test.tsx`, `HandlingScreens.test.tsx` (1 novo), `tests/e2e/production.spec.mjs` (1 novo).
   - Listas fixas ampliadas: `rls_set_based.test.sql`, `security_guard.test.sql`.
@@ -28,3 +28,10 @@
   - Testes instáveis antigos: `handling_void` teste 26 e `list_containers` teste 38, este falhou na CI do PR #25. Correção proposta a luis, com aprovação própria.
   - 3 pontos para luis em `FASE_07_6.md`.
 - **Próximo passo:** aceite de luis.
+
+### 14/11/2026 ~19:50 UTC — Claude Code
+- **CI do PR #26:** `banco-api-e2e` falhou duas vezes no teste 26 de `handling_void.test.sql`.
+- **Causa:** com banco recém-criado, o sorteio do teste 26 depende da ordem física das linhas. Essa ordem muda com as linhas desfeitas pelos arquivos que rodam antes. O arquivo novo `establishment_settings.test.sql` rodava antes de `handling_void` e mudou o sorteio para 4 anulações, abaixo do mínimo de 5.
+- **Correção:** o arquivo passou a se chamar `production_settings.test.sql` e roda depois. O teste 26 não foi alterado.
+- **Testes:** pgTAP 1284 passaram 3 vezes seguidas com banco recém-criado.
+- **Pendência:** tornar o teste 26 independente da ordem física. A correção fica proposta a luis, com aprovação própria.
