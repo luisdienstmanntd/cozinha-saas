@@ -37,6 +37,10 @@ import { OccurrencePanel } from '../../occurrences/components/OccurrencePanel';
 import { storageLabels } from '../../catalog/domain/catalog';
 import { useCompactLayout } from '../../../shared/ui/useCompactLayout';
 import { MoreInfo } from '../../../shared/ui/MoreInfo';
+import {
+  quantityProblemText,
+  toDotQuantity,
+} from '../../../shared/format/quantity';
 import { FirstSteps } from './FirstSteps';
 import type { AreaLinks } from './FirstSteps';
 
@@ -425,7 +429,8 @@ function BatchContents({
       productId: values.get('productId'),
       supplierId: values.get('supplierId'),
       sourceCode: values.get('sourceCode'),
-      quantity: values.get('quantity'),
+      // V5 (D-063): vírgula ou ponto decimal; o esquema de sempre recebe a forma com ponto.
+      quantity: toDotQuantity(String(values.get('quantity') ?? '')) ?? '',
       expiryDate: expiry,
       expiryOrigin: origin,
       originalExpiryDate:
@@ -449,7 +454,9 @@ function BatchContents({
             ].includes(String(issue.path[0])),
           )
           ? 'Confira a temperatura: informe a medida em °C (de -50 a 80, uma casa decimal) ou, se não foi possível medir, a justificativa.'
-          : 'Confira produto, fornecedor, quantidade e datas informadas.',
+          : // V5 (D-063): separador de milhar ou "1.500" (ambíguo) têm mensagem própria.
+            (quantityProblemText(String(values.get('quantity') ?? '')) ??
+              'Confira produto, fornecedor, quantidade e datas informadas.'),
       );
       return;
     }

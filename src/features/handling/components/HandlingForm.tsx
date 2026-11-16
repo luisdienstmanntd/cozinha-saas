@@ -23,6 +23,12 @@ import {
   zonedToInstant,
 } from '../domain/handling';
 import { VoidHandling } from './VoidHandling';
+import {
+  QUANTITY_HINT,
+  toDotQuantity,
+  formatQuantity,
+  quantityProblemText,
+} from '../../../shared/format/quantity';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { DownloadLabels } from '../../labels/components/DownloadLabels';
 
@@ -175,8 +181,10 @@ export function HandlingForm({
       </section>
     );
 
-  const portionQuantities =
+  // V5 (D-063): o que foi digitado (vírgula ou ponto) vira a forma com ponto antes das contas e do envio.
+  const typedQuantities =
     kind === 'opening' ? quantities.slice(0, 1) : quantities.slice(0, count);
+  const portionQuantities = typedQuantities.map((q) => toDotQuantity(q) ?? '');
   const { sumMilli, restMilli } = totals(portionQuantities, context.balance);
   const allValid = portionQuantities.every(isQuantity);
   const exceeds = restMilli < 0;
@@ -268,7 +276,8 @@ export function HandlingForm({
     setError('');
     if (!allValid || portionQuantities.length === 0)
       return setError(
-        `Informe a quantidade de cada porção em ${unit}, com ponto para decimais, por exemplo 0.5.`,
+        typedQuantities.map(quantityProblemText).find(Boolean) ??
+          `Informe a quantidade de cada porção em ${unit}, com vírgula ou ponto para decimais, por exemplo 0,5.`,
       );
     if (wholeUnits && portionQuantities.some((q) => q.includes('.')))
       return setError('Este produto é medido em unidades inteiras.');
@@ -450,14 +459,16 @@ export function HandlingForm({
           </li>
           <li>
             {kind === 'opening' ? 'Abrir embalagem' : 'Dividir em porções'}:{' '}
-            {portionQuantities.map((q) => `${q} ${unit}`).join(' + ')} (total{' '}
-            {fromMilli(sumMilli)} {unit})
+            {portionQuantities
+              .map((q) => `${formatQuantity(q)} ${unit}`)
+              .join(' + ')}{' '}
+            (total {formatQuantity(fromMilli(sumMilli))} {unit})
           </li>
           <li>
             Sobra:{' '}
             {restMilli === 0
               ? 'nenhuma'
-              : `${fromMilli(restMilli)} ${unit} — ${
+              : `${formatQuantity(fromMilli(restMilli))} ${unit} — ${
                   effectiveRemainder() === 'sealed'
                     ? 'continua fechada na embalagem original'
                     : effectiveRemainder() === 'portion'
@@ -561,7 +572,9 @@ export function HandlingForm({
                 type="button"
                 onClick={() =>
                   setQuantities(
-                    splitEqually(context.balance, count, wholeUnits),
+                    splitEqually(context.balance, count, wholeUnits).map(
+                      formatQuantity,
+                    ),
                   )
                 }
               >
@@ -569,7 +582,7 @@ export function HandlingForm({
               </button>
             </p>
           )}
-          {portionQuantities.map((value, index) => (
+          {typedQuantities.map((value, index) => (
             <p key={index}>
               <label>
                 {kind === 'opening'
@@ -584,18 +597,18 @@ export function HandlingForm({
             </p>
           ))}
           <p>
-            Use ponto para decimais, por exemplo 0.5. Soma:{' '}
-            {fromMilli(sumMilli)} {unit} de {context.balance} {unit}
+            {QUANTITY_HINT} Soma: {formatQuantity(fromMilli(sumMilli))} {unit}{' '}
+            de {formatQuantity(context.balance)} {unit}
             {allValid &&
               (exceeds
                 ? ' — excede o saldo registrado.'
-                : ` — sobra: ${fromMilli(restMilli) || '0'} ${unit}.`)}
+                : ` — sobra: ${formatQuantity(fromMilli(restMilli) || '0')} ${unit}.`)}
           </p>
         </fieldset>
         {hasRest && (
           <fieldset disabled={busy}>
             <legend>
-              Sobra de {fromMilli(restMilli)} {unit}
+              Sobra de {formatQuantity(fromMilli(restMilli))} {unit}
             </legend>
             {integral && (
               <>

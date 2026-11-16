@@ -57,5 +57,6 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 | Correção do teste pgTAP dependente do horário (`container_handling`, teste 69) | Claude Code; aprovada tecnicamente por luis em 16/11/2026, 12:43 UTC (PR #35 em rascunho sobre a `main`; mesmo commit levado à branch da V3, PR #34) | `ia-tarefas/corrige-teste-manipulacao-meia-noite.md` | Revisão de luis; sem merge sem pedido de luis. |
 | V4 — acabamento visual (proposta) | Claude Code; proposta aprovada por luis em 16/11/2026, 13:10 UTC (D-062) | `ia-tarefas/v4-proposta.md` | Implementação na tarefa abaixo. |
 | V4 — acabamento visual (implementação, D-062 aceita) | Claude Code; aceita por luis em 16/11/2026, 21:10 UTC, CI verde (PR #37 em rascunho sobre a branch do PR #36) | `ia-tarefas/v4-acabamento-visual.md` | Sem merge nem deploy sem autorização específica de luis; V5 (vírgula decimal) autorizada, em outra thread. |
+| V5 — vírgula decimal nas quantidades (D-063) | Claude Code; aguardando aceite de luis (PR em rascunho sobre a branch do PR #37) | `ia-tarefas/v5-virgula-decimal.md` | Aceite de luis; sem merge nem deploy sem autorização. |
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
