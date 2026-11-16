@@ -49,7 +49,16 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     ).toBeVisible();
     await page.getByLabel('Nome do fornecedor').fill('Granja de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
-    await expect(page.getByText('Granja de teste').first()).toBeVisible();
+    // O formulário de Receber fica montado (oculto) e recebe o fornecedor novo.
+    await expect(
+      page
+        .getByRole('combobox', {
+          name: 'Fornecedor',
+          exact: true,
+          includeHidden: true,
+        })
+        .locator('option', { hasText: 'Granja de teste' }),
+    ).toHaveCount(1);
     await openArea(page, 'Validade');
     await expect(steps).toContainText(
       'Cadastrar produtos e fornecedores — feito',

@@ -789,14 +789,18 @@ footer {
 }
 
 /* V4 (M2): rádio e caixa alinhados ao texto; o rótulo inteiro é a área de toque (≥ 44 px). */
-.workspace label:has(> input[type='radio']),
-.workspace label:has(> input[type='checkbox']) {
+/* :where mantém a especificidade baixa: arranjos próprios (ex.: ferramentas da lista) continuam valendo. */
+.workspace :where(label:has(> input[type='radio'])),
+.workspace :where(label:has(> input[type='checkbox'])) {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   min-height: 44px;
-  padding-right: 0.75rem;
   cursor: pointer;
+}
+/* Opções de rádio lado a lado não encostam uma na outra. */
+.workspace :where(label:has(> input[type='radio'])) {
+  margin-right: 1.25rem;
 }
 .workspace input[type='radio'],
 .workspace input[type='checkbox'] {
@@ -815,8 +819,8 @@ footer {
 }
 .more-info summary {
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
+  display: list-item;
+  padding: 0.6rem 0;
   min-height: 44px;
   font-weight: 600;
   color: #214f40;
@@ -886,6 +890,22 @@ footer {
   background: #fff;
   font-weight: 650;
   cursor: pointer;
+}
+.more-actions > summary::-webkit-details-marker {
+  display: none;
+}
+/* Seta decorativa (borda em CSS, sem texto para leitor de tela): para baixo fechado, para cima aberto. */
+.more-actions > summary::after {
+  content: '';
+  margin-left: 0.6rem;
+  border: 6px solid transparent;
+  border-top-color: currentColor;
+  transform: translateY(3px);
+}
+.more-actions[open] > summary::after {
+  border-top-color: transparent;
+  border-bottom-color: currentColor;
+  transform: translateY(-3px);
 }
 .more-actions[open] > summary {
   background: #e6efe9;
