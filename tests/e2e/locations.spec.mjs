@@ -139,7 +139,9 @@ test('membro vê os locais, mas não cria nem muda de local', async ({
     await panel.getByLabel('Nome do local').fill('Despensa');
     await panel.getByRole('button', { name: 'Criar local' }).click();
     await expect(panel).toContainText('Despensa — Refrigerado');
+    // V2 (D-025): recarregar mantém a sessão do proprietário; o membro entra depois de Sair.
     await page.reload();
+    await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[2]);
     await page
       .getByRole('button', { name: 'Catálogo de Cozinha principal' })

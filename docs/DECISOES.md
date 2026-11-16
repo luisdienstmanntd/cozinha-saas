@@ -166,7 +166,7 @@
 - **Consequência:** novo dado pessoal; entra no procedimento de anonimização (P8).
 - **Revisar quando:** houver convite de membros ou perfil editável.
 
-## D-025 — Sessão no dispositivo da cozinha (proposta)
+## D-025 — Sessão no dispositivo da cozinha (proposta; detalhada pela D-059)
 
 - **Status:** proposta, a detalhar na trilha pré-piloto (fatia 6.10); não incluída na aprovação de planejamento como regra fechada.
 - **Decisão:** sessão persistente no aparelho fixo da cozinha com expiração curta por inatividade e saída visível; login individual rápido para registrar autoria.
@@ -449,3 +449,12 @@
 - **Consequência:** fecha as fatias 7.1 a 7.9 do desenho; o que sobrar fica em `FASE_07_DESENHO.md`, seção 8.
 - **Observação de luis:** a faixa de -50 a 80 °C é só validação de entrada; o sistema nunca a usa para afirmar conformidade, liberar produto ou definir condição de conservação. Medição incorreta fica no histórico e se registra outra; a invalidação com motivo obrigatório, sem alterar o registro original, está no `BACKLOG.md`.
 - **Revisar quando:** a nutricionista RT definir faixas e a observação do piloto mostrar se falta correção ou anulação de medição.
+
+## D-059 — Sessão persistente com inatividade de 30 minutos (16/11/2026)
+
+- **Status:** proposta; definições de luis em 16/11/2026, aceite da fatia pendente ([registro](V2_SESSAO.md)). Detalha a D-025.
+- **Decisão:** a sessão fica guardada no navegador (recarregar e abrir o QR não pedem login) e expira com 30 minutos sem uso. O limite vale no banco: toda requisição de usuário passa por `session_guard.check_request`, e as políticas RLS e as funções de escrita só valem com sessão ativa. Sair apaga a sessão no servidor.
+- **Motivo:** B2 da revisão visual (sessão caía a cada recarga; cada leitura de etiqueta exigiria e-mail e senha) e D-025.
+- **Consequência:** nova migração (`20261116000000_session_inactivity.sql`) que muda `has_membership` e `member_organizations`; reversão em `supabase/rollback/session_inactivity.sql`. Aparelho compartilhado: cada pessoa usa a própria conta; não há PIN nem troca rápida.
+- **Revisar quando:** a observação do piloto mostrar se 30 minutos atrapalham a cozinha, ou houver MFA e autenticação hospedada.
+

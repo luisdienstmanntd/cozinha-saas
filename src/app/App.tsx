@@ -153,8 +153,8 @@ function Workspace({
   );
 }
 
-// Rota do QR (/recipiente/:id) e navegação entre origem e derivados sem recarregar a página
-// (recarregar encerra a sessão: ela não é persistida).
+// Rota do QR (/recipiente/:id) e navegação entre origem e derivados sem recarregar a página.
+// V2 (D-025): abrir o QR no mesmo navegador reaproveita a sessão guardada, se ainda valer.
 function Destination({
   configuration,
   userId,

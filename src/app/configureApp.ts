@@ -1,5 +1,9 @@
 import { parseEnvironment } from '../shared/config/environment';
-import { createIdentityGateway } from '../features/identity/data/supabaseIdentity';
+import {
+  AUTH_STORAGE_KEY,
+  createIdentityGateway,
+} from '../features/identity/data/supabaseIdentity';
+import { createSessionFetch } from '../features/identity/data/sessionFetch';
 import { createOccurrenceGateway } from '../features/occurrences/data/supabaseOccurrences';
 import { createCatalogGateway } from '../features/catalog/data/supabaseCatalog';
 import { createClient } from '@supabase/supabase-js';
@@ -14,20 +18,36 @@ import { createProductionGateway } from '../features/production/data/supabasePro
 import { createEstablishmentGateway } from '../features/establishments/data/supabaseEstablishments';
 import { createSettingsGateway } from '../features/settings/data/supabaseSettings';
 
+function browserStorage(): Storage | null {
+  try {
+    return typeof window === 'undefined' ? null : window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 export function configureApp(environment: Record<string, unknown>) {
   try {
     const config = parseEnvironment(environment);
     if (config.mode !== 'local') return { mode: 'demo' as const };
+    // V2 (D-025): a sessão fica guardada neste navegador (recarregar e abrir o QR não pedem login);
+    // quem limita a inatividade a 30 minutos é o banco (session_guard.check_request), e o aplicativo
+    // sai da conta quando a API responde SESSION_EXPIRED.
+    const events = createSessionFetch();
+    const storage = browserStorage();
     const client = createClient(config.url, config.publishableKey, {
       auth: {
-        persistSession: false,
+        persistSession: true,
+        storageKey: AUTH_STORAGE_KEY,
         autoRefreshToken: true,
         detectSessionInUrl: false,
+        ...(storage ? { storage } : {}),
       },
+      global: { fetch: events.fetch },
     });
     return {
       mode: 'local' as const,
-      identity: createIdentityGateway(client),
+      identity: createIdentityGateway(client, { events, storage }),
       catalog: createCatalogGateway(client),
       batches: createBatchGateway(client),
       containers: createContainerGateway(client),

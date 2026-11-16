@@ -3,6 +3,11 @@ import type { FormEvent, ReactNode } from 'react';
 import type { IdentityGateway } from '../application/identityGateway';
 import type { Access } from '../domain/identity';
 import { credentials, organizationName } from '../domain/identity';
+import type { SignOutReason } from '../application/identityGateway';
+import type { ActivityStore } from '../application/sessionActivity';
+import { defaultActivityStore } from '../application/sessionActivity';
+import { useSessionGuard } from '../application/useSessionGuard';
+import { EXPIRED_MESSAGE, SIGNED_OUT_MESSAGE, isIdle } from '../domain/session';
 
 type Organization = Access[number];
 type OrganizationChanged = (
@@ -39,8 +44,11 @@ export function IdentityHome({
   renderCatalog,
   renderDestination,
   renderOrganizationTools,
+  activity,
 }: {
   gateway: IdentityGateway;
+  /** V2: última atividade no navegador; os testes passam uma em memória. */
+  activity?: ActivityStore;
   renderCatalog?: (
     organizationId: string,
     establishmentId: string,
@@ -62,22 +70,112 @@ export function IdentityHome({
   const [notice, setNotice] = useState('');
   const [catalogUnit, setCatalogUnit] = useState<string | null>(null);
   const generation = useRef(0);
+  const [store] = useState(() => activity ?? defaultActivityStore());
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  // Enquanto confere a sessão guardada, não mostra o formulário de entrada.
+  const [restoring, setRestoring] = useState(() => !!gateway.currentUser);
+
+  // Troca de usuário no mesmo aparelho: tudo o que era da pessoa anterior sai da tela.
+  function clearSession(message: string) {
+    generation.current++;
+    store.clear();
+    setUserId(null);
+    setSessionEmail(null);
+    setAccess([]);
+    setSkipped(0);
+    setCatalogUnit(null);
+    setPassword('');
+    setBusy(false);
+    setRestoring(false);
+    setNotice('');
+    setError(message);
+  }
+  const clearRef = useRef(clearSession);
+  useEffect(() => {
+    clearRef.current = clearSession;
+  });
 
   useEffect(
     () =>
-      gateway.onSignOut(() => {
-        generation.current++;
-        setUserId(null);
-        setAccess([]);
-        setSkipped(0);
-        setCatalogUnit(null);
-        setPassword('');
-        setBusy(false);
-        setNotice('');
-        setError('Sessão encerrada. Entre novamente.');
-      }),
+      gateway.onSignOut((reason: SignOutReason = 'signed_out') =>
+        clearRef.current(
+          reason === 'expired' ? EXPIRED_MESSAGE : SIGNED_OUT_MESSAGE,
+        ),
+      ),
     [gateway],
   );
+
+  async function expireSession() {
+    clearSession(EXPIRED_MESSAGE);
+    try {
+      await (gateway.expire ? gateway.expire() : gateway.signOut());
+    } catch (cause) {
+      setError(
+        `${EXPIRED_MESSAGE} ${cause instanceof Error ? cause.message : ''}`.trim(),
+      );
+    }
+  }
+  const expireRef = useRef(expireSession);
+  useEffect(() => {
+    expireRef.current = expireSession;
+  });
+
+  useSessionGuard({
+    active: userId !== null,
+    store,
+    ...(gateway.touch ? { touch: () => gateway.touch!() } : {}),
+    expire: () => void expireRef.current(),
+  });
+
+  // V2: recarregar a página ou abrir o QR reaproveita a sessão guardada, se ainda valer.
+  useEffect(() => {
+    if (!gateway.currentUser) return;
+    const current = ++generation.current;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const user = await gateway.currentUser!();
+        if (cancelled || current !== generation.current) return;
+        if (!user) {
+          setRestoring(false);
+          return;
+        }
+        if (isIdle(store.read(), Date.now())) {
+          await expireRef.current();
+          return;
+        }
+        const state = gateway.touch ? await gateway.touch() : 'ok';
+        if (cancelled || current !== generation.current) return;
+        if (state === 'expired') {
+          await expireRef.current();
+          return;
+        }
+        store.write(Date.now());
+        setUserId(user.id);
+        setSessionEmail(user.email);
+        setRestoring(false);
+        setBusy(true);
+        try {
+          await refresh(current);
+        } finally {
+          if (current === generation.current) setBusy(false);
+        }
+      } catch (cause) {
+        if (cancelled || current !== generation.current) return;
+        setRestoring(false);
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : 'Não foi possível confirmar a sessão. Tente novamente.',
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Só ao abrir a tela.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gateway]);
 
   async function run(action: () => Promise<void>) {
     const current = ++generation.current;
@@ -144,7 +242,9 @@ export function IdentityHome({
       const current = generation.current;
       const id = await gateway.signIn(input.data.email, input.data.password);
       if (current !== generation.current) return;
+      store.write(Date.now());
       setUserId(id);
+      setSessionEmail(input.data.email);
       setPassword('');
       await refresh(current);
     });
@@ -166,7 +266,44 @@ export function IdentityHome({
           normalmente; atualize o acesso ou avise o responsável.
         </p>
       )}
-      {!userId ? (
+      {userId && (
+        <section aria-label="Sessão" className="session-bar">
+          <p>
+            {sessionEmail ? (
+              <>
+                Conectado como <strong>{sessionEmail}</strong>.{' '}
+              </>
+            ) : null}
+            Sem uso por 30 minutos, a sessão é encerrada. Aparelho
+            compartilhado: cada pessoa entra com a própria conta.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              void (async () => {
+                clearSession('');
+                try {
+                  await gateway.signOut();
+                  // O aviso de "sessão encerrada" do evento não vale para quem tocou em Sair.
+                  setError('');
+                  setNotice('Você saiu da conta.');
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : 'Não foi possível encerrar a sessão no servidor.',
+                  );
+                }
+              })()
+            }
+          >
+            Sair
+          </button>
+        </section>
+      )}
+      {restoring && !userId ? (
+        <p role="status">Conferindo a sessão…</p>
+      ) : !userId ? (
         <form onSubmit={signIn}>
           <p>
             <label>
@@ -202,23 +339,6 @@ export function IdentityHome({
             onClick={() => void run(() => refresh(generation.current))}
           >
             Atualizar acesso
-          </button>{' '}
-          <button
-            disabled={busy}
-            onClick={() =>
-              void run(async () => {
-                setAccess([]);
-                setCatalogUnit(null);
-                await gateway.signOut();
-                generation.current++;
-                setUserId(null);
-                setPassword('');
-                setBusy(false);
-                setError('');
-              })
-            }
-          >
-            Sair
           </button>
           {access.map((organization) => {
             const owner = organization.memberships.some(
