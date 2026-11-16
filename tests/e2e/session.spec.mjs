@@ -14,7 +14,7 @@ async function signIn(page, user) {
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
 }
 
@@ -32,7 +32,7 @@ test('recarregar e abrir o QR não pedem login; Sair encerra; troca de usuário 
 
     await page.reload();
     await expect(
-      page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+      page.getByRole('button', { name: 'Abrir Cozinha principal' }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),
