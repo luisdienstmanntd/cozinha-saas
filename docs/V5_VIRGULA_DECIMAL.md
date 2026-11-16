@@ -1,6 +1,6 @@
 # V5 — Vírgula decimal nas quantidades (D-063)
 
-Item M5 da [revisão visual](REVISAO_VISUAL_FASE_07.md). **Autorizada por luis em 16/11/2026, 21:10 UTC**, na mesma mensagem do aceite final da V4, com sete requisitos. Implementada na branch `claude/revisao-v5-virgula-decimal`, sobre a ponta da V4 (PR #37). **D-063 aguarda o aceite de luis.** Sem merge nem deploy.
+Item M5 da [revisão visual](REVISAO_VISUAL_FASE_07.md). **Autorizada por luis em 16/11/2026, 21:10 UTC**, na mesma mensagem do aceite final da V4, com sete requisitos. Implementada na branch `claude/revisao-v5-virgula-decimal`, sobre a ponta da V4 (PR #37). **D-063 aceita por luis em 16/11/2026, 22:08 UTC** (ver Aceite). Sem merge nem deploy.
 
 Só interface: nenhuma migração, política RLS, função do banco, esquema de domínio, regra de validade, saldo, movimentação, permissão ou auditoria mudou.
 
@@ -38,7 +38,7 @@ A quantidade digitada passa por `parseQuantity` antes da validação de sempre:
 | `1,2345`           | recusado (4 casas)      |
 | `0,0`              | recusado (zero)         |
 
-**Mudança de comportamento a confirmar:** antes da V5, a tela pedia "use ponto" e aceitava `1.500` como um e meio. Agora `1.500` é recusado e a mensagem orienta a digitar `1,5`. Quem se acostumou com o ponto e três casas (por exemplo `1.250` kg) vai ver a recusa uma vez. `1.25` e `0.250` continuam aceitos. Alternativa, se luis preferir: aceitar ponto com três casas como decimal (o comportamento antigo) e recusar só as formas com dois separadores. A recomendação é manter a recusa, porque na cozinha brasileira `1.500` é mais provável como mil e quinhentos do que como um e meio, e um erro de mil vezes no saldo é pior do que pedir para digitar de novo.
+**Mudança de comportamento (confirmada por luis em 16/11/2026, 22:08 UTC):** antes da V5, a tela pedia "use ponto" e aceitava `1.500` como um e meio. Agora `1.500` é recusado e a mensagem orienta a digitar `1,5`. Quem se acostumou com o ponto e três casas (por exemplo `1.250` kg) vai ver a recusa uma vez. `1.25` e `0.250` continuam aceitos. Alternativa, se luis preferir: aceitar ponto com três casas como decimal (o comportamento antigo) e recusar só as formas com dois separadores. A recomendação é manter a recusa, porque na cozinha brasileira `1.500` é mais provável como mil e quinhentos do que como um e meio, e um erro de mil vezes no saldo é pior do que pedir para digitar de novo.
 
 ## O que mudou nas telas
 
@@ -73,8 +73,8 @@ Novos testes:
 - Fora da V5, a decidir: as listas, cartões, histórico, QR e etiquetas PDF continuam mostrando os valores gravados com ponto (`12.5 kg`). Só os textos de conferência da digitação (tentativa pendente, saldo previsto, soma, sobra, revisão) passaram a usar vírgula. Mostrar vírgula em todo lugar seria uma fatia pequena, só de exibição.
 - Temperatura do recebimento ainda pede ponto ("por exemplo -18.5"); a da produção já aceita vírgula. Pode entrar junto da fatia acima.
 - Teclado do celular: o campo continua `inputMode="decimal"`. Em alguns teclados Android a tecla mostrada é só o ponto ou só a vírgula, conforme o idioma; as duas funcionam. Não verificado em aparelho físico.
-- A regra recusa `1.500` mesmo quando a pessoa quis dizer um e meio (ver "Mudança de comportamento a confirmar").
+- A regra recusa `1.500` mesmo quando a pessoa quis dizer um e meio; luis confirmou que é o comportamento desejado.
 
 ## Aceite
 
-Aguardando aceite de luis. Sem merge nem deploy sem autorização específica.
+**Aceite de luis em 16/11/2026, 22:08 UTC** (PR #38, CI verde): aprovou a implementação da V5 e a D-063 e considerou a V5 tecnicamente aceita. Confirmou expressamente que valores ambíguos como `1.500`, `1.000,50` e `1,000.50` continuam recusados, com mensagem explicativa. Manter: vírgula e ponto como separadores decimais quando não houver ambiguidade; ausência de separador de milhar; limites de quantidade, precisão e validações existentes; nenhuma alteração em saldos, históricos, permissões ou regras do banco. Na mesma mensagem autorizou **preparar a proposta** de uma fatia complementar (exibição com vírgula e temperatura do recebimento), **sem implementar**: ver [V5B_PROPOSTA.md](V5B_PROPOSTA.md). Sem merge nem deploy sem autorização específica.
