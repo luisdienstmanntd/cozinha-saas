@@ -1,6 +1,6 @@
 # V3 — Lista de validade legível
 
-Autorizada por luis em 16/11/2026, 02:26 UTC, junto com o aceite da V1 (D-060). Resolve B3, B4, M3, M4 e M6 de `REVISAO_VISUAL_FASE_07.md`. Proposta de decisão: **D-061** (aceite pendente). Sem merge nem deploy. V4 e V5 não foram iniciadas.
+Autorizada por luis em 16/11/2026, 02:26 UTC, junto com o aceite da V1 (D-060). Resolve B3, B4, M3, M4 e M6 de `REVISAO_VISUAL_FASE_07.md`. Decisão **D-061 aceita por luis em 16/11/2026, 12:43 UTC** (ver "Aceite" no fim); encerramento técnico condicionado à CI verde. Sem merge nem deploy. V4 e V5 não foram iniciadas.
 
 ## O que mudou
 
@@ -125,3 +125,11 @@ Observado: sem rolagem lateral em 390 px; selos legíveis com e sem cor; cartão
 4. Textos do selo: "Vencido há N dias", "Vence hoje", "Vence amanhã", "Vence em N dias", "Esgotado"; "Posteriores" mantido só no contador.
 5. Histórico com "por Nome" e identificadores recolhidos em "Identificadores (suporte)".
 6. Contadores sem filtro nesta fatia (filtro fica para avaliação futura).
+
+## Aceite (luis, 16/11/2026, 12:43 UTC)
+
+luis aprovou os seis pontos acima e considerou a V3 funcionalmente aceita, com o encerramento técnico condicionado à CI verde. Também aprovou tecnicamente a correção do teste 69 (PR #35).
+
+- **Teste dependente da meia-noite:** a causa está documentada em `TESTES_QUALIDADE.md` ("Teste pgTAP dependente do horário corrigido"). O commit do PR #35 foi levado para esta branch (cherry-pick, só o teste e a documentação), então a bateria e a CI da V3 já rodam com o teste corrigido. A correção muda apenas o horário da manipulação naquele `throws_ok` (`p_handled_at => now()`); a regra, o código de erro e a mensagem esperada são os mesmos. Nenhuma regra de negócio mudou.
+- **Backlog:** filtros de validade por categoria, acionados pelos contadores, no servidor, respeitando paginação e autorização (`BACKLOG.md`).
+- **Próximo passo:** após a CI verde, proposta da V4 (acabamento visual), sem implementação até aprovação de luis. Sem merge nem deploy.
