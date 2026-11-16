@@ -157,15 +157,18 @@ function PreparationWindow({
     return (
       <>
         {' '}
+        {/* V4 (D3): rótulo visível curto; o nome acessível mantém a preparação. */}
         <button
+          className="secondary"
           type="button"
+          aria-label={`Janela de registro de ${item.name}`}
           onClick={() => {
             setValue(own === null ? '' : String(own));
             setError('');
             setOpen(true);
           }}
         >
-          Janela de registro de {item.name}
+          Janela de registro
         </button>
       </>
     );
@@ -184,16 +187,27 @@ function PreparationWindow({
       <button
         type="button"
         disabled={busy || !valid}
+        aria-label={`Salvar janela de ${item.name}`}
         onClick={() => save(parsed)}
       >
-        Salvar janela de {item.name}
+        Salvar janela
       </button>{' '}
       {own !== null && (
-        <button type="button" disabled={busy} onClick={() => save(null)}>
-          Usar a janela da unidade em {item.name}
+        <button
+          type="button"
+          disabled={busy}
+          aria-label={`Usar a janela da unidade em ${item.name}`}
+          onClick={() => save(null)}
+        >
+          Usar a janela da unidade
         </button>
       )}{' '}
-      <button type="button" disabled={busy} onClick={() => setOpen(false)}>
+      <button
+        className="secondary"
+        type="button"
+        disabled={busy}
+        onClick={() => setOpen(false)}
+      >
         Cancelar
       </button>{' '}
       Entre 15 minutos e 24 horas. Vale para os registros novos.
@@ -310,6 +324,7 @@ function CatalogSection({
         <>
           <p role="alert">{list.message}</p>
           <button
+            className="secondary"
             onClick={() => {
               setList({ status: 'loading' });
               setAttempt((n) => n + 1);

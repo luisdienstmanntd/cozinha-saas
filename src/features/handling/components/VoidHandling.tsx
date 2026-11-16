@@ -56,7 +56,7 @@ export function VoidHandling({
   }
   if (!open)
     return (
-      <button type="button" onClick={() => setOpen(true)}>
+      <button className="risk" type="button" onClick={() => setOpen(true)}>
         Anular manipulação
       </button>
     );
@@ -78,8 +78,14 @@ export function VoidHandling({
             onChange={(event) => setReason(event.target.value)}
           />
         </label>{' '}
-        <button type="submit">Confirmar anulação</button>{' '}
-        <button type="button" onClick={() => setOpen(false)}>
+        <button className="risk-confirm" type="submit">
+          Confirmar anulação
+        </button>{' '}
+        <button
+          className="secondary"
+          type="button"
+          onClick={() => setOpen(false)}
+        >
           Cancelar
         </button>
         {error && <p role="alert">{error}</p>}

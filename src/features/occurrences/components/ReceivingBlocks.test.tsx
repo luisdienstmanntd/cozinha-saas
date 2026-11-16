@@ -191,7 +191,16 @@ it('repete a mesma tentativa de decisão após falha e mostra recusa do banco', 
   const form = screen.getByRole('form', {
     name: 'Decisão da ocorrência de Frango',
   });
+  // V4 (M1): a confirmação só fica no estilo de risco quando a decisão é rejeitar.
+  const confirmDecision = within(form).getByRole('button', {
+    name: 'Confirmar decisão',
+  });
+  expect(confirmDecision).not.toHaveClass('risk-confirm');
   await user.click(within(form).getByLabelText(/Rejeitar/));
+  expect(confirmDecision).toHaveClass('risk-confirm');
+  expect(within(form).getByRole('button', { name: 'Cancelar' })).toHaveClass(
+    'secondary',
+  );
   await user.type(
     within(form).getByLabelText('Justificativa da decisão'),
     'Embalagem morna',

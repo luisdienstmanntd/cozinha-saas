@@ -157,7 +157,7 @@ export function HandlingForm({
           <strong>{BLOCK_TEXT[context.block]}</strong>: este recipiente não pode
           ser manipulado. Só o descarte é permitido.
         </p>
-        <button type="button" onClick={onClose}>
+        <button className="secondary" type="button" onClick={onClose}>
           Fechar
         </button>
       </section>
@@ -169,7 +169,7 @@ export function HandlingForm({
           {title} {context.short_code}
         </h4>
         <p role="status">Recipiente sem saldo registrado.</p>
-        <button type="button" onClick={onClose}>
+        <button className="secondary" type="button" onClick={onClose}>
           Fechar
         </button>
       </section>
@@ -378,6 +378,7 @@ export function HandlingForm({
                 <>
                   {' '}
                   <button
+                    className="secondary"
                     type="button"
                     onClick={() => onOpenContainer(child.id)}
                   >
@@ -431,7 +432,7 @@ export function HandlingForm({
             }}
           />
         )}{' '}
-        <button type="button" onClick={onClose}>
+        <button className="secondary" type="button" onClick={onClose}>
           Fechar
         </button>
       </section>
@@ -488,7 +489,12 @@ export function HandlingForm({
         <button type="button" disabled={busy} onClick={() => void confirm()}>
           Confirmar registro
         </button>{' '}
-        <button type="button" disabled={busy} onClick={() => setStage('form')}>
+        <button
+          className="secondary"
+          type="button"
+          disabled={busy}
+          onClick={() => setStage('form')}
+        >
           Voltar e corrigir
         </button>
       </section>
@@ -551,6 +557,7 @@ export function HandlingForm({
                 />
               </label>{' '}
               <button
+                className="secondary"
                 type="button"
                 onClick={() =>
                   setQuantities(
@@ -844,7 +851,12 @@ export function HandlingForm({
         <button type="submit" disabled={busy || conflict}>
           Revisar registro
         </button>{' '}
-        <button type="button" disabled={busy} onClick={onClose}>
+        <button
+          className="secondary"
+          type="button"
+          disabled={busy}
+          onClick={onClose}
+        >
           Cancelar
         </button>
       </form>

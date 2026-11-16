@@ -155,6 +155,7 @@ export function PendingAttempts({
                   <strong>Registro confirmado</strong>: o servidor já tem esta
                   operação. Nada será enviado de novo.{' '}
                   <button
+                    className="secondary"
                     type="button"
                     onClick={() => {
                       pendingStore.remove(userId, item.intentId);
@@ -176,6 +177,7 @@ export function PendingAttempts({
                     Enviar novamente
                   </button>{' '}
                   <button
+                    className="risk"
                     type="button"
                     disabled={busy !== null}
                     onClick={() => pendingStore.remove(userId, item.intentId)}
@@ -188,6 +190,7 @@ export function PendingAttempts({
                 <>
                   Não foi possível conferir no servidor.{' '}
                   <button
+                    className="secondary"
                     type="button"
                     disabled={busy !== null}
                     onClick={() => void check(item)}

@@ -396,7 +396,7 @@ function OpenButton({
 }) {
   if (!onOpen) return <>{code}</>;
   return (
-    <button type="button" onClick={() => onOpen(id)}>
+    <button className="secondary" type="button" onClick={() => onOpen(id)}>
       Abrir {code}
     </button>
   );

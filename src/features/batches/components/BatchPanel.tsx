@@ -35,6 +35,10 @@ import { MoveContainer } from '../../locations/components/MoveContainer';
 import type { CurrentLocation } from '../../locations/domain/locations';
 import { OccurrencePanel } from '../../occurrences/components/OccurrencePanel';
 import { storageLabels } from '../../catalog/domain/catalog';
+import { useCompactLayout } from '../../../shared/ui/useCompactLayout';
+import { MoreInfo } from '../../../shared/ui/MoreInfo';
+import { FirstSteps } from './FirstSteps';
+import type { AreaLinks } from './FirstSteps';
 
 type Props = {
   scope: CatalogScope;
@@ -56,6 +60,8 @@ type Props = {
   // V1: qual parte aparece. Sem o parâmetro, as duas (como antes). A outra continua montada, só oculta,
   // para não perder o que foi digitado ao trocar de área.
   area?: 'validade' | 'receber';
+  // V4 (D1): links para as áreas no passo a passo da unidade vazia.
+  areaLinks?: AreaLinks;
 };
 type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 // key: consulta a que a página pertence; página de outra consulta conta como carregando.
@@ -87,7 +93,9 @@ function BatchContents({
   handling,
   locations,
   area,
+  areaLinks,
 }: Props) {
+  const compact = useCompactLayout();
   const showValidade = area === undefined || area === 'validade';
   const showReceber = area === undefined || area === 'receber';
   const [catalogData, setCatalogData] = useState<Catalog | null>(null);
@@ -109,6 +117,8 @@ function BatchContents({
   const [movementId, setMovementId] = useState<string | null>(null);
   const [handlingId, setHandlingId] = useState<string | null>(null);
   const [moveId, setMoveId] = useState<string | null>(null);
+  // V4 (M10): depois de mudar de local, o formulário fecha e a confirmação fica no cartão.
+  const [movedId, setMovedId] = useState<string | null>(null);
   const [placed, setPlaced] = useState<Map<string, CurrentLocation>>(new Map());
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -511,6 +521,7 @@ function BatchContents({
           </p>
           <button
             type="button"
+            className="secondary"
             disabled={busy}
             onClick={() => {
               setBusy(true);
@@ -565,7 +576,11 @@ function BatchContents({
       )}
       {notice && <p role="status">{notice}</p>}
       {!ready && !error && <p>Carregando recebimentos…</p>}
-      {!ready && error && <button onClick={reload}>Tentar novamente</button>}
+      {!ready && error && (
+        <button className="secondary" onClick={reload}>
+          Tentar novamente
+        </button>
+      )}
       {ready && !referenceDate && (
         <p role="alert">
           Não foi possível interpretar o fuso do estabelecimento. Atualize o
@@ -643,13 +658,24 @@ function BatchContents({
             {!shown ? (
               <p>Carregando recipientes…</p>
             ) : shown.rows.length === 0 ? (
-              <p>
-                {query.trim()
-                  ? 'Nenhum recipiente corresponde à busca.'
-                  : includeDepleted
-                    ? 'Nenhum recebimento registrado.'
-                    : 'Nenhum recipiente com saldo.'}
-              </p>
+              <>
+                <p>
+                  {query.trim()
+                    ? 'Nenhum recipiente corresponde à busca.'
+                    : includeDepleted
+                      ? 'Nenhum recebimento registrado.'
+                      : 'Nenhum recipiente com saldo.'}
+                </p>
+                {!query.trim() && (
+                  <FirstSteps
+                    owner={canCreate}
+                    hasProducts={catalogData.products.length > 0}
+                    hasSuppliers={catalogData.suppliers.length > 0}
+                    hasLocations={!!locations}
+                    links={areaLinks}
+                  />
+                )}
+              </>
             ) : (
               <>
                 <ul
@@ -758,54 +784,109 @@ function BatchContents({
                             <em>Manipulação indisponível: validade passou.</em>
                           </p>
                         )}
-                        <div className="card-actions">
-                          {labels && (
+                        {movedId === row.container_id && (
+                          <p
+                            className="card-status"
+                            role="status"
+                            tabIndex={-1}
+                            ref={(node) => node?.focus()}
+                          >
+                            Local registrado.
+                          </p>
+                        )}
+                        {(() => {
+                          // V4 (M1 e item 7): "Abrir / porcionar" é a ação principal do cartão; as demais
+                          // são secundárias. No celular, "Ver ficha" e a principal ficam à vista e o resto vai
+                          // para "Mais ações". Sem ação principal (vencido, bloqueado, esgotado ou
+                          // colaborador), "Ver movimentações" fica à vista, porque é por ela que se descarta.
+                          const canHandle =
+                            canCreate &&
+                            !!handling &&
+                            !depleted &&
+                            !isBlocked &&
+                            !expired;
+                          const ficha = labels ? (
                             <button
+                              key="ficha"
                               type="button"
+                              className="secondary"
                               data-ficha-for={row.container_id}
                               onClick={() => openFicha(row.container_id)}
                             >
                               Ver ficha
                             </button>
-                          )}
-                          {movements && row.kind === 'integral' && (
-                            <button
-                              type="button"
-                              className="secondary"
-                              onClick={() => setMovementId(row.container_id)}
-                            >
-                              Ver movimentações
-                            </button>
-                          )}
-                          {canCreate &&
-                            handling &&
-                            !depleted &&
-                            !isBlocked &&
-                            !expired && (
+                          ) : null;
+                          const history =
+                            movements && row.kind === 'integral' ? (
                               <button
+                                key="history"
                                 type="button"
                                 className="secondary"
-                                onClick={() => setHandlingId(row.container_id)}
+                                onClick={() => setMovementId(row.container_id)}
                               >
-                                {row.source_code === null
-                                  ? 'Porcionar'
-                                  : 'Abrir / porcionar'}
+                                Ver movimentações
                               </button>
-                            )}
-                          {canCreate &&
+                            ) : null;
+                          const main = canHandle ? (
+                            <button
+                              key="handle"
+                              type="button"
+                              onClick={() => setHandlingId(row.container_id)}
+                            >
+                              {row.source_code === null
+                                ? 'Porcionar'
+                                : 'Abrir / porcionar'}
+                            </button>
+                          ) : null;
+                          const move =
+                            canCreate &&
                             locations &&
                             handling &&
                             !depleted &&
-                            !isBlocked && (
+                            !isBlocked ? (
                               <button
+                                key="move"
                                 type="button"
                                 className="secondary"
-                                onClick={() => setMoveId(row.container_id)}
+                                onClick={() => {
+                                  setMovedId(null);
+                                  setMoveId(row.container_id);
+                                }}
                               >
                                 Mudar de local
                               </button>
-                            )}
-                        </div>
+                            ) : null;
+                          const inline = compact
+                            ? main
+                              ? [ficha, main]
+                              : [ficha, history]
+                            : [ficha, history, main, move];
+                          const extra = compact
+                            ? main
+                              ? [history, move]
+                              : [move]
+                            : [];
+                          const hidden = extra.filter(Boolean);
+                          return (
+                            <div className="card-actions">
+                              {inline.filter(Boolean)}
+                              {hidden.length > 0 && (
+                                <details className="more-actions">
+                                  <summary>
+                                    Mais ações
+                                    <span className="visually-hidden">
+                                      {' '}
+                                      do recipiente {row.short_code}
+                                    </span>
+                                  </summary>
+                                  <div className="more-actions-list">
+                                    {hidden}
+                                  </div>
+                                </details>
+                              )}
+                            </div>
+                          );
+                        })()}
                         {locations &&
                           handling &&
                           moveId === row.container_id && (
@@ -820,7 +901,11 @@ function BatchContents({
                                 handling.setDisplayName(target, id, name)
                               }
                               current={placed.get(row.container_id)}
-                              onMoved={() => loadPlaces()}
+                              onMoved={() => {
+                                loadPlaces();
+                                setMoveId(null);
+                                setMovedId(row.container_id);
+                              }}
                               onClose={() => setMoveId(null)}
                             />
                           )}
@@ -878,6 +963,7 @@ function BatchContents({
                 {shown.next && (
                   <button
                     type="button"
+                    className="secondary"
                     disabled={loadingMore}
                     onClick={loadMore}
                   >
@@ -888,11 +974,10 @@ function BatchContents({
               </>
             )}
             {/* V3: a explicação da ordem e da data de referência fica logo abaixo da lista (texto preservado). */}
+            {/* V4 (M11): a data de referência e o fuso definem como os selos de validade são calculados,
+                então ficam sempre à vista (texto da V3, sem mudança). Só a explicação da ordem da lista vai
+                para "Saiba mais" (texto preservado, só recolhido). */}
             <div className="expiry-notes">
-              <p>
-                Recipientes com saldo, do vencimento mais próximo para o mais
-                distante. Recipientes esgotados não entram nas contagens.
-              </p>
               <p className="expiry-reference">
                 Data de referência: {formatCivilDate(referenceDate)}. Fuso:{' '}
                 {timezoneLabel(timezone, now)}. Referência: relógio deste
@@ -909,6 +994,12 @@ function BatchContents({
                   </>
                 )}
               </p>
+              <MoreInfo summary="Saiba mais sobre a ordem da lista">
+                <p>
+                  Recipientes com saldo, do vencimento mais próximo para o mais
+                  distante. Recipientes esgotados não entram nas contagens.
+                </p>
+              </MoreInfo>
             </div>
             {/* V3: no celular a lista vem primeiro; o painel completo de bloqueios fica logo depois,
                 com aviso e atalho no alto do painel de validade. */}

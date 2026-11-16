@@ -126,7 +126,11 @@ export function RecordTemperature({
           />
         </label>{' '}
         <button type="submit">Registrar temperatura medida</button>{' '}
-        <button type="button" onClick={() => setOpen(false)}>
+        <button
+          className="secondary"
+          type="button"
+          onClick={() => setOpen(false)}
+        >
           Cancelar
         </button>
         {error && <p role="alert">{error}</p>}

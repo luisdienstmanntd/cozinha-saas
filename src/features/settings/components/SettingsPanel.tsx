@@ -119,6 +119,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
         <h3>Configurações da unidade</h3>
         <p role="alert">{loadError}</p>
         <button
+          className="secondary"
           type="button"
           onClick={() => {
             setLoadError('');
@@ -299,6 +300,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
           {error && <p role="alert">{error}</p>}
           <button type="submit">Revisar configurações</button>{' '}
           <button
+            className="secondary"
             type="button"
             onClick={() => {
               setStage('view');
@@ -332,6 +334,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
             Confirmar configurações
           </button>{' '}
           <button
+            className="secondary"
             type="button"
             disabled={busy}
             onClick={() => setStage('form')}

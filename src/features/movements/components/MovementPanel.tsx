@@ -16,6 +16,7 @@ import { EXPIRED_NOTE, EXPIRED_TEXT } from '../../batches/domain/expiryStatus';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import type { BlockStatus } from '../../occurrences/domain/occurrence';
 import { formatDateTime } from '../../../shared/format/dates';
+import { MoreInfo } from '../../../shared/ui/MoreInfo';
 
 // V3 (M4): quem registrou aparece pelo nome de exibição da organização. Sem nome (pessoa sem nome
 // de exibição ou sem acesso atual), mostra um texto neutro; os identificadores ficam recolhidos.
@@ -334,10 +335,14 @@ export function MovementPanel({
         </p>
       )}
       {notice && <p role="status">{notice}</p>}
-      <p>
-        Confira a operação antes de confirmar. Se fechar a aba após uma falha,
-        confira o histórico antes de registrar novamente.
-      </p>
+      {/* V4 (M11): orientação geral recolhida. Saldo após a operação, avisos de anulação, bloqueio e
+          vencido continuam sempre visíveis. */}
+      <MoreInfo>
+        <p>
+          Confira a operação antes de confirmar. Se fechar a aba após uma falha,
+          confira o histórico antes de registrar novamente.
+        </p>
+      </MoreInfo>
       {error && <p role="alert">{error}</p>}
       {!events && !error && <p>Consultando histórico…</p>}
       {stored.invalid && (
@@ -347,7 +352,11 @@ export function MovementPanel({
         </p>
       )}
       {!events && error && !rejected && (
-        <button disabled={busy} onClick={() => void refreshHistory()}>
+        <button
+          className="secondary"
+          disabled={busy}
+          onClick={() => void refreshHistory()}
+        >
           Tentar consultar histórico novamente
         </button>
       )}
@@ -404,6 +413,7 @@ export function MovementPanel({
                   !item.handlingId &&
                   !events.some((event) => event.reverses_id === item.id) && (
                     <button
+                      className="risk"
                       disabled={busy}
                       type="button"
                       onClick={() => setReversing(item)}
@@ -445,7 +455,11 @@ export function MovementPanel({
               </p>
             ))}
           {pending.kind === 'reversal' && events && !original && !rejected && (
-            <button disabled={busy} onClick={() => void refreshHistory()}>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => void refreshHistory()}
+            >
               Atualizar histórico
             </button>
           )}
@@ -467,6 +481,10 @@ export function MovementPanel({
           )}
           {canCreate && !confirmed && !rejected && (
             <button
+              // V4 (M1): anular registro e descartar alimento são de risco (vermelho cheio).
+              className={
+                pending.kind === 'consumption' ? undefined : 'risk-confirm'
+              }
               disabled={
                 busy || !events || (pending.kind === 'reversal' && !original)
               }
@@ -483,13 +501,21 @@ export function MovementPanel({
             </button>
           )}
           {reviewing && (
-            <button disabled={busy} onClick={clearPending}>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={clearPending}
+            >
               Corrigir antes de enviar
             </button>
           )}
           {rejected && (
             <>
-              <button disabled={busy} onClick={() => void refreshHistory()}>
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() => void refreshHistory()}
+              >
                 Atualizar histórico
               </button>
               {reviewedHistory && (
@@ -500,7 +526,11 @@ export function MovementPanel({
             </>
           )}
           {confirmed && (
-            <button disabled={busy} onClick={clearPending}>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={clearPending}
+            >
               Limpar tentativa confirmada
             </button>
           )}
@@ -514,8 +544,12 @@ export function MovementPanel({
           <label>
             Motivo da anulação <input name="reason" required maxLength={500} />
           </label>
-          <button>Revisar anulação</button>
-          <button type="button" onClick={() => setReversing(null)}>
+          <button className="risk">Revisar anulação</button>
+          <button
+            className="secondary"
+            type="button"
+            onClick={() => setReversing(null)}
+          >
             Voltar
           </button>
         </form>

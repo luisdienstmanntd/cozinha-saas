@@ -323,10 +323,30 @@ it('confirma anulação integral com motivo e preserva o histórico', async () =
     />,
   );
   expect(await screen.findByText('Saldo registrado: 0.5 kg')).toBeVisible();
+  // V4 (M1): anular registro é de risco (contorno vermelho); a confirmação, vermelho cheio.
+  expect(screen.getByRole('button', { name: 'Anular registro' })).toHaveClass(
+    'risk',
+  );
   await user.click(screen.getByRole('button', { name: 'Anular registro' }));
   await user.type(screen.getByLabelText('Motivo da anulação'), 'erro');
+  expect(screen.getByRole('button', { name: 'Revisar anulação' })).toHaveClass(
+    'risk',
+  );
+  expect(screen.getByRole('button', { name: 'Voltar' })).toHaveClass(
+    'secondary',
+  );
   await user.click(screen.getByRole('button', { name: 'Revisar anulação' }));
   expect(screen.getByText(/não recupera alimento/i)).toBeVisible();
+  // V4 (M11): o aviso da anulação e o saldo depois dela nunca ficam em "Saiba mais".
+  expect(
+    screen.getByText(/não recupera alimento/i).closest('details'),
+  ).toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'Confirmar anulação' }),
+  ).toHaveClass('risk-confirm');
+  expect(
+    screen.getByRole('button', { name: 'Corrigir antes de enviar' }),
+  ).toHaveClass('secondary');
   expect(screen.getByText(/Registro original: Descarte/)).toHaveTextContent(
     '12345678',
   );

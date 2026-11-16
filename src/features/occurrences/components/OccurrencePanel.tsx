@@ -106,8 +106,14 @@ function DecisionForm({
             />
           </label>
         </p>
-        <button type="submit">Confirmar decisão</button>{' '}
-        <button type="button" onClick={onCancel}>
+        {/* V4 (M1): rejeitar tira o item de circulação, então a confirmação fica no estilo de risco. */}
+        <button
+          type="submit"
+          className={decision === 'rejected' ? 'risk-confirm' : undefined}
+        >
+          Confirmar decisão
+        </button>{' '}
+        <button className="secondary" type="button" onClick={onCancel}>
           Cancelar
         </button>
         {error && <p role="alert">{error}</p>}
