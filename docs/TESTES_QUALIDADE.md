@@ -33,3 +33,18 @@
 - Falhas em lint, TypeScript, unitário, build ou RLS atingida bloqueiam avanço.
 - Registrar comandos e resultado exato ao final de cada fase; `SKIP` não é `PASS`.
 - Não usar banco/produtos/usuários reais em testes automatizados.
+
+## Teste pgTAP dependente do horário corrigido (16/11/2026)
+
+luis aprovou, em 16/11/2026, corrigir em tarefa separada o teste 69 de `container_handling.test.sql`, que falhava quando executado entre 00:00 e 00:10 no horário de São Paulo, com a mesma condição da correção anterior: determinístico **sem reduzir o rigor, remover verificações ou alterar regra de negócio**. Nenhuma migração, função ou regra do produto foi tocada.
+
+### `container_handling.test.sql`, teste 69 ("origem vencida na data da manipulação recusada")
+
+- **Sintoma:** a CI do PR #34 falhou às 03:06 UTC de 16/11/2026 (00:06 em São Paulo). O banco recusou a manipulação, mas com a mensagem "A validade após abertura não pode passar da validade do recipiente de origem." em vez de "Recipiente de origem vencido na data da manipulação; manipular não recupera validade.".
+- **Causa:** o recipiente de origem do teste vence ontem no fuso da unidade (`(now() at time zone 'America/Sao_Paulo')::date - 1`), mas a manipulação usava o horário padrão do auxiliar `pg_temp.h`, `now() - interval '10 minutes'`. O banco confere a validade da origem contra o **dia da manipulação** no fuso da unidade. Entre 00:00 e 00:10, "10 minutos antes" cai no dia anterior, que é a própria validade da origem; naquele dia a origem ainda não estava vencida, e a recusa vinha da regra seguinte (validade pedida posterior à da origem). Fora dessa janela o teste passava.
+- **Solução:** o teste 69 passa `p_handled_at => now()`, o instante do registro, que está sempre no dia de hoje do fuso da unidade, depois do recebimento da origem e dentro da janela de 2 horas. A origem fica, a qualquer hora, vencida desde o dia anterior ao da manipulação.
+- **Rigor mantido:** o teste confere a mesma regra, com o mesmo código (`22023`) e a mesma mensagem exata, e continua recusando pela regra de origem vencida, que é a primeira das verificações de validade. A contagem de testes do arquivo (148) não mudou. Nenhum outro teste do arquivo depende do horário padrão perto da meia-noite: os demais usam validades com folga de vários dias ou comparam com o dia de hoje no fuso da unidade.
+
+### Como conferir
+
+Além de `npx supabase test db`, a falha pode ser reproduzida a qualquer hora trocando, numa cópia do arquivo, `America/Sao_Paulo` por um fuso real cuja hora local esteja entre 00:01 e 00:08 e executando a cópia com `psql` no contêiner do banco. A versão anterior falha no teste 69; a corrigida passa nos 148.
