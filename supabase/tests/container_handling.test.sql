@@ -239,7 +239,10 @@ select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-00
   '22023','A validade após abertura não pode passar da validade do recipiente de origem.','congelar não prorroga validade (Q2)');
 select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000001'),'opening','{1}',(now() at time zone 'America/Sao_Paulo')::date-1,'sealed','e7000000-0000-4000-8000-000000000402')$$,
   '22023','A validade após abertura não pode ser anterior à data da manipulação nem à do registro.','validade anterior ao registro recusada');
-select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000005'),'opening','{1}',(now() at time zone 'America/Sao_Paulo')::date,'sealed','e7000000-0000-4000-8000-000000000402')$$,
+-- Manipulação no instante do registro (now()), não no padrão de 10 minutos antes: entre 00:00 e 00:10 em
+-- São Paulo, "10 minutos antes" cai no dia anterior, que é a própria validade da origem; a origem ainda não
+-- estava vencida naquele dia, e o banco recusava pela regra seguinte (validade posterior à da origem).
+select throws_ok($$select pg_temp.h(pg_temp.integral('e6000000-0000-4000-8000-000000000005'),'opening','{1}',(now() at time zone 'America/Sao_Paulo')::date,'sealed','e7000000-0000-4000-8000-000000000402',p_handled_at=>now())$$,
   '22023','Recipiente de origem vencido na data da manipulação; manipular não recupera validade.','origem vencida na data da manipulação recusada');
 
 -- Teste 6: horário ----------------------------------------------------------

@@ -54,5 +54,6 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 | V2 — sessão persistente com inatividade de 30 min (D-059 aceita) | Claude Code; aceita por luis em 16/11/2026, CI verde (PR #32 em rascunho sobre a branch do PR #31) | `ia-tarefas/v2-sessao-persistente.md` | V1 autorizada; sem merge sem pedido. |
 | V1 — navegação por áreas (D-060 aceita) | Claude Code; aceita por luis em 16/11/2026, CI verde (PR #33 em rascunho sobre a branch do PR #32) | `ia-tarefas/v1-navegacao.md` | V3 autorizada em outra thread; V4 e V5 só com aprovação própria; sem merge sem pedido. |
 | V3 — lista de validade legível (D-061 proposta) | Claude Code; PR em rascunho sobre a branch do PR #33, aceite de luis pendente | `ia-tarefas/v3-lista-validade.md` | V4 e V5 só com aprovação própria; sem merge sem pedido. |
+| Correção do teste pgTAP dependente do horário (`container_handling`, teste 69) | Claude Code; aguardando aceite (PR em rascunho sobre a `main`, sem merge) | `ia-tarefas/corrige-teste-manipulacao-meia-noite.md` | Revisão de luis; sem merge sem pedido de luis. |
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
