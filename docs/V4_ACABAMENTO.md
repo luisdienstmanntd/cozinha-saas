@@ -132,7 +132,7 @@ Capturas em `/mnt/project-files/capturas-v4-acabamento/` (fora do repositório),
 
 Sem rolagem horizontal em nenhuma das oito combinações. Ajustes feitos durante a revisão: o rótulo com caixa deixou de empurrar "Atualizar recebimentos" para outra linha no celular; opções de rádio lado a lado ganharam espaço entre si; "Saiba mais" voltou a mostrar a seta; "Mais ações" ganhou seta de aberto/fechado.
 
-Ganho na primeira tela do celular: o título geral sai da tela e o botão Sair fica em contorno, o que sobe a lista em cerca de 80 px (CSS); o primeiro cartão continua aparecendo na primeira tela, e com "Mais ações" o cartão de ação fica com duas ações à vista.
+Ganho na primeira tela do celular: o título geral sai da tela e o botão Sair fica em contorno, o que sobe o primeiro cartão de 554 px para 500 px do alto da tela (medido no celular emulado, proprietário); o primeiro cartão continua aparecendo na primeira tela, e com "Mais ações" o cartão de ação fica com duas ações à vista.
 
 ## Limitações e pendências
 
