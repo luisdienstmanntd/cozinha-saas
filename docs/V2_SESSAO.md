@@ -1,6 +1,6 @@
 # V2 — Sessão persistente com inatividade de 30 minutos (D-025, D-059)
 
-Fatia V2 da [revisão visual](REVISAO_VISUAL_FASE_07.md), problema B2: a sessão caía a cada recarga e o QR sempre pedia login. Definições de luis em 16/11/2026. **Status: proposta, aceite de luis pendente. Sem merge nem deploy.**
+Fatia V2 da [revisão visual](REVISAO_VISUAL_FASE_07.md), problema B2: a sessão caía a cada recarga e o QR sempre pedia login. Definições de luis em 16/11/2026. **Status: ACEITA por luis em 16/11/2026 (D-059), condicionada à CI verde do PR #32, que foi confirmada. Sem merge nem deploy.**
 
 ## O que muda para quem usa
 
@@ -50,6 +50,20 @@ Verificado:
 - **Atividade não é forjável por terceiros.** A tabela é privada; a função só atualiza a sessão do próprio usuário. Requisições automáticas de fundo não contam como atividade: só toque, tecla ou rolagem.
 - **Segredo.** Nenhuma chave nova. A chave publicável continua pública; o `service_role` nunca vai ao navegador.
 - **Advisors de segurança** do Supabase: sem achados.
+
+## Riscos conhecidos (registrados por luis em 16/11/2026)
+
+1. Token armazenado no `localStorage`, com exposição potencial a XSS.
+2. Ausência de PIN em dispositivo compartilhado.
+3. Renovação do token de autenticação não equivale a autorização de acesso a dados: o endpoint de autenticação pode renovar o token de uma sessão parada, mas a API e a RLS continuam recusando.
+4. Falta de validação no Supabase hospedado e em dispositivos físicos.
+
+## Checklist pré-deploy (V2)
+
+- [ ] Revisão de XSS e CSP (cabeçalho `Content-Security-Policy`, ausência de HTML injetado, scripts de terceiros) antes de qualquer publicação.
+- [ ] Verificar no Supabase hospedado a configuração `pgrst.db_pre_request = session_guard.check_request` no papel `authenticator` (e que a requisição de usuário parado recebe 401 `SESSION_EXPIRED`).
+- [ ] Aplicar a migração `20261116000000_session_inactivity.sql` e repetir pgTAP e testes de integração de sessão no ambiente hospedado.
+- [ ] Testar em aparelho físico (iOS e Android), com leitura real do QR.
 
 ## Limitações e riscos que ficam
 

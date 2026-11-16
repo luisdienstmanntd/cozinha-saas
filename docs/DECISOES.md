@@ -452,7 +452,7 @@
 
 ## D-059 — Sessão persistente com inatividade de 30 minutos (16/11/2026)
 
-- **Status:** proposta; definições de luis em 16/11/2026, aceite da fatia pendente ([registro](V2_SESSAO.md)). Detalha a D-025.
+- **Status:** ACEITA por luis em 16/11/2026, condicionada à CI verde do PR #32 (confirmada) ([registro](V2_SESSAO.md)). Detalha a D-025. Riscos conhecidos e checklist pré-deploy em `V2_SESSAO.md`.
 - **Decisão:** a sessão fica guardada no navegador (recarregar e abrir o QR não pedem login) e expira com 30 minutos sem uso. O limite vale no banco: toda requisição de usuário passa por `session_guard.check_request`, e as políticas RLS e as funções de escrita só valem com sessão ativa. Sair apaga a sessão no servidor.
 - **Motivo:** B2 da revisão visual (sessão caía a cada recarga; cada leitura de etiqueta exigiria e-mail e senha) e D-025.
 - **Consequência:** nova migração (`20261116000000_session_inactivity.sql`) que muda `has_membership` e `member_organizations`; reversão em `supabase/rollback/session_inactivity.sql`. Aparelho compartilhado: cada pessoa usa a própria conta; não há PIN nem troca rápida.
