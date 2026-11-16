@@ -133,3 +133,22 @@ luis aprovou os seis pontos acima e considerou a V3 funcionalmente aceita, com o
 - **Teste dependente da meia-noite:** a causa está documentada em `TESTES_QUALIDADE.md` ("Teste pgTAP dependente do horário corrigido"). O commit do PR #35 foi levado para esta branch (cherry-pick, só o teste e a documentação), então a bateria e a CI da V3 já rodam com o teste corrigido. A correção muda apenas o horário da manipulação naquele `throws_ok` (`p_handled_at => now()`); a regra, o código de erro e a mensagem esperada são os mesmos. Nenhuma regra de negócio mudou.
 - **Backlog:** filtros de validade por categoria, acionados pelos contadores, no servidor, respeitando paginação e autorização (`BACKLOG.md`).
 - **Próximo passo:** após a CI verde, proposta da V4 (acabamento visual), sem implementação até aprovação de luis. Sem merge nem deploy.
+
+## Encerramento técnico (16/11/2026)
+
+luis autorizou, às 12:53 UTC, incorporar **só** a correção do PR #35 nesta branch. Resultado no commit `997a550`:
+
+| Verificação                                | Resultado                |
+| ------------------------------------------ | ------------------------ |
+| format, lint, typecheck, build             | verdes                   |
+| Vitest                                     | 361 verdes               |
+| pgTAP                                      | 27 arquivos, 1433 verdes |
+| Integração                                 | 49 verdes                |
+| E2E (Playwright)                           | 30 verdes                |
+| CI do PR #34 (`quality` e `banco-api-e2e`) | verde                    |
+
+**Nenhuma regra mudou.** Diferença desta branch para a base (V1) em `supabase/`, `scripts/` e nas camadas `domain`, `data` e `application`: só o teste 69 (`p_handled_at => now()`) e funções novas de formatação em `expiryStatus.ts` (só acréscimos: `daysUntil` e texto do selo). Nenhuma migração, política RLS, função do banco, regra sanitária, de validade, de estoque ou de segurança.
+
+**Reprodução da falha perto da meia-noite (verificação adicional):** às 13:01 UTC, cópias do arquivo com `America/Sao_Paulo` trocado por `Pacific/Noumea` (00:01 local) rodaram com `psql` no contêiner do banco. A versão anterior (`cd7d237`) falhou no teste 69 ("not ok 69", 1 de 148). A versão corrigida passou em todos os 148. Procedimento em `TESTES_QUALIDADE.md` ("Teste pgTAP dependente do horário corrigido").
+
+Com a CI verde, a V3 fica tecnicamente encerrada. A proposta da V4 está em `V4_PROPOSTA.md` (PR #36), sem implementação.
