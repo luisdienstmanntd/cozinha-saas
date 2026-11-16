@@ -279,7 +279,7 @@ it('derivado mostra origem, validade efetiva e gera a etiqueta de produto aberto
     />,
   );
   expect(
-    await screen.findByText(/validade 2026-12-01 \(após manipulação\)/),
+    await screen.findByText(/validade 01\/12\/2026 \(após manipulação\)/),
   ).toBeVisible();
   expect(
     screen.getByRole('button', { name: 'Gerar etiqueta PDF' }),

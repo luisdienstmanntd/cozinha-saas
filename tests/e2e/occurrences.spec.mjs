@@ -89,12 +89,12 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
       'Motivo registrado: Termômetro sem pilha',
     );
     const rows = page.getByRole('list', { name: 'Recipientes e validade' });
-    await expect(rows.getByText(/lote F-29/)).toContainText(
-      'BLOQUEADO - aguardando decisão',
-    );
+    await expect(
+      rows.getByRole('listitem').filter({ hasText: 'lote F-29' }),
+    ).toContainText('BLOQUEADO - aguardando decisão');
 
     // Etiqueta com faixa.
-    await page.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await page.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     await expect(
       label.getByText('BLOQUEADO - aguardando decisão'),
@@ -102,6 +102,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     const blockedPdf = await labelPdf(page, testInfo, 'bloqueada.pdf');
     expect(blockedPdf.subarray(0, 5).toString()).toBe('%PDF-');
     expect(blockedPdf.includes(Buffer.from('(BLOQUEADO)'))).toBe(true);
+    await page.getByRole('button', { name: '← Voltar para a lista' }).click();
 
     // Baixa recusada na tela, com a mensagem do banco.
     await page.getByRole('button', { name: 'Ver movimentações' }).click();
@@ -152,8 +153,10 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
       page.getByText('Decisão registrada: Frango de teste liberado.'),
     ).toBeVisible();
     await expect(blocks).toContainText('Nenhum recipiente bloqueado.');
-    await expect(rows.getByText(/lote F-29/)).not.toContainText('BLOQUEADO');
-    await page.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await expect(
+      rows.getByRole('listitem').filter({ hasText: 'lote F-29' }),
+    ).not.toContainText('BLOQUEADO');
+    await page.getByRole('button', { name: 'Ver ficha' }).click();
     await expect(
       label.getByRole('button', { name: 'Gerar etiqueta PDF' }),
     ).toBeVisible();
@@ -163,6 +166,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     const releasedPdf = await labelPdf(page, testInfo, 'liberada.pdf');
     expect(releasedPdf.includes(Buffer.from('BLOQUEADO'))).toBe(false);
     expect(releasedPdf.includes(Buffer.from('Frango de teste'))).toBe(true);
+    await page.getByRole('button', { name: '← Voltar para a lista' }).click();
 
     // Consumo agora passa: a tentativa recusada ficou pendente na sessão e é repetida (mesmo
     // identificador, sem duplicar).

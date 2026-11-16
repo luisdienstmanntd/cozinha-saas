@@ -11,9 +11,15 @@ import type { LabelGateway } from '../../labels/application/labelGateway';
 import { LabelView } from '../../labels/components/LabelView';
 import {
   EXPIRED_TEXT,
+  expiryBadgeText,
   getExpiryStatus,
   localCivilDate,
 } from '../domain/expiryStatus';
+import {
+  formatCivilDate,
+  formatDateTime,
+  timezoneLabel,
+} from '../../../shared/format/dates';
 import type { MovementGateway } from '../../movements/application/movementGateway';
 import { MovementPanel } from '../../movements/components/MovementPanel';
 import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
@@ -56,11 +62,13 @@ type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 type Listing = ContainerPage & { fetchedAt: Date; key: string };
 const LOAD_ERROR =
   'Não foi possível carregar todos os recebimentos. Confira o acesso e tente novamente.';
-const statusLabels = {
-  overdue: 'Vencido',
-  today: 'Vence hoje',
-  tomorrow: 'Vence amanhã',
-  upcoming: 'Posterior',
+// V3 (B4): o selo usa cor e símbolo, mas o texto sempre diz o status (não depende só da cor).
+const badgeSymbols = {
+  overdue: '⛔',
+  today: '⚠',
+  tomorrow: '●',
+  upcoming: '✓',
+  depleted: '○',
 } as const;
 
 function BatchContents({
@@ -94,7 +102,10 @@ function BatchContents({
   const [origin, setOrigin] = useState('original');
   const [conflictReviewed, setConflictReviewed] = useState(false);
   const [reviewError, setReviewError] = useState('');
+  // V3 (M6): ficha do recipiente aberta a partir do cartão. A lista fica oculta (não desmontada), e
+  // "Voltar para a lista" devolve o foco ao cartão de onde a pessoa saiu.
   const [labelId, setLabelId] = useState<string | null>(null);
+  const [labelFrom, setLabelFrom] = useState<string | null>(null);
   const [movementId, setMovementId] = useState<string | null>(null);
   const [handlingId, setHandlingId] = useState<string | null>(null);
   const [moveId, setMoveId] = useState<string | null>(null);
@@ -282,6 +293,22 @@ function BatchContents({
     setNow(new Date());
     setAttempt((value) => value + 1);
   }
+  function openFicha(containerId: string) {
+    setLabelFrom(containerId);
+    setLabelId(containerId);
+    window.scrollTo?.({ top: 0 });
+  }
+  function closeFicha() {
+    const from = labelFrom;
+    setLabelId(null);
+    setLabelFrom(null);
+    if (from)
+      window.setTimeout(() =>
+        document
+          .querySelector<HTMLElement>(`[data-ficha-for="${from}"]`)
+          ?.focus(),
+      );
+  }
   function loadMore() {
     if (!listing?.next || listing.key !== listKey || loadingMore) return;
     const version = listVersion.current;
@@ -459,15 +486,20 @@ function BatchContents({
       {showReceber && <h3>Recebimentos de lote</h3>}
       <div hidden={!showValidade}>
         {labelId && labels && (
-          <LabelView
-            key={labelId}
-            id={labelId}
-            gateway={labels}
-            handling={handling}
-            canHandle={() => canCreate}
-            userId={userId}
-            onOpenContainer={setLabelId}
-          />
+          <div className="container-ficha">
+            <button type="button" className="secondary" onClick={closeFicha}>
+              ← Voltar para a lista
+            </button>
+            <LabelView
+              key={labelId}
+              id={labelId}
+              gateway={labels}
+              handling={handling}
+              canHandle={() => canCreate}
+              userId={userId}
+              onOpenContainer={setLabelId}
+            />
+          </div>
         )}
       </div>
       {error && <p role="alert">{error}</p>}
@@ -542,9 +574,346 @@ function BatchContents({
       )}
       {ready && catalogData && referenceDate && summary && (
         <>
-          <div hidden={!showValidade}>
-            {occurrences && occurrenceRows && (
+          <div hidden={!showValidade || (!!labelId && !!labels)}>
+            <section aria-label="Painel de validade" className="expiry-panel">
+              <h4>Validade</h4>
+              {occurrenceRows && occurrenceRows.length > 0 && (
+                <p className="blocked-band blocks-notice">
+                  <strong>
+                    {occurrenceRows.length === 1
+                      ? '1 ocorrência aberta'
+                      : `${occurrenceRows.length} ocorrências abertas`}
+                  </strong>{' '}
+                  com recipiente bloqueado.{' '}
+                  <a href="#bloqueios">Ver bloqueios e ocorrências</a>
+                </p>
+              )}
+              <div
+                role="group"
+                aria-label="Resumo de validade"
+                className="expiry-summary"
+              >
+                <p className="tile tone-overdue">
+                  <span className="tile-label">Vencidos:</span>{' '}
+                  <strong className="tile-count">{summary.overdue}</strong>
+                </p>{' '}
+                <p className="tile tone-today">
+                  <span className="tile-label">Vence hoje:</span>{' '}
+                  <strong className="tile-count">{summary.due_today}</strong>
+                </p>{' '}
+                <p className="tile tone-tomorrow">
+                  <span className="tile-label">Vence amanhã:</span>{' '}
+                  <strong className="tile-count">{summary.due_tomorrow}</strong>
+                </p>{' '}
+                <p className="tile tone-upcoming">
+                  <span className="tile-label">Posteriores:</span>{' '}
+                  <strong className="tile-count">{summary.later}</strong>
+                </p>{' '}
+              </div>
+              <div className="expiry-tools">
+                <label className="expiry-search">
+                  Buscar por produto, lote, código ou ID do recipiente{' '}
+                  <input
+                    type="search"
+                    aria-label="Buscar por produto, lote, código ou ID do recipiente"
+                    value={search}
+                    maxLength={120}
+                    onChange={(event) => {
+                      setMoreError('');
+                      setSearch(event.target.value);
+                    }}
+                  />
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={includeDepleted}
+                    onChange={(event) => {
+                      setMoreError('');
+                      setIncludeDepleted(event.target.checked);
+                    }}
+                  />{' '}
+                  Mostrar esgotados
+                </label>
+                <button type="button" className="secondary" onClick={reload}>
+                  Atualizar recebimentos
+                </button>
+              </div>
+            </section>
+            {!shown ? (
+              <p>Carregando recipientes…</p>
+            ) : shown.rows.length === 0 ? (
+              <p>
+                {query.trim()
+                  ? 'Nenhum recipiente corresponde à busca.'
+                  : includeDepleted
+                    ? 'Nenhum recebimento registrado.'
+                    : 'Nenhum recipiente com saldo.'}
+              </p>
+            ) : (
               <>
+                <ul
+                  aria-label="Recipientes e validade"
+                  className="container-cards"
+                >
+                  {shown.rows.map((row) => {
+                    const depleted = row.balance <= 0;
+                    const status = getExpiryStatus(
+                      row.expiry_date,
+                      timezone,
+                      now,
+                    );
+                    // Fatia 6.11: vencido com saldo. O banco recusa o consumo e a manipulação; só o descarte passa.
+                    const expired = !depleted && status === 'overdue';
+                    const tone = depleted ? 'depleted' : status;
+                    const isBlocked = blocked.has(row.container_id);
+                    const place = depleted
+                      ? undefined
+                      : placed.get(row.container_id);
+                    const titleId = `cartao-${row.container_id}`;
+                    return (
+                      <li
+                        key={row.container_id}
+                        className={`container-card tone-${tone}`}
+                        aria-labelledby={titleId}
+                      >
+                        <div className="card-head">
+                          <p className="card-title" id={titleId}>
+                            <strong className="card-product">
+                              {row.product_name}
+                            </strong>{' '}
+                            <span className="card-code">{row.short_code}</span>
+                            {row.kind === 'derived' && (
+                              <span className="card-tag"> (derivado)</span>
+                            )}{' '}
+                            <span className="card-lot">
+                              · {lotText(row.source_code)}
+                            </span>
+                          </p>{' '}
+                          <span className={`expiry-badge tone-${tone}`}>
+                            <span aria-hidden="true">{badgeSymbols[tone]}</span>{' '}
+                            {depleted
+                              ? 'Esgotado'
+                              : expiryBadgeText(row.expiry_date, timezone, now)}
+                          </span>
+                        </div>{' '}
+                        <dl className="card-facts">
+                          <div className="fact-expiry">
+                            <dt>Validade</dt>{' '}
+                            <dd>
+                              <strong>
+                                {formatCivilDate(row.expiry_date)}
+                              </strong>{' '}
+                              <span className="fact-note">
+                                (
+                                {row.expiry_origin === 'handling'
+                                  ? 'após manipulação'
+                                  : row.batch_expiry_origin === 'original'
+                                    ? 'original'
+                                    : 'definida pelo responsável'}
+                                )
+                              </span>
+                            </dd>
+                          </div>{' '}
+                          <div className="fact-balance">
+                            <dt>Saldo</dt>{' '}
+                            <dd>
+                              <strong>
+                                {row.balance} {row.unit}
+                              </strong>{' '}
+                              de {row.initial_quantity} {row.unit}
+                            </dd>
+                          </div>
+                          {place && (
+                            <>
+                              {' '}
+                              <div>
+                                <dt>Local</dt> <dd>{place.location_name}</dd>
+                              </div>
+                            </>
+                          )}
+                        </dl>{' '}
+                        {expired && (
+                          <p className="expired-band card-band">
+                            <strong>{EXPIRED_TEXT}</strong>
+                          </p>
+                        )}
+                        {isBlocked && (
+                          <p className="blocked-band card-band">
+                            <strong>
+                              {BLOCK_TEXT[blocked.get(row.container_id)!]}
+                            </strong>
+                          </p>
+                        )}
+                        {canCreate && handling && isBlocked && (
+                          <p className="card-note">
+                            <em>
+                              Manipulação indisponível enquanto o bloqueio
+                              durar.
+                            </em>
+                          </p>
+                        )}
+                        {canCreate && handling && expired && !isBlocked && (
+                          <p className="card-note">
+                            <em>Manipulação indisponível: validade passou.</em>
+                          </p>
+                        )}
+                        <div className="card-actions">
+                          {labels && (
+                            <button
+                              type="button"
+                              data-ficha-for={row.container_id}
+                              onClick={() => openFicha(row.container_id)}
+                            >
+                              Ver ficha
+                            </button>
+                          )}
+                          {movements && row.kind === 'integral' && (
+                            <button
+                              type="button"
+                              className="secondary"
+                              onClick={() => setMovementId(row.container_id)}
+                            >
+                              Ver movimentações
+                            </button>
+                          )}
+                          {canCreate &&
+                            handling &&
+                            !depleted &&
+                            !isBlocked &&
+                            !expired && (
+                              <button
+                                type="button"
+                                className="secondary"
+                                onClick={() => setHandlingId(row.container_id)}
+                              >
+                                {row.source_code === null
+                                  ? 'Porcionar'
+                                  : 'Abrir / porcionar'}
+                              </button>
+                            )}
+                          {canCreate &&
+                            locations &&
+                            handling &&
+                            !depleted &&
+                            !isBlocked && (
+                              <button
+                                type="button"
+                                className="secondary"
+                                onClick={() => setMoveId(row.container_id)}
+                              >
+                                Mudar de local
+                              </button>
+                            )}
+                        </div>
+                        {locations &&
+                          handling &&
+                          moveId === row.container_id && (
+                            <MoveContainer
+                              key={row.container_id}
+                              scope={{ organizationId, establishmentId }}
+                              containerId={row.container_id}
+                              userId={userId}
+                              gateway={locations}
+                              loadMembers={(target) => handling.members(target)}
+                              setDisplayName={(target, id, name) =>
+                                handling.setDisplayName(target, id, name)
+                              }
+                              current={placed.get(row.container_id)}
+                              onMoved={() => loadPlaces()}
+                              onClose={() => setMoveId(null)}
+                            />
+                          )}
+                        {movements &&
+                          row.kind === 'integral' &&
+                          movementId === row.container_id && (
+                            <MovementPanel
+                              key={row.container_id}
+                              scope={{ organizationId, establishmentId }}
+                              userId={userId}
+                              batch={{
+                                id: row.batch_id,
+                                productName: row.product_name,
+                                sourceCode: row.source_code,
+                                quantity: row.initial_quantity,
+                                unit: row.unit,
+                              }}
+                              canCreate={canCreate}
+                              gateway={movements}
+                              loadMembers={handling?.members}
+                              blocked={blocked.get(row.container_id)}
+                              expired={expired}
+                              onRecorded={() => {
+                                refreshRow(row.container_id);
+                                // O descarte pode tirar uma rejeitada da lista de bloqueios.
+                                if (isBlocked && occurrences)
+                                  void occurrences
+                                    .list(
+                                      { organizationId, establishmentId },
+                                      'open',
+                                    )
+                                    .then(setOccurrenceRows, () => fail());
+                              }}
+                            />
+                          )}
+                        {handling && handlingId === row.container_id && (
+                          <HandlingForm
+                            key={row.container_id}
+                            scope={{ organizationId, establishmentId }}
+                            containerId={row.container_id}
+                            userId={userId}
+                            gateway={handling}
+                            labels={labels}
+                            onChanged={() => refreshRow(row.container_id)}
+                            onClose={() => {
+                              setHandlingId(null);
+                              reload();
+                            }}
+                          />
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {shown.next && (
+                  <button
+                    type="button"
+                    disabled={loadingMore}
+                    onClick={loadMore}
+                  >
+                    Carregar mais recipientes
+                  </button>
+                )}
+                {moreError && <p role="alert">{moreError}</p>}
+              </>
+            )}
+            {/* V3: a explicação da ordem e da data de referência fica logo abaixo da lista (texto preservado). */}
+            <div className="expiry-notes">
+              <p>
+                Recipientes com saldo, do vencimento mais próximo para o mais
+                distante. Recipientes esgotados não entram nas contagens.
+              </p>
+              <p className="expiry-reference">
+                Data de referência: {formatCivilDate(referenceDate)}. Fuso:{' '}
+                {timezoneLabel(timezone, now)}. Referência: relógio deste
+                dispositivo. Novos registros podem exigir atualização. Após
+                mudar o fuso da unidade, atualize o acesso.
+                {shown && (
+                  <>
+                    {' '}
+                    Última consulta: {formatDateTime(
+                      shown.fetchedAt,
+                      timezone,
+                    )}{' '}
+                    (relógio deste dispositivo).
+                  </>
+                )}
+              </p>
+            </div>
+            {/* V3: no celular a lista vem primeiro; o painel completo de bloqueios fica logo depois,
+                com aviso e atalho no alto do painel de validade. */}
+            {occurrences && occurrenceRows && (
+              <div id="bloqueios" className="blocks-after-list">
                 <OccurrencePanel
                   rows={occurrenceRows}
                   decided={showDecided ? decidedRows : null}
@@ -569,282 +938,7 @@ function BatchContents({
                   Mostrar todas as ocorrências, inclusive decididas
                 </label>
                 {showDecided && !decidedRows && <p>Carregando ocorrências…</p>}
-              </>
-            )}
-            <section aria-label="Painel de validade">
-              <h4>Validade</h4>
-              <p>
-                Recipientes com saldo, do vencimento mais próximo para o mais
-                distante. Recipientes esgotados não entram nas contagens.
-              </p>
-              <p>
-                Fuso: {timezone}. Data de referência: {referenceDate}.
-                Referência: relógio deste dispositivo. Novos registros podem
-                exigir atualização. Após mudar o fuso da unidade, atualize o
-                acesso.
-              </p>
-              {shown && (
-                <p>
-                  Última consulta: {shown.fetchedAt.toISOString()} (relógio
-                  deste dispositivo).
-                </p>
-              )}
-              <button type="button" onClick={reload}>
-                Atualizar recebimentos
-              </button>
-              <p>
-                Vencidos: {summary.overdue} · Vence hoje: {summary.due_today} ·{' '}
-                Vence amanhã: {summary.due_tomorrow} · Posteriores:{' '}
-                {summary.later}
-              </p>
-              <label>
-                Buscar por produto, lote, código ou ID do recipiente{' '}
-                <input
-                  type="search"
-                  aria-label="Buscar por produto, lote, código ou ID do recipiente"
-                  value={search}
-                  maxLength={120}
-                  onChange={(event) => {
-                    setMoreError('');
-                    setSearch(event.target.value);
-                  }}
-                />
-              </label>{' '}
-              <label>
-                <input
-                  type="checkbox"
-                  checked={includeDepleted}
-                  onChange={(event) => {
-                    setMoreError('');
-                    setIncludeDepleted(event.target.checked);
-                  }}
-                />{' '}
-                Mostrar esgotados
-              </label>
-            </section>
-            {!shown ? (
-              <p>Carregando recipientes…</p>
-            ) : shown.rows.length === 0 ? (
-              <p>
-                {query.trim()
-                  ? 'Nenhum recipiente corresponde à busca.'
-                  : includeDepleted
-                    ? 'Nenhum recebimento registrado.'
-                    : 'Nenhum recipiente com saldo.'}
-              </p>
-            ) : (
-              <>
-                <ul aria-label="Recipientes e validade">
-                  {shown.rows.map((row) => {
-                    const depleted = row.balance <= 0;
-                    const status = getExpiryStatus(
-                      row.expiry_date,
-                      timezone,
-                      now,
-                    );
-                    // Fatia 6.11: vencido com saldo. O banco recusa o consumo e a manipulação; só o descarte passa.
-                    const expired = !depleted && status === 'overdue';
-                    return (
-                      <li key={row.container_id}>
-                        {row.product_name} — {row.short_code}
-                        {row.kind === 'derived' && ' (derivado)'} —{' '}
-                        {lotText(row.source_code)} — saldo {row.balance}{' '}
-                        {row.unit} de {row.initial_quantity} {row.unit} —
-                        validade {row.expiry_date} (
-                        {row.expiry_origin === 'handling'
-                          ? 'após manipulação'
-                          : row.batch_expiry_origin === 'original'
-                            ? 'original'
-                            : 'definida pelo responsável'}
-                        ) — {depleted ? 'Esgotado' : statusLabels[status]} —
-                        recipiente {row.container_id}
-                        {placed.has(row.container_id) && !depleted && (
-                          <>
-                            {' '}
-                            — local:{' '}
-                            {placed.get(row.container_id)!.location_name}
-                          </>
-                        )}
-                        {expired && (
-                          <strong className="expired-band">
-                            {' '}
-                            — {EXPIRED_TEXT}
-                          </strong>
-                        )}
-                        {blocked.has(row.container_id) && (
-                          <strong>
-                            {' '}
-                            — {BLOCK_TEXT[blocked.get(row.container_id)!]}
-                          </strong>
-                        )}
-                        {canCreate &&
-                          locations &&
-                          handling &&
-                          !depleted &&
-                          !blocked.has(row.container_id) && (
-                            <>
-                              {' '}
-                              <button
-                                type="button"
-                                onClick={() => setMoveId(row.container_id)}
-                              >
-                                Mudar de local
-                              </button>
-                            </>
-                          )}
-                        {locations &&
-                          handling &&
-                          moveId === row.container_id && (
-                            <MoveContainer
-                              key={row.container_id}
-                              scope={{ organizationId, establishmentId }}
-                              containerId={row.container_id}
-                              userId={userId}
-                              gateway={locations}
-                              loadMembers={(target) => handling.members(target)}
-                              setDisplayName={(target, id, name) =>
-                                handling.setDisplayName(target, id, name)
-                              }
-                              current={placed.get(row.container_id)}
-                              onMoved={() => loadPlaces()}
-                              onClose={() => setMoveId(null)}
-                            />
-                          )}
-                        {movements && row.kind === 'integral' && (
-                          <button
-                            type="button"
-                            onClick={() => setMovementId(row.container_id)}
-                          >
-                            Ver movimentações
-                          </button>
-                        )}
-                        {movements &&
-                          row.kind === 'integral' &&
-                          movementId === row.container_id && (
-                            <MovementPanel
-                              key={row.container_id}
-                              scope={{ organizationId, establishmentId }}
-                              userId={userId}
-                              batch={{
-                                id: row.batch_id,
-                                productName: row.product_name,
-                                sourceCode: row.source_code,
-                                quantity: row.initial_quantity,
-                                unit: row.unit,
-                              }}
-                              canCreate={canCreate}
-                              gateway={movements}
-                              blocked={blocked.get(row.container_id)}
-                              expired={expired}
-                              onRecorded={() => {
-                                refreshRow(row.container_id);
-                                // O descarte pode tirar uma rejeitada da lista de bloqueios.
-                                if (
-                                  blocked.has(row.container_id) &&
-                                  occurrences
-                                )
-                                  void occurrences
-                                    .list(
-                                      { organizationId, establishmentId },
-                                      'open',
-                                    )
-                                    .then(setOccurrenceRows, () => fail());
-                              }}
-                            />
-                          )}
-                        {canCreate &&
-                          handling &&
-                          !depleted &&
-                          !blocked.has(row.container_id) &&
-                          !expired && (
-                            <>
-                              {' '}
-                              <button
-                                type="button"
-                                onClick={() => setHandlingId(row.container_id)}
-                              >
-                                {row.source_code === null
-                                  ? 'Porcionar'
-                                  : 'Abrir / porcionar'}
-                              </button>
-                            </>
-                          )}
-                        {canCreate &&
-                          handling &&
-                          blocked.has(row.container_id) && (
-                            <em>
-                              {' '}
-                              — manipulação indisponível enquanto o bloqueio
-                              durar
-                            </em>
-                          )}
-                        {canCreate &&
-                          handling &&
-                          expired &&
-                          !blocked.has(row.container_id) && (
-                            <em>
-                              {' '}
-                              — manipulação indisponível: validade passou
-                            </em>
-                          )}
-                        {handling && handlingId === row.container_id && (
-                          <HandlingForm
-                            key={row.container_id}
-                            scope={{ organizationId, establishmentId }}
-                            containerId={row.container_id}
-                            userId={userId}
-                            gateway={handling}
-                            labels={labels}
-                            onChanged={() => refreshRow(row.container_id)}
-                            onClose={() => {
-                              setHandlingId(null);
-                              reload();
-                            }}
-                          />
-                        )}
-                        {canCreate && labels && row.kind === 'integral' && (
-                          <>
-                            {' '}
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => {
-                                setBusy(true);
-                                setError('');
-                                void labels
-                                  .ensure(
-                                    { organizationId, establishmentId },
-                                    row.batch_id,
-                                  )
-                                  .then(
-                                    (id) => setLabelId(id),
-                                    () =>
-                                      setError(
-                                        'Não foi possível preparar o recipiente. Confira seu acesso.',
-                                      ),
-                                  )
-                                  .finally(() => setBusy(false));
-                              }}
-                            >
-                              Abrir etiqueta
-                            </button>
-                          </>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-                {shown.next && (
-                  <button
-                    type="button"
-                    disabled={loadingMore}
-                    onClick={loadMore}
-                  >
-                    Carregar mais recipientes
-                  </button>
-                )}
-                {moreError && <p role="alert">{moreError}</p>}
-              </>
+              </div>
             )}
           </div>
           <div hidden={!showReceber}>

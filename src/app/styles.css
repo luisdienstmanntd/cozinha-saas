@@ -477,3 +477,284 @@ footer {
     margin-top: 0.5rem;
   }
 }
+
+/* V3: lista de validade em cartões. A cor reforça o texto do selo; nunca o substitui. */
+.expiry-panel h4 {
+  margin: 0.5rem 0;
+  font-size: 1.15rem;
+}
+.expiry-summary {
+  margin: 0 0 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.tile {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid #c9d6cf;
+  background: #fff;
+  line-height: 1.25;
+}
+.tile-label {
+  font-size: 0.85rem;
+}
+.tile-count {
+  font-size: 1.4rem;
+}
+.expiry-reference {
+  font-size: 0.85rem;
+  color: #52665e;
+}
+.expiry-panel > p {
+  margin: 0.25rem 0;
+}
+.expiry-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.25rem 1rem;
+  margin: 0.5rem 0 0.75rem;
+}
+.expiry-search {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 18rem;
+  font-size: 0.9rem;
+}
+.expiry-tools button {
+  margin: 0;
+}
+.container-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.container-card {
+  background: #fff;
+  border: 1px solid #d3ddd6;
+  border-left: 6px solid #8aa597;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  overflow-wrap: normal;
+}
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+.card-title,
+.ficha-title {
+  margin: 0;
+  line-height: 1.3;
+}
+.card-product {
+  font-size: 1.1rem;
+}
+.card-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  color: #3c5a50;
+  white-space: nowrap;
+}
+.card-tag {
+  font-size: 0.85rem;
+  color: #52665e;
+}
+.expiry-badge {
+  display: inline-block;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+}
+.card-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.25rem;
+  margin: 0.4rem 0 0;
+}
+.card-facts > div {
+  display: flex;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+.card-facts dt {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #52665e;
+}
+.card-facts dd {
+  margin: 0;
+}
+.fact-expiry strong {
+  font-size: 1.05rem;
+}
+.fact-note {
+  font-size: 0.85rem;
+  color: #52665e;
+}
+.card-band,
+.card-note {
+  margin: 0.4rem 0 0;
+}
+.blocked-band {
+  background: #fff4dc;
+  color: #6b4500;
+  border-left: 4px solid #a86b00;
+  padding: 0.15rem 0.4rem;
+}
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.workspace .card-actions button {
+  margin: 0;
+}
+/* Tons: borda do cartão e selo. Contraste do texto ≥ 4,5:1 sobre o fundo do selo. */
+.tone-overdue.container-card {
+  border-left-color: #9b261a;
+  background: #fff8f7;
+}
+.tone-today.container-card {
+  border-left-color: #b45309;
+}
+.tone-tomorrow.container-card {
+  border-left-color: #a16207;
+}
+.tone-depleted.container-card {
+  border-left-color: #b7c2bc;
+  color: #4b5d56;
+}
+.expiry-badge.tone-overdue,
+.tile.tone-overdue {
+  background: #fdecea;
+  color: #7a1d12;
+}
+.expiry-badge.tone-today,
+.tile.tone-today {
+  background: #ffedd5;
+  color: #7c2d12;
+}
+.expiry-badge.tone-tomorrow,
+.tile.tone-tomorrow {
+  background: #fef9c3;
+  color: #713f12;
+}
+.expiry-badge.tone-upcoming,
+.tile.tone-upcoming {
+  background: #e7f3ec;
+  color: #1d4d3a;
+}
+.expiry-badge.tone-depleted {
+  background: #eef1ef;
+  color: #45524c;
+}
+.tile.tone-overdue,
+.tile.tone-today,
+.tile.tone-tomorrow,
+.tile.tone-upcoming {
+  border-color: currentColor;
+}
+.container-ficha > button {
+  margin-bottom: 0.5rem;
+}
+.support-ids {
+  font-size: 0.8rem;
+  color: #52665e;
+}
+.support-ids summary {
+  cursor: pointer;
+}
+.support-ids p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 899px) {
+  .expiry-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tile {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.6rem;
+  }
+  .tile-count {
+    font-size: 1.15rem;
+  }
+  .container-card {
+    padding: 0.5rem 0.6rem;
+  }
+  .card-head {
+    align-items: flex-start;
+  }
+  .card-facts {
+    gap: 0 1rem;
+  }
+  .card-actions button {
+    flex: 1 1 auto;
+  }
+}
+.blocks-notice {
+  margin: 0 0 0.5rem;
+}
+.blocks-after-list {
+  margin-top: 1.5rem;
+  scroll-margin-top: 6rem;
+}
+.expiry-notes {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #52665e;
+}
+.expiry-notes p {
+  margin: 0.25rem 0;
+}
+/* Ferramentas da lista numa faixa curta: busca, "Mostrar esgotados" e atualizar. A área de toque
+   continua de 44 px pelo rótulo inteiro. */
+.expiry-tools > label:not(.expiry-search) {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+}
+.workspace .expiry-tools input[type='checkbox'] {
+  min-height: auto;
+  width: 1.3rem;
+  height: 1.3rem;
+  padding: 0;
+  margin: 0;
+}
+@media (max-width: 899px) {
+  .expiry-search {
+    flex-basis: 100%;
+    font-size: 0.85rem;
+  }
+  .expiry-tools {
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .expiry-tools {
+    gap: 0.25rem 0.5rem;
+  }
+  .expiry-tools button {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  .expiry-panel h4 {
+    margin: 0.25rem 0;
+  }
+}

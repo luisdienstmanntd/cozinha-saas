@@ -46,3 +46,35 @@ export function isExpired(
 ): boolean {
   return getExpiryStatus(expiryDate, timezone, now) === 'overdue';
 }
+
+// V3 (B4): dias de calendário entre hoje (no fuso da unidade) e a validade registrada. Negativo = já
+// passou. Usa a mesma data de hoje de getExpiryStatus; não cria prazo nem nova faixa de status.
+export function daysUntil(
+  expiryDate: string,
+  timezone: string,
+  now: Date = new Date(),
+): number {
+  const today = localCivilDate(now, timezone);
+  const day = 86_400_000;
+  return Math.round(
+    (Date.parse(`${expiryDate}T00:00:00.000Z`) -
+      Date.parse(`${today}T00:00:00.000Z`)) /
+      day,
+  );
+}
+
+export type ExpiryTone = ExpiryStatus | 'depleted';
+// Selo do cartão e da ficha: sempre texto além da cor (a cor só reforça o texto).
+export function expiryBadgeText(
+  expiryDate: string,
+  timezone: string,
+  now: Date = new Date(),
+): string {
+  const status = getExpiryStatus(expiryDate, timezone, now);
+  if (status === 'today') return 'Vence hoje';
+  if (status === 'tomorrow') return 'Vence amanhã';
+  const days = daysUntil(expiryDate, timezone, now);
+  if (status === 'overdue')
+    return days === -1 ? 'Vencido há 1 dia' : `Vencido há ${-days} dias`;
+  return `Vence em ${days} dias`;
+}

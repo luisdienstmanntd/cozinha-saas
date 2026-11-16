@@ -74,7 +74,8 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
     await openArea(page, 'Validade');
     const rows = page.getByRole('list', { name: 'Recipientes e validade' });
     const row = rows.getByRole('listitem').filter({ hasText: 'lote 0001' });
-    await expect(row).not.toContainText('local:');
+    // V3: o local aparece no cartão como o campo "Local"; sem local registrado, o campo não existe.
+    await expect(row.getByText('Local', { exact: true })).toHaveCount(0);
     await row.getByRole('button', { name: 'Mudar de local' }).click();
     const form = page.getByRole('form', { name: 'Mudar de local' });
     await expect(form).toContainText('Sem local registrado.');
@@ -97,7 +98,7 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
       page.getByRole('status').filter({ hasText: 'Local registrado' }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Fechar' }).click();
-    await expect(row).toContainText('local: Despensa');
+    await expect(row).toContainText('Local Despensa');
 
     // Divergência: ambiente em câmara fria pede confirmação explícita.
     await row.getByRole('button', { name: 'Mudar de local' }).click();
@@ -110,13 +111,13 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
     await expect(again.getByRole('alert')).toContainText(
       'condição do local é diferente',
     );
-    await expect(row).toContainText('local: Despensa');
+    await expect(row).toContainText('Local Despensa');
     await again.getByRole('button', { name: 'Registrar mesmo assim' }).click();
     await page.getByRole('button', { name: 'Fechar' }).click();
-    await expect(row).toContainText('local: Câmara fria 01');
+    await expect(row).toContainText('Local Câmara fria 01');
     // Saldo e validade seguem os mesmos.
-    await expect(row).toContainText('saldo 10 kg de 10 kg');
-    await expect(row).toContainText('validade 2030-01-01');
+    await expect(row).toContainText('Saldo 10 kg de 10 kg');
+    await expect(row).toContainText('Validade 01/01/2030');
 
     // Local desativado não aparece como destino.
     await openArea(page, 'Locais');

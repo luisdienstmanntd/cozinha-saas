@@ -75,7 +75,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(page.getByText('Recebimento registrado.')).toBeVisible();
     await openArea(page, 'Validade');
     await expect(page.getByText(/lote 0001/)).toBeVisible();
-    await page.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await page.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     await expect(label.getByText(/Identificação:/)).toBeVisible();
     const id = (await label.getByText(/Identificação:/).innerText()).replace(
@@ -83,6 +83,8 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       '',
     );
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    // V3: a ficha ocupa a área de Validade; a busca fica na lista.
+    await page.getByRole('button', { name: '← Voltar para a lista' }).click();
     const search = page.getByRole('searchbox', {
       name: 'Buscar por produto, lote, código ou ID do recipiente',
     });
@@ -92,8 +94,11 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await search.fill('0001');
     await expect(results.getByText(/Arroz de teste/)).toBeVisible();
     await search.fill(id);
-    await expect(results.getByText(`recipiente ${id}`)).toBeVisible();
-    await search.clear();
+    // A busca pelo identificador continua; o cartão não mostra o UUID, a ficha confirma o recipiente.
+    await expect(results.getByRole('listitem')).toHaveCount(1);
+    await expect(results).not.toContainText(id);
+    await results.getByRole('button', { name: 'Ver ficha' }).click();
+    await expect(label.getByText(`Identificação: ${id}`)).toBeVisible();
     const waitDownload = page.waitForEvent('download');
     await label.getByRole('button', { name: 'Gerar etiqueta PDF' }).click();
     const pdf = await waitDownload;
@@ -106,6 +111,8 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     expect(bytes.includes(Buffer.from('Validade: 01/01/2030'))).toBe(true);
     expect(bytes.includes(Buffer.from('Quantidade inicial:'))).toBe(true);
     expect(pdf.suggestedFilename()).toBe(`etiqueta-${id}.pdf`);
+    await page.getByRole('button', { name: '← Voltar para a lista' }).click();
+    await search.clear();
     await page.getByRole('button', { name: 'Ver movimentações' }).click();
     const movements = page.getByRole('region', { name: 'Movimentações' });
     await expect(
@@ -133,7 +140,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     ).toBeVisible();
     await expect(movements.getByText(/Consumo — 0.5 kg/)).toBeVisible();
     // Fatia 6.2: a linha do painel mostra o saldo do servidor, não a quantidade recebida.
-    await expect(results.getByText(/saldo 0.75 kg de 1.25 kg/)).toBeVisible();
+    await expect(results.getByText(/Saldo 0.75 kg de 1.25 kg/)).toBeVisible();
     await openArea(page, 'Cadastros');
     await page.getByLabel('Nome do fornecedor').fill('HORTA DE TESTE');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
