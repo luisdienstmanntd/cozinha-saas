@@ -1,6 +1,6 @@
 # V4 — Acabamento visual
 
-Proposta em `V4_PROPOSTA.md` (PR #36). **Aprovada por luis em 16/11/2026, 13:10 UTC**, com a decisão D-062 e dez definições: itens M1, M2, M10, M11, D1 e D3, mais os opcionais 7 (Mais ações no celular) e 8 (cabeçalho compacto no celular). Só interface: nenhuma migração, política RLS, função do banco, regra de validade, estoque, permissão ou auditoria mudou. **D-062 aguarda o aceite final de luis.** Sem merge, deploy ou V5.
+Proposta em `V4_PROPOSTA.md` (PR #36). **Aprovada por luis em 16/11/2026, 13:10 UTC**, com a decisão D-062 e dez definições: itens M1, M2, M10, M11, D1 e D3, mais os opcionais 7 (Mais ações no celular) e 8 (cabeçalho compacto no celular). Só interface: nenhuma migração, política RLS, função do banco, regra de validade, estoque, permissão ou auditoria mudou. **D-062 aceita por luis em 16/11/2026, 21:10 UTC**, com CI verde; V4 tecnicamente encerrada. Sem merge nem deploy.
 
 ## O que mudou
 
@@ -137,11 +137,11 @@ Ganho na primeira tela do celular: o título geral sai da tela e o botão Sair f
 ## Limitações e pendências
 
 - "Mais ações" depende da largura da tela no momento (muda ao girar o aparelho); não foi testado em aparelho físico, só em celular emulado (390 × 844).
-- O critério "botão que abre o formulário de registro principal da tela fica principal" é interpretação desta implementação da definição 4; se luis preferir, esses botões podem passar a secundários sem mudar comportamento.
+- Os botões que iniciam a operação central da tela ("Nova preparação", "Registrar decisão", "Abrir / porcionar") ficam principais, como luis confirmou no aceite.
 - Rejeitar ocorrência só fica vermelho na confirmação, depois de marcar "Rejeitar"; o botão "Registrar decisão" abre a escolha entre liberar e rejeitar e continua principal.
 - Os primeiros passos não verificam se já existem locais (o passo é opcional e não mostra "feito").
 - Fora da V4, como na proposta: vírgula decimal (V5), filtros por categoria, aviso de formulário não salvo.
 
 ## Aceite
 
-Aguardando aceite final de luis. Sem merge, deploy ou V5.
+Aceite final de luis em 16/11/2026, 21:10 UTC: os oito itens e a D-062 aprovados, CI verde, V4 tecnicamente encerrada. Diretriz visual definida por luis no aceite: **uma só ação principal por contexto, sempre que possível**. Ficam como principais os botões que iniciam a operação central da tela (como "Nova preparação", "Registrar decisão" e "Abrir / porcionar"); as ações destrutivas continuam diferenciadas pelo estilo de risco. Sem merge nem deploy sem autorização específica. A V5 (vírgula decimal) foi autorizada por luis em outra thread.
