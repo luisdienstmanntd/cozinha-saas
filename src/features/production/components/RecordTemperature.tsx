@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import { instantToZoned, zonedToInstant } from '../../handling/domain/handling';
+import { toDotTemperature } from '../../../shared/format/temperature';
 import type { ProductionGateway } from '../application/productionGateway';
 import { ProductionRejected } from '../application/productionGateway';
 import {
@@ -45,7 +46,7 @@ export function RecordTemperature({
     const input = temperatureInputSchema.safeParse({
       batchId,
       moment,
-      temperature: value.trim().replace(',', '.'),
+      temperature: toDotTemperature(value),
       measuredAt: instant,
     });
     if (!input.success) {

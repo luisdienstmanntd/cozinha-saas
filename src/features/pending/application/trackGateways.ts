@@ -12,6 +12,7 @@ import { DecisionRejected } from '../../occurrences/application/occurrenceGatewa
 import type { ProductionGateway } from '../../production/application/productionGateway';
 import { ProductionRejected } from '../../production/application/productionGateway';
 import { pendingStore } from '../domain/pending';
+import { formatQuantity } from '../../../shared/format/quantity';
 import type { PendingKind } from '../domain/pending';
 
 export type TrackedGateways = {
@@ -84,7 +85,7 @@ export function trackGateways(
           'receipt',
           scope,
           input as unknown as Input,
-          `Recebimento do lote ${input.sourceCode} (${input.quantity})`,
+          `Recebimento do lote ${input.sourceCode} (${formatQuantity(input.quantity)})`,
           () => gateways.batches.receive(scope, input),
         ),
     },
@@ -97,7 +98,7 @@ export function trackGateways(
           input as unknown as Input,
           input.kind === 'reversal'
             ? 'Anulação de saída'
-            : `${movementLabel[input.kind]} de ${input.quantity}`,
+            : `${movementLabel[input.kind]} de ${formatQuantity(input.quantity)}`,
           () => gateways.movements.record(scope, input),
         ),
     },
@@ -138,7 +139,7 @@ export function trackGateways(
           'production',
           scope,
           input as unknown as Input,
-          `Produção de ${input.quantity} (validade ${input.expiryDate})`,
+          `Produção de ${formatQuantity(input.quantity)} (validade ${input.expiryDate})`,
           () => gateways.production!.register(scope, input),
         ),
       void: (scope, input) =>

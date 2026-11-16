@@ -83,7 +83,7 @@ test('recebimento, saída e abrir aceitam vírgula e recusam milhar e ambiguidad
     await openArea(page, 'Validade');
     const list = page.getByRole('list', { name: 'Recipientes e validade' });
     const card = list.getByRole('listitem').filter({ hasText: 'V5-01' });
-    await expect(card).toContainText('12.5 kg');
+    await expect(card).toContainText('12,5 kg');
 
     // Saída: "1,000.50" recusado; "0,75" vira tentativa com vírgula e grava 0.75.
     await card.getByRole('button', { name: 'Ver movimentações' }).click();
@@ -111,7 +111,7 @@ test('recebimento, saída e abrir aceitam vírgula e recusam milhar e ambiguidad
       'Saldo após a operação, se confirmada: 11,75 kg.',
     );
     await movements.getByRole('button', { name: 'Confirmar saída' }).click();
-    await expect(movements).toContainText('Saldo registrado: 11.75 kg');
+    await expect(movements).toContainText('Saldo registrado: 11,75 kg');
 
     // Abrir: "1.500" recusado; "2,25" aceito, com soma e sobra em vírgula.
     await page.reload();
@@ -147,7 +147,7 @@ test('recebimento, saída e abrir aceitam vírgula e recusam milhar e ambiguidad
     await review.getByRole('button', { name: 'Confirmar registro' }).click();
     await expect(
       page.getByRole('region', { name: 'Resultado da manipulação' }),
-    ).toContainText('Sobra de 9.5 kg segue fechada');
+    ).toContainText('Sobra de 9,5 kg segue fechada');
   });
 });
 
@@ -199,6 +199,6 @@ test('produção aceita vírgula e recusa entrada ambígua', async ({ page }) =>
     ).toBeVisible();
     await expect(
       panel.getByRole('list', { name: 'Produções recentes' }),
-    ).toContainText('3.5 l');
+    ).toContainText('3,5 l');
   });
 });

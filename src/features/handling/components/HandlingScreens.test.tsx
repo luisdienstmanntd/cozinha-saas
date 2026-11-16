@@ -637,3 +637,120 @@ it('V5: produto em unidades recusa 2,5 como recusava 2.5', async () => {
   );
   expect(gw.handle).not.toHaveBeenCalled();
 });
+
+// V5B (D-064): saldo, porções e sobras com vírgula no formulário, no resultado e na ficha.
+it('V5B: formulário mostra o saldo com vírgula', async () => {
+  render(
+    <HandlingForm
+      scope={scope}
+      containerId={ids.box}
+      userId={ids.user}
+      gateway={gateway({
+        context: vi.fn().mockResolvedValue({ ...context, balance: 12.5 }),
+      })}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText(/saldo 12,5 kg/)).toBeVisible();
+  expect(screen.queryByText(/12\.5/)).toBeNull();
+});
+
+it('V5B: resultado e ficha mostram sobra e porções com vírgula', async () => {
+  const user = userEvent.setup();
+  const created = {
+    handling: {
+      ...handlingRow,
+      remainder: 'sealed' as const,
+      remainder_quantity: 5.5,
+    },
+    voided: null,
+    children: [
+      {
+        id: ids.child,
+        short_code: 'C-000002',
+        position: 1,
+        initial_quantity: 4.5,
+        balance: 4.5,
+      },
+    ],
+  };
+  render(
+    <HandlingForm
+      scope={scope}
+      containerId={ids.box}
+      userId={ids.user}
+      gateway={gateway({ created: vi.fn().mockResolvedValue(created) })}
+      onClose={vi.fn()}
+    />,
+  );
+  await user.type(
+    await screen.findByLabelText('Quantidade aberta (kg)'),
+    '4,5',
+  );
+  await user.click(screen.getByLabelText('Sim, continua fechado'));
+  await user.type(
+    screen.getByLabelText('Validade após a abertura'),
+    '2026-12-01',
+  );
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  await user.click(
+    await screen.findByRole('button', { name: 'Confirmar registro' }),
+  );
+  const result = await screen.findByRole('region', {
+    name: 'Resultado da manipulação',
+  });
+  expect(result).toHaveTextContent('Sobra de 5,5 kg segue fechada');
+  expect(result).toHaveTextContent('4,5 kg');
+  expect(result).not.toHaveTextContent(/\d\.\d/);
+});
+
+it('V5B: a ficha do recipiente mostra quantidade inicial, saldo, sobra e derivados com vírgula', async () => {
+  const family: Family = {
+    created: null,
+    openings: [
+      {
+        handling: {
+          ...handlingRow,
+          remainder: 'sealed',
+          remainder_quantity: 6.5,
+        },
+        children: [
+          {
+            id: ids.child,
+            short_code: 'C-000002',
+            position: null,
+            initial_quantity: 3.5,
+            balance: 3.5,
+          },
+        ],
+        voided: null,
+      },
+    ] as never,
+    partial: false,
+  };
+  render(
+    <LabelView
+      id={ids.box}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({
+          ...labelData,
+          id: ids.box,
+          kind: 'integral',
+          balance: 6.5,
+          effective: undefined,
+          batch_receipts: { ...labelData.batch_receipts, quantity: 10.5 },
+        }),
+      }}
+      handling={gateway({ family: vi.fn().mockResolvedValue(family) })}
+      canHandle={() => true}
+      userId={ids.user}
+    />,
+  );
+  expect(await screen.findByText('Saldo atual: 6,5 kg')).toBeVisible();
+  expect(screen.getByText(/Quantidade inicial: 10,5 kg/)).toBeVisible();
+  expect(
+    await screen.findByText(/sobra de 6,5 kg segue fechada/),
+  ).toBeVisible();
+  expect(document.body).not.toHaveTextContent(/\d\.\d+ kg/);
+});

@@ -454,3 +454,81 @@ it('consumo de recipiente bloqueado é recusado na tela com a mensagem do banco 
     'Recipiente bloqueado: ocorrência aguardando decisão do proprietário. Só o descarte é permitido.',
   );
 });
+
+it('V5B: o saldo do recipiente na ocorrência aparece com vírgula', async () => {
+  renderPanel({
+    rows: [
+      occurrence({
+        containers: [
+          {
+            container_id: containerId,
+            short_code: 'C-000042',
+            kind: 'integral',
+            balance: 10.5,
+          },
+        ],
+      }),
+    ],
+  });
+  const blocks = await screen.findByRole('region', {
+    name: 'Bloqueios e ocorrências',
+  });
+  expect(blocks).toHaveTextContent('C-000042 (saldo 10,5 kg)');
+  expect(blocks).not.toHaveTextContent('10.5');
+});
+
+// V5B (D-064): vírgula ou ponto na temperatura do recebimento, com as mesmas validações de antes.
+it.each([
+  ['3,5', '3.5'],
+  ['-18,5', '-18.5'],
+  ['-18.5', '-18.5'],
+  ['80,0', '80.0'],
+  ['-50', '-50'],
+])(
+  'V5B: temperatura %s do recebimento é enviada como %s',
+  async (typed, sent) => {
+    const { batches } = renderPanel({ rows: [] });
+    const user = userEvent.setup();
+    await fillReceipt(user);
+    await user.click(screen.getByLabelText('Temperatura medida'));
+    await user.type(screen.getByLabelText('Temperatura medida, em °C'), typed);
+    await user.click(
+      screen.getByRole('button', { name: 'Registrar recebimento' }),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Recebimento registrado.',
+    );
+    expect(batches.receive.mock.calls[0]![1]).toMatchObject({
+      temperatureStatus: 'measured',
+      receivedTemperatureC: sent,
+    });
+  },
+);
+
+it.each(['80,1', '-50,1', '4,25', '1.000,5', '3,5,5', 'quatro'])(
+  'V5B: temperatura %s do recebimento continua recusada, sem limite novo',
+  async (typed) => {
+    const { batches } = renderPanel({ rows: [] });
+    const user = userEvent.setup();
+    await fillReceipt(user);
+    await user.click(screen.getByLabelText('Temperatura medida'));
+    await user.type(screen.getByLabelText('Temperatura medida, em °C'), typed);
+    await user.click(
+      screen.getByRole('button', { name: 'Registrar recebimento' }),
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Confira a temperatura',
+    );
+    expect(batches.receive).not.toHaveBeenCalled();
+  },
+);
+
+it('V5B: o texto de ajuda da temperatura fala em vírgula ou ponto', async () => {
+  renderPanel({ rows: [] });
+  const user = userEvent.setup();
+  await fillReceipt(user);
+  await user.click(screen.getByLabelText('Temperatura medida'));
+  expect(
+    screen.getByText(/Use vírgula ou ponto para decimais, por exemplo -18,5\./),
+  ).toBeVisible();
+});
