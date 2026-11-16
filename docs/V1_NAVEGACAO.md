@@ -1,6 +1,6 @@
 # V1 — Navegação e estrutura
 
-Autorizada por luis em 16/11/2026 (relatório `REVISAO_VISUAL_FASE_07.md`, bloqueio B1). Proposta de decisão: D-060 (aceite pendente). Sem merge nem deploy.
+Autorizada por luis em 16/11/2026 (relatório `REVISAO_VISUAL_FASE_07.md`, bloqueio B1). D-060 ACEITA por luis em 16/11/2026 (PR #33), com a ressalva do ponto 6 abaixo. Sem merge nem deploy.
 
 ## O que mudou
 
@@ -50,7 +50,7 @@ Capturas em `docs/capturas/revisao-visual-v1/`: `d-*` desktop 1366×900 e `m-*` 
 - Colaborador vê "Configurações" em vez de "Cadastros" porque os testes de Produção exigem a mensagem somente leitura ali.
 - Não garante conformidade sanitária (Q10 pendente).
 
-## Pontos que exigem aceite de luis
+## Pontos para aceite de luis (todos aprovados em 16/11/2026)
 
 1. Receber oculto para colaborador (o banco já recusa a escrita).
 2. Colaborador com "Configurações" somente leitura no lugar de Cadastros.
@@ -59,3 +59,7 @@ Capturas em `docs/capturas/revisao-visual-v1/`: `d-*` desktop 1366×900 e `m-*` 
 5. Ferramentas da organização dentro de Cadastros.
 6. Limitação de rascunhos perdidos em "Trocar de unidade" / recarregar.
 7. Seguir para V3 (lista de validade no celular), com aprovação própria.
+
+## Aceite (16/11/2026)
+
+luis aprovou os pontos 1 a 5 e o 7, e **aceitou provisoriamente o ponto 6**: perder rascunhos ao trocar de unidade, atualizar acesso ou recarregar é limitação anterior à V1. Fica no backlog avisar sobre formulários não salvos antes de ações **voluntárias** que descartem dados. Logout e expiração de sessão continuam limpando os dados e **nunca** podem ser impedidos por esse aviso. A V3 foi autorizada em thread própria.
