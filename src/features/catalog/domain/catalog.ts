@@ -3,7 +3,8 @@ import { z } from 'zod';
 export const units = ['kg', 'g', 'l', 'ml', 'un'] as const;
 const unitSchema = z.enum(units);
 const nameSchema = z.string().trim().min(1).max(120);
-export type CatalogKind = 'products' | 'suppliers';
+// Fatia 7.3: preparações próprias (D-049, D-050) ficam na tabela de produtos, com `kind = 'preparation'`.
+export type CatalogKind = 'products' | 'suppliers' | 'preparations';
 export type CatalogScope = { organizationId: string; establishmentId: string };
 export type CatalogInput = { name: string; unit?: (typeof units)[number] };
 export const catalogRow = z.object({ id: z.uuid(), name: nameSchema });

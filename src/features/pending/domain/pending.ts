@@ -15,6 +15,9 @@ export const pendingKinds = [
   'movement',
   'location_move',
   'location',
+  // Fatia 7.3: produção da cozinha e anulação de produção.
+  'production',
+  'production_void',
 ] as const;
 export type PendingKind = (typeof pendingKinds)[number];
 
@@ -37,6 +40,8 @@ export const kindLabels: Record<PendingKind, string> = {
   movement: 'Saída ou anulação de saída',
   location_move: 'Mudança de local',
   location: 'Local de armazenamento',
+  production: 'Produção da cozinha',
+  production_void: 'Anulação de produção',
 };
 
 const key = (userId: string) => `pending-attempts:v1:${userId}`;

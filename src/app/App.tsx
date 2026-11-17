@@ -14,6 +14,7 @@ import {
   containerPath,
   parseContainerPath,
 } from '../features/labels/domain/label';
+import { ProductionPanel } from '../features/production/components/ProductionPanel';
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 
 function Workspace({
@@ -35,6 +36,8 @@ function Workspace({
 }) {
   const [revision, setRevision] = useState(0);
   const [pendingToken, setPendingToken] = useState(0);
+  // Fatia 7.3: produção registrada ou anulada muda a lista de recipientes.
+  const [stockToken, setStockToken] = useState(0);
   const scope = { organizationId, establishmentId };
   // Escritas passam pelo decorador: tentativa de resultado incerto fica guardada até ser conferida.
   const tracked = useMemo(
@@ -46,6 +49,7 @@ function Workspace({
           occurrences: configuration.occurrences,
           handling: configuration.handling,
           locations: configuration.locations,
+          production: configuration.production,
         },
         userId,
       ),
@@ -73,6 +77,10 @@ function Workspace({
         return tracked.locations!.move(target, input);
       case 'location':
         return tracked.locations!.create(target, input);
+      case 'production':
+        return tracked.production!.register(target, input);
+      case 'production_void':
+        return tracked.production!.void(target, input);
     }
   }
   return (
@@ -91,6 +99,21 @@ function Workspace({
         canCreate={canCreate}
         onCreated={() => setRevision((value) => value + 1)}
       />
+      {tracked.production && (
+        <ProductionPanel
+          scope={scope}
+          timezone={timezone}
+          userId={userId}
+          canCreate={canCreate}
+          catalog={configuration.catalog}
+          gateway={tracked.production}
+          loadMembers={tracked.handling.members}
+          setDisplayName={tracked.handling.setDisplayName}
+          catalogRevision={revision}
+          reloadToken={pendingToken}
+          onChanged={() => setStockToken((value) => value + 1)}
+        />
+      )}
       <BatchPanel
         catalog={configuration.catalog}
         batches={tracked.batches}
@@ -99,7 +122,7 @@ function Workspace({
         timezone={timezone}
         canCreate={canCreate}
         catalogRevision={revision}
-        reloadToken={pendingToken}
+        reloadToken={pendingToken + stockToken}
         userId={userId}
         labels={configuration.labels}
         movements={tracked.movements}

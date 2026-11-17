@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { LabelGateway } from '../application/labelGateway';
 import type { LabelData } from '../domain/label';
-import { LATE_HOLD_MESSAGE } from '../domain/label';
+import {
+  LATE_HOLD_MESSAGE,
+  PRODUCTION_VOIDED_MESSAGE,
+  PRODUCTION_VOIDED_TEXT,
+} from '../domain/label';
 import { lotText } from '../../batches/domain/lot';
 import type { HandlingGateway } from '../../handling/application/handlingGateway';
 import type { Family } from '../../handling/domain/family';
@@ -98,7 +102,7 @@ export function LabelView({
       return;
     }
     if (!isCurrent()) return;
-    if (fresh.voided || fresh.late_hold) {
+    if (fresh.voided || fresh.late_hold || fresh.production?.voided) {
       setData(fresh);
       setBusy(false);
       return;
@@ -127,9 +131,11 @@ export function LabelView({
   }
   // Fatia 6.11: vencido com saldo (validade do próprio recipiente, data da unidade). O banco recusa
   // consumo e manipulação; a tela mostra a faixa e não oferece abrir / porcionar.
+  const productionVoided = Boolean(data?.production?.voided);
   const expired = Boolean(
     data &&
     !data.voided &&
+    !productionVoided &&
     data.balance > 0 &&
     data.batch_receipts.timezone &&
     isExpired(
@@ -144,11 +150,33 @@ export function LabelView({
       {!data && !error && <p>Consultando recipiente…</p>}
       {data && (
         <>
+          {data.production && <p>Preparação própria</p>}
           <p>
             {data.kind === 'derived'
               ? 'Recipiente derivado de uma manipulação (produto aberto ou fracionado).'
-              : 'Um recipiente integral corresponde a este recebimento.'}
+              : data.production
+                ? 'Um recipiente integral corresponde a esta produção.'
+                : 'Um recipiente integral corresponde a este recebimento.'}
           </p>
+          {data.production && (
+            <p>
+              Produzida em{' '}
+              {when(data.production.produced_at, data.production.timezone)} por{' '}
+              {data.production.handled_by_name}
+              {data.production.late &&
+                ' — registrada fora da janela de 2 horas'}
+            </p>
+          )}
+          {data.production?.voided && (
+            <p role="alert">
+              <strong>{PRODUCTION_VOIDED_TEXT}</strong>: produção anulada em{' '}
+              {when(
+                data.production.voided.created_at,
+                data.production.timezone,
+              )}{' '}
+              ({data.production.voided.reason}). {PRODUCTION_VOIDED_MESSAGE}
+            </p>
+          )}
           <p>
             {data.batch_receipts.products.name} —{' '}
             {lotText(data.batch_receipts.source_code)}
@@ -203,7 +231,7 @@ export function LabelView({
             </p>
           ) : data.late_hold ? (
             <p role="alert">{LATE_HOLD_MESSAGE}</p>
-          ) : (
+          ) : productionVoided ? null : (
             <button disabled={busy} onClick={() => void download()}>
               Gerar etiqueta PDF
             </button>

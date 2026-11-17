@@ -39,6 +39,18 @@ export const labelDataSchema = z.object({
       siblings: z.number().int().nullable(),
     })
     .optional(),
+  // Fatia 7.3: lote produzido pela cozinha (D-050) e, se houver, a anulação dele (D-051), lidos pela RLS.
+  production: z
+    .object({
+      produced_at: z.string(),
+      handled_by_name: z.string(),
+      timezone: z.string(),
+      late: z.boolean(),
+      voided: z
+        .object({ reason: z.string(), created_at: z.string() })
+        .nullable(),
+    })
+    .optional(),
   batch_receipts: z.object({
     suppliers: z.object({ name: z.string() }).nullable().optional(),
     source_code: z.string().nullable(),
@@ -52,6 +64,9 @@ export const labelDataSchema = z.object({
     products: z.object({ name: z.string() }),
   }),
 });
+export const PRODUCTION_VOIDED_TEXT = 'ANULADO';
+export const PRODUCTION_VOIDED_MESSAGE =
+  'Produção anulada: este lote não vale mais e a etiqueta não pode ser gerada. Para corrigir, a produção é registrada de novo.';
 // Fatia 7.1: lote produzido pela cozinha (sem lote do fabricante). O modelo próprio chega na 7.4.
 export const PRODUCED_LABEL_MESSAGE =
   'Etiqueta de preparação própria ainda não disponível: o modelo próprio chega em fatia futura.';

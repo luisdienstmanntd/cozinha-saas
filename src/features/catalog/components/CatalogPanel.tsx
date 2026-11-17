@@ -30,8 +30,45 @@ function message(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+// Fatia 7.3: preparação própria tem seção própria; o recebimento continua só com produtos.
+const TEXTS: Record<
+  CatalogKind,
+  {
+    title: string;
+    nameLabel: string;
+    empty: string;
+    created: string;
+    submit: string;
+  }
+> = {
+  products: {
+    title: 'Produtos',
+    nameLabel: 'Nome do produto',
+    empty: 'Nenhum produto cadastrado.',
+    created: 'Produto cadastrado.',
+    submit: 'Cadastrar produto',
+  },
+  suppliers: {
+    title: 'Fornecedores',
+    nameLabel: 'Nome do fornecedor',
+    empty: 'Nenhum fornecedor cadastrado.',
+    created: 'Fornecedor cadastrado.',
+    submit: 'Cadastrar fornecedor',
+  },
+  preparations: {
+    title: 'Preparações próprias',
+    nameLabel: 'Nome da preparação',
+    empty: 'Nenhuma preparação cadastrada.',
+    created: 'Preparação cadastrada.',
+    submit: 'Cadastrar preparação',
+  },
+};
+
 const STORAGE_HINT =
   'A conservação é definida uma vez e não pode ser trocada depois. Ela é exigida em todo recebimento do produto.';
+
+const PREPARATION_STORAGE_HINT =
+  'A conservação é definida uma vez e não pode ser trocada depois. Ela vale para toda produção desta preparação.';
 
 // Produto sem conservação (cadastrado antes da 6.5a ou cuja definição falhou): o proprietário define
 // aqui, uma única vez. Sem ela, o produto não pode ser recebido.
@@ -96,14 +133,16 @@ function CatalogSection({
   onCreated,
   kind,
 }: Props & { kind: CatalogKind }) {
-  const product = kind === 'products';
-  const singular = product ? 'produto' : 'fornecedor';
-  const title = product ? 'Produtos' : 'Fornecedores';
+  const product = kind !== 'suppliers';
+  const text = TEXTS[kind];
+  const title = text.title;
   const [list, setList] = useState<ListState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  // Fatia 7.3: o cadastro de preparação abre por escolha, para não repetir na tela os campos do produto.
+  const [formOpen, setFormOpen] = useState(kind !== 'preparations');
 
   useEffect(() => {
     let current = true;
@@ -170,10 +209,14 @@ function CatalogSection({
       onCreated?.();
       if (storageError)
         setError(
-          `Produto cadastrado, mas a conservação não foi definida: ${storageError} Defina na lista antes de receber.`,
+          kind === 'preparations'
+            ? `Preparação cadastrada, mas a conservação não foi definida: ${storageError} Defina na lista antes de registrar a produção.`
+            : `Produto cadastrado, mas a conservação não foi definida: ${storageError} Defina na lista antes de receber.`,
         );
-      else
-        setNotice(product ? 'Produto cadastrado.' : 'Fornecedor cadastrado.');
+      else {
+        setNotice(text.created);
+        if (kind === 'preparations') setFormOpen(false);
+      }
     } catch (cause) {
       setError(message(cause, 'Falha no cadastro.'));
     } finally {
@@ -208,7 +251,7 @@ function CatalogSection({
             </p>
           )}
           {list.items.length === 0 ? (
-            <p>Nenhum {singular} cadastrado.</p>
+            <p>{text.empty}</p>
           ) : (
             <ul>
               {list.items.map((item) => (
@@ -248,11 +291,19 @@ function CatalogSection({
               ))}
             </ul>
           )}
-          {canCreate && (
+          {canCreate && !formOpen && (
+            <>
+              <button type="button" onClick={() => setFormOpen(true)}>
+                Nova preparação
+              </button>
+              {notice && <p role="status">{notice}</p>}
+            </>
+          )}
+          {canCreate && formOpen && (
             <form onSubmit={(event) => void submit(event)}>
               <p>
                 <label>
-                  Nome do {singular}{' '}
+                  {text.nameLabel}{' '}
                   <input name="name" maxLength={120} required />
                 </label>
               </p>
@@ -288,10 +339,12 @@ function CatalogSection({
                       ))}
                     </select>
                   </label>{' '}
-                  {STORAGE_HINT}
+                  {kind === 'preparations'
+                    ? PREPARATION_STORAGE_HINT
+                    : STORAGE_HINT}
                 </p>
               )}
-              <button disabled={saving}>Cadastrar {singular}</button>
+              <button disabled={saving}>{text.submit}</button>
               {error && <p role="alert">{error}</p>}
               {notice && <p role="status">{notice}</p>}
             </form>
@@ -309,6 +362,7 @@ export function CatalogPanel(props: Props) {
       {!props.canCreate && <p>Somente proprietários podem cadastrar itens.</p>}
       <CatalogSection {...props} kind="products" />
       <CatalogSection {...props} kind="suppliers" />
+      <CatalogSection {...props} kind="preparations" />
     </div>
   );
 }

@@ -231,3 +231,89 @@ it('dados da manipulação ilegíveis deixam o derivado sem `handling` (o PDF re
   );
   expect(label.handling).toBeUndefined();
 });
+
+function producedClient(production: unknown, voidRow: unknown) {
+  const container = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    organization_id: '22345678-1234-4234-8234-123456789abc',
+    establishment_id: '32345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000003',
+    batch_id: '62345678-1234-4234-8234-123456789abc',
+    handling_id: null,
+    batch_receipts: {
+      origin: 'produced',
+      source_code: null,
+      quantity: 6,
+      unit: 'l',
+      expiry_date: '2026-11-16',
+      expiry_origin: 'responsible',
+      products: { name: 'Caldo de legumes' },
+    },
+  };
+  const query = (result: unknown) => {
+    const q = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: result, error: null }),
+    };
+    q.select.mockReturnValue(q);
+    q.eq.mockReturnValue(q);
+    return q;
+  };
+  const tables: Record<string, ReturnType<typeof query>> = {
+    containers: query(container),
+    batch_productions: query(production),
+    production_voids: query(voidRow),
+  };
+  const from = vi.fn((table: string) => tables[table]!);
+  const rpc = vi.fn((name: string) =>
+    Promise.resolve(
+      name === 'container_blocks'
+        ? { data: [], error: null }
+        : { data: [{ container_id: container.id, balance: 0 }], error: null },
+    ),
+  );
+  return { client: { from, rpc } as unknown as SupabaseClient, tables };
+}
+
+it('lote produzido traz a produção e a anulação, lidas pela RLS (fatia 7.3)', async () => {
+  const made = {
+    produced_at: '2026-11-14T14:30:00+00:00',
+    handled_by_name: 'Bruno Lima',
+    timezone: 'America/Sao_Paulo',
+    late: false,
+  };
+  const { client, tables } = producedClient(made, {
+    reason: 'Validade digitada errada',
+    created_at: '2026-11-14T15:00:00+00:00',
+  });
+  const label = await createLabelGateway(client).get(
+    '12345678-1234-4234-8234-123456789abc',
+  );
+  expect(tables.batch_productions!.eq).toHaveBeenCalledWith(
+    'batch_id',
+    '62345678-1234-4234-8234-123456789abc',
+  );
+  expect(label.production).toEqual({
+    ...made,
+    voided: {
+      reason: 'Validade digitada errada',
+      created_at: '2026-11-14T15:00:00+00:00',
+    },
+  });
+  const fresh = producedClient(made, null);
+  expect(
+    (
+      await createLabelGateway(fresh.client).get(
+        '12345678-1234-4234-8234-123456789abc',
+      )
+    ).production?.voided,
+  ).toBeNull();
+});
+
+it('lote produzido sem dados da produção legíveis fica indisponível (fail closed)', async () => {
+  const { client } = producedClient(null, null);
+  await expect(
+    createLabelGateway(client).get('12345678-1234-4234-8234-123456789abc'),
+  ).rejects.toThrow('Recipiente indisponível ou sem acesso.');
+});
