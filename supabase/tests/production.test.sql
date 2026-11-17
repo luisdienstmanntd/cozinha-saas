@@ -17,10 +17,10 @@ select ok((select not prosecdef from pg_proc
   'register_production público é SECURITY INVOKER');
 select ok(has_column_privilege('authenticated', 'public.products', 'kind', 'INSERT'), 'o tipo do item é escolhido ao criar');
 select ok(not has_column_privilege('authenticated', 'public.products', 'kind', 'UPDATE'), 'o tipo do item não é trocado depois');
-select is((select count(*) from public.batch_receipts where origin <> 'received'), 0::bigint,
-  'todo lote anterior à 7.1 continua como recebido');
-select is((select count(*) from public.products where kind <> 'product'), 0::bigint,
-  'todo item anterior à 7.1 continua como produto');
+-- O backfill da 7.1 é pelo default constante (sem reescrever o histórico). Sem contar linhas: a bateria
+-- de integração deixa lotes produzidos no banco local entre execuções.
+select col_default_is('public', 'batch_receipts', 'origin', 'received'::text, 'lote sem origem informada é recebido');
+select col_default_is('public', 'products', 'kind', 'product'::text, 'item sem tipo informado é produto');
 
 insert into auth.users(id) values
  ('d1000000-0000-4000-8000-000000000001'),('d1000000-0000-4000-8000-000000000002'),

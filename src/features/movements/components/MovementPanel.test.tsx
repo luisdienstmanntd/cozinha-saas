@@ -690,3 +690,44 @@ it('recusa de consumo por vencimento mostra a mensagem do banco (fatia 6.11)', a
   await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
   expect(await screen.findByRole('alert')).toHaveTextContent(message);
 });
+
+it('mostra a anulação de produção como saída e não oferece desfazê-la (fatia 7.2)', async () => {
+  sessionStorage.clear();
+  const list = vi.fn().mockResolvedValue([
+    {
+      id: 'anulacao',
+      kind: 'production_void',
+      quantity: 6,
+      reason: 'Validade digitada errada',
+      created_by: 'autor',
+      created_at: '2026-01-01T12:00:00Z',
+      timezone: 'UTC',
+      reverses_id: null,
+    },
+  ]);
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Caldo de legumes',
+        sourceCode: null,
+        quantity: 6,
+        unit: 'l',
+      }}
+      canCreate
+      gateway={{ list, record: vi.fn() }}
+    />,
+  );
+  expect(await screen.findByText('Saldo registrado: 0 l')).toBeVisible();
+  expect(
+    screen.getByText(/Produção anulada — 6 l — Validade digitada errada/),
+  ).toBeVisible();
+  expect(
+    screen.getByText(/Caldo de legumes — preparação própria/),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: 'Anular registro' }),
+  ).not.toBeInTheDocument();
+});

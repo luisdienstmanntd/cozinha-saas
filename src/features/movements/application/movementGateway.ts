@@ -22,7 +22,9 @@ export type Movement = {
     | 'reversal'
     | 'transfer'
     | 'transfer_reversal'
-    | 'handling_void';
+    | 'handling_void'
+    // 'production_void' (fatia 7.2): anulação de produção; zera o integral e não é desfeita.
+    | 'production_void';
   quantity: number;
   reason: string | null;
   created_by: string;
