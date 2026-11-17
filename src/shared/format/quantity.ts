@@ -43,9 +43,10 @@ export function toDotQuantity(raw: string): string | null {
 // V5B (D-064): única forma de MOSTRAR uma quantidade (telas, histórico, ficha, tentativas e etiquetas PDF).
 // Recebe o número do banco ou o texto com ponto e devolve vírgula decimal, sem separador de milhar e só com
 // as casas necessárias (12,5 e não 12,500; 1500 e não 1.500), até as 3 casas que o banco guarda. Trabalha
-// sobre o texto do número, sem conta, então todo valor válido (até 3 casas) sai com as mesmas casas que tem.
-// Só quando o número traz mais de 3 casas (resíduo de conta em ponto flutuante, que o banco nunca guarda) ele
-// é ARREDONDADO à terceira casa por toFixed(3), que arredonda e não trunca (0.0006 vira 0,001).
+// sobre o texto do número, sem conta, então preserva exatamente todo valor válido guardado (até 3 casas).
+// Só quando o número traz mais de 3 casas (resíduo de conta em ponto flutuante, que o banco nunca guarda)
+// ele é ARREDONDADO para 3 casas por toFixed(3) (arredondamento, não truncamento; ex.: 0.30000000000000004
+// vira 0,3). Esse caminho nunca é percorrido por valor válido do banco.
 export function formatQuantity(value: string | number): string {
   let text = typeof value === 'number' ? String(value) : value.trim();
   if (/e/i.test(text)) {

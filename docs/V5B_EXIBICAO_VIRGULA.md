@@ -1,6 +1,6 @@
 # V5B — Exibição com vírgula e temperatura com vírgula (D-064)
 
-Complementa a [V5](V5_VIRGULA_DECIMAL.md) (D-063, aceita). Proposta em [V5B_PROPOSTA.md](V5B_PROPOSTA.md), **aprovada por luis em 16/11/2026, 22:40 UTC**, com quatro decisões e requisitos adicionais. Implementada na branch `claude/revisao-v5b-exibicao-virgula`, sobre a ponta da V5 (PR #38). **D-064 aguarda o aceite final de luis.** Sem merge nem deploy.
+Complementa a [V5](V5_VIRGULA_DECIMAL.md) (D-063, aceita). Proposta em [V5B_PROPOSTA.md](V5B_PROPOSTA.md), **aprovada por luis em 16/11/2026, 22:40 UTC**, com quatro decisões e requisitos adicionais. Implementada na branch `claude/revisao-v5b-exibicao-virgula`, sobre a ponta da V5 (PR #38). **D-064 ACEITA por luis em 17/11/2026.** Sem merge nem deploy.
 
 Só exibição e leitura da temperatura digitada: nenhuma migração, política RLS, função do banco, esquema de domínio, saldo, movimentação, validade, permissão ou auditoria mudou.
 
@@ -28,7 +28,7 @@ Só exibição e leitura da temperatura digitada: nenhuma migração, política 
 
 - Aceita o número que o banco devolve ou o texto com ponto.
 - Troca o ponto por vírgula, tira zeros finais, nunca agrupa milhares.
-- Não faz conta: opera sobre o texto do número. Só quando o número traz mais de 3 casas (resíduo de conta em ponto flutuante, que o banco nunca guarda, por exemplo `0.1 + 0.2`) ele é **arredondado** à terceira casa por `toFixed(3)`, que arredonda e não trunca (`0.0006` vira `0,001`, `0.9996` vira `1`). Esse caminho nunca é percorrido por um valor válido: toda quantidade aceita pelo esquema e guardada pelo banco tem no máximo 3 casas e sai com as mesmas casas, só sem os zeros finais (teste exaustivo em "Testes novos").
+- Não faz conta: opera sobre o texto do número. Só quando o número traz mais de 3 casas (resíduo de conta em ponto flutuante, que o banco nunca guarda, por exemplo `0.1 + 0.2`) ele é **arredondado** para 3 casas (`toFixed(3)`, que arredonda e não trunca; por exemplo `0.30000000000000004` vira `0,3` e `1.2346` vira `1,235`). Esse caminho nunca é percorrido por valor válido do banco: todo valor guardado (até 3 casas) é preservado exatamente, e há teste de ida e volta nos extremos `0,001` e `999999999,999`.
 - Texto que não é número volta como veio.
 
 | Guardado no banco | Mostrado          |
@@ -99,4 +99,4 @@ Bateria completa em 16/11/2026, 22:40–23:20 UTC, no ambiente de nuvem (Node 24
 
 ## Aceite
 
-**Aceita por luis em 17/11/2026, 13:17 UTC**, junto com a D-064, com a correção de documentação sobre `toFixed(3)` (arredonda, não trunca) e a garantia de preservação dos valores válidos, ambas feitas. luis considera encerrada a etapa de melhorias de interface V1 a V5B. Sem merge nem deploy sem autorização específica.
+**ACEITA por luis em 17/11/2026, 13:17 UTC** (aceite final da V5B e da D-064), com a correção da divergência de redação sobre `toFixed(3)`, que arredonda e não trunca; o código não mudou de comportamento, só comentário, nome de teste e documentação. Com isso luis encerrou a etapa de melhorias de interface V1 a V5B; não há novas funcionalidades até nova autorização. Sem merge nem deploy sem autorização específica.
