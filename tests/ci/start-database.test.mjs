@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import process from 'node:process';
 import test from 'node:test';
 
 const SCRIPT = path.resolve('scripts/ci/start-database.sh');
@@ -39,7 +40,11 @@ esac`,
   fake('ss', 'echo "LISTEN 0 4096 0.0.0.0:54322 0.0.0.0:*"');
   fake('sudo', 'shift; exec "$@"');
   const result = spawnSync('bash', [SCRIPT], {
-    env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, RUNNER_TEMP: dir },
+    env: {
+      ...process.env,
+      PATH: `${dir}:${process.env.PATH}`,
+      RUNNER_TEMP: dir,
+    },
     encoding: 'utf8',
   });
   const log = readFileSync(calls, 'utf8');
@@ -47,7 +52,8 @@ esac`,
     status: result.status,
     out: `${result.stdout}${result.stderr}`,
     npmCalls: log.split('\n').filter((l) => l.startsWith('npm ')).length,
-    stopCalls: log.split('\n').filter((l) => l.startsWith('npx supabase stop')).length,
+    stopCalls: log.split('\n').filter((l) => l.startsWith('npx supabase stop'))
+      .length,
   };
 }
 
