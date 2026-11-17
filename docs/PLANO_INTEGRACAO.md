@@ -272,3 +272,18 @@ luis aceitou a fatia 8.1 e a D-066 em 17/11/2026, 15:16 UTC ([relatório](FASE_0
 - **Proteção da `main`:** ruleset `main-protegida` aplicado por luis no painel e conferido: PR obrigatório com 0 aprovações, conversas resolvidas, somente merge commit, checks `quality` e `banco-api-e2e`, atualização estrita desligada, sem force-push, exclusão ou bypass. A sessão de nuvem não tem permissão de escrita nessa rota.
 - **Lote inicial autorizado por luis:** (1) proteção, (2) #42, (3) CI verde na `main`, (4) revalidar o #28 com a CI nova, (5) integrar o #28, (6) CI verde na `main`, (7) relatório e parada. Resultado: ver `ia-tarefas/plano-integracao.md`. Demais lotes aguardam autorização específica.
 - **Observação:** a revalidação do #28 incorporou a `main` à branch dele (merge da `main` na branch, sem reescrever história), porque a CI de PR só roda a nova infraestrutura com a `main` atual na combinação.
+
+## 12. Segundo lote integrado (17/11/2026)
+
+luis autorizou, em 17/11/2026, 16:42 UTC, as etapas 2 a 7 (#22 a #27) sem nova autorização entre elas. Para cada PR: simulação de merge sem conflitos (`git merge-tree`), troca da base para a `main`, incorporação da `main` atual à branch (merge, sem reescrever história), CI verde (`quality` e `banco-api-e2e`, que inclui pgTAP de RLS, estoque, auditoria e guardas de segurança, e os testes de integração e E2E) sobre o resultado combinado, merge commit e CI verde na `main`.
+
+| Etapa | PR | SHA testado | Merge commit na `main` | CI da `main` |
+|---|---|---|---|---|
+| 2 | #22 | `59f8148` | `b7cdfe6` | verde |
+| 3 | #23 | `6b620e9` | `2909e64` | verde |
+| 4 | #24 | `7a3f34e` | `f7aa028` | verde |
+| 5 | #25 | `d827689` | `53fb281` | verde |
+| 6 | #26 | `16983f8` | `88ac2cd` | verde |
+| 7 | #27 | `813a0b3` | `98cfa5d` | verde |
+
+Sem conflito, regressão ou instabilidade (12 execuções da CI verdes na primeira tentativa, sem avisos de porta em uso). Próxima etapa: 8 (#29), aguardando autorização específica.

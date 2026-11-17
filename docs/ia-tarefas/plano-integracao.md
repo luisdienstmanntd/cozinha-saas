@@ -27,3 +27,7 @@
 - **#42 integrado** (merge commit `0685ffc`); CI da `main` verde. **#28 revalidado** com a `main` incorporada (`04d79ee`), CI verde, e integrado (merge commit `1acf671`); CI da `main` verde.
 - **Recorrências de instabilidade neste lote:** nenhuma.
 - **Próximo passo:** aguardar autorização específica para o próximo lote (etapa 2, #22). Nada mais foi mesclado.
+
+### 17/11/2026 18:00 UTC — Claude Code
+- **Segundo lote concluído** (#22 a #27, autorização de luis 16:42 UTC): todos integrados com merge commit, CI verde sobre o resultado combinado e na `main`. Tabela em `PLANO_INTEGRACAO.md` (seção 12). Nenhuma recorrência de instabilidade.
+- **Próximo passo:** aguardar autorização específica para a etapa 8 (#29). Nada mais foi mesclado.
