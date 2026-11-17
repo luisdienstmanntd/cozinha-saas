@@ -33,3 +33,25 @@
 - Falhas em lint, TypeScript, unitário, build ou RLS atingida bloqueiam avanço.
 - Registrar comandos e resultado exato ao final de cada fase; `SKIP` não é `PASS`.
 - Não usar banco/produtos/usuários reais em testes automatizados.
+
+## Testes pgTAP instáveis corrigidos (14/11/2026)
+
+luis autorizou, em 14/11/2026 (20:47 UTC), a correção de dois testes que falhavam de vez em quando, com a condição de que ficassem determinísticos **sem reduzir o rigor, remover verificações ou alterar regra de negócio**. Nenhuma migração, função ou regra do produto foi tocada.
+
+### `handling_void.test.sql`, teste 26 (propriedade com semente)
+
+- **Sintoma:** "a sequência inclui anulações de manipulação bem-sucedidas" (exige pelo menos 5) falhava às vezes. O número de anulações bem-sucedidas variou de 2 a 11 em 12 execuções com a mesma semente, e a CI falhou no PR #26 quando um arquivo de teste novo mudou o estado do banco antes dele.
+- **Causa:** a semente (`setseed(0.4242)`) fixava os valores de `random()`, mas cada escolha de candidato era `order by random() limit 1`, e `random()` é avaliado por linha, na ordem em que o plano devolve as linhas. Essa ordem depende dos UUIDs dos recipientes e dos movimentos, gerados a cada execução (`gen_random_uuid()`), e do estado físico das tabelas. Com a mesma semente, a sequência de 250 passos mudava de uma execução para outra.
+- **Solução:** cada candidato é escolhido por uma ordem estável (código curto do recipiente, que sai de uma sequência, ou a ordem de criação registrada nas tabelas temporárias `prop_movs` e `prop_handlings`) e por um único sorteio de `random()` por escolha, que a semente determina. Depois da correção, 6 execuções seguidas deram exatamente a mesma sequência (consumo 40/0, descarte 55/0, manipulação 41/4, devolução 55/1, anulação 12/42).
+- **Rigor mantido:** os 250 passos, as operações, as regras de sobra e as recusas esperadas não mudaram. As verificações e seus limites são os mesmos: conservação e saldo válidos depois de cada passo, nenhum saldo negativo, pelo menos 5 anulações bem-sucedidas, pelo menos 1 recusada, pelo menos 10 manipulações e pelo menos 20 baixas.
+
+### `list_containers.test.sql`, teste 38 ("busca por lote")
+
+- **Sintoma:** a busca por "f-78" devolvia também o lote de arroz (`...001`) e falhou na CI do PR #25.
+- **Causa:** a busca do servidor compara o termo com produto, lote, código curto **e o ID do recipiente em texto**. O ID é um UUID sorteado a cada execução, e um termo só com hexadecimais e hífen pode aparecer nele por acaso. Em 2 milhões de UUIDs sorteados, 981 continham "f-78" (cerca de 1 em 2000 por recipiente).
+- **Solução:** o código do lote de teste passou de `F-78` para `LF-78` e a busca, de `f-78` para `lf-78`. A letra "L" não existe em UUID, então só o lote pode casar. A busca continua parcial e sem diferenciar maiúsculas de minúsculas, o que o teste original conferia.
+- **Rigor mantido:** o teste confere a mesma coisa (a busca por lote encontra só o lote esperado). Os demais termos de busca do arquivo não podem casar com UUID: nomes de produto, `LOTE-B`, `a_1` com sublinhado literal, o código curto (o UUID não comporta "c-" seguido de seis dígitos) e o próprio ID completo.
+
+### Como conferir
+
+`npm run db:reset` seguido de `npx supabase test db`, várias vezes: o resultado é o mesmo. O resultado do teste 26 aparece na linha `# teste 26, passos por operação` da saída.
