@@ -36,6 +36,14 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Reservar as portas do Supabase local fora da faixa efêmera
+        # Causa provável da falha "address already in use" (classe A, docs/FASE_08_1.md): 54320-54329 estão
+        # dentro da faixa de portas efêmeras do Linux (32768-60999); uma conexão de saída (npm, imagens)
+        # pode ocupar a 54322 por um instante, e o Docker não consegue ligá-la. Reservada, o kernel não
+        # a entrega mais a conexões de saída. Precisa rodar antes de qualquer acesso à rede.
+        run: |
+          echo "faixa efêmera: $(cat /proc/sys/net/ipv4/ip_local_port_range)"
+          sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       - uses: actions/setup-node@v4
         with:
           node-version: 24

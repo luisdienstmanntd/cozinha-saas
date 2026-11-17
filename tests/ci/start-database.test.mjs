@@ -14,7 +14,7 @@ const SECRET = 'sb_secret_ABCDEFGHIJKLMNOPQRSTUV';
 const JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.assinaturaFalsa1234567890';
 
-function run(behaviors) {
+function run(behaviors, { socketsBusy = false } = {}) {
   // behaviors: lista de resultados do `npm run db:start`, em ordem: 'ok' | 'porta' | 'outro'.
   const dir = mkdtempSync(path.join(tmpdir(), 'ci-start-'));
   const calls = path.join(dir, 'calls.log');
@@ -37,7 +37,12 @@ esac`,
   );
   fake('npx', `echo "npx $*" >> "${calls}"; exit 0`);
   fake('docker', 'exit 0');
-  fake('ss', 'echo "LISTEN 0 4096 0.0.0.0:54322 0.0.0.0:*"');
+  fake(
+    'ss',
+    socketsBusy
+      ? 'printf "State Recv-Q Send-Q Local Peer\\nTIME-WAIT 0 0 10.0.0.4:54322 1.2.3.4:443\\n"'
+      : 'printf "State Recv-Q Send-Q Local Peer\\n"',
+  );
   fake('sudo', 'shift; exec "$@"');
   const result = spawnSync('bash', [SCRIPT], {
     env: {
@@ -91,4 +96,12 @@ test('outra falha (migração, imagem): nenhuma nova tentativa e credenciais mas
   assert.match(r.out, /\*\*\*/);
   assert.doesNotMatch(r.out, new RegExp(SECRET));
   assert.doesNotMatch(r.out, /eyJhbGci/);
+});
+
+test('porta em uso com socket ainda ocupado: avisa, espera e tenta mesmo assim uma única vez', () => {
+  const r = run(['porta', 'ok'], { socketsBusy: true });
+  assert.equal(r.status, 0);
+  assert.equal(r.npmCalls, 2);
+  assert.match(r.out, /::warning title=Portas 5432x ainda ocupadas/);
+  assert.match(r.out, /TIME-WAIT/);
 });

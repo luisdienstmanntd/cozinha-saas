@@ -3,8 +3,8 @@
 # - A saída da CLI vai para um arquivo; o log da CI mostra só um resumo. Se falhar, mostra o final do
 #   arquivo com chaves, senhas e tokens mascarados.
 # - Uma nova tentativa só acontece para UM erro conhecido de infraestrutura do executor ("address already
-#   in use" ao ligar uma porta do Supabase local), depois de registrar um aviso visível e de diagnosticar
-#   quem usa a porta. Qualquer outra falha (migração, imagem, teste) termina na hora, sem repetir.
+#   in use" ao ligar uma porta do Supabase local), depois de registrar um aviso visível, de diagnosticar
+#   quem usa a porta e de esperar os sockets dela liberarem. Qualquer outra falha (migração, imagem, teste) termina na hora, sem repetir.
 set -uo pipefail
 
 LOG="${RUNNER_TEMP:-/tmp}/supabase-start.log"
@@ -17,11 +17,27 @@ mask() {
     -e 's#(postgres(ql)?://[^:]+:)[^@]+@#\1***@#g'
 }
 
+# Sockets TCP (em qualquer estado, inclusive TIME_WAIT) cuja porta LOCAL é 5432x. `ss -l` não mostra
+# esses casos, e eles impedem o Docker de ligar a porta.
+sockets_5432x() { ss -tan 2>/dev/null | awk 'NR>1 && $4 ~ /:5432[0-9]$/ {print}'; }
+
 diagnose() {
-  echo "::group::Diagnóstico: portas 5432x e contêineres"
-  (sudo -n ss -ltnp 2>/dev/null || ss -ltn 2>/dev/null) | grep -E ':5432[0-9]\b' || echo "nenhuma porta 5432x em escuta"
+  echo "::group::Diagnóstico: portas 5432x, faixa efêmera e contêineres"
+  echo "faixa de portas efêmeras: $(cat /proc/sys/net/ipv4/ip_local_port_range 2>/dev/null)"
+  echo "portas reservadas: $(cat /proc/sys/net/ipv4/ip_local_reserved_ports 2>/dev/null)"
+  (sudo -n ss -tanp 2>/dev/null || ss -tan 2>/dev/null) | awk 'NR==1 || $4 ~ /:5432[0-9]$/' | head -20
   docker ps -a --format '{{.Names}}  {{.Status}}  {{.Ports}}' 2>/dev/null | head -30 || true
   echo "::endgroup::"
+}
+
+# Espera os sockets em 5432x (TIME_WAIT dura até ~60 s) sumirem antes da segunda tentativa.
+wait_ports_free() {
+  local rounds="${PORT_WAIT_ROUNDS:-25}" step="${PORT_WAIT_STEP:-3}" i
+  for i in $(seq 1 "$rounds"); do
+    [ -z "$(sockets_5432x)" ] && return 0
+    sleep "$step"
+  done
+  return 1
 }
 
 start() { npm run db:start >"$LOG" 2>&1; }
@@ -36,6 +52,7 @@ if grep -q "address already in use" "$LOG"; then
   mask <"$LOG" | grep -E "address already in use|failed to bind" | head -3
   diagnose
   npx supabase stop --no-backup >/dev/null 2>&1 || true
+  wait_ports_free || echo "::warning title=Portas 5432x ainda ocupadas::Tentando mesmo assim; veja o diagnóstico acima."
   if start; then
     echo "::warning title=Supabase iniciou na segunda tentativa::A primeira falhou por porta em uso; registre a ocorrência em docs/TESTES_QUALIDADE.md."
     echo "Supabase local iniciado na segunda tentativa."
