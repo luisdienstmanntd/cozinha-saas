@@ -21,6 +21,7 @@
     "db:reset": "supabase db reset --no-seed",
     "test:db": "supabase test db",
     "test:integration": "node --test tests/integration/*.test.mjs",
+    "test:ci-scripts": "node --test tests/ci/*.test.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
