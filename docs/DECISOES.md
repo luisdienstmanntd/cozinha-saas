@@ -507,3 +507,11 @@
 - **Motivo:** a `main` está 17 PRs atrás; integrar com verificação a cada passo reduz o risco, e a CI instável precisa ser entendida antes (10 falhas em 100 execuções recentes).
 - **Consequência:** nenhuma funcionalidade comercial nova; os demais achados da revisão ficam no backlog. Diretrizes permanentes: não enfraquecer, remover nem desabilitar teste para obter CI verde; sem novas tentativas indiscriminadas; sem mudar regra de negócio; preservar segurança, auditoria, estoque, validade e permissões; investigar causa desconhecida; sem segredo, credencial ou dado pessoal em log; sem push direto, force-push, squash ou rebase na `main` durante a integração; sem deploy, contratação ou publicação sem autorização específica.
 - **Revisar quando:** ao fim de cada parada do plano (etapas 10, 12 e 19) e antes de qualquer contratação.
+
+## D-066 — Estabilização da CI e do E2E (fatia 8.1) e proteção da `main` (17/11/2026)
+
+- **Status:** ACEITA por luis em 17/11/2026, 15:16 UTC ([relatório](FASE_08_1.md), [proposta de proteção](PROTECAO_MAIN_PROPOSTA.md)).
+- **Decisão:** a CI roda por `pull_request`, `push` só na `main` e execução manual; as portas 54320-54329 ficam fora da faixa efêmera; o banco local sobe por script que não imprime credenciais e faz no máximo uma nova tentativa, só para "address already in use", com aviso e diagnóstico; o teste E2E do título mede depois de a unidade reabrir; a `main` recebe o ruleset `main-protegida` (PR obrigatório, 0 aprovações, conversas resolvidas, só merge commit, checks `quality` e `banco-api-e2e`, sem force-push, exclusão ou bypass, atualização estrita desligada, sem auto-merge).
+- **Motivo:** 10 falhas em 100 execuções, todas com causa explicada (seis classes); a classe da porta em uso é causa provável, não provada.
+- **Consequência:** nenhum teste foi enfraquecido nem regra de negócio alterada. Qualquer recorrência de falha de infraestrutura deve ser registrada.
+- **Revisar quando:** a classe A (porta em uso) reaparecer, ou ao fim da integração (reavaliar atualização estrita e 1 aprovação).

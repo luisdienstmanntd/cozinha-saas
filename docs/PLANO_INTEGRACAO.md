@@ -261,3 +261,14 @@ luis **aprovou o plano do PR #41** com estas decisões:
 - Não expor segredos, credenciais ou dados pessoais nos logs.
 - Sem push direto, force-push, squash ou rebase na `main` durante a integração.
 - Sem deploy, contratação de serviços ou publicação do sistema.
+
+## 11. Fatia 8.1 aceita e lote inicial (17/11/2026)
+
+luis aceitou a fatia 8.1 e a D-066 em 17/11/2026, 15:16 UTC ([relatório](FASE_08_1.md)). Mudanças no plano:
+
+- **PR #42 (8.1a, CI, base `main`)** passa a ser a **etapa 0**. Foi integrado com merge commit (`0685ffc`). Depois dele, os PRs da cadeia passam a usar o workflow novo quando a base for trocada para a `main`.
+- **PR #43 (8.1b, teste E2E do título, base na ponta da cadeia)** entra **logo depois do #39** (etapa 17), antes dos PRs de documentação (#40 e #41). Sem ele, o teste `finishing.spec.mjs` da ponta pode oscilar.
+- **Contagem:** com o #42 e o #43, passam a ser **21 merges** individuais (os 19 anteriores mais #42 e #43).
+- **Proteção da `main`:** ruleset `main-protegida` aplicado por luis no painel e conferido: PR obrigatório com 0 aprovações, conversas resolvidas, somente merge commit, checks `quality` e `banco-api-e2e`, atualização estrita desligada, sem force-push, exclusão ou bypass. A sessão de nuvem não tem permissão de escrita nessa rota.
+- **Lote inicial autorizado por luis:** (1) proteção, (2) #42, (3) CI verde na `main`, (4) revalidar o #28 com a CI nova, (5) integrar o #28, (6) CI verde na `main`, (7) relatório e parada. Resultado: ver `ia-tarefas/plano-integracao.md`. Demais lotes aguardam autorização específica.
+- **Observação:** a revalidação do #28 incorporou a `main` à branch dele (merge da `main` na branch, sem reescrever história), porque a CI de PR só roda a nova infraestrutura com a `main` atual na combinação.
