@@ -245,7 +245,10 @@ function ProductionContents({
   const instant = producedTouched
     ? zonedToInstant(producedAt, timezone)
     : now().toISOString();
-  const windowMinutes = rules.production_window_minutes;
+  // Fatia 7.7: a janela da preparação, se houver, vale no lugar da janela da unidade.
+  const windowMinutes =
+    selectedPreparation?.production_window_minutes ??
+    rules.production_window_minutes;
   const late = instant
     ? now().getTime() - new Date(instant).getTime() > windowMinutes * 60000
     : false;

@@ -8,6 +8,7 @@ import {
   storageLabels,
   units,
 } from '../domain/catalog';
+import { durationText } from '../../settings/domain/settings';
 import type {
   CatalogItem,
   CatalogKind,
@@ -121,6 +122,81 @@ function DefineStorage({
       >
         Definir conservação
       </button>
+      {error && <span role="alert"> {error}</span>}
+    </span>
+  );
+}
+
+// Fatia 7.7: janela de registro da produção própria da preparação. Sem ela, vale a da unidade (7.6).
+// O sistema não sugere valor; o proprietário define, e o banco audita.
+function PreparationWindow({
+  item,
+  onSave,
+}: {
+  item: CatalogItem;
+  onSave: (minutes: number | null) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const own = item.production_window_minutes ?? null;
+  const parsed = /^\d{1,4}$/.test(value.trim()) ? Number(value.trim()) : null;
+  const valid = parsed !== null && parsed >= 15 && parsed <= 1440;
+  function save(minutes: number | null) {
+    setBusy(true);
+    setError('');
+    void onSave(minutes)
+      .then(() => setOpen(false))
+      .catch((cause: unknown) =>
+        setError(message(cause, 'Não foi possível salvar a janela.')),
+      )
+      .finally(() => setBusy(false));
+  }
+  if (!open)
+    return (
+      <>
+        {' '}
+        <button
+          type="button"
+          onClick={() => {
+            setValue(own === null ? '' : String(own));
+            setError('');
+            setOpen(true);
+          }}
+        >
+          Janela de registro de {item.name}
+        </button>
+      </>
+    );
+  return (
+    <span>
+      {' '}
+      <label>
+        Janela de registro da produção de {item.name} (minutos){' '}
+        <input
+          inputMode="numeric"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+        />
+      </label>{' '}
+      {valid && `(${durationText(parsed)}) `}
+      <button
+        type="button"
+        disabled={busy || !valid}
+        onClick={() => save(parsed)}
+      >
+        Salvar janela de {item.name}
+      </button>{' '}
+      {own !== null && (
+        <button type="button" disabled={busy} onClick={() => save(null)}>
+          Usar a janela da unidade em {item.name}
+        </button>
+      )}{' '}
+      <button type="button" disabled={busy} onClick={() => setOpen(false)}>
+        Cancelar
+      </button>{' '}
+      Entre 15 minutos e 24 horas. Vale para os registros novos.
       {error && <span role="alert"> {error}</span>}
     </span>
   );
@@ -262,6 +338,44 @@ function CatalogSection({
                     (item.storage_condition
                       ? ` — ${storageLabels[item.storage_condition]}`
                       : ' — conservação não definida')}
+                  {kind === 'preparations' && (
+                    <span>
+                      {item.production_window_minutes
+                        ? ` — janela de registro: ${durationText(item.production_window_minutes)}`
+                        : ' — janela de registro: a da unidade'}
+                    </span>
+                  )}
+                  {kind === 'preparations' &&
+                    canCreate &&
+                    gateway.setProductionWindow && (
+                      <PreparationWindow
+                        key={`${item.id}:${item.production_window_minutes ?? ''}`}
+                        item={item}
+                        onSave={async (minutes) => {
+                          const saved = await gateway.setProductionWindow!(
+                            { organizationId, establishmentId },
+                            item.id,
+                            minutes,
+                          );
+                          setList((previous) =>
+                            previous.status === 'ready'
+                              ? {
+                                  status: 'ready',
+                                  items: previous.items.map((row) =>
+                                    row.id === item.id
+                                      ? {
+                                          ...row,
+                                          production_window_minutes: saved,
+                                        }
+                                      : row,
+                                  ),
+                                }
+                              : previous,
+                          );
+                          onCreated?.();
+                        }}
+                      />
+                    )}
                   {product && !item.storage_condition && canCreate && (
                     <DefineStorage
                       item={item}
