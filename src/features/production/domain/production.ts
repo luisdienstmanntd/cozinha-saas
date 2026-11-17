@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { durationText } from '../../settings/domain/settings';
 
 // Fatia 7.3 (desenho da Fase 7, seções 4.6, 4.7 e 5.1): registrar e anular produção da cozinha pela tela.
 // O banco (register_production, void_production) decide tudo; esta camada só confere a forma, converte o
@@ -38,6 +39,8 @@ export const productionRowSchema = z.object({
   expiry_date: z.iso.date(),
   produced_at: z.string(),
   late: z.boolean(),
+  // Fatia 7.6: janela usada no registro (as produções anteriores, 2 horas).
+  late_window_minutes: z.number().int().optional(),
   handled_by_name: z.string(),
   note: z.string().nullable(),
   timezone: z.string(),
@@ -60,15 +63,30 @@ export const PRODUCTION_MESSAGES = [
   'A validade não pode ser anterior à data do registro.',
   'A pessoa que produziu precisa ter vínculo ativo com a empresa.',
   'Defina o nome de exibição da pessoa que produziu antes de registrar.',
+  'Quem não é proprietário registra só a própria produção.',
   'Informe o motivo da anulação.',
   'Esta produção já foi anulada.',
   'Só lote produzido pela cozinha é anulado por aqui; recebimento usa o descarte com motivo.',
   'A produção já teve consumo, descarte, porcionamento ou mudança de local: não pode ser anulada. Use o descarte com motivo.',
 ] as const;
 
+// Fatia 7.6: a janela é da configuração da unidade, então estas duas mensagens trazem a duração. Só o
+// formato exato do banco é repetido ("2 horas", "1 hora e 30 minutos", "45 minutos").
+const DURATION = String.raw`(?:1 hora|[2-9] horas|1\d horas|2[0-4] horas)(?: e (?:1 minuto|(?:[2-9]|[1-5]\d) minutos))?|(?:1[5-9]|[2-5]\d) minutos`;
+export const PRODUCTION_MESSAGE_PATTERNS = [
+  new RegExp(
+    `^Produção registrada mais de (?:${DURATION}) depois de feita exige justificativa do atraso\\. Siga o procedimento da cozinha\\.$`,
+  ),
+  new RegExp(
+    `^Justificativa de atraso só vale para produção registrada mais de (?:${DURATION}) depois de feita\\.$`,
+  ),
+] as const;
+
 export function knownProductionMessage(message: unknown): string | null {
-  return typeof message === 'string' &&
-    (PRODUCTION_MESSAGES as readonly string[]).includes(message)
+  if (typeof message !== 'string') return null;
+  if ((PRODUCTION_MESSAGES as readonly string[]).includes(message))
+    return message;
+  return PRODUCTION_MESSAGE_PATTERNS.some((pattern) => pattern.test(message))
     ? message
     : null;
 }
@@ -125,4 +143,9 @@ export function expiryInWords(producedDate: string, expiryDate: string) {
 // Data civil da unidade de um valor de <input type="datetime-local"> ("2026-11-14T09:30").
 export function localDateOf(local: string) {
   return /^\d{4}-\d{2}-\d{2}/.exec(local)?.[0] ?? null;
+}
+
+// Fatia 7.6: a janela vem da configuração da unidade (padrão 2 horas, o texto de antes).
+export function productionLateText(minutes: number) {
+  return `Registro mais de ${durationText(minutes)} depois da produção. O lote ficará bloqueado até a decisão do proprietário.`;
 }

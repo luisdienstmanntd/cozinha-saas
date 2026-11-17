@@ -36,6 +36,10 @@ export const LATE_TEXT =
 // lote; a pessoa não digita outra data. "Igual ou menor" é configuração da 7.6.
 export const PREPARATION_EXPIRY_TEXT =
   'A porção de preparação própria leva a mesma validade do lote, informada pelo responsável na produção.';
+// Fatia 7.6: com a configuração "igual ou menor" da unidade, a pessoa pode informar validade menor,
+// nunca maior que a do lote.
+export const PREPARATION_SHORTER_TEXT =
+  'Informe a validade da porção definida pelo responsável: igual ou menor que a do lote, nunca maior. O sistema não calcula prazos.';
 export const FREEZE_TEXT =
   'Congelar não prorroga a validade nesta versão. Não registre um recebimento novo para isso.';
 type Remainder = 'none' | 'sealed' | 'discard' | 'portion';
@@ -139,6 +143,7 @@ export function HandlingForm({
   const unit = context.unit;
   const integral = context.kind === 'integral';
   const preparation = context.source_code === null;
+  const shorter = preparation && context.portion_rule === 'equal_or_less';
   const title = preparation ? 'Porcionar' : 'Abrir / porcionar';
   const wholeUnits = unit === 'un';
 
@@ -276,7 +281,11 @@ export function HandlingForm({
         'Manipulação registrada mais de 2 horas depois de feita exige justificativa do atraso.',
       );
     if (!expiry) return setError('Informe a validade após a abertura.');
-    if (preparation && expiry !== context?.expiry_date)
+    if (shorter && context && expiry > context.expiry_date)
+      return setError(
+        'A validade da porção não pode passar da validade do lote.',
+      );
+    if (preparation && !shorter && expiry !== context?.expiry_date)
       return setError(
         'A porção de preparação própria leva a mesma validade do recipiente de origem.',
       );
@@ -462,7 +471,11 @@ export function HandlingForm({
           </li>
           <li>
             {preparation
-              ? `Validade da porção: ${formatDate(expiry)} (a mesma do lote)`
+              ? `Validade da porção: ${formatDate(expiry)} (${
+                  expiry === context.expiry_date
+                    ? 'a mesma do lote'
+                    : `lote: ${formatDate(context.expiry_date)}`
+                })`
               : `Validade após a abertura: ${formatDate(expiry)}`}
           </li>
           <li>Conservação: {storage ? storageLabels[storage] : ''}</li>
@@ -678,7 +691,24 @@ export function HandlingForm({
               </p>
             </>
           )}
-          {preparation ? (
+          {shorter ? (
+            <>
+              <p>
+                <label>
+                  Validade da porção{' '}
+                  <input
+                    type="date"
+                    value={expiry}
+                    onChange={(event) => setExpiry(event.target.value)}
+                  />
+                </label>
+              </p>
+              <p>
+                {PREPARATION_SHORTER_TEXT} A validade do lote é{' '}
+                {formatDate(context.expiry_date)}.
+              </p>
+            </>
+          ) : preparation ? (
             <p>
               Validade da porção: {formatDate(context.expiry_date)}.{' '}
               {PREPARATION_EXPIRY_TEXT}

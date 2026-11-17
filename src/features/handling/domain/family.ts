@@ -18,6 +18,8 @@ export const contextSchema = z.object({
 export type HandlingContext = z.infer<typeof contextSchema> & {
   // 'pending' | 'rejected' quando o banco bloqueia a manipulação (container_blocks).
   block: 'pending' | 'rejected' | null;
+  // Fatia 7.6: regra da validade da porção de preparação na unidade (padrão: igual à do lote).
+  portion_rule?: 'equal' | 'equal_or_less';
 };
 
 export const memberSchema = z.object({

@@ -15,6 +15,8 @@ const listedSchema = z.object({
   batch_id: z.uuid(),
   produced_at: z.string(),
   late: z.boolean(),
+  // Fatia 7.6; sempre presente no banco (as produções anteriores têm 120).
+  late_window_minutes: z.number().int().optional(),
   handled_by_name: z.string(),
   note: z.string().nullable(),
   timezone: z.string(),
@@ -72,7 +74,7 @@ export function createProductionGateway(
       const { data, error } = await client
         .from('batch_productions')
         .select(
-          'batch_id,produced_at,late,handled_by_name,note,timezone,batch_receipts!batch_productions_batch_fk!inner(quantity,unit,expiry_date,products!inner(name),containers(id,short_code,kind)),production_voids!production_voids_production_fk(reason,created_at)',
+          'batch_id,produced_at,late,late_window_minutes,handled_by_name,note,timezone,batch_receipts!batch_productions_batch_fk!inner(quantity,unit,expiry_date,products!inner(name),containers(id,short_code,kind)),production_voids!production_voids_production_fk(reason,created_at)',
         )
         .eq('organization_id', scope.organizationId)
         .eq('establishment_id', scope.establishmentId)
@@ -100,6 +102,7 @@ export function createProductionGateway(
             expiry_date: row.batch_receipts.expiry_date,
             produced_at: row.produced_at,
             late: row.late,
+            late_window_minutes: row.late_window_minutes,
             handled_by_name: row.handled_by_name,
             note: row.note,
             timezone: row.timezone,

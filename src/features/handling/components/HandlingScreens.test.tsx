@@ -472,3 +472,55 @@ it('preparação própria: sobra fica no recipiente da produção', async () => 
   ).toBeVisible();
   expect(screen.getByLabelText('Sim, continua no recipiente')).toBeVisible();
 });
+
+// Fatia 7.6: com a configuração "igual ou menor" da unidade, a porção de preparação aceita validade
+// menor que a do lote, nunca maior.
+it('preparação própria com "igual ou menor": campo de validade, nunca maior que a do lote', async () => {
+  const user = userEvent.setup();
+  const gw = gateway({
+    context: vi.fn().mockResolvedValue({
+      ...context,
+      product_name: 'Caldo de legumes',
+      unit: 'l',
+      source_code: null,
+      expiry_date: '2030-01-03',
+      balance: 6,
+      storage: 'refrigerated',
+      portion_rule: 'equal_or_less',
+    }),
+  });
+  render(
+    <HandlingForm
+      scope={scope}
+      containerId={ids.box}
+      userId={ids.user}
+      gateway={gw}
+      onClose={vi.fn()}
+    />,
+  );
+  const field = await screen.findByLabelText('Validade da porção');
+  expect(field).toHaveValue('2030-01-03');
+  expect(
+    screen.getByText(/igual ou menor que a do lote, nunca maior/),
+  ).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Dividir igualmente' }));
+  await user.clear(field);
+  await user.type(field, '2030-01-04');
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'A validade da porção não pode passar da validade do lote.',
+  );
+  await user.clear(field);
+  await user.type(field, '2030-01-02');
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  expect(
+    await screen.findByText(
+      'Validade da porção: 02/01/2030 (lote: 03/01/2030)',
+    ),
+  ).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Confirmar registro' }));
+  expect(vi.mocked(gw.handle).mock.calls[0]![1]).toMatchObject({
+    kind: 'portioning',
+    expiryDate: '2030-01-02',
+  });
+});

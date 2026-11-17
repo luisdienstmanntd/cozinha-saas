@@ -50,7 +50,8 @@ select is(
   (select coalesce(string_agg(t, ',' order by t), '') from unnest(array[
       'public.memberships','public.batch_receipts','public.containers','public.stock_movements','public.entity_changes',
       'public.container_handlings','public.handling_voids','public.occurrences','public.occurrence_decisions',
-      'public.location_moves','public.storage_locations','public.batch_productions','public.production_voids']) t
+      'public.location_moves','public.storage_locations','public.batch_productions','public.production_voids',
+      'public.establishment_settings']) t
     where has_any_column_privilege('authenticated', t::regclass, 'INSERT,UPDATE')),
   '', 'histórico e vínculos só mudam por funções autorizadas (sem INSERT/UPDATE direto)');
 

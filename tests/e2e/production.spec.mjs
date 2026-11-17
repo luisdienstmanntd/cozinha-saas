@@ -248,3 +248,101 @@ test('porções de uma preparação saem com o mesmo modelo de etiqueta', async 
     );
   });
 });
+
+// Fatia 7.6: o proprietário muda as configurações da unidade e o colaborador passa a registrar a
+// própria produção; anular continua só do proprietário.
+test('colaborador registra a própria produção quando a unidade permite', async ({
+  page,
+}) => {
+  page.setDefaultTimeout(5000);
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await page
+      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
+      .click();
+    const settings = page.getByRole('region', {
+      name: 'Configurações da unidade',
+    });
+    await expect(settings).toContainText(
+      'Quem registra produção: Só o proprietário',
+    );
+    await settings
+      .getByRole('button', { name: 'Alterar configurações' })
+      .click();
+    await settings
+      .getByLabel('Cada colaborador registra a própria produção')
+      .check();
+    await settings
+      .getByLabel('Janela de registro da produção (minutos)')
+      .fill('90');
+    await settings
+      .getByRole('button', { name: 'Revisar configurações' })
+      .click();
+    await expect(
+      settings.getByRole('region', { name: 'Revisão das configurações' }),
+    ).toContainText(
+      'Janela de registro da produção: 2 horas → 1 hora e 30 minutos',
+    );
+    await settings
+      .getByRole('button', { name: 'Confirmar configurações' })
+      .click();
+    await expect(settings.getByRole('status')).toContainText(
+      'Configurações salvas.',
+    );
+
+    // O proprietário cadastra a preparação e define o nome de exibição do colaborador.
+    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    await catalog.getByRole('button', { name: 'Nova preparação' }).click();
+    await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
+    await catalog.getByLabel('Unidade de medida').selectOption('l');
+    await catalog
+      .getByRole('combobox', { name: 'Conservação', exact: true })
+      .selectOption('refrigerated');
+    await catalog.getByRole('button', { name: 'Cadastrar preparação' }).click();
+    await expect(catalog).toContainText('Caldo de teste — l — Refrigerado');
+    const panel = page.getByRole('region', { name: 'Produção da cozinha' });
+    await panel.getByRole('button', { name: 'Registrar produção' }).click();
+    const ownerForm = panel.getByRole('form', { name: 'Registrar produção' });
+    await ownerForm
+      .getByLabel('Pessoa sem nome de exibição')
+      .selectOption({ label: 'Colaborador (sem nome)' });
+    await ownerForm.getByLabel('Nome (até 40 caracteres)').fill('Bia Teste');
+    await ownerForm.getByRole('button', { name: 'Definir nome' }).click();
+    await expect(ownerForm.getByLabel('Produzida por')).toContainText(
+      'Bia Teste',
+    );
+    await page.getByRole('button', { name: 'Sair', exact: true }).click();
+
+    await signIn(page, users[2]);
+    await page
+      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
+      .click();
+    await expect(settings).toContainText(
+      'Somente o proprietário muda as configurações da unidade.',
+    );
+    await expect(panel).toContainText(
+      'Você registra só a própria produção. Somente o proprietário anula produção.',
+    );
+    await panel.getByRole('button', { name: 'Registrar produção' }).click();
+    const form = panel.getByRole('form', { name: 'Registrar produção' });
+    await form
+      .getByLabel('Preparação')
+      .selectOption({ label: 'Caldo de teste (l)' });
+    await form.getByLabel('Quantidade produzida (l)').fill('4');
+    await form.getByLabel('Validade', { exact: true }).fill(localDate(2));
+    await expect(form.getByLabel('Produzida por')).toHaveValue(users[2].id);
+    await form.getByRole('button', { name: 'Revisar produção' }).click();
+    const review = panel.getByRole('region', { name: 'Revisão da produção' });
+    await expect(review).toContainText('Produzida por: Bia Teste');
+    await review.getByRole('button', { name: 'Confirmar produção' }).click();
+    await expect(
+      panel.getByRole('region', { name: 'Resultado da produção' }),
+    ).toContainText(/Produção registrada no recipiente C-\d{6}/);
+    const productions = panel.getByRole('list', { name: 'Produções recentes' });
+    await expect(productions).toContainText('por Bia Teste');
+    await expect(
+      productions.getByRole('button', { name: 'Anular produção' }),
+    ).toHaveCount(0);
+  });
+});

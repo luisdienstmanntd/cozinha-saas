@@ -126,7 +126,22 @@ export function createHandlingGateway(client: SupabaseClient): HandlingGateway {
         : rows.data.length > 0
           ? 'pending'
           : null;
-      return { ...context, block };
+      if (context.source_code !== null) return { ...context, block };
+      // Preparação própria: a regra da porção vem da configuração da unidade (7.6).
+      const settings = await client
+        .from('establishment_settings')
+        .select('portion_expiry_rule')
+        .eq('organization_id', scope.organizationId)
+        .eq('establishment_id', scope.establishmentId)
+        .maybeSingle();
+      if (settings.error) throw new Error(UNAVAILABLE);
+      const rule = (settings.data as { portion_expiry_rule?: unknown } | null)
+        ?.portion_expiry_rule;
+      return {
+        ...context,
+        block,
+        portion_rule: rule === 'equal_or_less' ? 'equal_or_less' : 'equal',
+      };
     },
     async members(scope) {
       const { data, error } = await client
