@@ -28,7 +28,7 @@ Só exibição e leitura da temperatura digitada: nenhuma migração, política 
 
 - Aceita o número que o banco devolve ou o texto com ponto.
 - Troca o ponto por vírgula, tira zeros finais, nunca agrupa milhares.
-- Não faz conta: opera sobre o texto do número. Só quando o número traz mais de 3 casas (resíduo de conta em ponto flutuante, que o banco nunca guarda, por exemplo `0.1 + 0.2`) ele é cortado na terceira casa.
+- Não faz conta: opera sobre o texto do número. Só quando o número traz mais de 3 casas (resíduo de conta em ponto flutuante, que o banco nunca guarda, por exemplo `0.1 + 0.2`) ele é **arredondado** à terceira casa por `toFixed(3)`, que arredonda e não trunca (`0.0006` vira `0,001`, `0.9996` vira `1`). Esse caminho nunca é percorrido por um valor válido: toda quantidade aceita pelo esquema e guardada pelo banco tem no máximo 3 casas e sai com as mesmas casas, só sem os zeros finais (teste exaustivo em "Testes novos").
 - Texto que não é número volta como veio.
 
 | Guardado no banco | Mostrado          |
@@ -81,12 +81,13 @@ Reforços: o E2E `catalog.spec.mjs` ganhou conferência da vírgula e da ausênc
 ## Testes novos
 
 - **Unitários (+64):** `formatQuantity` (18 valores, ausência de milhar, resíduo de ponto flutuante, ida e volta nos extremos `0,001` a `999999999,999`, texto que não é número); `toDotTemperature` (6 entradas, 6 que ficam como digitadas e a equivalência das validações do esquema, com limites e recusas); **varredura** que falha se algum texto voltar a mostrar quantidade ou saldo crus (e confere que ela reconhece os padrões que deve barrar); **PDF** com recebimento de nome longo (107 caracteres), preparação com `1,25`, `0,001`, `3`, `1500` e `999999999,999` (nome de 80 caracteres), porção, produto fracionado, nome longo demais ainda recusado, uma página só e sem ponto decimal, e o texto codificado no QR igual ao de antes com quantidades diferentes; telas de movimentações, ficha, abrir/porcionar, ocorrências, lista de produções e tentativas pendentes com valores decimais; temperatura do recebimento (5 entradas aceitas e enviadas com ponto, 6 recusadas sem limite novo, texto de ajuda).
+- **Correção pedida no aceite (17/11/2026):** testes de que o que passa de 3 casas é arredondado e não truncado (`0.0006` → `0,001`, `0.9996` → `1`, `1.2346` → `1,235`) e teste exaustivo de que cada valor válido (todos os milésimos de `0,001` a `25,000`, os últimos 20 000 milésimos da faixa e uma varredura de passo largo até `999999999,999`) sai com as mesmas casas, como texto e como número.
 - **Integração (+1):** valores guardados com 1 a 3 casas lidos pela API e mostrados sem perder casa nenhuma, ida e volta ao mesmo número, temperatura `-18,5` gravada como `-18.5`, limites do banco intactos (`80,1` e `-50,1` recusados; `80,0` e `-50,0` aceitos) e leitura repetida igual.
 - **E2E (+2):** recebimento de produto de nome longo com `12,5` e temperatura `-18,5` (recusas de `80,1`, `-50,1` e `4,25`), lista, saída de `0,25`, histórico, ficha, rota do QR e etiqueta PDF (vírgula, nome inteiro, uma página, mesmo ID), valor guardado conferido no banco; produção `2,5 l` com preparação de nome longo, lista e etiqueta PDF.
 
 ## Testes executados
 
-Bateria completa em 16/11/2026, 22:40–23:20 UTC, no ambiente de nuvem (Node 24, Supabase local): `npm run lint`, `typecheck`, `format:check` e `build` ok; `npm run test` (vitest) **519 de 519** (antes 455); `npm run test:db` (pgTAP) **1433 de 1433** (sem mudança: nenhuma migração); `supabase db advisors --type security --level warn` sem problemas; `npm run test:integration` **51 de 51** (antes 50); `npm run test:e2e` **35 de 35** (antes 33). Tudo verde. A CI do PR é registrada no PR.
+Bateria completa em 16/11/2026, 22:40–23:20 UTC, no ambiente de nuvem (Node 24, Supabase local): `npm run lint`, `typecheck`, `format:check` e `build` ok; `npm run test` (vitest) **521 de 521** (antes 455; 519 na primeira bateria e +2 do aceite); `npm run test:db` (pgTAP) **1433 de 1433** (sem mudança: nenhuma migração); `supabase db advisors --type security --level warn` sem problemas; `npm run test:integration` **51 de 51** (antes 50); `npm run test:e2e` **35 de 35** (antes 33). Tudo verde. A CI do PR é registrada no PR.
 
 ## Limitações e pendências
 
@@ -98,4 +99,4 @@ Bateria completa em 16/11/2026, 22:40–23:20 UTC, no ambiente de nuvem (Node 24
 
 ## Aceite
 
-Aguardando o aceite final de luis. Sem merge nem deploy sem autorização específica.
+**Aceita por luis em 17/11/2026, 13:17 UTC**, junto com a D-064, com a correção de documentação sobre `toFixed(3)` (arredonda, não trunca) e a garantia de preservação dos valores válidos, ambas feitas. luis considera encerrada a etapa de melhorias de interface V1 a V5B. Sem merge nem deploy sem autorização específica.
