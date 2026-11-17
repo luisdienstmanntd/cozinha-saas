@@ -21,6 +21,9 @@ export const HANDLING_MESSAGES = [
   'Algum recipiente desta manipulação já teve movimentação; a manipulação não pode ser anulada.',
   'Algum recipiente desta manipulação já mudou de local; a manipulação não pode ser anulada.',
   'Manipulação já anulada.',
+  // Fatia 7.5: porção de preparação própria leva a validade do lote; abrir preparação é recusado (7.1).
+  'A porção de preparação própria leva a mesma validade do recipiente de origem.',
+  'Preparação própria não é aberta: use o porcionamento.',
 ] as const;
 
 export function knownMessage(message: unknown): string | null {

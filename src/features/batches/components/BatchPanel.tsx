@@ -747,7 +747,9 @@ function BatchContents({
                               type="button"
                               onClick={() => setHandlingId(row.container_id)}
                             >
-                              Abrir / porcionar
+                              {row.source_code === null
+                                ? 'Porcionar'
+                                : 'Abrir / porcionar'}
                             </button>
                           </>
                         )}

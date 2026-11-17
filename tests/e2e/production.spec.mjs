@@ -200,11 +200,17 @@ test('porções de uma preparação saem com o mesmo modelo de etiqueta', async 
       .getByRole('list', { name: 'Recipientes e validade' })
       .getByRole('listitem')
       .filter({ hasText: 'Caldo de teste' });
-    await row.getByRole('button', { name: 'Abrir / porcionar' }).click();
+    // Fatia 7.5: preparação só é porcionada, e a porção leva a validade do lote (sem campo de data).
+    await row.getByRole('button', { name: 'Porcionar', exact: true }).click();
     const form = page.getByRole('region', { name: 'Abrir ou porcionar' });
-    await form.getByLabel('Dividir em porções').check();
+    await expect(form).toContainText(
+      'Preparação própria não é aberta: divida em porções.',
+    );
+    await expect(form.getByLabel('Abrir embalagem')).toBeHidden();
+    await expect(form.getByLabel('Validade após a abertura')).toHaveCount(0);
+    const [y, m, d] = localDate(2).split('-');
+    await expect(form).toContainText(`Validade da porção: ${d}/${m}/${y}`);
     await form.getByRole('button', { name: 'Dividir igualmente' }).click();
-    await form.getByLabel('Validade após a abertura').fill(localDate(1));
     await form
       .getByRole('combobox', { name: 'Manipulado por' })
       .selectOption({ label: 'Ana Teste' });

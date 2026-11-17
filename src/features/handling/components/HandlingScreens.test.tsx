@@ -378,3 +378,97 @@ it('origem aberta avisa para usar a etiqueta nova', async () => {
     screen.getByRole('button', { name: 'Abrir / porcionar' }),
   ).toBeVisible();
 });
+
+// Fatia 7.5: preparação própria só é porcionada, e a porção leva a validade do lote (decisão B).
+it('preparação própria: só porcionar, com a validade do lote e sem campo de data', async () => {
+  const user = userEvent.setup();
+  const caldo: HandlingContext = {
+    ...context,
+    product_name: 'Caldo de legumes',
+    unit: 'l',
+    source_code: null,
+    expiry_date: '2030-01-03',
+    balance: 6,
+    storage: 'refrigerated',
+  };
+  const gw = gateway({
+    context: vi.fn().mockResolvedValue(caldo),
+    created: vi.fn().mockResolvedValue({
+      handling: {
+        id: ids.handling,
+        source_container_id: ids.box,
+        kind: 'portioning',
+        expiry_date: '2030-01-03',
+        storage: 'refrigerated',
+        handled_at: '2026-11-13T12:00:00Z',
+        handled_by_name: 'Ana',
+        remainder: 'none',
+        remainder_quantity: 0,
+        timezone: 'America/Sao_Paulo',
+      },
+      voided: null,
+      children: [],
+    }),
+  });
+  render(
+    <HandlingForm
+      scope={scope}
+      containerId={ids.box}
+      userId={ids.user}
+      gateway={gw}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(
+    await screen.findByText(
+      'Preparação própria não é aberta: divida em porções.',
+    ),
+  ).toBeVisible();
+  expect(screen.getByRole('heading', { level: 4 })).toHaveTextContent(
+    'Porcionar C-000001',
+  );
+  expect(screen.queryByLabelText('Abrir embalagem')).not.toBeVisible();
+  expect(
+    screen.queryByLabelText('Validade após a abertura'),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText(/Validade da porção: 03\/01\/2030/)).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Dividir igualmente' }));
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  expect(
+    await screen.findByText('Validade da porção: 03/01/2030 (a mesma do lote)'),
+  ).toBeVisible();
+  expect(screen.getByText(/Porcionado em:/)).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Confirmar registro' }));
+  expect(vi.mocked(gw.handle).mock.calls[0]![1]).toMatchObject({
+    kind: 'portioning',
+    quantities: ['3', '3'],
+    expiryDate: '2030-01-03',
+    remainder: 'none',
+  });
+});
+
+it('preparação própria: sobra fica no recipiente da produção', async () => {
+  const user = userEvent.setup();
+  render(
+    <HandlingForm
+      scope={scope}
+      containerId={ids.box}
+      userId={ids.user}
+      gateway={gateway({
+        context: vi.fn().mockResolvedValue({
+          ...context,
+          source_code: null,
+          unit: 'l',
+          balance: 6,
+        }),
+      })}
+      onClose={vi.fn()}
+    />,
+  );
+  await user.type(await screen.findByLabelText('Porção 1 (l)'), '1');
+  await user.type(screen.getByLabelText('Porção 2 (l)'), '1');
+  expect(
+    screen.getByText('O restante continua no recipiente da produção?'),
+  ).toBeVisible();
+  expect(screen.getByLabelText('Sim, continua no recipiente')).toBeVisible();
+});

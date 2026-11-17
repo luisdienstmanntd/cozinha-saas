@@ -59,6 +59,7 @@ Retenção e backup: **a definir** (prazo, local, quem acessa, teste de restaura
 | Ocorrências (total, tardias, sem decisão) | `occurrences` | peso do bloqueio |
 | Decisões e tempo até a decisão (mediana e máximo) | `occurrence_decisions` | gargalo do proprietário (R15) |
 | Anulações de manipulação; mudanças de local | `handling_voids`, `location_moves` | uso real |
+| Produções; produções tardias; atraso entre produção e registro (mediana e máximo); anulações de produção; porcionamentos de preparação; ocorrências de produção tardia (fatia 7.5) | `batch_productions`, `production_voids`, `container_handlings`, `occurrences` | gargalo do proprietário no registro da produção (R-1 da Fase 7, D-019) e uso da anulação |
 | Recipientes vencidos que ainda têm saldo (fatia 6.11) | `container_balances` e validade do recipiente | vencidos esquecidos no estoque; fotografia **de agora**, na data da unidade, independente do período pedido |
 
 **Não medido pelo banco** (as recusas não são gravadas e o papel fora do sistema não aparece lá): etiquetas feitas fora do sistema e tentativas de prazo recusadas. Durante a observação, registre à mão por turno: etiquetas feitas à mão, tentativas de "congelar para prorrogar" e pedidos de prazo acima da origem relatados pela equipe. Se o piloto mostrar que isso importa, a recusa passa a ser gravada em uma fatia própria.
