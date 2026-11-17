@@ -1,9 +1,18 @@
 name: Qualidade
+# Fatia 8.1 (D-065): uma execução por commit. Antes, `on: push` + `on: pull_request` rodavam o mesmo commit
+# duas vezes (as execuções gêmeas que apareciam em pares). Agora: PRs (qualquer base, inclusive PRs
+# empilhados), a `main` e execução manual para medir estabilidade.
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  # Um PR cancela a execução anterior do mesmo PR; `main` e execuções manuais nunca se cancelam.
+  group: quality-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -18,6 +27,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
+      - run: npm run test:ci-scripts
       - run: npm run build
   banco-api-e2e:
     # Gates de segurança que dependem do Supabase local descartável (pgTAP, advisors, API e navegador).
@@ -31,9 +41,18 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run db:start
+      - name: Subir o Supabase local (sem imprimir credenciais)
+        run: scripts/ci/start-database.sh
       - run: npm run test:db
       - run: npx supabase db advisors --type security --level warn --fail-on warn
       - run: npm run test:integration
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e -- --trace off
+      - name: Guardar o resultado dos testes de navegador (só se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-e2e
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
