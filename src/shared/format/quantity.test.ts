@@ -167,7 +167,7 @@ describe('formatQuantity (V5B)', () => {
     for (const value of [1500, 1234567.891, 999999999.999])
       expect(formatQuantity(value)).toMatch(/^\d+(?:,\d{1,3})?$/);
   });
-  it('resíduo de ponto flutuante além de 3 casas é cortado em 3; o que o banco guarda não é tocado', () => {
+  it('resíduo de ponto flutuante além de 3 casas é arredondado para 3 (toFixed, não truncamento); o que o banco guarda não é tocado', () => {
     expect(formatQuantity(0.1 + 0.2)).toBe('0,3');
     expect(formatQuantity(1.25 - 0.5)).toBe('0,75');
     expect(formatQuantity(11.75 - 0.75)).toBe('11');

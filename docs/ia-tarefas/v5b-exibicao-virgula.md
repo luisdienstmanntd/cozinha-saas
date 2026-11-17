@@ -25,3 +25,9 @@
 - **Estado do ambiente:** `playwright.local.config.mjs` local, não versionado.
 - **Pendências / riscos:** aceite de luis; impressão física e etiquetas antigas (com ponto) fora do escopo.
 - **Próximo passo:** aceite final de luis.
+
+### 17/11/2026 13:30 UTC — Claude Code
+
+- **Planejado / feito:** aceite final de luis (17/11/2026, 13:17 UTC): D-064 ACEITA. Corrigida a divergência de redação: `toFixed(3)` arredonda, não trunca; ajustados comentário em `quantity.ts`, nome do teste, `V5B_EXIBICAO_VIRGULA.md` e `DECISOES.md`. Comportamento do código inalterado; valores guardados (1 a 3 casas) seguem preservados pelo caminho de texto. luis encerrou a etapa V1–V5B.
+- **Testes:** ver mensagem do commit/PR.
+- **Próximo passo:** revisão técnica integrada (`docs/REVISAO_TECNICA_INTEGRADA.md`), só análise.
