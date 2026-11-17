@@ -441,3 +441,75 @@ it('preparação própria mostra quem produziu e, anulada, a faixa ANULADO sem e
     screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
   ).not.toBeInTheDocument();
 });
+
+it('preparação tardia sem liberação explica a recusa e não oferece a etiqueta (fatia 7.4)', async () => {
+  const data = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000003',
+    balance: 6,
+    hold: 'pending' as const,
+    production_hold: true,
+    production: {
+      produced_at: '2026-11-14T10:00:00.000Z',
+      handled_by_name: 'Bruno Lima',
+      timezone: 'America/Sao_Paulo',
+      late: true,
+      voided: null,
+    },
+    batch_receipts: {
+      source_code: null,
+      quantity: 6,
+      unit: 'l',
+      expiry_date: '2030-11-16',
+      expiry_origin: 'responsible' as const,
+      products: { name: 'Caldo de legumes' },
+    },
+  };
+  render(
+    <LabelView
+      id={data.id}
+      gateway={{ ensure: vi.fn(), get: vi.fn().mockResolvedValue(data) }}
+    />,
+  );
+  expect(
+    await screen.findByText(/Produção registrada fora da janela de horário/),
+  ).toBeVisible();
+  expect(
+    screen.queryByText(/a etiqueta sai com a faixa/),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).not.toBeInTheDocument();
+});
+
+it('preparação própria liberada oferece a etiqueta PDF (fatia 7.4)', async () => {
+  const data = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    short_code: 'C-000003',
+    balance: 6,
+    production: {
+      produced_at: '2026-11-14T14:30:00.000Z',
+      handled_by_name: 'Bruno Lima',
+      timezone: 'America/Sao_Paulo',
+      late: false,
+      voided: null,
+    },
+    batch_receipts: {
+      source_code: null,
+      quantity: 6,
+      unit: 'l',
+      expiry_date: '2030-11-16',
+      expiry_origin: 'responsible' as const,
+      products: { name: 'Caldo de legumes' },
+    },
+  };
+  render(
+    <LabelView
+      id={data.id}
+      gateway={{ ensure: vi.fn(), get: vi.fn().mockResolvedValue(data) }}
+    />,
+  );
+  expect(
+    await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeVisible();
+});

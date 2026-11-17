@@ -4,12 +4,16 @@ import {
   containerPath,
   DERIVED_DATA_MESSAGE,
   PRODUCED_LABEL_MESSAGE,
+  PRODUCTION_HOLD_MESSAGE,
+  PRODUCTION_VOIDED_MESSAGE,
   LATE_HOLD_MESSAGE,
 } from '../domain/label';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import { storageLabels } from '../../catalog/domain/catalog';
 import type { LabelData } from '../domain/label';
 
+// Fatia 7.4 (desenho da Fase 7, seção 5.2): terceiro modelo, "Preparação própria", para o integral e as
+// porções de um lote produzido pela cozinha. Nenhum texto afirma conformidade (teste 16).
 // Fatia 6.7 (desenho 7.2): dois modelos de 100 × 100 mm, legíveis sem ler o QR. "Recebimento" para o
 // recipiente integral e "Produto aberto" / "Produto fracionado" para o derivado. Gerar ou reimprimir
 // nunca grava nada (D-003). O QR leva só a URL e o ID opaco.
@@ -46,11 +50,69 @@ function refuse(data: LabelData) {
     throw new Error(
       'Manipulação anulada: este recipiente não vale mais e a etiqueta não pode ser gerada.',
     );
-  if (data.batch_receipts.source_code === null)
-    throw new Error(PRODUCED_LABEL_MESSAGE);
+  // Fatia 7.4: lote produzido exige os dados da produção; anulado ou tardio sem liberação não sai.
+  if (data.batch_receipts.source_code === null || data.production) {
+    if (!data.production) throw new Error(PRODUCED_LABEL_MESSAGE);
+    if (data.production.voided) throw new Error(PRODUCTION_VOIDED_MESSAGE);
+    if (data.production_hold) throw new Error(PRODUCTION_HOLD_MESSAGE);
+    if (!(data.handling?.storage ?? data.storage))
+      throw new Error(PRODUCED_LABEL_MESSAGE);
+  }
   if (data.late_hold) throw new Error(LATE_HOLD_MESSAGE);
   if (data.kind === 'derived' && !data.handling)
     throw new Error(DERIVED_DATA_MESSAGE);
+}
+
+// Ordem da seção 5.2: nome (maior texto), VALIDADE em destaque, produzido em, produzido por,
+// conservação, quantidade (e "porção X de N"), "Validade informada pelo responsável", código e QR.
+function preparationPage({ doc }: Page, data: LabelData) {
+  const p = data.production!;
+  const h = data.handling;
+  const batch = data.batch_receipts;
+  const made = zoned(p.produced_at, p.timezone);
+  const storage = (h?.storage ?? data.storage)!;
+  const expiry = h?.expiry_date ?? batch.expiry_date;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text('PREPARAÇÃO PRÓPRIA', 6, 7);
+  // O nome é o maior texto (16 pt); a validade vem logo abaixo, em negrito (15 pt).
+  doc.setFontSize(16);
+  const name = lines(doc, batch.products.name, 88, 3);
+  doc.text(name, 6, 14, { lineHeightFactor: 1.15 });
+  let y = 14 + name.length * 6.5;
+  doc.setFontSize(9);
+  doc.text('VALIDADE', 6, y);
+  y += 6.5;
+  doc.setFontSize(15);
+  doc.text(day(expiry), 6, y);
+  y += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text('Validade informada pelo responsável', 6, y);
+  y += 5;
+  doc.setFontSize(9);
+  const row = (text: string, width = 88, max = 2) => {
+    const wrapped = lines(doc, text, width, max);
+    doc.text(wrapped, 6, y);
+    y += wrapped.length * 4;
+  };
+  row(`Produzido em: ${made.date} ${made.time} (${p.timezone})`);
+  row(`Produzido por: ${p.handled_by_name}`);
+  // Abaixo da altura do QR (a partir de 61 mm) o texto fica na coluna da esquerda.
+  y = Math.max(y, 61);
+  row(`Conservação: ${storageLabels[storage]}`, 54, 1);
+  const quantity = data.effective?.initial_quantity ?? batch.quantity;
+  row(
+    h
+      ? `Quantidade da porção: ${quantity} ${batch.unit}`
+      : `Quantidade produzida: ${quantity} ${batch.unit}`,
+    54,
+    2,
+  );
+  if (h?.kind === 'portioning' && h.position)
+    row(`Porção ${h.position}${h.siblings ? ` de ${h.siblings}` : ''}`, 54, 1);
+  if (y > (data.hold ? 81 : 93))
+    throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
 }
 
 type Page = { doc: jsPDF; right: number };
@@ -151,6 +213,7 @@ function textsOf(data: LabelData): string[] {
     data.batch_receipts.source_code ?? '',
     data.batch_receipts.suppliers?.name ?? '',
     data.handling?.handled_by_name ?? '',
+    data.production?.handled_by_name ?? '',
   ];
 }
 
@@ -176,7 +239,8 @@ export async function makeLabelsPdf(
   for (const [index, data] of list.entries()) {
     if (index > 0) doc.addPage([100, 100]);
     doc.setTextColor(0, 0, 0);
-    if (data.kind === 'derived') openedPage({ doc, right: 94 }, data);
+    if (data.production) preparationPage({ doc, right: 94 }, data);
+    else if (data.kind === 'derived') openedPage({ doc, right: 94 }, data);
     else receiptPage({ doc, right: 94 }, data);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);

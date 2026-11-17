@@ -98,7 +98,33 @@ it('texto extraído das etiquetas PDF não afirma conformidade sanitária', asyn
       siblings: 2,
     },
   };
+  // Fatia 7.4: também o modelo "Preparação própria" (integral e porção).
+  const production = {
+    produced_at: '2026-11-14T14:30:00Z',
+    handled_by_name: 'Bruno',
+    timezone: 'America/Sao_Paulo',
+    late: false,
+    voided: null,
+  };
+  const prepared: LabelData = {
+    ...base,
+    kind: 'integral',
+    storage: 'refrigerated',
+    production,
+    batch_receipts: {
+      ...base.batch_receipts,
+      source_code: null,
+      products: { name: 'Caldo' },
+    },
+  };
+  const preparedPortion: LabelData = {
+    ...opened,
+    production,
+    batch_receipts: prepared.batch_receipts,
+  };
   for (const [model, hold] of [
+    [prepared, null],
+    [preparedPortion, null],
     [base, null],
     [base, 'pending'],
     [base, 'rejected'],

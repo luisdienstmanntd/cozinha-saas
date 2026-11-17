@@ -393,3 +393,11 @@
 - **Motivo:** D-049, D-050, D-051, D-043, D-045, D-004, D-019.
 - **Consequência:** a 7.4 desenha o PDF a partir dos mesmos dados (`production` na etiqueta). A lista mostra só as 50 mais recentes; todo o histórico segue no banco, e a pesquisa histórica por data, preparação e lote fica como melhoria futura (`BACKLOG.md`).
 - **Revisar quando:** a 7.4 e a 7.5 chegarem ou a observação na cozinha pedir outro fluxo.
+
+## D-053 — Etiqueta "Preparação própria" (14/11/2026)
+
+- **Status:** aceita por luis em 14/11/2026 (16:41 UTC) com os 3 pontos; implementada na fatia 7.4 ([registro](FASE_07_4.md)).
+- **Decisão:** lote produzido e suas porções usam o terceiro modelo de 100 × 100 mm, com os campos da seção 5.2 na ordem do desenho (nome como maior texto, validade em negrito logo abaixo, "Validade informada pelo responsável", produzido em/por, conservação, quantidade e porção X de N, código e QR), sem lote nem fornecedor; o arquivo inteiro é recusado para produção anulada, produção tardia sem liberação ou dados da produção indisponíveis; gerar não grava nada.
+- **Motivo:** D-003, D-044, D-049, D-050, D-051, D-052.
+- **Consequência:** a 7.5 ajusta a tela de porcionar preparação sem mudar o modelo.
+- **Revisar quando:** a impressão física for testada ou a nutricionista RT responder a seção 10 do desenho (ambas pendências do piloto, `PRE_PILOTO.md`, seção 5).

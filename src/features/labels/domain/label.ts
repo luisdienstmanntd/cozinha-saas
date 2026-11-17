@@ -14,6 +14,9 @@ export const labelDataSchema = z.object({
   // Fatia 6.5b: recipiente bloqueado por ocorrência (sem decisão ou rejeitada). A etiqueta sai com a
   // faixa de bloqueio; liberada a ocorrência, a reimpressão sai sem a faixa.
   hold: z.enum(['pending', 'rejected']).nullable().optional(),
+  // Fatia 7.4: lote produzido registrado fora da janela, sem liberação do proprietário (ocorrência
+  // late_production aberta). A etiqueta não sai, como na manipulação tardia (D-044).
+  production_hold: z.boolean().optional(),
   // Fatia 6.6: dados do próprio recipiente (list_containers). Opcionais: sem eles vale o recebimento.
   kind: z.enum(['integral', 'derived']).optional(),
   organization_id: uuid.optional(),
@@ -67,9 +70,12 @@ export const labelDataSchema = z.object({
 export const PRODUCTION_VOIDED_TEXT = 'ANULADO';
 export const PRODUCTION_VOIDED_MESSAGE =
   'Produção anulada: este lote não vale mais e a etiqueta não pode ser gerada. Para corrigir, a produção é registrada de novo.';
-// Fatia 7.1: lote produzido pela cozinha (sem lote do fabricante). O modelo próprio chega na 7.4.
+// Fatia 7.4: lote produzido (sem lote do fabricante) usa o modelo "Preparação própria"; sem os dados da
+// produção, o arquivo é recusado (falha fechada).
 export const PRODUCED_LABEL_MESSAGE =
-  'Etiqueta de preparação própria ainda não disponível: o modelo próprio chega em fatia futura.';
+  'Dados da produção indisponíveis: a etiqueta de preparação própria não pode ser gerada.';
+export const PRODUCTION_HOLD_MESSAGE =
+  'Produção registrada fora da janela de horário, sem liberação do proprietário: a etiqueta não pode ser gerada.';
 export const LATE_HOLD_MESSAGE =
   'Manipulação registrada fora da janela de horário, sem liberação do proprietário: a etiqueta não pode ser gerada.';
 export const DERIVED_DATA_MESSAGE =

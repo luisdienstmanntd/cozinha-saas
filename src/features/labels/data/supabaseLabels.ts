@@ -139,6 +139,7 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
       // O bloqueio vem do banco (container_blocks), pela RLS, como o resto. Desde a 6.5b a consulta vale
       // para todo recipiente não anulado (recebimento sem medição bloqueia o integral).
       let lateHold = false;
+      let productionHold = false;
       let hold: 'pending' | 'rejected' | null = null;
       if (!voided) {
         const blocks = await client.rpc('container_blocks', {
@@ -150,6 +151,9 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
         if (blocks.error || !rows.success)
           throw new Error('Recipiente indisponível ou sem acesso.');
         lateHold = rows.data.some((row) => row.kind === 'late_handling');
+        productionHold = rows.data.some(
+          (row) => row.kind === 'late_production',
+        );
         // Fatia 6.5b: integral ou derivado bloqueado; rejeitada prevalece sobre aguardando decisão.
         hold = rows.data.some((row) => row.status === 'rejected')
           ? 'rejected'
@@ -161,6 +165,7 @@ export function createLabelGateway(client: SupabaseClient): LabelGateway {
         id: scope.id,
         voided,
         late_hold: lateHold,
+        production_hold: productionHold,
         hold,
         short_code: (data as { short_code: unknown }).short_code,
         balance: row.data[0].balance,

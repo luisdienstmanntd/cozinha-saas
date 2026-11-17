@@ -80,3 +80,13 @@ O banco não sabe de etiqueta feita à mão nem de item sem etiqueta. A contagem
 Regras: só números, sem foto e sem texto das etiquetas de terceiros; uma linha por local e turno; não apagar linha errada, riscar e escrever a correta ao lado. No fim da semana, comparar "etiqueta do sistema" com "à mão + sem etiqueta" e com a métrica de vencidos com saldo do banco. Se esse número for decisivo para o piloto, a contagem vira registro no sistema em fatia própria (ver `FASE_06_11.md`).
 
 As métricas **não** medem segurança do alimento nem conformidade.
+
+## 5. Pendências do piloto registradas por luis
+
+Registradas por luis em 14/11/2026, 16:41 UTC, no aceite da fatia 7.4. Nenhuma delas foi feita; o piloto não começa sem decisão dele sobre cada uma.
+
+| Pendência | Situação | Por que importa |
+|---|---|---|
+| **Impressão física das etiquetas** (recebimento, produto aberto/fracionado e preparação própria) na impressora e no papel que a cozinha vai usar, e leitura do QR por celular | pendente; os PDFs de 100 × 100 mm só foram conferidos por teste automatizado (texto desenhado) | tamanho de letra, contraste, aderência ao recipiente e leitura do QR só se confirmam no papel |
+| **Validação normativa pela nutricionista responsável técnica** (Q10), incluindo as perguntas da seção 10 do desenho da Fase 7 | pendente; a profissional ainda não foi escolhida | nada no sistema afirma conformidade; campos, prazos e janelas são decisão de produto de luis até essa conferência |
+

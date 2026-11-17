@@ -13,6 +13,7 @@ import type { CatalogGateway } from '../catalog/application/catalogGateway';
 import type { CatalogItem } from '../catalog/domain/catalog';
 import type { Member } from '../handling/domain/family';
 import type { ProductionGateway } from './application/productionGateway';
+import type { LabelGateway } from '../labels/application/labelGateway';
 import { ProductionRejected } from './application/productionGateway';
 import { createProductionGateway } from './data/supabaseProduction';
 import {
@@ -88,7 +89,11 @@ function production(rows: ProductionRow[] = []): ProductionGateway & {
 }
 function panel(
   gateway: ProductionGateway,
-  options: { canCreate?: boolean; items?: CatalogGateway } = {},
+  options: {
+    canCreate?: boolean;
+    items?: CatalogGateway;
+    labels?: LabelGateway;
+  } = {},
 ) {
   const loadMembers = vi.fn().mockResolvedValue(members);
   const onChanged = vi.fn();
@@ -103,6 +108,7 @@ function panel(
       loadMembers={loadMembers}
       setDisplayName={vi.fn()}
       now={now}
+      labels={options.labels}
       onChanged={onChanged}
     />,
   );
@@ -610,5 +616,39 @@ describe('tela de produção', () => {
     expect(
       screen.queryByRole('region', { name: 'Revisão da produção' }),
     ).not.toBeInTheDocument();
+  });
+  it('oferece a etiqueta de cada produção não anulada e do resultado (fatia 7.4)', async () => {
+    const labels: LabelGateway = { ensure: vi.fn(), get: vi.fn() };
+    const gateway = production([
+      row(),
+      row({
+        batch_id: id(23),
+        container_id: id(24),
+        short_code: 'C-000125',
+        voided: { reason: 'erro', created_at: '2026-11-14T15:00:00.000Z' },
+      }),
+    ]);
+    const user = userEvent.setup();
+    panel(gateway, { labels });
+    const list = within(
+      await screen.findByRole('list', { name: 'Produções recentes' }),
+    );
+    expect(
+      list.getByRole('button', { name: 'Baixar etiqueta (C-000123)' }),
+    ).toBeVisible();
+    expect(
+      list.queryByRole('button', { name: 'Baixar etiqueta (C-000125)' }),
+    ).not.toBeInTheDocument();
+    const form = await fillForm(user);
+    await user.click(form.getByRole('button', { name: 'Revisar produção' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Confirmar produção' }),
+    );
+    const result = within(
+      await screen.findByRole('region', { name: 'Resultado da produção' }),
+    );
+    expect(
+      result.getByRole('button', { name: 'Baixar etiqueta' }),
+    ).toBeVisible();
   });
 });
