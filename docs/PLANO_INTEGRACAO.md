@@ -1,6 +1,6 @@
 # Plano de integração dos PRs e de preparação para produção (proposta)
 
-**Estado: proposta, aguardando aprovação de luis.** Preparado em 17/11/2026 a partir das decisões de luis sobre a [revisão técnica integrada](REVISAO_TECNICA_INTEGRADA.md) (PR #40, aprovada como diagnóstico, 13:38 UTC). **Este documento não executa nada:** nenhum merge, deploy, contratação de serviço, mudança de configuração do GitHub ou implementação de fatia. Cada etapa e cada fatia abaixo só começa com autorização específica e escrita de luis. Nada aqui afirma conformidade sanitária ou legal (Q10 segue pendente). O repositório é público: nenhum dado do estabelecimento piloto aparece neste texto.
+**Estado: APROVADO por luis em 17/11/2026, 13:59 UTC (ver seção 10).** Preparado em 17/11/2026 a partir das decisões de luis sobre a [revisão técnica integrada](REVISAO_TECNICA_INTEGRADA.md) (PR #40, aprovada como diagnóstico, 13:38 UTC). **Este documento não executa nada:** nenhum merge, deploy, contratação de serviço, mudança de configuração do GitHub ou implementação de fatia. Cada etapa e cada fatia abaixo só começa com autorização específica e escrita de luis. Nada aqui afirma conformidade sanitária ou legal (Q10 segue pendente). O repositório é público: nenhum dado do estabelecimento piloto aparece neste texto.
 
 ## 1. Decisões de luis que este plano cumpre
 
@@ -33,7 +33,7 @@
 4. **Critério de pronto de uma etapa** (todos): (a) execução completa da CI (`quality` e `banco-api-e2e`) verde no **SHA exato da ponta** do PR antes do merge; (b) merge feito com autorização; (c) execução da CI **na `main`** (evento `push`) verde no merge commit; (d) sem conflito novo e sem arquivo fora do previsto; (e) linha da tarefa em `docs/IA_ESTADO.md` e registro em `docs/ia-tarefas/` atualizados no PR.
 5. **Por que (c) importa:** na etapa 2 a `main` já terá o #28, que o #22 não tem; a árvore resultante não é exatamente a que a CI do PR testou. Da etapa 7 em diante a ponta já contém o #28 e os testes da ponta valem para o resultado; antes disso, só a CI da `main` prova o conjunto.
 6. **Falha de CI:** uma única nova execução dos jobs que falharam; se falhar de novo, parar e investigar a causa (seção 6). Nunca pular, desligar ou enfraquecer teste, nem empurrar commit vazio. Falha que a seção 6 classifica como de infraestrutura não bloqueia se houver execução verde completa no mesmo SHA.
-7. **Parada obrigatória** nas etapas 10, 12 e 18 (seção 4): pausa para a bateria completa na `main` e relato a luis antes de seguir.
+7. **Parada obrigatória** nas etapas 10, 12 e 19 (seção 4): pausa para a bateria completa na `main` e relato a luis antes de seguir.
 8. **Reversão de uma etapa:** um commit novo que desfaz o merge (`revert` do merge commit), com autorização. Não há banco hospedado, então nada de dados precisa ser desfeito. Proibido reescrever a história da `main`.
 9. Sem deploy em nenhuma etapa. As migrações só chegam a banco hospedado na fase 8.4, com autorização própria.
 
@@ -64,9 +64,10 @@ Tamanhos são o acréscimo do PR sobre o anterior (comparação de árvores). "M
 | 15 | #37 | V4 acabamento visual (D-062) | 37 arq., +1624/−99 | não | nenhum | médio; contém o E2E instável (seção 6, F) |
 | 16 | #38 | V5 vírgula decimal nas quantidades (D-063) | 18 arq., +1162/−27 | não | nenhum | médio: mudança de regra de entrada |
 | 17 | #39 | V5B exibição com vírgula, temperatura (D-064) | 31 arq., +1166/−66 | não | nenhum | médio: 23 pontos de exibição |
-| 18 | #40 e este plano | Diagnóstico e plano (somente documentos) | docs | não | nenhum | baixo. **Parada 3** (final) |
+| 18 | #40 | Diagnóstico técnico (somente documento) | docs | não | nenhum | baixo |
+| 19 | #41 | Este plano e a Fase 8 (somente documentos) | docs | não | nenhum | baixo. **Parada 3** (final) |
 
-Totais: 18 etapas de merge e 1 PR fechado sem merge (#35); este plano, em PR próprio, entra junto com a etapa 18. Cerca de 4 minutos de CI por etapa mais a espera pela autorização.
+Totais: **19 merges** (os 17 PRs de código e documentação da cadeia, mais #40 e #41 mesclados individualmente) e 1 PR fechado sem merge (#35). Correção pedida por luis: a versão anterior dizia 18. Cerca de 4 minutos de CI por etapa mais a espera pela autorização.
 
 ### 4.2 Verificação antes de cada etapa (todas)
 
@@ -96,14 +97,14 @@ Em todas valem os itens 3 e 4 da seção 3 e a verificação 4.2. Abaixo, só o 
 - **Etapa 6, #26 (migração `establishment_settings`).** Decide quem pode registrar produção; a regra "igual ou menor" fica oculta (`PORTION_RULE_SELECTABLE=false`). Critério extra: `security_guard` e testes de papéis verdes.
 - **Etapa 7, #27 (migração `preparation_window`).** Contém o #28 mesclado; conflito não esperado. Critério extra: o teste 26 de `handling_void` estável (rodar pgTAP duas vezes seguidas na CI ou localmente).
 - **Etapas 8 e 9, #29 e #30.** Migrações de registro append-only (`production_label_downloads`, `production_temperatures`). Critério extra: a lista fixa de tabelas de histórico em `security_guard` e `assert_history_protected` inclui as novas (já testado).
-- **Etapa 10, #31. Parada 1: fim da Fase 7.** Depois do merge, rodar na `main` a bateria completa: lint, tipos, formatação, Vitest, build, pgTAP, advisors, integração e E2E; conferir `FASE_07_ENCERRAMENTO.md` contra o estado real; relatar a luis antes de seguir. Nota: o relatório da Fase 7 diz que a `main` tem até a 7.1; atualizar essa frase no PR da etapa 18.
+- **Etapa 10, #31. Parada 1: fim da Fase 7.** Depois do merge, rodar na `main` a bateria completa: lint, tipos, formatação, Vitest, build, pgTAP, advisors, integração e E2E; conferir `FASE_07_ENCERRAMENTO.md` contra o estado real; relatar a luis antes de seguir. Nota: o relatório da Fase 7 diz que a `main` tem até a 7.1; atualizar essa frase no PR da etapa 19.
 - **Etapa 11, #32 (V2).** A migração faz `alter role authenticator set pgrst.db_pre_request` e muda `has_membership` e `member_organizations`. Riscos: uma falha aqui bloqueia **todas** as leituras e escritas autenticadas; no Supabase hospedado a configuração do papel não foi testada (achado S-5). Critério extra: pgTAP de sessão (27 arquivos), integração de sessão e E2E `session.spec.mjs` verdes; revisar de novo `supabase/rollback/session_inactivity.sql`. Como a `main` não é implantada, o risco hospedado só aparece na fatia 8.4.
 - **Etapa 12, #33 (V1).** Reorganiza a navegação; muitos E2E mudam de rota. Critério extra: E2E inteiro verde. **Parada 2:** conferir com luis antes das telas V3 a V5B.
 - **Etapa 13, #34 (V3).** Contém a correção do teste 69. Depois do merge, **fechar o #35** com a nota "incorporado no #34", sem merge. Janela de exposição: entre as etapas 1 e 13, um teste pgTAP de manipulação pode falhar se a CI rodar entre 03:00 e 03:10 UTC (00:00 a 00:10 em São Paulo); evitar essa janela ou aceitar uma nova execução.
 - **Etapa 14, #36.** Só documento.
 - **Etapa 15, #37 (V4).** Contém o E2E `finishing.spec.mjs:138`, que falhou uma vez (seção 6, F). Critério: execução verde no SHA; a correção do teste é a fatia 8.1 e pode entrar depois, sem bloquear.
 - **Etapas 16 e 17, #38 e #39 (V5 e V5B).** Mudança de regra de entrada (vírgula) e de exibição. Critério extra: testes de vírgula (Vitest 519 no total, integração `display-comma`, E2E `decimal-comma` e `display-comma`). Depois do #39 entrar, a bateria completa deve repetir os números de hoje (Vitest 519, pgTAP 1433, integração 51, E2E 35).
-- **Etapa 18, #40 e este plano. Parada 3.** Depois do merge, reescrever o topo de `docs/IA_ESTADO.md` com uma única situação atual (achado A-4) e fechar a Fase 7/V1-V5B no registro.
+- **Etapas 18 e 19, #40 e #41 (este plano). Parada 3 na 19.** Depois dos merges, reescrever o topo de `docs/IA_ESTADO.md` com uma única situação atual (achado A-4) e fechar a Fase 7/V1-V5B no registro.
 
 ### 4.5 Riscos da integração e mitigação
 
@@ -147,7 +148,7 @@ Contagem: A 2 + B 2 + C 2 + D 2 + E 1 + F 1 = 10.
 3. **Classe D e E.** Fazer `checked()` incluir `error.message` e `error.hint` (dados sintéticos, sem dado pessoal) e rodar `handling-void.test.mjs` e a suíte de integração 20 vezes em laço para tentar reproduzir; identificar o arquivo da classe E.
 4. **Classe F.** Em `finishing.spec.mjs`, esperar a unidade reabrir antes de medir (por exemplo, mover a medição para depois dos `expect` do cabeçalho, ou usar `expect.poll`), mantendo o limite de ≤ 1 px. Confirmar com 20 repetições do teste em tela de celular.
 5. **Higiene geral.** Ações do GitHub por SHA, aviso de Node 20 resolvido, `--trace off` já usado. Registrar no `TESTES_QUALIDADE.md` as causas e correções (como já foi feito para B e C).
-6. **Registro contínuo.** A cada falha de CI nova, anotar classe e causa em `TESTES_QUALIDADE.md`; revisar na etapa 18.
+6. **Registro contínuo.** A cada falha de CI nova, anotar classe e causa em `TESTES_QUALIDADE.md`; revisar na etapa 19.
 
 Critério de pronto da 8.1: 20 execuções consecutivas verdes de cada teste das classes D, E e F no mesmo ambiente de CI e nenhuma falha de classe A em 10 execuções seguidas da CI. Se a classe A persistir, a causa será investigada no executor antes de seguir.
 
@@ -235,3 +236,28 @@ Não executa merge, deploy, contratação, mudança de configuração do GitHub 
 3. Dizer se a fatia **8.1 (estabilização da CI)** pode rodar antes da 8.0 e se a **proteção da `main`** (0.2) pode ser configurada.
 4. Autorizar, por escrito, a **etapa 1 (#28)** e os lotes seguintes que queira liberar.
 5. Confirmar que o #35 será fechado sem merge depois da etapa 13.
+
+## 10. Aprovação de luis e diretrizes permanentes (17/11/2026, 13:59 UTC)
+
+luis **aprovou o plano do PR #41** com estas decisões:
+
+1. Estratégia A de integração individual dos PRs, **com merge commit**.
+2. Nomenclatura **Fase 8 — Preparação para produção e piloto operacional**, com as fatias 8.0 a 8.8.
+3. Renumeração das funcionalidades futuras para **Fase 9**.
+4. Autorizada a implementação da **fatia 8.1 (estabilização da CI e do E2E) antes da integração**.
+5. Autorizada a **proposta** de proteção da `main`, **sem aplicar** a configuração até o aceite dele.
+6. Aprovado fechar o **PR #35 sem merge**, depois de confirmar que a correção foi efetivamente incorporada à `main` pelo PR #34. Como o #34 ainda não está na `main`, o #35 **permanece aberto** até o merge da etapa 13; hoje só está confirmado que o arquivo de teste do #34 e da ponta da cadeia é idêntico ao do #35.
+7. Contagem corrigida: com #40 e #41 mesclados individualmente são **19 merges**, não 18.
+
+**Sequência decidida:** 8.1 → relatório, PR, resultados de estabilidade e proposta de proteção da `main` para o aceite de luis → depois do aceite da 8.1, **o primeiro lote de integração é exclusivamente o PR #28**. Os demais lotes aguardam autorização específica.
+
+**Diretrizes permanentes:**
+
+- Não enfraquecer, remover ou desabilitar testes para obter CI verde.
+- Não ocultar falhas com novas tentativas indiscriminadas.
+- Não modificar regras de negócio.
+- Preservar segurança, auditoria, estoque, validade e permissões.
+- Investigar falhas de causa desconhecida.
+- Não expor segredos, credenciais ou dados pessoais nos logs.
+- Sem push direto, force-push, squash ou rebase na `main` durante a integração.
+- Sem deploy, contratação de serviços ou publicação do sistema.
