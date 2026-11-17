@@ -298,14 +298,23 @@ select throws_ok($$truncate handling_voids cascade$$, '55000', null, 'anulaçõe
 -- 250 passos aleatórios (semente 0.4242) de baixa, descarte, anulação, manipulação e anulação de
 -- manipulação, pelas funções públicas e como o proprietário. Depois de cada passo: nenhum saldo
 -- negativo, conservação verdadeira no recebimento e saldo guardado igual ao histórico.
+--
+-- Determinismo: todo candidato é escolhido por ordem estável (código curto, que sai de uma sequência,
+-- ou ordem de criação registrada em prop_movs e prop_handlings) e por UM sorteio de random() com a semente
+-- registrada. Antes, a escolha era "order by random() limit 1", e random() era avaliado por linha na ordem
+-- em que o plano devolvia as linhas, que depende de UUIDs gerados a cada execução: a mesma semente dava
+-- sequências diferentes, e o número de anulações bem-sucedidas variava (de 2 a 11 nas medições). Os limites
+-- abaixo não mudaram.
 create temporary table prop_log (step int, op text, ok boolean, problems int) on commit drop;
+create temporary table prop_movs (seq bigserial primary key, id uuid not null) on commit drop;
+create temporary table prop_handlings (seq bigserial primary key, id uuid not null) on commit drop;
 select set_config('request.jwt.claims','{"sub":"f1000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 do $$
 declare
   v_org uuid := 'f2000000-0000-4000-8000-00000000000a';
   v_est uuid := 'f3000000-0000-4000-8000-0000000000a1';
   v_batch uuid := 'f6000000-0000-4000-8000-000000000007';
-  v_step int; v_op int; v_ok boolean; v_c record; v_m uuid; v_h uuid; v_q numeric; v_problems int; v_name text; v_kind text; v_qs numeric[]; v_rest numeric; v_rem text;
+  v_step int; v_op int; v_ok boolean; v_c record; v_m uuid; v_h uuid; v_q numeric; v_problems int; v_name text; v_kind text; v_qs numeric[]; v_rest numeric; v_rem text; v_r double precision; v_id uuid;
 begin
   perform setseed(0.4242);
   for v_step in 1 .. 250 loop
@@ -314,24 +323,36 @@ begin
     begin
       if v_op in (0, 1) then
         v_name := case v_op when 0 then 'consumption' else 'discard' end;
-        select c.id, cb.balance into v_c from public.containers c join public.container_balances cb on cb.container_id = c.id
-         where c.batch_id = v_batch and cb.balance > 0 order by random() limit 1;
+        v_r := random();
+        select q.id, q.balance into v_c from (
+          select c.id, cb.balance, row_number() over (order by length(c.short_code), c.short_code) rn, count(*) over () cnt
+            from public.containers c join public.container_balances cb on cb.container_id = c.id
+           where c.batch_id = v_batch and cb.balance > 0) q
+         where q.rn = 1 + floor(v_r * q.cnt)::int;
         if v_c.id is null then raise exception 'sem recipiente' using errcode = 'P0001'; end if;
         v_q := greatest(1, floor(v_c.balance * random() * 0.6));
-        perform public.record_container_movement(v_org, v_est, v_c.id, v_name, v_q,
+        v_id := public.record_container_movement(v_org, v_est, v_c.id, v_name, v_q,
           case v_op when 1 then 'Teste de propriedade' end, gen_random_uuid());
+        insert into prop_movs(id) values (v_id);
       elsif v_op = 2 then
         v_name := 'reversal';
-        select m.id into v_m from public.stock_movements m
-         where m.batch_id = v_batch and m.kind in ('consumption', 'discard') and m.handling_id is null
-           and not exists (select 1 from public.stock_movements r where r.reverses_id = m.id)
-         order by random() limit 1;
+        v_r := random();
+        select q.id into v_m from (
+          select m.id, row_number() over (order by pm.seq) rn, count(*) over () cnt
+            from prop_movs pm join public.stock_movements m on m.id = pm.id
+           where m.batch_id = v_batch and m.kind in ('consumption', 'discard') and m.handling_id is null
+             and not exists (select 1 from public.stock_movements r where r.reverses_id = m.id)) q
+         where q.rn = 1 + floor(v_r * q.cnt)::int;
         if v_m is null then raise exception 'sem movimento' using errcode = 'P0001'; end if;
         perform public.reverse_movement(v_org, v_est, v_m, 'Teste de propriedade', gen_random_uuid());
       elsif v_op = 3 then
         v_name := 'handling';
-        select c.id, c.kind, cb.balance into v_c from public.containers c join public.container_balances cb on cb.container_id = c.id
-         where c.batch_id = v_batch and cb.balance >= 3 order by random() limit 1;
+        v_r := random();
+        select q.id, q.kind, q.balance into v_c from (
+          select c.id, c.kind, cb.balance, row_number() over (order by length(c.short_code), c.short_code) rn, count(*) over () cnt
+            from public.containers c join public.container_balances cb on cb.container_id = c.id
+           where c.batch_id = v_batch and cb.balance >= 3) q
+         where q.rn = 1 + floor(v_r * q.cnt)::int;
         if v_c.id is null then raise exception 'sem recipiente' using errcode = 'P0001'; end if;
         v_q := floor(v_c.balance / (2 + floor(random() * 3)));
         v_kind := case when random() < 0.5 then 'opening' else 'portioning' end;
@@ -344,14 +365,18 @@ begin
           when v_c.kind = 'integral' and random() < 0.4 then 'sealed'
           when v_kind = 'portioning' and random() < 0.5 then 'portion'
           else 'discard' end;
-        perform public.handle_container(v_org, v_est, v_c.id, v_kind, v_qs,
+        v_id := public.handle_container(v_org, v_est, v_c.id, v_kind, v_qs,
           current_date + 5, 'refrigerated', now() - interval '10 minutes', 'f1000000-0000-4000-8000-000000000002',
           v_rem, case when v_rem = 'discard' then 'Sobra do teste' end, null, null, gen_random_uuid());
+        insert into prop_handlings(id) values (v_id);
       else
         v_name := 'void';
-        select h.id into v_h from public.container_handlings h
-         where h.batch_id = v_batch and not exists (select 1 from public.handling_voids v where v.handling_id = h.id)
-         order by random() limit 1;
+        v_r := random();
+        select q.id into v_h from (
+          select h.id, row_number() over (order by ph.seq) rn, count(*) over () cnt
+            from prop_handlings ph join public.container_handlings h on h.id = ph.id
+           where h.batch_id = v_batch and not exists (select 1 from public.handling_voids v where v.handling_id = h.id)) q
+         where q.rn = 1 + floor(v_r * q.cnt)::int;
         perform public.void_handling(v_org, v_est, v_h, 'Teste de propriedade', gen_random_uuid());
       end if;
     exception when others then
