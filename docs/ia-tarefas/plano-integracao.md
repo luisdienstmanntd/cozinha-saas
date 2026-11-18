@@ -31,3 +31,8 @@
 ### 17/11/2026 18:00 UTC — Claude Code
 - **Segundo lote concluído** (#22 a #27, autorização de luis 16:42 UTC): todos integrados com merge commit, CI verde sobre o resultado combinado e na `main`. Tabela em `PLANO_INTEGRACAO.md` (seção 12). Nenhuma recorrência de instabilidade.
 - **Próximo passo:** aguardar autorização específica para a etapa 8 (#29). Nada mais foi mesclado.
+
+### 18/11/2026 — Claude Code
+- **Cadeia integrada** (#29 a #34, #36 a #39, #43, #40) conforme `PLANO_INTEGRACAO.md`, seção 13; #35 fechado sem merge depois de confirmar a correção na `main`. #41 é o último.
+- **Classe F reapareceu** no #38 (tentativa 1) e antes no #37; causa conhecida, corrigida pelo #43 já na `main`. Registrado também em `FASE_08_1.md`, seção 8.
+- **Próximo passo:** CI da `main` após o #40 e o #41; depois, a thread do PR #44 incorpora a `main`, resolve conflitos, atualiza a lista do reset e roda a bateria completa. Sem merge do #44, deploy ou migração hospedada.

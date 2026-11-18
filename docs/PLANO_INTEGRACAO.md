@@ -287,3 +287,26 @@ luis autorizou, em 17/11/2026, 16:42 UTC, as etapas 2 a 7 (#22 a #27) sem nova a
 | 7 | #27 | `813a0b3` | `98cfa5d` | verde |
 
 Sem conflito, regressão ou instabilidade (12 execuções da CI verdes na primeira tentativa, sem avisos de porta em uso). Próxima etapa: 8 (#29), aguardando autorização específica.
+
+## 13. Terceiro lote e cadeia final integrados (18/11/2026)
+
+luis autorizou #29, #30 e #31 (00:39 UTC) e #32 a #41 (01:00 UTC), cada um individualmente, com os critérios de sempre: simulação de merge, troca da base para a `main`, `main` incorporada à branch, CI verde sobre o combinado, só merge commit, CI verde na `main` depois. Atenção especial ao #32 (sessões): revisei a migração `session_inactivity` (sessão revogada ou ociosa por mais de 30 minutos recusa leitura e escrita; falha fechada; funções só em `private`; limitação conhecida e documentada em `V2_SESSAO.md` para token sem `session_id`) e a CI de banco, integração e E2E passou.
+
+| Etapa | PR | SHA testado | Merge commit na `main` | CI da `main` |
+|---|---|---|---|---|
+| 8 | #29 | `18238c5` | `9ca88db` | verde |
+| 9 | #30 | `8a042aa` | `f05d878` | verde |
+| 10 | #31 | `29580fa` | `c54e579` | verde |
+| 11 | #32 | `01ecf59` | `c98f0e9` | verde |
+| 12 | #33 | `97077f3` | `64fcec7` | verde |
+| 13 | #34 | `f571341` | `0bbeb74` | verde |
+| 14 | #36 | `629d161` | `55905c6` | verde |
+| 15 | #37 | `9fe1256` | `dc61ee0` | verde |
+| 16 | #38 | `a6c530a` | `73c7154` | verde |
+| 17 | #39 | `5981d4b` | `cacc7c4` | verde |
+| 17b | #43 (8.1b) | `5e6c91d` | `3141293` | verde |
+| 18 | #40 | `1b3201a` | `88d6073` | ver `ia-tarefas/plano-integracao.md` |
+
+- **#35:** fechado sem merge em 18/11/2026, depois de confirmar que `supabase/tests/container_handling.test.sql` da `main` é idêntico ao do #35 (diferença vazia) e que a CI da `main` estava verde após o #34.
+- **Recorrência da classe F (E2E `finishing.spec.mjs:138`, altura do título 84,4 px):** a CI do #38 no SHA `a6c530a` falhou na tentativa 1 (rodada 44217166668) com a mesma falha e a mesma linha; foi reexecutada (tentativa 2) e passou, e eu integrei o #38 sobre essa tentativa 2 sem ter visto a tentativa 1, o que registro aqui. Antes disso, a mesma falha ocorreu no #37 (SHA `66f685c`, 16/11). A causa já era conhecida e reproduzida na 8.1 (o teste mede o título antes de a unidade reabrir depois do `reload`), e a correção é o PR #43, integrado em seguida (`3141293`) sem mexer no limite. O #39 (`5981d4b`) passou na primeira tentativa. Por ser causa conhecida e correção aprovada, não houve outra repetição para esconder falha. A `main` já tem a correção a partir de `3141293`.
+- **Critério de CI verde:** a tentativa 2 do #38 conta como verde porque a falha da tentativa 1 é a classe F, de causa conhecida, e a 8.1b a corrige no código combinado final. Para não depender de reexecução, a partir de agora o relatório de cada PR informa o número da tentativa da CI usada.
