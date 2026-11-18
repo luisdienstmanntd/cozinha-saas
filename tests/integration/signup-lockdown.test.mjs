@@ -79,3 +79,86 @@ test('API anônima não lê tabelas do aplicativo e o verificador de hospedagem 
   const failures = results.filter((r) => r.status === 'FALHA');
   assert.deepEqual(failures, [], JSON.stringify(failures));
 });
+
+// Sessões e vínculo: o acesso vem do vínculo ativo e da sessão válida, conferidos pelo banco a cada pedido.
+test('vínculo revogado perde o acesso na hora, mesmo com a sessão ainda válida', async () => {
+  const { admin, client } = localSupabase();
+  const email = `revogado-${randomUUID()}@example.invalid`;
+  const password = randomUUID();
+  const orgId = randomUUID();
+  const { user } = checked(
+    await admin.auth.admin.createUser({ email, password, email_confirm: true }),
+  );
+  try {
+    checked(
+      await admin
+        .from('organizations')
+        .insert({ id: orgId, name: `Revoga ${orgId}` }),
+    );
+    checked(
+      await admin
+        .from('memberships')
+        .insert({ organization_id: orgId, user_id: user.id, role: 'owner' }),
+    );
+    const person = client();
+    checked(await person.auth.signInWithPassword({ email, password }));
+    assert.equal(
+      checked(await person.from('organizations').select('id')).length,
+      1,
+    );
+    checked(
+      await admin
+        .from('memberships')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('user_id', user.id),
+    );
+    assert.equal(
+      checked(await person.from('organizations').select('id')).length,
+      0,
+      'sem vínculo ativo, a mesma sessão não enxerga mais a empresa',
+    );
+  } finally {
+    await admin.from('memberships').delete().eq('organization_id', orgId);
+    await admin.from('organizations').delete().eq('id', orgId);
+    await admin.auth.admin.deleteUser(user.id);
+  }
+});
+
+test('sair encerra a sessão no servidor e token adulterado é recusado', async () => {
+  const { url, publishableKey, admin, client } = localSupabase();
+  const email = `sessao-${randomUUID()}@example.invalid`;
+  const password = randomUUID();
+  const { user } = checked(
+    await admin.auth.admin.createUser({ email, password, email_confirm: true }),
+  );
+  try {
+    const person = client();
+    const { session } = checked(
+      await person.auth.signInWithPassword({ email, password }),
+    );
+    const refreshToken = session.refresh_token;
+    // Token adulterado (assinatura trocada) não autentica.
+    const forged = `${session.access_token.slice(0, -4)}AAAA`;
+    const response = await globalThis.fetch(
+      `${url}/rest/v1/organizations?select=id`,
+      {
+        headers: { apikey: publishableKey, authorization: `Bearer ${forged}` },
+      },
+    );
+    assert.ok(
+      [401, 403].includes(response.status),
+      `adulterado: HTTP ${response.status}`,
+    );
+    // Sair (escopo global) invalida o refresh token no servidor.
+    checked(await person.auth.signOut({ scope: 'global' }));
+    const again = await client().auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+    assert.ok(
+      again.error,
+      'o refresh token de uma sessão encerrada não renova',
+    );
+  } finally {
+    await admin.auth.admin.deleteUser(user.id);
+  }
+});

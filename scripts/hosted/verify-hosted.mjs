@@ -9,6 +9,7 @@
 //         node scripts/hosted/verify-hosted.mjs
 // Saída: uma linha por conferência (OK/FALHA/AVISO) e código de saída 1 se alguma FALHAR. Não imprime chaves.
 import process from 'node:process';
+import { URL } from 'node:url';
 import { pathToFileURL } from 'node:url';
 
 const PROTECTED_TABLES = [
@@ -23,7 +24,7 @@ const PROTECTED_TABLES = [
 export async function verifyProject({
   url,
   publishableKey,
-  fetchImpl = fetch,
+  fetchImpl = globalThis.fetch,
 }) {
   const base = new URL(url).origin;
   const headers = {

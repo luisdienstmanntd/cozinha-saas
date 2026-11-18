@@ -1,0 +1,152 @@
+# Fase 8, fatia 8.4a — Modo hospedado e ambiente de testes (D-066)
+
+Antecipa parcialmente a fatia 8.4 (hospedagem) do `PLANO_INTEGRACAO.md` para que luis use o sistema definitivo com **dados fictícios** e o refine aos poucos. **Nada aqui foi aplicado no Supabase hospedado nem implantado no Cloudflare Pages**; tudo foi validado só no Supabase local descartável. Nada afirma conformidade sanitária (Q10 segue pendente). Sem merge, deploy, contratação ou alteração no banco hospedado sem autorização específica de luis.
+
+## 1. Estado da integração e base escolhida
+
+Conferido no GitHub em 18/11/2026: a `main` (`98cfa5d`) já tem #42 (CI), #28, #22 a #27. **Faltam** #29 (7.8), #30 (7.9), #31 (revisão visual, só documentos), #32 (V2 sessão), #33 (V1 navegação), #34 (V3), #35 (teste da meia-noite, a fechar sem merge depois do #34), #36/#37 (V4), #38 (V5), #39 (V5B), #40 (revisão técnica), #41 (plano de integração) e #43 (E2E 8.1b). Nenhum merge foi feito por mim.
+
+**Base escolhida: `main`.** Motivos: (1) o PR fica independente da cadeia e pode ser aceito e testado agora, sem carregar 15 PRs de outros assuntos; (2) as mudanças são em arquivos novos, mais três pontos pequenos de código; (3) a única migração nova é posterior a todas as outras (20261118…), então a ordem do banco fica correta em qualquer sequência de merges.
+
+**Ordem proposta:** integrar a cadeia como no plano do #41 (#29, #30, … #39, #43), depois este PR. **Conflitos já medidos** (simulei o merge desta branch com a ponta do #39 e abortei): 4 arquivos, todos mecânicos: `src/app/App.tsx` (o `if` do modo e o aviso do ambiente), `src/app/configureApp.ts` (a V2 acrescentou `createSessionFetch`/armazenamento; some-se o parâmetro `hostname` e o modo `hosted` ao mesmo `createClient`), `src/app/styles.css` (as duas folhas de estilo) e `IdentityHome.tsx` (na V1 o texto do ambiente virou a constante `environmentNote`; o texto `hosted` entra ali). Eu resolvo esses conflitos quando a cadeia estiver na `main` (rebase pedido por você). **Não aplique as migrações no hospedado antes da cadeia estar na `main`**: a migração desta fatia tem data posterior às da cadeia, e aplicá-la antes obrigaria `db push --include-all` depois.
+
+## 2. O que foi feito, por etapa
+
+| # | Pedido | Entrega |
+|---|---|---|
+| 2 | Modo hosted preservando local e demo | `VITE_APP_MODE=hosted` em `src/shared/config/environment.ts` (esquema Zod estrito: https, domínio `<20 caracteres>.supabase.co`, sem caminho/porta/usuário/barra final; chave `sb_publishable_`; `VITE_APP_ENV` = `testes` ou `producao`). `configureApp` usa os mesmos gateways nos três modos, `demo` e `local` ficam como eram (os 330 testes unitários e os E2E existentes passam sem alteração). Sessão: igual ao local desta base (V2 vem com a cadeia). |
+| 3 | Hospedagem mal configurada não cai na demo | Três camadas. **Build:** `vite.config.ts` chama `assertBuildEnvironment`; no Cloudflare Pages (`CF_PAGES=1`) ou com `VITE_APP_MODE=hosted`, faltar ou errar qualquer variável **interrompe o build** (mensagem só com nomes, nunca valores); `VITE_*` com cara de segredo (`SECRET`, `SERVICE_ROLE`, `sb_secret_`…) também interrompe, em qualquer build. **Execução:** em nome de máquina que não é local, `demo` e `local` são recusados (`assertModeAllowedOnHost`) e aparece a tela "Não foi possível iniciar o aplicativo", sem mostrar valores; a demo pública só existe com `VITE_ALLOW_PUBLIC_DEMO=true` de propósito. **Aviso:** em `hosted` + `testes`, faixa fixa "Ambiente de testes. Use somente dados fictícios…". |
+| 4 | Variáveis de ambiente | `.env.example` com os três modos comentados e a regra "só VITE_* públicas"; tabela na seção 4 abaixo. Nenhum segredo no repositório. |
+| 5 | CSP e cabeçalhos | `src/shared/security/headers.ts` + plugin no build gera `dist/_headers` com o endereço exato do Supabase: `default-src 'none'`, `script-src 'self'`, `style-src 'self'`, `connect-src 'self' <projeto>`, `frame-ancestors 'none'`, `base-uri 'none'`, `object-src 'none'`, `upgrade-insecure-requests`, HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy: no-referrer`, `Permissions-Policy` (câmera, microfone, localização etc. negados), COOP/CORP e cache imutável só para `/assets/*`. Sem `unsafe-inline`/`unsafe-eval` (o aplicativo não usa estilo em linha). **Conferido em navegador real** servindo o `dist` com esses cabeçalhos: tela de acesso e faixa renderizam e o console fica sem violações. Limite: o download de etiqueta (PDF por `blob:`) não foi exercitado sob a CSP em navegador; downloads não são restringidos pela CSP, mas confirme com uma etiqueta no primeiro uso. |
+| 6 | Migrações do banco hospedado | Preparadas e validadas **só no Supabase local** (`db reset` aplica as 27 migrações; pgTAP e advisors verdes). Procedimento na seção 5. Nada foi aplicado. |
+| 7 | Primeiro proprietário, empresa e unidade | Migração `20261118000000_hosted_provisioning.sql`: `private.bootstrap_owner_organization` e `private.add_member_to_organization`. A conta é criada por você no painel (Authentication > Users > Add user, com Auto Confirm); depois um comando no SQL Editor cria empresa, unidade e vínculo em uma transação. **Nenhuma chave de serviço sai do Supabase.** Seção 6. |
+| 8 | Cadastro público restrito | O Supabase local já roda com `enable_signup = false` e a API recusa `signUp` e login anônimo (teste de integração). Para o hospedado a configuração é do painel (seção 8). `scripts/hosted/verify-hosted.mjs` confere o projeto hospedado **só com leitura**, usando apenas endereço e chave publicável: cadastro desligado, login anônimo, confirmação de e-mail, API anônima sem acesso às tabelas. Defesa em profundidade: uma conta sem vínculo não enxerga nem cria empresa, unidade ou vínculo (teste de integração). |
+| 9 | Validar RLS, permissões, sessões e isolamento | Seção 7. |
+| 10 | Zerar o banco de testes | `private.reset_test_environment`, com marcador de ambiente e quatro travas. Seção 9. |
+
+## 3. Decisão D-066
+
+- **Decisão:** a 8.4a entrega o necessário para um ambiente hospedado **de testes**, com dados fictícios, em projeto Supabase próprio. A produção terá projeto e domínio separados (decisão 6 da revisão técnica) e continua exigindo MFA obrigatório, revisão de segurança independente, backup com teste de restauração e a conferência da nutricionista RT.
+- **Motivo:** pedido de luis de 18/11/2026 de usar o sistema definitivo com dados fictícios enquanto o refina.
+- **Consequência:** o ambiente de testes pode ser zerado a qualquer momento (e o aplicativo diz isso numa faixa). O marcador `producao` é irreversível.
+- **Revisar quando:** a 8.4 completa (produção) for autorizada.
+
+## 4. Variáveis de ambiente
+
+| Variável | Onde | Valor | Observação |
+|---|---|---|---|
+| `NODE_VERSION` | Cloudflare (build) | `24` | já configurada |
+| `VITE_APP_MODE` | Cloudflare | `hosted` | sem ela (ou com `demo`/`local`) o build falha na hospedagem |
+| `VITE_SUPABASE_URL` | Cloudflare | `https://<ref>.supabase.co` | sem barra final, sem caminho |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Cloudflare | `sb_publishable_…` | **publicável**; nunca a secreta nem a `service_role` |
+| `VITE_APP_ENV` | Cloudflare | `testes` | `producao` só no futuro projeto de produção |
+| `VITE_ALLOW_PUBLIC_DEMO` | — | não definir | só para uma demonstração pública intencional |
+
+Configure as quatro `VITE_*` em **Production e em Preview** (ou desligue os deploys de Preview): sem elas, o build de Preview falha de propósito. Chaves secretas e a senha do banco **não** vão ao Cloudflare nem ao GitHub.
+
+## 5. Migrações no banco hospedado (preparado, não aplicado)
+
+Validação local feita: `supabase db reset` aplica tudo do zero; `supabase test db` (pgTAP) e `supabase db advisors --type security --level warn --fail-on warn` passam. Rollback desta fatia: `supabase/rollback/hosted_provisioning.sql`.
+
+Procedimento para quando você autorizar (na sua máquina, com a cadeia já na `main`):
+
+1. `npx supabase login` e `npx supabase link --project-ref <ref>` (pede a senha do banco, que você guarda em gerenciador de senhas).
+2. `npx supabase db push --dry-run` — confira que a lista de migrações é exatamente a esperada (27 da `main` atual + as da cadeia + `20261118000000`).
+3. `npx supabase db push`.
+4. `npx supabase migration list` — local e remoto iguais.
+5. Pontos a observar no primeiro `push`: (a) a migração da V2 (`20261116000000`) executa `alter role authenticator set pgrst.db_pre_request`; isso é prática documentada do Supabase, mas **não pôde ser testado no hospedado** — se falhar, o `push` para sem aplicar o resto e me avise; (b) as migrações rodam como `postgres`, dono das tabelas, que é o que as funções administrativas desta fatia precisam.
+
+## 6. Primeiro proprietário, empresa e unidade
+
+1. **Authentication > Users > Add user > Create new user:** e-mail do proprietário, senha forte gerada por gerenciador (mín. 12), marcar **Auto Confirm User**. Guarde a senha por canal seguro; ela deve ser trocada no primeiro acesso.
+2. **SQL Editor** (roda como `postgres`), uma vez:
+   ```sql
+   select private.declare_environment('testes');
+   select * from private.bootstrap_owner_organization(
+     'email-do-proprietario@exemplo.com', 'Nome curto', 'Nome da empresa fictícia', 'Nome da unidade', 'America/Sao_Paulo');
+   ```
+3. Colaboradores (conta criada do mesmo jeito):
+   ```sql
+   select private.add_member_to_organization('<organization_id devolvido acima>', 'colaborador@exemplo.com', 'Nome curto', 'member');
+   ```
+Regras do banco: recusa e-mail sem conta ou não confirmado; nome da empresa repetido; conta que já tem vínculo ativo (uma conta por pessoa); fuso inválido (o fuso fica imutável depois do primeiro recebimento, 6.0c); nomes fora de 1 a 80 caracteres (exibição: 1 a 40, curto e sem sobrenome completo — dado pessoal, R6). Tudo ou nada. As funções **só funcionam em sessão de administração do banco**: a API (anon, authenticated, service_role) não as executa, o schema `private` não é exposto e a própria função confere `session_user`.
+
+## 7. Validação de RLS, permissões, autenticação, sessões e isolamento (local)
+
+Executada contra o Supabase local, que usa as mesmas migrações e a mesma versão de Auth/PostgREST da CLI:
+
+- **RLS e isolamento entre empresas:** a bateria existente (pgTAP e integração) cobre negação cruzada, inserção falsa e junções; esta fatia acrescentou, em `hosted_provisioning.test.sql`, duas empresas criadas pelas funções novas com cada proprietário enxergando só a sua; `security_guard.test.sql` (RLS em toda tabela, `anon` sem privilégio algum) segue verde com o schema novo.
+- **Cadastro e autenticação:** `signUp` e login anônimo recusados; nenhuma conta criada; conta sem vínculo não lê nem cria empresa/unidade/vínculo e não lê recebimentos, recipientes ou movimentos.
+- **Sessões:** vínculo revogado tira o acesso na hora, com a mesma sessão; token adulterado recebe 401/403; `signOut` global invalida o refresh token. A inatividade de 30 minutos (V2/D-025) vem na cadeia e **não faz parte desta base**.
+- **Não validável aqui:** comportamento do Auth **hospedado** (limites de e-mail do plano Free, expiração real de JWT, rate limits). O `verify-hosted.mjs` cobre a parte de configuração; o resto é observado no primeiro uso.
+
+## 8. Cadastro público restrito (configuração do painel)
+
+Ver o guia da seção 10, passo 3. Depois de configurar, rode (somente leitura):
+
+```
+VERIFY_SUPABASE_URL=https://<ref>.supabase.co VERIFY_SUPABASE_PUBLISHABLE_KEY=sb_publishable_... node scripts/hosted/verify-hosted.mjs
+```
+Esperado: nenhuma linha `FALHA`. Avisos ("AVISO") pedem conferência manual no painel. O script nunca tenta se cadastrar e não imprime a chave.
+
+## 9. Zerar o banco de testes
+
+`select * from private.reset_test_environment('operational', 'ZERAR AMBIENTE DE TESTES');` no SQL Editor.
+
+Travas, todas obrigatórias: (1) sessão de administração do banco (não funciona pela API); (2) o marcador `private.environment_marker` precisa existir e ser `testes` — **sem marcador, ou com `producao`, recusa** (e `producao` é irreversível: não volta a `testes`, não é apagado nem truncado); (3) a frase de confirmação exata; (4) transação única, sem `CASCADE` (se uma tabela mantida referenciar uma apagada, falha em vez de apagar mais), com verificação final `assert_history_protected()`.
+
+- `operational`: apaga recebimentos, recipientes, saldos, movimentos, manipulações, anulações, produções, ocorrências, mudanças de local e a auditoria; **mantém** empresas, unidades, vínculos, catálogo, fornecedores, locais e configurações. Tabelas futuras do schema `public` entram como operacionais.
+- `everything`: apaga também essas.
+- Contas de acesso (Authentication > Users) **nunca** são tocadas pela função; apague-as pelo painel se quiser recomeçar do zero.
+- Os gatilhos append-only são suspensos **só dentro da função** e restaurados exatamente como estavam (`ENABLE ALWAYS` incluído); o teste confirma que o histórico volta a recusar `DELETE`.
+- Devolve a contagem de linhas removidas por tabela.
+- Alternativa mais drástica, sem SQL: apagar e recriar o projeto no Supabase (muda URL e chaves; exige atualizar o Cloudflare).
+
+## 10. Guia: o que você precisa fazer pessoalmente (em ordem)
+
+**0. Antes de tudo — Cloudflare Pages:** desligue os deploys de **Preview** (Settings > Builds & deployments > Branch control) ou garanta as quatro `VITE_*` também em Preview. Enquanto a conexão com o GitHub estiver ativa, **qualquer push na `main` (merge) dispara um deploy de produção**; é o "deploy" que você ainda quer controlar. Se quiser impedi-lo até estar pronto, pause o projeto ou deixe "Automatic production branch deployments" desligado.
+
+**1. GitHub:** mergear a cadeia na ordem do plano (você); depois me peça o rebase deste PR sobre a `main`. Considere aplicar a proteção da `main` de `docs/PROTECAO_MAIN_PROPOSTA.md` e ligar *Secret scanning* e *Push protection* (Settings > Code security; o repositório é público). Nunca coloque chave do Supabase em Secrets do GitHub sem necessidade.
+
+**2. Supabase — chaves (Settings > API Keys):** use só a **publishable** no Cloudflare. A **secret** e a senha do banco ficam só com você (gerenciador de senhas). Depois de tudo funcionando, considere desativar as chaves legadas JWT (anon/service_role).
+
+**3. Supabase — Authentication (antes de criar contas):**
+   - *Sign In / Providers:* **desligar "Allow new users to sign up"**; desligar **Anonymous sign-ins**; deixar só o provedor Email (sem provedores sociais, sem telefone).
+   - *Email:* ligar **Confirm email**; ligar troca segura de senha (*Secure password change*).
+   - *Password:* mínimo **12** caracteres com minúsculas, maiúsculas, dígitos e símbolos. Proteção contra senhas vazadas: só em planos pagos, se existir no seu plano.
+   - *Multi-Factor:* ligar TOTP (inscrição e verificação). **Importante:** isso só permite cadastrar o fator; torná-lo **obrigatório** para proprietários ainda exige código no aplicativo (decisão 2 da revisão técnica; não implementado nesta fatia).
+   - *URL Configuration:* **Site URL** = endereço final do site no Cloudflare (`https://….pages.dev` ou domínio); remova URLs de localhost; sem curingas.
+   - *Rate limits:* conferir os valores de `supabase/production/auth.example.toml` (mais baixos que os locais).
+   - *Data API:* expor só o schema `public`; novas tabelas **não** devem ser expostas automaticamente.
+   - Rode o `verify-hosted.mjs` (seção 8) e corrija o que sair como `FALHA`.
+
+**4. Supabase — banco:** só depois da cadeia na `main`, com sua autorização: seção 5 (login, link, dry-run, push). Em seguida seção 6 (conta, marcador `testes`, empresa/unidade).
+
+**5. Cloudflare Pages:** conferir as variáveis da seção 4 (Production e Preview) e `NODE_VERSION=24`; fazer o primeiro deploy; abrir o site e entrar com o proprietário; imprimir uma etiqueta de teste (PDF) para confirmar o download sob a CSP; no console do navegador não deve haver erros de CSP. Domínio próprio, se quiser: Custom domains (depois de decidir o nome). Opcional e recomendado: proteger o site de testes com **Cloudflare Access** (grátis até 50 usuários), para que só você e quem convidar o abram.
+
+**6. Limites do plano Free a conhecer:** o projeto Supabase **pausa após cerca de uma semana sem atividade** (retome pelo painel); **não há backup diário automático** no Free (aceitável para dados fictícios; para produção é requisito — decisão 7 da revisão técnica); o envio de e-mail nativo é muito limitado (por isso as contas são criadas por você, com Auto Confirm).
+
+## 11. Testes (resultados reais, Node 24, Supabase local)
+
+| Comando | Resultado |
+|---|---|
+| `format:check`, `lint`, `typecheck`, `build` | ok |
+| `build` com `CF_PAGES=1` e sem variáveis | **falha de propósito** com mensagem explícita; com as quatro variáveis, passa e gera `dist/_headers` |
+| Vitest | 330 passaram (inclui `environment`, `buildGuard`/cabeçalhos e `App`) |
+| `test:ci-scripts` | 10 passaram (5 novos do verificador) |
+| pgTAP | 1376 passaram (49 novos em `hosted_provisioning.test.sql`) |
+| Advisors de segurança (`--fail-on warn`) | sem problemas |
+| Integração | 42 passaram (5 novos em `signup-lockdown.test.mjs`) |
+| E2E (Playwright, Chromium) | 19 passaram, sem alteração nos existentes |
+| CSP em navegador real (dist servido com o `_headers`) | tela de acesso e faixa renderizam; console sem violações |
+
+Nenhum teste existente foi alterado, removido ou enfraquecido. Não executado: nada no Supabase hospedado nem no Cloudflare (por ordem de luis).
+
+## 12. Limites e decisões para luis
+
+1. **Aceite da fatia 8.4a e do D-066.** Sem ele, nada segue.
+2. **Quando integrar:** esta fatia espera a cadeia (conflito de 4 arquivos, previsto e mecânico). Posso rebasear quando você pedir.
+3. **Deploy automático do Cloudflare:** veja o passo 0; só você controla quando o primeiro deploy acontece.
+4. **MFA obrigatório** para proprietários continua sem implementação (decisão 2); para o ambiente de testes com dados fictícios sugiro adiar, mas a produção não deve começar sem ele.
+5. **Proprietário único no piloto** (decisão de 12/11/2026) continua valendo; as funções de provisionamento aceitam o papel `owner` para colaboradores só se você pedir explicitamente.
+6. **Pendências do piloto inalteradas:** nutricionista RT (Q10), teste físico de impressão, MFA, backup/restauração.

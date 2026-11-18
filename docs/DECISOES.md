@@ -432,3 +432,12 @@
 - **Motivo:** resposta 5 de luis ao questionário (14/11/2026), D-036, D-055.
 - **Consequência:** o aviso de produção sem etiqueta (7.8) e a temperatura opcional (7.9) seguem como fatias próprias.
 - **Revisar quando:** a nutricionista RT avaliar os valores operacionais.
+
+## D-066 — Ambiente hospedado de testes com dados fictícios (18/11/2026)
+
+- **Status:** proposta; aceite de luis pendente ([registro](FASE_08_4A.md)).
+- **Decisão:** antecipar parcialmente a 8.4: modo `hosted` (Cloudflare Pages + Supabase em projeto próprio de testes), que nunca cai na demonstração (falha no build e na execução), com cabeçalhos de segurança e CSP restritos ao projeto, cadastro público desligado, primeiro proprietário/empresa/unidade criados por função administrativa executável só em sessão de administração do banco, e reset do banco de testes protegido por marcador de ambiente (`testes`/`producao`, este irreversível).
+- **Motivo:** luis quer usar o sistema definitivo com dados fictícios enquanto o refina (18/11/2026); decisões 5 e 6 da revisão técnica (hospedagem, ambientes separados).
+- **Consequência:** nenhuma regra de negócio, RLS ou histórico muda; a produção continua dependendo de MFA obrigatório, revisão de segurança independente, backup com teste de restauração e Q10.
+- **Revisar quando:** a 8.4 completa (produção) for autorizada.
+
