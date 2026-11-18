@@ -10,6 +10,11 @@ import {
   isQuantity,
   zonedToInstant,
 } from '../../handling/domain/handling';
+import {
+  formatQuantity,
+  quantityProblemText,
+  toDotQuantity,
+} from '../../../shared/format/quantity';
 import type { ProductionGateway } from '../application/productionGateway';
 import { ProductionRejected } from '../application/productionGateway';
 import type { ProductionRow } from '../domain/production';
@@ -277,12 +282,14 @@ function ProductionContents({
     producedDate && expiry ? daysBetween(producedDate, expiry) : null;
   const people = members.filter((member) => member.display_name);
   const selected = members.find((member) => member.user_id === handledBy);
+  // V5 (D-063): vírgula ou ponto decimal; o esquema de sempre recebe a forma com ponto.
+  const dotQuantity = toDotQuantity(quantity) ?? '';
 
   function build() {
     if (!instant) return null;
     return productionInputSchema.safeParse({
       productId,
-      quantity,
+      quantity: dotQuantity,
       expiryDate: expiry,
       producedAt: instant,
       handledBy,
@@ -300,11 +307,12 @@ function ProductionContents({
       return setError(
         'Defina a conservação da preparação no catálogo antes de registrar a produção.',
       );
-    if (!isQuantity(quantity))
+    if (!isQuantity(dotQuantity))
       return setError(
-        `Informe a quantidade produzida em ${unit}, com ponto para decimais, por exemplo 0.5.`,
+        quantityProblemText(quantity) ??
+          `Informe a quantidade produzida em ${unit}, com vírgula ou ponto para decimais, por exemplo 0,5.`,
       );
-    if (unit === 'un' && quantity.includes('.'))
+    if (unit === 'un' && dotQuantity.includes('.'))
       return setError('Esta preparação é medida em unidades inteiras.');
     if (!instant) return setError('Informe a data e a hora da produção.');
     if (new Date(instant).getTime() > now().getTime())
@@ -563,7 +571,7 @@ function ProductionContents({
           <ul>
             <li>Preparação: {selectedPreparation.name}</li>
             <li>
-              Quantidade: {quantity} {unit}
+              Quantidade: {formatQuantity(dotQuantity)} {unit}
             </li>
             <li>
               Produzida em: {shownProducedAt.replace('T', ' ')} (fuso {timezone}

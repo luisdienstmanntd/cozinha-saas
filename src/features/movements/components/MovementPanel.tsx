@@ -17,6 +17,12 @@ import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import type { BlockStatus } from '../../occurrences/domain/occurrence';
 import { formatDateTime } from '../../../shared/format/dates';
 import { MoreInfo } from '../../../shared/ui/MoreInfo';
+import {
+  QUANTITY_HINT,
+  formatQuantity,
+  quantityProblemText,
+  toDotQuantity,
+} from '../../../shared/format/quantity';
 
 // V3 (M4): quem registrou aparece pelo nome de exibição da organização. Sem nome (pessoa sem nome
 // de exibição ou sem acesso atual), mostra um texto neutro; os identificadores ficam recolhidos.
@@ -238,9 +244,11 @@ export function MovementPanel({
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fields = new FormData(e.currentTarget);
-    const quantity = String(fields.get('quantity') ?? '');
+    const typed = String(fields.get('quantity') ?? '');
     const kind = String(fields.get('kind'));
     const reason = String(fields.get('reason') ?? '').trim();
+    // V5 (D-063): vírgula ou ponto decimal; a validação de antes vale sobre a forma com ponto.
+    const quantity = toDotQuantity(typed) ?? '';
     if (
       !/^(?:0|[1-9]\d{0,9})(?:\.\d{1,3})?$/.test(quantity) ||
       Number(quantity) <= 0 ||
@@ -250,7 +258,9 @@ export function MovementPanel({
       (kind === 'discard' && !reason) ||
       reason.length > 500
     ) {
-      setError('Confira tipo, quantidade e motivo.');
+      setError(
+        quantityProblemText(typed) ?? 'Confira tipo, quantidade e motivo.',
+      );
       return;
     }
     const input: MovementInput = {
@@ -435,7 +445,7 @@ export function MovementPanel({
               : pending.kind === 'discard'
                 ? 'descarte'
                 : 'consumo'}{' '}
-            de {pending.quantity} {batch.unit}.
+            de {formatQuantity(pending.quantity)} {batch.unit}.
           </p>
           {pending.reason && <p>Motivo: {pending.reason}</p>}
           {pending.kind === 'reversal' &&
@@ -472,10 +482,12 @@ export function MovementPanel({
           {reviewing && remaining !== null && (
             <p>
               Saldo após a operação, se confirmada:{' '}
-              {(Math.round(remaining * 1000) -
-                (pending.kind === 'reversal' ? -1 : 1) *
-                  Math.round(Number(pending.quantity) * 1000)) /
-                1000}{' '}
+              {formatQuantity(
+                (Math.round(remaining * 1000) -
+                  (pending.kind === 'reversal' ? -1 : 1) *
+                    Math.round(Number(pending.quantity) * 1000)) /
+                  1000,
+              )}{' '}
               {batch.unit}. O servidor confirmará o saldo atual.
             </p>
           )}
@@ -573,7 +585,7 @@ export function MovementPanel({
               Motivo (obrigatório para descarte){' '}
               <input aria-label="Motivo" name="reason" maxLength={500} />
             </label>
-            <p>Use ponto para decimais, por exemplo 0.5.</p>
+            <p>{QUANTITY_HINT}</p>
             <button disabled={busy}>Registrar saída</button>
           </form>
         )

@@ -805,3 +805,69 @@ it('mostra quem registrou pelo nome e a data no fuso, com identificadores recolh
   expect(ids).toHaveTextContent(`autor ${author}`);
   expect(within(first).getByText('Identificadores (suporte)')).toBeVisible();
 });
+
+// V5 (M5, D-063): vírgula decimal na quantidade da saída.
+function decimalPanel(record = vi.fn().mockResolvedValue('evento')) {
+  sessionStorage.clear();
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 10,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list: vi.fn().mockResolvedValue([]), record }}
+    />,
+  );
+  return record;
+}
+
+it('V5: aceita 2,5 na saída, mostra com vírgula e envia 2.5', async () => {
+  const user = userEvent.setup();
+  const record = decimalPanel();
+  await user.type(await screen.findByLabelText('Quantidade da saída'), '2,5');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  expect(
+    screen.getByText('Tentativa pendente: consumo de 2,5 kg.'),
+  ).toBeVisible();
+  expect(
+    screen.getByText(/Saldo após a operação, se confirmada: 7,5 kg/),
+  ).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(record).toHaveBeenCalledTimes(1);
+  expect(record.mock.calls[0]?.[1]).toMatchObject({
+    kind: 'consumption',
+    quantity: '2.5',
+  });
+});
+
+it.each([
+  ['1.000,50', /não use separador de milhar/],
+  ['1,000.50', /não use separador de milhar/],
+  ['2.500', /Quantidade ambígua: "2\.500"/],
+  ['2,5 kg', /Confira tipo, quantidade e motivo\./],
+  ['0,0001', /Confira tipo, quantidade e motivo\./],
+])('V5: recusa %s na saída sem criar tentativa', async (typed, message) => {
+  const user = userEvent.setup();
+  const record = decimalPanel();
+  await user.type(await screen.findByLabelText('Quantidade da saída'), typed);
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  expect(screen.getByRole('alert')).toHaveTextContent(message);
+  expect(screen.queryByText(/Tentativa pendente/)).toBeNull();
+  expect(sessionStorage.length).toBe(0);
+  expect(record).not.toHaveBeenCalled();
+});
+
+it('V5: a dica da saída fala em vírgula ou ponto', async () => {
+  decimalPanel();
+  expect(
+    await screen.findByText(
+      'Use vírgula ou ponto para decimais, por exemplo 0,5. Não use separador de milhar.',
+    ),
+  ).toBeVisible();
+});
