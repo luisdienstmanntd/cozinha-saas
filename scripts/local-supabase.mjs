@@ -34,10 +34,19 @@ export function localSupabase() {
   };
 }
 
+// Fatia 8.1 (D-065): a mensagem e a dica do banco entram no erro (antes só o código aparecia, e falhas
+// intermitentes de CI ficavam sem diagnóstico). São textos das regras do banco, sem credenciais; limitados
+// a 300 caracteres. Os dados dos testes são sintéticos.
 export function checked(result) {
-  if (result.error)
+  if (result.error) {
+    const { code, status, message, hint } = result.error;
+    const detail = [message, hint]
+      .filter(Boolean)
+      .map((text) => String(text).slice(0, 300))
+      .join(' | ');
     throw new Error(
-      `Operação local falhou (${result.error.code ?? result.error.status}).`,
+      `Operação local falhou (${code ?? status})${detail ? `: ${detail}` : ''}.`,
     );
+  }
   return result.data;
 }
