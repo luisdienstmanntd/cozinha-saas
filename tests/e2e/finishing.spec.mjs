@@ -132,7 +132,7 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     await page.reload();
     const title = page.getByRole('heading', {
       level: 1,
-      name: 'Cozinha SaaS — unidades, recebimentos e validade',
+      name: 'CozziGo — unidades, recebimentos e validade',
     });
     await expect(title).toHaveCount(1);
     const bar = page.getByRole('region', { name: 'Sessão' });
