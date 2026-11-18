@@ -731,3 +731,57 @@ it('mostra a anulação de produção como saída e não oferece desfazê-la (fa
     screen.queryByRole('button', { name: 'Anular registro' }),
   ).not.toBeInTheDocument();
 });
+
+it('mostra quem registrou pelo nome e a data no fuso, com identificadores recolhidos (V3)', async () => {
+  sessionStorage.clear();
+  const author = '22345678-1234-4234-8234-123456789abc';
+  const other = '32345678-1234-4234-8234-123456789abc';
+  const list = vi.fn().mockResolvedValue([
+    {
+      id: 'evento-1',
+      kind: 'consumption',
+      quantity: 0.25,
+      reason: null,
+      created_by: author,
+      created_at: '2026-11-14T23:00:31.357489+00:00',
+      timezone: 'America/Sao_Paulo',
+    },
+    {
+      id: 'evento-2',
+      kind: 'discard',
+      quantity: 0.25,
+      reason: 'dano',
+      created_by: other,
+      created_at: '2026-11-15T10:00:00Z',
+      timezone: 'America/Sao_Paulo',
+    },
+  ]);
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate={false}
+      gateway={{ list, record: vi.fn() }}
+      loadMembers={vi.fn().mockResolvedValue([
+        { user_id: author, display_name: 'Ana Cozinha', role: 'owner' },
+        { user_id: other, display_name: null, role: 'member' },
+      ])}
+    />,
+  );
+  const first = (await screen.findByText(/14\/11\/2026 20:00/)).closest('li')!;
+  expect(await within(first).findByText(/por Ana Cozinha/)).toBeVisible();
+  const second = screen.getByText(/15\/11\/2026 07:00/).closest('li')!;
+  expect(second).toHaveTextContent('por pessoa sem nome de exibição');
+  // Identificadores continuam disponíveis para suporte, recolhidos.
+  const ids = within(first).getByText(/Registro evento-1/);
+  expect(ids).not.toBeVisible();
+  expect(ids).toHaveTextContent(`autor ${author}`);
+  expect(within(first).getByText('Identificadores (suporte)')).toBeVisible();
+});

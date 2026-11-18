@@ -102,7 +102,7 @@ function renderPanel({
   return { batches, occurrences };
 }
 
-it('mostra o bloqueio no topo e na linha do recipiente, com motivo e tempo', async () => {
+it('mostra o bloqueio no alto, na linha do recipiente e no painel após a lista, com motivo e tempo', async () => {
   renderPanel();
   const blocks = await screen.findByRole('region', {
     name: 'Bloqueios e ocorrências',
@@ -115,6 +115,20 @@ it('mostra o bloqueio no topo e na linha do recipiente, com motivo e tempo', asy
   expect(blocks).toHaveTextContent('C-000042 (saldo 10 kg)');
   const list = screen.getByRole('list', { name: 'Recipientes e validade' });
   expect(list).toHaveTextContent('BLOQUEADO - aguardando decisão');
+  // V3: aviso no alto do painel de validade, com atalho; o painel completo vem depois da lista.
+  const dashboard = screen.getByRole('region', { name: 'Painel de validade' });
+  expect(dashboard).toHaveTextContent(
+    '1 ocorrência aberta com recipiente bloqueado.',
+  );
+  expect(
+    within(dashboard).getByRole('link', {
+      name: 'Ver bloqueios e ocorrências',
+    }),
+  ).toHaveAttribute('href', '#bloqueios');
+  expect(blocks.closest('#bloqueios')).not.toBeNull();
+  expect(
+    list.compareDocumentPosition(blocks) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
 });
 
 it('proprietário registra a decisão com justificativa e o painel é relido', async () => {

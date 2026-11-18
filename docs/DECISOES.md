@@ -466,3 +466,11 @@
 - **Motivo:** B1 da revisão visual (sem navegação) e autorização de luis de 16/11/2026.
 - **Consequência:** botão "Catálogo de X" passa a "Abrir X"; ferramentas da organização vão para Cadastros; V3 a V5 seguem como fatias próprias.
 - **Revisar quando:** a observação do piloto mostrar se as áreas e o perfil do colaborador atendem a cozinha.
+
+## D-061 — Lista de validade em cartões e ficha aberta pela lista (16/11/2026)
+
+- **Status:** ACEITA por luis em 16/11/2026, 12:43 UTC, com os seis pontos do relatório ([registro](V3_LISTA_VALIDADE.md)). V3 funcionalmente aceita; encerramento técnico condicionado à CI verde.
+- **Decisão:** cada recipiente da lista de Validade é um cartão: produto e código curto em destaque, selo de vencimento com texto e símbolo além da cor ("Vencido há N dias", "Vence hoje", "Vence amanhã", "Vence em N dias", "Esgotado"), validade em dd/mm/aaaa, saldo, lote e local. O UUID sai da lista e fica só na ficha (a busca pelo identificador continua). "Ver ficha" abre a ficha do recipiente no lugar da lista, para qualquer perfil e também para derivados, sem gravar nada; "Voltar para a lista" devolve o foco ao cartão. Datas e horários em dd/mm/aaaa HH:mm no fuso da unidade; o fuso aparece com nome legível. O histórico mostra o nome de exibição de quem registrou, com os identificadores recolhidos em "Identificadores (suporte)".
+- **Motivo:** B3, B4, M3, M4 e M6 da revisão visual e autorização de luis de 16/11/2026.
+- **Consequência:** só interface. O status continua vindo de `getExpiryStatus` (mesma data da unidade do banco); "em N dias" é a diferença de dias de calendário, sem nova faixa nem prazo. Nenhuma migração, política RLS ou função muda. O botão "Abrir etiqueta" da lista passa a "Ver ficha" e deixa de chamar `ensure_container`.
+- **Revisar quando:** a observação do piloto mostrar se o cartão e o selo bastam na cozinha, ou se os contadores devem virar filtros (fora desta fatia).

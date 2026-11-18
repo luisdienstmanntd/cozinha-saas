@@ -97,13 +97,13 @@ test('vencido: faixa no painel e no QR, consumo indisponível e descarte registr
     await panel.getByRole('button', { name: 'Registrar saída' }).click();
     await panel.getByRole('button', { name: 'Confirmar saída' }).click();
     await expect(panel.getByText(/Descarte — 2 kg/)).toBeVisible();
-    await expect(expired).toContainText('saldo 3 kg');
+    await expect(expired).toContainText('Saldo 3 kg');
     await expired.screenshot({
       path: testInfo.outputPath('02-descarte-vencido.png'),
     });
 
     // Tela do recipiente (a mesma do QR).
-    await expired.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await expired.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     await expect(label.getByText('VENCIDO - somente descarte')).toBeVisible();
     await expect(

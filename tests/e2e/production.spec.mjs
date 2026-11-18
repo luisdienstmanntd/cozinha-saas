@@ -164,7 +164,7 @@ test('registrar e anular produção da cozinha pela tela', async ({
       .getByRole('listitem')
       .filter({ hasText: 'Caldo de teste' });
     await expect(row).toContainText('preparação própria');
-    await expect(row).toContainText('saldo 6 l de 6 l');
+    await expect(row).toContainText('Saldo 6 l de 6 l');
 
     // Anular: motivo obrigatório; depois o saldo é zero e a lista mostra ANULADA.
     await openArea(page, 'Produção');
@@ -183,8 +183,8 @@ test('registrar e anular produção da cozinha pela tela', async ({
     await openArea(page, 'Validade');
     await expect(row).toHaveCount(0);
     await page.getByLabel('Mostrar esgotados').check();
-    await expect(row).toContainText('saldo 0 l de 6 l');
-    await row.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await expect(row).toContainText('Saldo 0 l de 6 l');
+    await row.getByRole('button', { name: 'Ver ficha' }).click();
     const container = page.getByRole('region', { name: 'Recipiente' });
     await expect(container).toContainText('Preparação própria');
     await expect(container).toContainText('ANULADO');

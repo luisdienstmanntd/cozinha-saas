@@ -246,7 +246,7 @@ test('QR e links diretos seguem funcionando com a sessão persistente', async ({
     await page.getByRole('button', { name: 'Registrar recebimento' }).click();
     await expect(page.getByText('Recebimento registrado.')).toBeVisible();
     await openArea(page, 'Validade');
-    await page.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await page.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     const id = (await label.getByText(/Identificação:/).innerText()).replace(
       'Identificação: ',

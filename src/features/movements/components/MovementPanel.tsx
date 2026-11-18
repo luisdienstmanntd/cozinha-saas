@@ -15,6 +15,15 @@ import {
 import { EXPIRED_NOTE, EXPIRED_TEXT } from '../../batches/domain/expiryStatus';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import type { BlockStatus } from '../../occurrences/domain/occurrence';
+import { formatDateTime } from '../../../shared/format/dates';
+
+// V3 (M4): quem registrou aparece pelo nome de exibição da organização. Sem nome (pessoa sem nome
+// de exibição ou sem acesso atual), mostra um texto neutro; os identificadores ficam recolhidos.
+type MemberName = { user_id: string; display_name: string | null };
+function authorName(names: Map<string, string> | null, id: string): string {
+  if (!names) return 'pessoa da organização';
+  return names.get(id) ?? 'pessoa sem nome de exibição';
+}
 
 const savedSchema = z
   .object({
@@ -35,6 +44,7 @@ export function MovementPanel({
   onRecorded,
   blocked,
   expired,
+  loadMembers,
 }: {
   scope: CatalogScope;
   userId: string;
@@ -54,7 +64,34 @@ export function MovementPanel({
   // Fatia 6.11: validade do recipiente já passou na data da unidade. O banco recusa o consumo; o
   // formulário só oferece o descarte.
   expired?: boolean;
+  // V3: nomes de exibição; sem a função, o histórico não mostra nomes.
+  loadMembers?: (scope: CatalogScope) => Promise<MemberName[]>;
 }) {
+  const [names, setNames] = useState<Map<string, string> | null>(null);
+  useEffect(() => {
+    if (!loadMembers) return;
+    let current = true;
+    void loadMembers({
+      organizationId: scope.organizationId,
+      establishmentId: scope.establishmentId,
+    }).then(
+      (rows) => {
+        if (current)
+          setNames(
+            new Map(
+              rows
+                .filter((row) => row.display_name)
+                .map((row) => [row.user_id, row.display_name!]),
+            ),
+          );
+      },
+      // Nomes são informação extra: o histórico continua sem eles.
+      () => undefined,
+    );
+    return () => {
+      current = false;
+    };
+  }, [loadMembers, scope.organizationId, scope.establishmentId]);
   const key = `movement-intent:${userId}:${scope.organizationId}:${scope.establishmentId}:${batch.id}`;
   const [events, setEvents] = useState<Movement[] | null>(null);
   const [error, setError] = useState('');
@@ -340,15 +377,22 @@ export function MovementPanel({
                               : 'Descarte'
                             : 'Consumo'}{' '}
                 — {item.quantity} {batch.unit} — {item.reason ?? 'sem motivo'} —{' '}
-                {item.created_at} — fuso {item.timezone} — autor{' '}
-                {item.created_by} — ID {item.id}
-                {item.kind === 'reversal' && (
-                  <> — movimento original {item.reverses_id}</>
-                )}
+                {formatDateTime(item.created_at, item.timezone)} — por{' '}
+                {authorName(names, item.created_by)}
                 {item.kind !== 'reversal' &&
                   events.some((event) => event.reverses_id === item.id) && (
                     <> — anulado</>
                   )}
+                <details className="support-ids">
+                  <summary>Identificadores (suporte)</summary>
+                  <p>
+                    Registro {item.id} — autor {item.created_by} — fuso{' '}
+                    {item.timezone} — instante {item.created_at}
+                    {item.kind === 'reversal' && (
+                      <> — movimento original {item.reverses_id}</>
+                    )}
+                  </p>
+                </details>
                 {canCreate &&
                   !stored.invalid &&
                   !pending &&
@@ -390,8 +434,9 @@ export function MovementPanel({
               <p>
                 Registro original:{' '}
                 {original.kind === 'discard' ? 'Descarte' : 'Consumo'} —{' '}
-                {original.created_at} — motivo {original.reason ?? 'sem motivo'}{' '}
-                — ID {original.id}
+                {formatDateTime(original.created_at, original.timezone)} —
+                motivo {original.reason ?? 'sem motivo'} — por{' '}
+                {authorName(names, original.created_by)} — ID {original.id}
               </p>
             ) : (
               <p>

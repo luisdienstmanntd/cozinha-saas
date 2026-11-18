@@ -19,8 +19,11 @@ import { DownloadLabels } from './DownloadLabels';
 import {
   EXPIRED_NOTE,
   EXPIRED_TEXT,
+  expiryBadgeText,
+  getExpiryStatus,
   isExpired,
 } from '../../batches/domain/expiryStatus';
+import { formatCivilDate } from '../../../shared/format/dates';
 
 export function LabelView({
   id,
@@ -149,9 +152,45 @@ export function LabelView({
       data.batch_receipts.timezone,
     ),
   );
+  // V3 (B4): o mesmo selo da lista no topo da ficha (e da página do QR). Só aparece com fuso conhecido
+  // e para recipiente que ainda vale; o texto vem da mesma regra de data da lista.
+  const expiryDate = data
+    ? (data.effective?.expiry_date ?? data.batch_receipts.expiry_date)
+    : null;
+  const zone = data?.batch_receipts.timezone;
+  let badge: { tone: string; text: string } | null = null;
+  if (data && expiryDate && zone && !data.voided && !productionVoided) {
+    try {
+      badge =
+        data.balance <= 0
+          ? { tone: 'depleted', text: 'Esgotado' }
+          : {
+              tone: getExpiryStatus(expiryDate, zone),
+              text: expiryBadgeText(expiryDate, zone),
+            };
+    } catch {
+      badge = null;
+    }
+  }
   return (
     <section aria-label="Recipiente">
       <h2>Recipiente</h2>
+      {data && (
+        <p className="ficha-title">
+          <strong className="card-product">
+            {data.batch_receipts.products.name}
+          </strong>{' '}
+          <span className="card-code">{data.short_code}</span>
+          {badge && (
+            <>
+              {' '}
+              <span className={`expiry-badge tone-${badge.tone}`}>
+                {badge.text}
+              </span>
+            </>
+          )}
+        </p>
+      )}
       {error && <p role="alert">{error}</p>}
       {!data && !error && <p>Consultando recipiente…</p>}
       {data && (
@@ -191,7 +230,10 @@ export function LabelView({
             Quantidade inicial:{' '}
             {data.effective?.initial_quantity ?? data.batch_receipts.quantity}{' '}
             {data.batch_receipts.unit} — validade{' '}
-            {data.effective?.expiry_date ?? data.batch_receipts.expiry_date} (
+            {formatCivilDate(
+              data.effective?.expiry_date ?? data.batch_receipts.expiry_date,
+            )}{' '}
+            (
             {data.effective?.expiry_origin === 'handling'
               ? 'após manipulação'
               : data.batch_receipts.expiry_origin === 'original'

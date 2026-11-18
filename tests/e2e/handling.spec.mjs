@@ -134,11 +134,11 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
       expect(has(opened.bytes, text), text).toBe(true);
     expect(has(opened.bytes, 'PRODUTO FRACIONADO')).toBe(false);
     await result.getByRole('button', { name: 'Fechar' }).click();
-    await expect(origin).toContainText('saldo 6 kg');
+    await expect(origin).toContainText('Saldo 6 kg');
     const derived = rows
       .getByRole('listitem')
       .filter({ hasText: '(derivado)' });
-    await expect(derived).toContainText('saldo 4 kg');
+    await expect(derived).toContainText('Saldo 4 kg');
     await expect(derived).toContainText('após manipulação');
 
     // E2E 28: porcionar o derivado em 3 de 1 kg; a sobra de 1 kg só pode ser porção ou descarte.
@@ -181,7 +181,7 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
     await result.getByRole('button', { name: 'Fechar' }).click();
 
     // E2E 31: QR da origem avisa que foi aberta e leva aos derivados.
-    await origin.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await origin.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     await expect(label).toContainText('Este recipiente foi aberto em');
     await expect(label).toContainText('Use a etiqueta nova');
@@ -225,7 +225,7 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await origin.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await origin.getByRole('button', { name: 'Ver ficha' }).click();
     await family
       .getByRole('button', { name: /^Abrir C-/ })
       .first()

@@ -513,3 +513,39 @@ it('preparação própria liberada oferece a etiqueta PDF (fatia 7.4)', async ()
     await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
   ).toBeVisible();
 });
+
+it('mostra o selo de validade e a data no formato brasileiro no topo da ficha (V3)', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-11-15T15:00:00Z'));
+    render(
+      <LabelView
+        id="12345678-1234-4234-8234-123456789abc"
+        gateway={{
+          ensure: vi.fn(),
+          get: vi.fn().mockResolvedValue({
+            id: '12345678-1234-4234-8234-123456789abc',
+            short_code: 'C-000042',
+            balance: 2,
+            batch_receipts: {
+              source_code: '0001',
+              quantity: 5,
+              unit: 'kg',
+              expiry_date: '2026-11-20',
+              expiry_origin: 'original' as const,
+              timezone: 'America/Sao_Paulo',
+              products: { name: 'Arroz' },
+            },
+          }),
+        }}
+      />,
+    );
+    const badge = await screen.findByText('Vence em 5 dias');
+    expect(badge).toHaveClass('expiry-badge', 'tone-upcoming');
+    expect(
+      screen.getByText(/validade 20\/11\/2026 \(original\)/),
+    ).toBeVisible();
+  } finally {
+    vi.useRealTimers();
+  }
+});
