@@ -26,7 +26,7 @@ export function DemoHome() {
       </a>
       <header className="site-header">
         <a className="wordmark" href="#conteudo">
-          Gestão de cozinha
+          CozziGo
         </a>
         <span className="badge">Ambiente de demonstração</span>
       </header>

@@ -380,7 +380,7 @@ export function IdentityHome({
           Pular para o conteúdo
         </a>
       )}
-      <h1>Cozinha SaaS — unidades, recebimentos e validade</h1>
+      <h1>CozziGo — unidades, recebimentos e validade</h1>
       {!openTarget && environmentNote}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
