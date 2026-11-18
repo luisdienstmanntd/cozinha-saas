@@ -54,9 +54,9 @@ Validação local feita: `supabase db reset` aplica tudo do zero; `supabase test
 Procedimento para quando você autorizar (na sua máquina, com a cadeia já na `main`):
 
 1. `npx supabase login` e `npx supabase link --project-ref <ref>` (pede a senha do banco, que você guarda em gerenciador de senhas).
-2. `npx supabase db push --dry-run` — confira que a lista de migrações é exatamente a esperada (30 no total: as 29 da `main` atual e `20261118000000`, a última).
-3. `npx supabase db push`.
-4. `npx supabase migration list` — local e remoto iguais.
+2. `npx supabase db push --remote --dry-run` (no CLI 3.x a flag `--remote` é obrigatória; sem ela o alvo é o banco local) — confira que a lista de migrações é exatamente a esperada (30 no total: as 29 da `main` atual e `20261118000000`, a última).
+3. `npx supabase db push --remote`.
+4. `npx supabase migration list --remote` — local e remoto iguais.
 5. Pontos a observar no primeiro `push`: (a) a migração da V2 (`20261116000000`) executa `alter role authenticator set pgrst.db_pre_request`; isso é prática documentada do Supabase, mas **não pôde ser testado no hospedado** — se falhar, o `push` para sem aplicar o resto e me avise; (b) as migrações rodam como `postgres`, dono das tabelas, que é o que as funções administrativas desta fatia precisam.
 
 ## 6. Primeiro proprietário, empresa e unidade

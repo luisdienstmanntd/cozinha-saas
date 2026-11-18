@@ -1,6 +1,6 @@
 # Fatia 8.4c — Procedimento de migração do banco hospedado de testes (checklist, NÃO executado)
 
-Status: documento preparado em 18/11/2026. **Nada foi aplicado** no Supabase hospedado (`cozinha-saas-testes`) e não houve deploy. Este procedimento só vale depois de autorização específica de luis, por escrito, para a migração (e outra, separada, para o primeiro deploy).
+Status: documento preparado em 18/11/2026. Migração **aplicada** em `cozinha-saas-testes` em 18/11/2026 (ver seção 8); **não houve deploy**. Este procedimento só vale com autorização específica de luis, por escrito, para a migração (e outra, separada, para o primeiro deploy).
 
 Estado conferido antes de escrever: `main` em `f525cc8` (inclui #46 identidade CozziGo e #47 etiquetas/`VITE_APP_URL`), 30 migrações em `supabase/migrations` (a última é `20261118000000_hosted_provisioning.sql`), nenhuma migração nova nesta rodada. `verify-hosted.mjs` em 18/11/2026: cadastro público, login anônimo e provedores desligados, e-mail confirmado exigido; as seis tabelas respondem 404 (ainda não existem, banco vazio).
 
@@ -17,9 +17,10 @@ Estado conferido antes de escrever: `main` em `f525cc8` (inclui #46 identidade C
 ## 2. Aplicar (na máquina de luis)
 1. `npx supabase login`
 2. `npx supabase link --project-ref wtscafnacsmyfmqcaffy` (pede a senha do banco).
-3. `npx supabase db push --dry-run` — **conferir**: exatamente 30 migrações, da primeira até `20261118000000`, nenhuma a mais, nenhuma faltando. Qualquer divergência: pare.
-4. `npx supabase db push`.
-5. `npx supabase migration list` — colunas Local e Remote iguais.
+3. `npx supabase db push --remote --dry-run` — **a flag `--remote` é obrigatória no CLI 3.x**: sem ela o alvo é o banco local (Docker). A primeira linha deve dizer `Target: project cozinha-saas-testes (wtscafnacsmyfmqcaffy)`.
+    **conferir**: exatamente 30 migrações, da primeira até `20261118000000`, nenhuma a mais, nenhuma faltando. Qualquer divergência: pare.
+4. `npx supabase db push --remote` (pede `Yes/No`; o padrão é No).
+5. `npx supabase migration list --remote` — colunas Local e Remote iguais.
 
 **Pontos de atenção do primeiro push**
 - `20261116000000_session_inactivity.sql` faz `alter role authenticator set pgrst.db_pre_request = 'session_guard.check_request'`. É o caminho documentado do Supabase, mas não foi testado no hospedado. Se o push parar aqui, **não force**: as migrações anteriores já aplicadas ficam registradas; envie a mensagem de erro (sem a senha) e aguarde instrução.
@@ -50,3 +51,34 @@ Seguir `FASE_08_4A.md` §6: criar a conta em Authentication > Users (Auto Confir
 
 ## 7. Pendências que continuam abertas
 MFA obrigatório antes do lançamento comercial; backup diário e teste de restauração (plano pago); pausa por inatividade do plano Free; desativar as chaves legadas quando nada mais depender delas; Redirect URLs sem localhost; revisão independente de segurança pré-piloto; RT (Q10); teste físico de impressão/QR.
+
+## 8. Registro da execução (18/11/2026, autorizada por luis)
+- Conferências prévias: projeto `wtscafnacsmyfmqcaffy`, Postgres **17.11**, 0 tabelas/schemas do app, 0 histórico de migrações, 0 contas.
+- Cópia limpa do repositório em `b723bfe`, Node 24.12, `npm ci` sem vulnerabilidades, Supabase CLI 3.0.0. `link` sem alterar arquivos (`git status` limpo).
+- `db push --remote --dry-run`: **30 migrações**, idênticas às de `supabase/migrations` (comparadas), alvo correto. Um primeiro `dry-run` sem `--remote` mirou o banco local e falhou sem efeito.
+- `db push --remote`: aplicado; `migration list --remote` com local e remoto iguais.
+- `verify-hosted.mjs` depois: 4 checagens de autenticação OK; as 6 tabelas passaram de 404 para **401** (anônimo negado).
+- Consulta de estrutura (SQL Editor): migrações 30, tabelas `public` 21, sem RLS 0, privilégios de `anon` 0, funções administrativas expostas 0, gatilhos append-only `ALWAYS` 25, tabelas `private` 2, marcador de ambiente 0, `pre_request` da V2 = true (o `alter role authenticator` funcionou no hospedado), empresas 0. **Única divergência:** `funcoes_anon = 1`.
+
+### 8.1 Função da plataforma `public.rls_auto_enable()` (divergência e correção)
+- Não é nossa (não aparece em migração, doc ou teste). SECURITY DEFINER, dono `postgres`, usada pelo gatilho de evento `ensure_rls` (`ddl_command_end`, ativo) que liga RLS em tabela nova. O local não a tem.
+- **Permissões originais:** `proacl = NULL` (padrão: `PUBLIC` executa, logo `anon` e `authenticated` também), o que permitia chamá-la por `/rest/v1/rpc/rls_auto_enable`.
+- **Antes:** teste de criar tabela em transação que termina em erro de propósito: `relrowsecurity = t`.
+- **Alteração (autorizada por luis, só neste projeto, sem apagar nem alterar a função):**
+  `revoke execute on function public.rls_auto_enable() from public, anon, authenticated;`
+- **Depois:** `proacl = {postgres=X/postgres}`, `funcoes_anon = 0`, função e gatilho intactos (`ativo = O`), o mesmo teste de tabela continua dando `relrowsecurity = t`, e a chamada anônima pela API responde `permission denied for function rls_auto_enable` (401). `verify-hosted` continua com todas as linhas OK.
+- **Reversão (não deixa exatamente `NULL`, mas equivale ao padrão):** `grant execute on function public.rls_auto_enable() to public;`
+
+### 8.2 Para futuras instalações do CozziGo (novo projeto Supabase)
+Depois do `db push --remote`, rodar no SQL Editor a consulta de estrutura da seção 3 e, se `funcoes_anon` for maior que 0 por causa de `public.rls_auto_enable()`, aplicar o mesmo `revoke` (só se a função existir):
+```sql
+do $$ begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end $$;
+```
+Depois repetir a consulta (`funcoes_anon 0`), o teste de tabela com RLS automático e o `verify-hosted`. Não é migração do repositório de propósito: a função é da plataforma e não existe no Supabase local.
+
+### 8.3 Ainda pendente após a migração
+Isolamento entre empresas e proteção de sessões **no hospedado** exigem contas de teste (etapa seguinte); o marcador `testes` ainda não foi declarado; sem deploy. As garantias de RLS/isolamento/sessões já são cobertas pela bateria local (pgTAP, integração e E2E) sobre as mesmas migrações.
