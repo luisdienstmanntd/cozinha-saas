@@ -33,6 +33,10 @@ const listedSchema = z.object({
       })
       .array(),
   }),
+  production_label_downloads: z
+    .object({ downloaded_at: z.string() })
+    .array()
+    .optional(),
   production_voids: z
     .union([
       z.object({ reason: z.string(), created_at: z.string() }),
@@ -74,7 +78,7 @@ export function createProductionGateway(
       const { data, error } = await client
         .from('batch_productions')
         .select(
-          'batch_id,produced_at,late,late_window_minutes,handled_by_name,note,timezone,batch_receipts!batch_productions_batch_fk!inner(quantity,unit,expiry_date,products!inner(name),containers(id,short_code,kind)),production_voids!production_voids_production_fk(reason,created_at)',
+          'batch_id,produced_at,late,late_window_minutes,handled_by_name,note,timezone,batch_receipts!batch_productions_batch_fk!inner(quantity,unit,expiry_date,products!inner(name),containers(id,short_code,kind)),production_voids!production_voids_production_fk(reason,created_at),production_label_downloads!production_label_downloads_production_fk(downloaded_at)',
         )
         .eq('organization_id', scope.organizationId)
         .eq('establishment_id', scope.establishmentId)
@@ -109,6 +113,10 @@ export function createProductionGateway(
             container_id: integral?.id ?? null,
             short_code: integral?.short_code ?? null,
             voided,
+            label_downloaded_at:
+              (row.production_label_downloads ?? [])
+                .map((download) => download.downloaded_at)
+                .sort((a, b) => Date.parse(a) - Date.parse(b))[0] ?? null,
           });
         });
     },
@@ -148,6 +156,15 @@ export function createProductionGateway(
           'Não foi possível anular a produção. Atualize a lista e confira.',
         );
       return z.uuid().parse(data);
+    },
+    async recordLabelDownload(scope, containerId) {
+      const { error } = await client.rpc('record_production_label_download', {
+        p_organization_id: scope.organizationId,
+        p_establishment_id: scope.establishmentId,
+        p_container_id: z.uuid().parse(containerId),
+      });
+      if (error)
+        throw new Error('Não foi possível registrar o horário da etiqueta.');
     },
   };
 }

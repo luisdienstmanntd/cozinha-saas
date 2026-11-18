@@ -15,6 +15,7 @@
 ## Melhorias futuras registradas
 
 - **Pesquisa histórica de produções** por data, preparação e lote (pedido de luis em 14/11/2026, no aceite da 7.3). Hoje a tela mostra as 50 produções mais recentes; todos os registros anteriores continuam preservados no banco (append-only). Exige aprovação própria.
+- **Acompanhar downloads de etiqueta por diferentes telas e usuários autorizados** (pedido de luis em 14/11/2026, no aceite da 7.8), sem enfraquecer os controles de acesso. Hoje só o download feito na tela de Produção é registrado; o da página do QR não é, e o aviso aparece só na tela de Produção. Avaliar no piloto. Exige aprovação própria.
 
 ## Filtro para toda história
 Como [papel] quero [ação] para [benefício]. Aceite em casos positivos, negativos e limites. Dependências identificadas. Teste automatizado criado/atualizado. Evidência de execução. Risco regulatório reconhecido. Parar para aceite humano.

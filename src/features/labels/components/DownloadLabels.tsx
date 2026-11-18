@@ -9,11 +9,14 @@ export function DownloadLabels({
   ids,
   filename,
   label,
+  onDownloaded,
 }: {
   gateway: LabelGateway;
   ids: string[];
   filename: string;
   label: string;
+  // Fatia 7.8: chamado só depois que o PDF foi gerado e baixado.
+  onDownloaded?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +32,7 @@ export function DownloadLabels({
     setError('');
     try {
       await downloadLabels(gateway, ids, filename);
+      onDownloaded?.();
     } catch (cause) {
       if (mounted.current)
         setError(

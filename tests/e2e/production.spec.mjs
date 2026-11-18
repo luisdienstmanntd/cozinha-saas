@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
+import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
@@ -410,5 +411,87 @@ test('janela de registro própria da preparação vale na tela de produção', a
       form.getByText(/Registro mais de 4 horas depois da produção/),
     ).toBeVisible();
     await expect(form.getByLabel('Justificativa do atraso')).toBeVisible();
+  });
+});
+
+test('produção sem etiqueta baixada é avisada e o download tira o aviso', async ({
+  page,
+}, testInfo) => {
+  page.setDefaultTimeout(5000);
+  await withCatalogFixture(async ({ client, users, scopeA }) => {
+    // Produção registrada há 90 minutos (limite padrão da unidade: 1 hora), sem etiqueta baixada.
+    const owner = client();
+    const signed = await owner.auth.signInWithPassword({
+      email: users[0].email,
+      password: users[0].password,
+    });
+    expect(signed.error).toBeNull();
+    const scope = {
+      p_organization_id: scopeA.organization_id,
+      p_establishment_id: scopeA.establishment_id,
+    };
+    const product = await owner
+      .from('products')
+      .insert({
+        ...scopeA,
+        name: 'Caldo de teste',
+        unit: 'l',
+        kind: 'preparation',
+      })
+      .select('id')
+      .single();
+    expect(product.error).toBeNull();
+    for (const call of [
+      owner.rpc('set_product_storage_condition', {
+        ...scope,
+        p_product_id: product.data.id,
+        p_storage_condition: 'refrigerated',
+      }),
+      owner.rpc('set_member_display_name', {
+        p_organization_id: scopeA.organization_id,
+        p_user_id: users[0].id,
+        p_display_name: 'Ana Teste',
+      }),
+    ])
+      expect((await call).error).toBeNull();
+    const produced = await owner.rpc('register_production', {
+      ...scope,
+      p_product_id: product.data.id,
+      p_quantity: 6,
+      p_expiry_date: localDate(2),
+      p_produced_at: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+      p_handled_by: users[0].id,
+      p_note: null,
+      p_late_reason: null,
+      p_intent_id: randomUUID(),
+    });
+    expect(produced.error).toBeNull();
+
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await page
+      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
+      .click();
+    const panel = page.getByRole('region', { name: 'Produção da cozinha' });
+    const productions = panel.getByRole('list', { name: 'Produções recentes' });
+    await expect(productions).toContainText(
+      /sem download de etiqueta registrado há 1 hora e 3\d minutos \(acima de 1 hora\)/,
+    );
+    await expect(panel).toContainText(
+      '1 produção está sem download de etiqueta registrado há mais de 1 hora',
+    );
+
+    await download(
+      page,
+      testInfo,
+      productions.getByRole('button', { name: /^Baixar etiqueta \(C-/ }),
+      'aviso.pdf',
+    );
+    await expect(productions).not.toContainText(
+      'sem download de etiqueta registrado há',
+    );
+    await expect(panel).not.toContainText(
+      'está sem download de etiqueta registrado',
+    );
   });
 });
