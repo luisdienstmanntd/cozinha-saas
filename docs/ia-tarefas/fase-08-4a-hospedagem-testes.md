@@ -19,3 +19,8 @@
 - **Feito:** seis condições de luis tratadas (D-066→D-067, lista explícita no reset, cadeado e nulos, sessões, MFA, exposição automática). Detalhes em `FASE_08_4A.md`, seção 13.
 - **Testes:** pgTAP 1389, integração 43, E2E 19, advisors sem problemas; bateria repetida sem privilégios padrão de tabelas novas.
 - **Próximo passo:** quando a cadeia (#29 em diante) estiver na `main`, merge da `main` nesta branch (sem reescrever histórico), classificar `production_label_downloads` e `production_temperatures` nas listas do reset, resolver os 4 conflitos e rodar a bateria completa no código combinado.
+
+### 18/11/2026, tarde — Claude Code
+- **Feito:** merge da `main` (`1e3cd0e`) na branch (`b3a9e44`), seis conflitos resolvidos; reset com `production_label_downloads` e `production_temperatures`; `session_activity` testada como intocada.
+- **Testes (código combinado):** Vitest 552, pgTAP 1496, integração 57, E2E 35, advisors sem problemas; também sem privilégios padrão de tabelas novas.
+- **Próximo passo:** aceite de luis; guia da primeira hospedagem em `FASE_08_4A.md`, seção 10. Sem merge, deploy ou migração no hospedado sem autorização.

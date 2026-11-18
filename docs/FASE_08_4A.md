@@ -1,16 +1,16 @@
 # Fase 8, fatia 8.4a — Modo hospedado e ambiente de testes (D-067)
 
-> **Estado (18/11/2026, 00:39 UTC):** proposta **aprovada por luis, com aceite final condicionado a seis pontos**. A seção 13 registra cada um e como foi tratado. A numeração anterior "D-066" era do `FASE_08_1` (estabilização da CI e proteção da `main`); esta decisão é a **D-067**. O PR #44 aguarda a integração da cadeia; depois disso resolvo os conflitos sem reescrever histórico e rodo a bateria completa no código combinado.
+> **Estado (18/11/2026):** proposta **aprovada por luis, com aceite final condicionado a seis pontos**; a `main` (`1e3cd0e`) já foi incorporada à branch e a bateria rodou no código combinado. A seção 13 registra cada um e como foi tratado. A numeração anterior "D-066" era do `FASE_08_1` (estabilização da CI e proteção da `main`); esta decisão é a **D-067**. 
 
 Antecipa parcialmente a fatia 8.4 (hospedagem) do `PLANO_INTEGRACAO.md` para que luis use o sistema definitivo com **dados fictícios** e o refine aos poucos. **Nada aqui foi aplicado no Supabase hospedado nem implantado no Cloudflare Pages**; tudo foi validado só no Supabase local descartável. Nada afirma conformidade sanitária (Q10 segue pendente). Sem merge, deploy, contratação ou alteração no banco hospedado sem autorização específica de luis.
 
-## 1. Estado da integração e base escolhida
+## 1. Estado da integração e base
 
-Conferido no GitHub em 18/11/2026: a `main` (`98cfa5d`) já tem #42 (CI), #28, #22 a #27. **Faltam** #29 (7.8), #30 (7.9), #31 (revisão visual, só documentos), #32 (V2 sessão), #33 (V1 navegação), #34 (V3), #35 (teste da meia-noite, a fechar sem merge depois do #34), #36/#37 (V4), #38 (V5), #39 (V5B), #40 (revisão técnica), #41 (plano de integração) e #43 (E2E 8.1b). Nenhum merge foi feito por mim.
+Em 18/11/2026 a cadeia de integração terminou: a `main` está em `1e3cd0e` (inclui #22 a #34, #36 a #41 e #43; o #35 foi fechado sem merge), com a CI da `main` verde. Esta branch nasceu da `main` em `98cfa5d` (sem a cadeia) para ficar independente dela; **a `main` foi incorporada por merge (`b3a9e44`), sem reescrever histórico**.
 
-**Base escolhida: `main`.** Motivos: (1) o PR fica independente da cadeia e pode ser aceito e testado agora, sem carregar 15 PRs de outros assuntos; (2) as mudanças são em arquivos novos, mais três pontos pequenos de código; (3) a única migração nova é posterior a todas as outras (20261118…), então a ordem do banco fica correta em qualquer sequência de merges.
+Conflitos resolvidos (seis arquivos): `docs/DECISOES.md` e `docs/IA_ESTADO.md` (mantidas as duas entradas; a **D-066** da `main` é a estabilização da CI e esta decisão continua **D-067**), `src/app/styles.css` (as duas folhas), `src/app/configureApp.ts` (versão da `main`, com a sessão persistente da V2, mais `hostname`, `assertModeAllowedOnHost` e o modo `hosted` no mesmo `createClient`), `src/app/App.tsx` (faixa do ambiente e o parâmetro `unit` da V1) e `IdentityHome.tsx` (o texto do ambiente da V1 passou a aceitar o texto `hosted`). A lista do reset ganhou `production_label_downloads` e `production_temperatures` (fatias 7.8 e 7.9); `private.session_activity` (V2) não está no schema `public` e o reset não a toca (teste incluído).
 
-**Ordem proposta:** integrar a cadeia como no plano do #41 (#29, #30, … #39, #43), depois este PR. **Conflitos já medidos** (simulei o merge desta branch com a ponta do #39 e abortei): 4 arquivos, todos mecânicos: `src/app/App.tsx` (o `if` do modo e o aviso do ambiente), `src/app/configureApp.ts` (a V2 acrescentou `createSessionFetch`/armazenamento; some-se o parâmetro `hostname` e o modo `hosted` ao mesmo `createClient`), `src/app/styles.css` (as duas folhas de estilo) e `IdentityHome.tsx` (na V1 o texto do ambiente virou a constante `environmentNote`; o texto `hosted` entra ali). Eu resolvo esses conflitos quando a cadeia estiver na `main` (rebase pedido por você). **Não aplique as migrações no hospedado antes da cadeia estar na `main`**: a migração desta fatia tem data posterior às da cadeia, e aplicá-la antes obrigaria `db push --include-all` depois.
+**A migração desta fatia (`20261118000000`) é a mais recente**: pode ser aplicada no hospedado junto com as demais, em ordem, sem `--include-all`.
 
 ## 2. O que foi feito, por etapa
 
@@ -20,7 +20,7 @@ Conferido no GitHub em 18/11/2026: a `main` (`98cfa5d`) já tem #42 (CI), #28, #
 | 3 | Hospedagem mal configurada não cai na demo | Três camadas. **Build:** `vite.config.ts` chama `assertBuildEnvironment`; no Cloudflare Pages (`CF_PAGES=1`) ou com `VITE_APP_MODE=hosted`, faltar ou errar qualquer variável **interrompe o build** (mensagem só com nomes, nunca valores); `VITE_*` com cara de segredo (`SECRET`, `SERVICE_ROLE`, `sb_secret_`…) também interrompe, em qualquer build. **Execução:** em nome de máquina que não é local, `demo` e `local` são recusados (`assertModeAllowedOnHost`) e aparece a tela "Não foi possível iniciar o aplicativo", sem mostrar valores; a demo pública só existe com `VITE_ALLOW_PUBLIC_DEMO=true` de propósito. **Aviso:** em `hosted` + `testes`, faixa fixa "Ambiente de testes. Use somente dados fictícios…". |
 | 4 | Variáveis de ambiente | `.env.example` com os três modos comentados e a regra "só VITE_* públicas"; tabela na seção 4 abaixo. Nenhum segredo no repositório. |
 | 5 | CSP e cabeçalhos | `src/shared/security/headers.ts` + plugin no build gera `dist/_headers` com o endereço exato do Supabase: `default-src 'none'`, `script-src 'self'`, `style-src 'self'`, `connect-src 'self' <projeto>`, `frame-ancestors 'none'`, `base-uri 'none'`, `object-src 'none'`, `upgrade-insecure-requests`, HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy: no-referrer`, `Permissions-Policy` (câmera, microfone, localização etc. negados), COOP/CORP e cache imutável só para `/assets/*`. Sem `unsafe-inline`/`unsafe-eval` (o aplicativo não usa estilo em linha). **Conferido em navegador real** servindo o `dist` com esses cabeçalhos: tela de acesso e faixa renderizam e o console fica sem violações. Limite: o download de etiqueta (PDF por `blob:`) não foi exercitado sob a CSP em navegador; downloads não são restringidos pela CSP, mas confirme com uma etiqueta no primeiro uso. |
-| 6 | Migrações do banco hospedado | Preparadas e validadas **só no Supabase local** (`db reset` aplica as 27 migrações; pgTAP e advisors verdes). Procedimento na seção 5. Nada foi aplicado. |
+| 6 | Migrações do banco hospedado | Preparadas e validadas **só no Supabase local** (`db reset` aplica as 30 migrações; pgTAP e advisors verdes). Procedimento na seção 5. Nada foi aplicado. |
 | 7 | Primeiro proprietário, empresa e unidade | Migração `20261118000000_hosted_provisioning.sql`: `private.bootstrap_owner_organization` e `private.add_member_to_organization`. A conta é criada por você no painel (Authentication > Users > Add user, com Auto Confirm); depois um comando no SQL Editor cria empresa, unidade e vínculo em uma transação. **Nenhuma chave de serviço sai do Supabase.** Seção 6. |
 | 8 | Cadastro público restrito | O Supabase local já roda com `enable_signup = false` e a API recusa `signUp` e login anônimo (teste de integração). Para o hospedado a configuração é do painel (seção 8). `scripts/hosted/verify-hosted.mjs` confere o projeto hospedado **só com leitura**, usando apenas endereço e chave publicável: cadastro desligado, login anônimo, confirmação de e-mail, API anônima sem acesso às tabelas. Defesa em profundidade: uma conta sem vínculo não enxerga nem cria empresa, unidade ou vínculo (teste de integração). |
 | 9 | Validar RLS, permissões, sessões e isolamento | Seção 7. |
@@ -53,7 +53,7 @@ Validação local feita: `supabase db reset` aplica tudo do zero; `supabase test
 Procedimento para quando você autorizar (na sua máquina, com a cadeia já na `main`):
 
 1. `npx supabase login` e `npx supabase link --project-ref <ref>` (pede a senha do banco, que você guarda em gerenciador de senhas).
-2. `npx supabase db push --dry-run` — confira que a lista de migrações é exatamente a esperada (27 da `main` atual + as da cadeia + `20261118000000`).
+2. `npx supabase db push --dry-run` — confira que a lista de migrações é exatamente a esperada (30 no total: as 29 da `main` atual e `20261118000000`, a última).
 3. `npx supabase db push`.
 4. `npx supabase migration list` — local e remoto iguais.
 5. Pontos a observar no primeiro `push`: (a) a migração da V2 (`20261116000000`) executa `alter role authenticator set pgrst.db_pre_request`; isso é prática documentada do Supabase, mas **não pôde ser testado no hospedado** — se falhar, o `push` para sem aplicar o resto e me avise; (b) as migrações rodam como `postgres`, dono das tabelas, que é o que as funções administrativas desta fatia precisam.
@@ -128,27 +128,27 @@ Travas, todas obrigatórias: (1) sessão de administração do banco (não funci
 
 **6. Limites do plano Free a conhecer:** o projeto Supabase **pausa após cerca de uma semana sem atividade** (retome pelo painel); **não há backup diário automático** no Free (aceitável para dados fictícios; para produção é requisito — decisão 7 da revisão técnica); o envio de e-mail nativo é muito limitado (por isso as contas são criadas por você, com Auto Confirm).
 
-## 11. Testes (resultados reais, Node 24, Supabase local)
+## 11. Testes (resultados reais, Node 24, Supabase local, código combinado `main` 1e3cd0e + 8.4a)
 
 | Comando | Resultado |
 |---|---|
 | `format:check`, `lint`, `typecheck`, `build` | ok |
 | `build` com `CF_PAGES=1` e sem variáveis | **falha de propósito** com mensagem explícita; com as quatro variáveis, passa e gera `dist/_headers` |
-| Vitest | 330 passaram |
-| `test:ci-scripts` | 10 passaram (5 novos do verificador) |
-| pgTAP | 1389 passaram (62 em `hosted_provisioning.test.sql`) |
+| Vitest | 552 passaram |
+| `test:ci-scripts` | 10 passaram |
+| pgTAP | 1496 passaram (28 arquivos; 64 em `hosted_provisioning.test.sql`) |
 | Advisors de segurança (`--fail-on warn`) | sem problemas |
-| Integração | 43 passaram (6 novos: cadastro, sessões, vínculo revogado, concorrência administrativa) |
-| E2E (Playwright, Chromium) | 19 passaram, sem alteração nos existentes |
-| **Mesma bateria com os privilégios padrão de tabelas nova removidos** (exposição automática desligada, ponto 6) | pgTAP 1389, advisors sem problemas, integração 43, E2E 19: tudo verde |
-| CSP em navegador real (dist servido com o `_headers`) | tela de acesso e faixa renderizam; console sem violações |
+| Integração | 57 passaram |
+| E2E (Playwright, Chromium) | 35 passaram, sem alteração nos existentes |
+| **Mesma bateria (pgTAP, advisors, integração, E2E) sem os privilégios padrão de tabelas novas** (exposição automática desligada) | tudo verde: 1496 / sem problemas / 57 / 35 |
+| CSP em navegador real (dist servido com o `_headers`; verificado antes do merge) | tela de acesso e faixa renderizam; console sem violações |
 
-Nenhum teste existente foi alterado, removido ou enfraquecido. Não executado: nada no Supabase hospedado nem no Cloudflare (por ordem de luis).
+Nenhum teste existente foi alterado, removido ou enfraquecido (o único ajuste foi um teste **novo** desta fatia, que passou a esperar a restauração assíncrona da sessão da V2). Não executado: nada no Supabase hospedado nem no Cloudflare (por ordem de luis).
 
 ## 12. Limites e decisões para luis
 
 1. **Aceite final da 8.4a e da D-067**, depois dos seis pontos da seção 13.
-2. **Quando integrar:** esta fatia espera a cadeia (conflito de 4 arquivos, previsto e mecânico). Rebase sem reescrever histórico (merge da `main` na branch) e bateria completa no código combinado quando a cadeia entrar.
+2. **Quando integrar:** a cadeia já está na `main` e foi incorporada a esta branch por merge (seção 1), com a bateria completa no código combinado (seção 11). Falta só o seu aceite para o PR sair do rascunho; o merge é seu.
 3. **Deploy automático do Cloudflare:** veja o passo 0 do guia; só você controla quando o primeiro deploy acontece. Nenhuma migração foi nem será aplicada no Supabase hospedado sem sua autorização específica.
 4. **MFA obrigatório:** ver ponto 5 da seção 13.
 5. **Proprietário único no piloto** (decisão de 12/11/2026) continua valendo; as funções de provisionamento aceitam o papel `owner` para colaboradores só se você pedir explicitamente.
