@@ -1,4 +1,7 @@
-import { parseEnvironment } from '../shared/config/environment';
+import {
+  assertModeAllowedOnHost,
+  parseEnvironment,
+} from '../shared/config/environment';
 import { createIdentityGateway } from '../features/identity/data/supabaseIdentity';
 import { createOccurrenceGateway } from '../features/occurrences/data/supabaseOccurrences';
 import { createCatalogGateway } from '../features/catalog/data/supabaseCatalog';
@@ -14,10 +17,15 @@ import { createProductionGateway } from '../features/production/data/supabasePro
 import { createEstablishmentGateway } from '../features/establishments/data/supabaseEstablishments';
 import { createSettingsGateway } from '../features/settings/data/supabaseSettings';
 
-export function configureApp(environment: Record<string, unknown>) {
+// `hostname` vem de window.location na inicialização; o padrão é a máquina local (testes e desenvolvimento).
+export function configureApp(
+  environment: Record<string, unknown>,
+  hostname = 'localhost',
+) {
   try {
     const config = parseEnvironment(environment);
-    if (config.mode !== 'local') return { mode: 'demo' as const };
+    assertModeAllowedOnHost(config.mode, hostname, environment);
+    if (config.mode === 'demo') return { mode: 'demo' as const };
     const client = createClient(config.url, config.publishableKey, {
       auth: {
         persistSession: false,
@@ -26,7 +34,9 @@ export function configureApp(environment: Record<string, unknown>) {
       },
     });
     return {
-      mode: 'local' as const,
+      mode: config.mode,
+      environmentName:
+        config.mode === 'hosted' ? config.environmentName : undefined,
       identity: createIdentityGateway(client),
       catalog: createCatalogGateway(client),
       batches: createBatchGateway(client),

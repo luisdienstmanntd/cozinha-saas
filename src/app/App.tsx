@@ -1,4 +1,5 @@
 import type { configureApp } from './configureApp';
+import { EnvironmentBanner } from './EnvironmentBanner';
 import { DemoHome } from '../features/demo/components/DemoHome';
 import { IdentityHome } from '../features/identity/components/IdentityHome';
 import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
@@ -27,7 +28,7 @@ function Workspace({
   timezone,
 }: {
   configuration: NonNullable<ReturnType<typeof configureApp>> & {
-    mode: 'local';
+    mode: 'local' | 'hosted';
   };
   organizationId: string;
   establishmentId: string;
@@ -161,7 +162,7 @@ function Destination({
   access,
 }: {
   configuration: NonNullable<ReturnType<typeof configureApp>> & {
-    mode: 'local';
+    mode: 'local' | 'hosted';
   };
   userId: string;
   access: Access;
@@ -202,51 +203,61 @@ export function App({
   if (!configuration) {
     return (
       <main className="page configuration-error">
-        <h1>Não foi possível iniciar a demonstração</h1>
+        <h1>Não foi possível iniciar o aplicativo</h1>
         <p role="alert">
-          Configuração inválida. Use demo ou Supabase local com chave
-          publicável.
+          Configuração inválida. Use demo, Supabase local ou o ambiente
+          hospedado completo (modo, endereço, chave publicável e nome do
+          ambiente). Por segurança, esta tela não mostra os valores
+          configurados.
         </p>
       </main>
     );
   }
-  if (configuration.mode === 'local')
+  if (configuration.mode !== 'demo')
     return (
-      <IdentityHome
-        gateway={configuration.identity}
-        renderOrganizationTools={(organization, owner, onChanged, busy) => (
-          <EstablishmentTools
-            gateway={configuration.establishments}
-            organization={organization}
-            owner={owner}
-            onChanged={onChanged}
-            busy={busy}
-          />
-        )}
-        renderDestination={(userId, access) => (
-          <Destination
-            configuration={configuration}
-            userId={userId}
-            access={access}
-          />
-        )}
-        renderCatalog={(
-          organizationId,
-          establishmentId,
-          canCreate,
-          userId,
-          timezone,
-        ) => (
-          <Workspace
-            configuration={configuration}
-            organizationId={organizationId}
-            establishmentId={establishmentId}
-            canCreate={canCreate}
-            userId={userId}
-            timezone={timezone}
-          />
-        )}
-      />
+      <>
+        <EnvironmentBanner environmentName={configuration.environmentName} />
+        <IdentityHome
+          environmentNotice={
+            configuration.mode === 'hosted'
+              ? 'Contas e vínculos são preparados pelo responsável pelo ambiente.'
+              : undefined
+          }
+          gateway={configuration.identity}
+          renderOrganizationTools={(organization, owner, onChanged, busy) => (
+            <EstablishmentTools
+              gateway={configuration.establishments}
+              organization={organization}
+              owner={owner}
+              onChanged={onChanged}
+              busy={busy}
+            />
+          )}
+          renderDestination={(userId, access) => (
+            <Destination
+              configuration={configuration}
+              userId={userId}
+              access={access}
+            />
+          )}
+          renderCatalog={(
+            organizationId,
+            establishmentId,
+            canCreate,
+            userId,
+            timezone,
+          ) => (
+            <Workspace
+              configuration={configuration}
+              organizationId={organizationId}
+              establishmentId={establishmentId}
+              canCreate={canCreate}
+              userId={userId}
+              timezone={timezone}
+            />
+          )}
+        />
+      </>
     );
   return <DemoHome />;
 }

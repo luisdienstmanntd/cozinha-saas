@@ -39,8 +39,11 @@ export function IdentityHome({
   renderCatalog,
   renderDestination,
   renderOrganizationTools,
+  environmentNotice,
 }: {
   gateway: IdentityGateway;
+  // Texto do ambiente (hospedado); sem ele vale o texto do ambiente local de demonstração.
+  environmentNotice?: string;
   renderCatalog?: (
     organizationId: string,
     establishmentId: string,
@@ -154,8 +157,8 @@ export function IdentityHome({
     <main className="workspace">
       <h1>Cozinha SaaS — unidades, recebimentos e validade</h1>
       <p>
-        Ambiente local de demonstração, com dados descartáveis. Contas e
-        vínculos são preparados pelo responsável pelos testes.
+        {environmentNotice ??
+          'Ambiente local de demonstração, com dados descartáveis. Contas e vínculos são preparados pelo responsável pelos testes.'}
       </p>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}

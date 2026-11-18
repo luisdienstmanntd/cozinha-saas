@@ -276,3 +276,12 @@ footer {
   border-left: 4px solid #9b261a;
   padding: 0.15rem 0.4rem;
 }
+
+.environment-banner {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  background: #fff3cd;
+  color: #4d3b00;
+  border-bottom: 2px solid #b58900;
+  text-align: center;
+}

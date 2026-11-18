@@ -6,7 +6,7 @@ import './app/styles.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Elemento raiz da aplicação não encontrado.');
-const configuration = configureApp(import.meta.env);
+const configuration = configureApp(import.meta.env, window.location.hostname);
 createRoot(root).render(
   <StrictMode>
     <App configuration={configuration} />
