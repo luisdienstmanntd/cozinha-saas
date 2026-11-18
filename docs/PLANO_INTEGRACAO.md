@@ -310,3 +310,14 @@ luis autorizou #29, #30 e #31 (00:39 UTC) e #32 a #41 (01:00 UTC), cada um indiv
 - **#35:** fechado sem merge em 18/11/2026, depois de confirmar que `supabase/tests/container_handling.test.sql` da `main` é idêntico ao do #35 (diferença vazia) e que a CI da `main` estava verde após o #34.
 - **Recorrência da classe F (E2E `finishing.spec.mjs:138`, altura do título 84,4 px):** a CI do #38 no SHA `a6c530a` falhou na tentativa 1 (rodada 44217166668) com a mesma falha e a mesma linha; foi reexecutada (tentativa 2) e passou, e eu integrei o #38 sobre essa tentativa 2 sem ter visto a tentativa 1, o que registro aqui. Antes disso, a mesma falha ocorreu no #37 (SHA `66f685c`, 16/11). A causa já era conhecida e reproduzida na 8.1 (o teste mede o título antes de a unidade reabrir depois do `reload`), e a correção é o PR #43, integrado em seguida (`3141293`) sem mexer no limite. O #39 (`5981d4b`) passou na primeira tentativa. Por ser causa conhecida e correção aprovada, não houve outra repetição para esconder falha. A `main` já tem a correção a partir de `3141293`.
 - **Critério de CI verde:** a tentativa 2 do #38 conta como verde porque a falha da tentativa 1 é a classe F, de causa conhecida, e a 8.1b a corrige no código combinado final. Para não depender de reexecução, a partir de agora o relatório de cada PR informa o número da tentativa da CI usada.
+
+## 14. Fatia 8.4a integrada (18/11/2026)
+
+luis aprovou definitivamente a fatia 8.4a e a **D-067** em 18/11/2026, 02:46 UTC, e autorizou o merge do PR #44. Antes do merge: a `main` (`1e3cd0e`, cadeia inteira) já estava incorporada à branch (`b3a9e44`), a ponta `1e410af` tinha a CI verde (rodada 44224577995), o PR estava limpo e a `main` não havia mudado. Bateria no código combinado: Vitest 552, pgTAP 1496, integração 57, E2E 35, advisors sem problemas, e a mesma bateria também sem os privilégios padrão de tabelas novas.
+
+| Etapa | PR | SHA testado | Merge commit na `main` | CI da `main` |
+|---|---|---|---|---|
+| 8.4a | #44 | `1e410af` | `d05a6e7` | verde (rodada 44225780081) |
+
+Estado depois do merge: o código e as migrações (inclusive `20261118000000_hosted_provisioning.sql`) estão na `main`, mas **nada foi aplicado no Supabase hospedado e nenhum deploy foi feito**. O projeto do Cloudflare Pages ainda não foi salvo (tela inicial de configuração, sem "Save and Deploy"), então o merge não disparou implantação. Aplicar migrações e implantar continuam exigindo autorização específica de luis, depois da conclusão das configurações de segurança do Supabase (guia: `FASE_08_4A.md`, seção 10).
+

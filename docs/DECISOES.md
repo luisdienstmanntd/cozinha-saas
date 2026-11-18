@@ -518,7 +518,7 @@
 
 ## D-067 — Ambiente hospedado de testes com dados fictícios (18/11/2026)
 
-- **Status:** proposta aprovada por luis em 18/11/2026, 00:39 UTC, com aceite final condicionado a seis pontos, tratados em `FASE_08_4A.md` (seção 13) ([registro](FASE_08_4A.md)). Numeração: a D-066 pertence à fatia 8.1.
+- **Status:** aceita definitivamente por luis em 18/11/2026, 02:46 UTC; integrada na `main` (PR #44, `d05a6e7`). Aprovada antes, com seis condições, tratadas em `FASE_08_4A.md` (seção 13) ([registro](FASE_08_4A.md)). Numeração: a D-066 pertence à fatia 8.1.
 - **Decisão:** antecipar parcialmente a 8.4: modo `hosted` (Cloudflare Pages + Supabase em projeto próprio de testes), que nunca cai na demonstração (falha no build e na execução), com cabeçalhos de segurança e CSP restritos ao projeto, cadastro público desligado, primeiro proprietário/empresa/unidade criados por função administrativa executável só em sessão de administração do banco, e reset do banco de testes protegido por marcador de ambiente (`testes`/`producao`, este irreversível).
 - **Motivo:** luis quer usar o sistema definitivo com dados fictícios enquanto o refina (18/11/2026); decisões 5 e 6 da revisão técnica (hospedagem, ambientes separados).
 - **Consequência:** nenhuma regra de negócio, RLS ou histórico muda; a produção continua dependendo de MFA obrigatório (preservado como condição de lançamento comercial; sua ausência vale só nos testes privados com dados fictícios), revisão de segurança independente, backup com teste de restauração e Q10.
