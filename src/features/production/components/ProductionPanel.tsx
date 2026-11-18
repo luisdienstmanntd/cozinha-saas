@@ -17,6 +17,7 @@ import {
 } from '../../../shared/format/quantity';
 import type { ProductionGateway } from '../application/productionGateway';
 import { ProductionRejected } from '../application/productionGateway';
+import { localCivilDate } from '../../batches/domain/expiryStatus';
 import type { ProductionRow } from '../domain/production';
 import {
   daysBetween,
@@ -105,12 +106,17 @@ function ProductionContents({
   settingsRevision,
 }: Props) {
   const [preparations, setPreparations] = useState<CatalogItem[] | null>(null);
+  const [todayOnly, setTodayOnly] = useState(false);
   const [rows, setRows] = useState<ProductionRow[] | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [rules, setRules] = useState<EstablishmentSettings | null>(null);
   const [loadError, setLoadError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [stage, setStage] = useState<Stage>('closed');
+  const formTitle = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (stage === 'form') formTitle.current?.focus();
+  }, [stage]);
   const [productId, setProductId] = useState('');
   const [quantity, setQuantity] = useState('');
   const [producedAt, setProducedAt] = useState('');
@@ -392,6 +398,12 @@ function ProductionContents({
     const minutes = unlabeledMinutes(row, rules.unlabeled_limit_minutes, now());
     return minutes === null ? [] : [{ row, minutes }];
   });
+  const today = localCivilDate(now(), timezone);
+  const visibleRows = todayOnly
+    ? rows.filter(
+        (row) => localCivilDate(new Date(row.produced_at), timezone) === today,
+      )
+    : rows;
   const unlabeledLimit = durationText(rules.unlabeled_limit_minutes);
 
   const created = result
@@ -399,11 +411,21 @@ function ProductionContents({
     : undefined;
 
   return (
-    <section aria-label="Produção da cozinha">
-      <h3>Produção da cozinha</h3>
-      <p>
-        Preparações feitas na cozinha, com validade informada pelo responsável.
-      </p>
+    <section aria-label="Produção da cozinha" className="production-panel">
+      <header className="operation-heading">
+        <div>
+          <h3>Produção da cozinha</h3>
+          <p>
+            Preparações feitas na cozinha, com validade informada pelo
+            responsável.
+          </p>
+        </div>
+        {canRegister && stage === 'closed' && (
+          <button type="button" onClick={startForm}>
+            Registrar produção
+          </button>
+        )}
+      </header>
       {notice && <p role="status">{notice}</p>}
       {unlabeled.length > 0 && (
         <p role="status">
@@ -413,112 +435,6 @@ function ProductionContents({
           há mais de {unlabeledLimit}. É só um aviso: o sistema registra o
           download, não a impressão nem a aplicação da etiqueta.
         </p>
-      )}
-      <h4>Produções recentes</h4>
-      {rows.length === 0 ? (
-        <p>Nenhuma produção registrada.</p>
-      ) : (
-        <ul aria-label="Produções recentes">
-          {rows.map((row) => (
-            <li key={row.batch_id}>
-              {row.product_name}
-              {row.short_code && ` — ${row.short_code}`} —{' '}
-              {formatQuantity(row.quantity)} {row.unit} — produzida em{' '}
-              {when(row.produced_at, row.timezone)} por {row.handled_by_name} —
-              validade {formatDate(row.expiry_date)} (definida pelo responsável)
-              {row.late &&
-                ` — registrada fora da janela de ${durationText(row.late_window_minutes ?? 120)}`}
-              {labels && row.container_id && !row.voided && (
-                <>
-                  {' '}
-                  <DownloadLabels
-                    gateway={labels}
-                    ids={[row.container_id]}
-                    filename={`etiqueta-${row.container_id}.pdf`}
-                    label={`Baixar etiqueta${row.short_code ? ` (${row.short_code})` : ''}`}
-                    onDownloaded={
-                      canRegister
-                        ? () => recordDownload(row.container_id!)
-                        : undefined
-                    }
-                  />
-                </>
-              )}
-              {unlabeled.some((item) => item.row === row) && (
-                <strong>
-                  {' '}
-                  — sem download de etiqueta registrado há{' '}
-                  {durationText(
-                    unlabeled.find((item) => item.row === row)!.minutes,
-                  )}{' '}
-                  (acima de {unlabeledLimit})
-                </strong>
-              )}
-              {(row.temperatures ?? []).length > 0 && (
-                <ul
-                  aria-label={`Temperaturas de ${row.short_code ?? row.product_name}`}
-                >
-                  {(row.temperatures ?? []).map((item, index) => (
-                    <li key={index}>
-                      {TEMPERATURE_MOMENTS[item.moment]}:{' '}
-                      {formatTemperature(item.temperature_c)}, medida em{' '}
-                      {when(item.measured_at, row.timezone)}, registrada por{' '}
-                      {item.recorded_by_name} (informada; o sistema não avalia)
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {canRegister &&
-                !row.voided &&
-                (canCreate || row.handled_by === userId) && (
-                  <>
-                    {' '}
-                    <RecordTemperature
-                      scope={{ organizationId, establishmentId }}
-                      batchId={row.batch_id}
-                      label={row.short_code ?? row.product_name}
-                      timezone={row.timezone}
-                      gateway={gateway}
-                      now={now}
-                      onRecorded={() => {
-                        setNotice('Temperatura registrada.');
-                        reloadList();
-                      }}
-                    />
-                  </>
-                )}
-              {row.voided ? (
-                <strong>
-                  {' '}
-                  — ANULADA em {when(row.voided.created_at, row.timezone)}:{' '}
-                  {row.voided.reason}
-                </strong>
-              ) : (
-                canCreate && (
-                  <>
-                    {' '}
-                    <VoidProduction
-                      scope={{ organizationId, establishmentId }}
-                      batchId={row.batch_id}
-                      label={row.short_code ?? row.product_name}
-                      gateway={gateway}
-                      onVoided={() => {
-                        setNotice(
-                          'Produção anulada: o saldo do lote foi zerado. Para corrigir, registre a produção de novo.',
-                        );
-                        reloadList();
-                        onChanged?.();
-                      }}
-                    />
-                  </>
-                )
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {rows.length >= 50 && (
-        <p role="status">A lista mostra as 50 produções mais recentes.</p>
       )}
       {!canRegister && (
         <p>Somente o proprietário registra ou anula produção.</p>
@@ -619,14 +535,11 @@ function ProductionContents({
           </button>
         </section>
       )}
-      {canRegister && stage === 'closed' && (
-        <button type="button" onClick={startForm}>
-          Registrar produção
-        </button>
-      )}
       {canRegister && stage === 'form' && (
         <form aria-label="Registrar produção" onSubmit={review}>
-          <h4>Registrar produção</h4>
+          <h4 ref={formTitle} tabIndex={-1}>
+            Registrar produção
+          </h4>
           {preparations.length === 0 && (
             <p>Cadastre uma preparação própria no catálogo primeiro.</p>
           )}
@@ -818,6 +731,158 @@ function ProductionContents({
             Cancelar
           </button>
         </form>
+      )}
+      <div className="production-list-heading">
+        <h4>Produções recentes</h4>
+        {rows.length > 0 && (
+          <div
+            role="group"
+            aria-label="Período das produções recentes"
+            className="production-period"
+          >
+            <button
+              type="button"
+              className="secondary"
+              aria-pressed={!todayOnly}
+              onClick={() => setTodayOnly(false)}
+            >
+              Todas
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              aria-pressed={todayOnly}
+              onClick={() => setTodayOnly(true)}
+            >
+              Hoje
+            </button>
+          </div>
+        )}
+      </div>
+      {visibleRows.length === 0 ? (
+        <p role="status">
+          {todayOnly
+            ? 'Nenhuma produção de hoje na lista recente.'
+            : 'Nenhuma produção registrada.'}
+        </p>
+      ) : null}
+      {rows.length > 0 && (
+        <ul
+          aria-label="Produções recentes"
+          className="production-list"
+          hidden={visibleRows.length === 0}
+        >
+          {rows.map((row) => (
+            <li
+              key={row.batch_id}
+              className="production-card"
+              hidden={!visibleRows.includes(row)}
+            >
+              <div className="production-card-heading">
+                <strong>{row.product_name}</strong>
+                <span>
+                  {row.short_code && `${row.short_code} — `}
+                  {formatQuantity(row.quantity)} {row.unit}
+                </span>
+              </div>
+              <p className="production-card-details">
+                Produzida em {when(row.produced_at, row.timezone)} por{' '}
+                {row.handled_by_name} · validade {formatDate(row.expiry_date)}{' '}
+                (definida pelo responsável)
+                {row.late &&
+                  ` — registrada fora da janela de ${durationText(row.late_window_minutes ?? 120)}`}
+              </p>
+              {labels && row.container_id && !row.voided && (
+                <>
+                  {' '}
+                  <DownloadLabels
+                    gateway={labels}
+                    ids={[row.container_id]}
+                    filename={`etiqueta-${row.container_id}.pdf`}
+                    label={`Baixar etiqueta${row.short_code ? ` (${row.short_code})` : ''}`}
+                    onDownloaded={
+                      canRegister
+                        ? () => recordDownload(row.container_id!)
+                        : undefined
+                    }
+                  />
+                </>
+              )}
+              {unlabeled.some((item) => item.row === row) && (
+                <strong>
+                  {' '}
+                  — sem download de etiqueta registrado há{' '}
+                  {durationText(
+                    unlabeled.find((item) => item.row === row)!.minutes,
+                  )}{' '}
+                  (acima de {unlabeledLimit})
+                </strong>
+              )}
+              {(row.temperatures ?? []).length > 0 && (
+                <ul
+                  aria-label={`Temperaturas de ${row.short_code ?? row.product_name}`}
+                >
+                  {(row.temperatures ?? []).map((item, index) => (
+                    <li key={index}>
+                      {TEMPERATURE_MOMENTS[item.moment]}:{' '}
+                      {formatTemperature(item.temperature_c)}, medida em{' '}
+                      {when(item.measured_at, row.timezone)}, registrada por{' '}
+                      {item.recorded_by_name} (informada; o sistema não avalia)
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {canRegister &&
+                !row.voided &&
+                (canCreate || row.handled_by === userId) && (
+                  <>
+                    {' '}
+                    <RecordTemperature
+                      scope={{ organizationId, establishmentId }}
+                      batchId={row.batch_id}
+                      label={row.short_code ?? row.product_name}
+                      timezone={row.timezone}
+                      gateway={gateway}
+                      now={now}
+                      onRecorded={() => {
+                        setNotice('Temperatura registrada.');
+                        reloadList();
+                      }}
+                    />
+                  </>
+                )}
+              {row.voided ? (
+                <strong>
+                  {' '}
+                  — ANULADA em {when(row.voided.created_at, row.timezone)}:{' '}
+                  {row.voided.reason}
+                </strong>
+              ) : (
+                canCreate && (
+                  <>
+                    {' '}
+                    <VoidProduction
+                      scope={{ organizationId, establishmentId }}
+                      batchId={row.batch_id}
+                      label={row.short_code ?? row.product_name}
+                      gateway={gateway}
+                      onVoided={() => {
+                        setNotice(
+                          'Produção anulada: o saldo do lote foi zerado. Para corrigir, registre a produção de novo.',
+                        );
+                        reloadList();
+                        onChanged?.();
+                      }}
+                    />
+                  </>
+                )
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {rows.length >= 50 && (
+        <p role="status">A lista mostra as 50 produções mais recentes.</p>
       )}
     </section>
   );

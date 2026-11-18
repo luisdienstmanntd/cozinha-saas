@@ -402,6 +402,10 @@ footer {
 .unit-nav {
   position: sticky;
   top: 6.5rem;
+  border: 1px solid #c9d6cf;
+  border-radius: 0.85rem;
+  padding: 0.4rem;
+  background: #fff;
 }
 .unit-nav ul {
   list-style: none;
@@ -414,6 +418,7 @@ footer {
 .unit-nav a {
   display: flex;
   align-items: center;
+  gap: 0.65rem;
   min-height: 48px;
   padding: 0.5rem 0.9rem;
   border-radius: 0.5rem;
@@ -447,24 +452,28 @@ footer {
     inset: auto 0 0 0;
     z-index: 20;
     background: #fff;
+    border: 0;
     border-top: 1px solid #c9d6cf;
-    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: 0;
+    padding: 0.2rem 0.2rem calc(0.2rem + env(safe-area-inset-bottom));
   }
   .unit-nav ul {
     flex-direction: row;
     gap: 0;
   }
   .unit-nav li {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
   }
   .unit-nav a {
+    flex-direction: column;
     justify-content: center;
+    gap: 0.12rem;
     text-align: center;
     min-height: 56px;
     padding: 0.25rem 0.3rem;
-    border-radius: 0;
-    font-size: 0.74rem;
+    border-radius: 0.55rem;
+    font-size: clamp(0.65rem, 3vw, 0.75rem);
     overflow-wrap: normal;
     word-break: keep-all;
     line-height: 1.2;
@@ -509,7 +518,8 @@ footer {
 /* V3: lista de validade em cartões. A cor reforça o texto do selo; nunca o substitui. */
 .expiry-panel h4 {
   margin: 0.5rem 0;
-  font-size: 1.15rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.025em;
 }
 .expiry-summary {
   margin: 0 0 0.5rem;
@@ -521,8 +531,8 @@ footer {
   margin: 0;
   display: flex;
   flex-direction: column;
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.75rem;
   border: 1px solid #c9d6cf;
   background: #fff;
   line-height: 1.25;
@@ -531,7 +541,8 @@ footer {
   font-size: 0.85rem;
 }
 .tile-count {
-  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.65rem;
 }
 .expiry-reference {
   font-size: 0.85rem;
@@ -972,4 +983,147 @@ footer {
   color: #4d3b00;
   border-bottom: 2px solid #b58900;
   text-align: center;
+}
+
+.operation-heading,
+.production-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.operation-heading {
+  padding: 0.9rem 1rem;
+  border-radius: 0.85rem;
+  background: #e7f3ec;
+}
+
+.workspace .operation-heading h3,
+.operation-heading p,
+.workspace .operation-heading button,
+.production-list-heading h4 {
+  margin: 0;
+}
+
+.operation-heading p {
+  color: #405d52;
+  font-size: 0.9rem;
+}
+
+.production-list-heading {
+  margin: 1rem 0 0.5rem;
+}
+
+.production-period {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.workspace .production-period button {
+  margin: 0;
+  padding: 0.3rem 0.85rem;
+}
+
+.workspace .production-period button[aria-pressed='true'] {
+  background: #e7f3ec;
+  font-weight: 700;
+}
+
+.production-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.production-card {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #c9d6cf;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.production-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.75rem;
+}
+
+.production-card-heading span,
+.production-card-details {
+  color: #405d52;
+  font-size: 0.9rem;
+}
+
+.production-card-details {
+  margin: 0.2rem 0 0;
+}
+
+@media (max-width: 520px) {
+  .workspace .operation-heading > button {
+    width: 100%;
+  }
+}
+
+.receipt-form {
+  margin-top: 0.75rem;
+}
+
+.receipt-form fieldset {
+  min-width: 0;
+  border: 1px solid #c9d6cf;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.receipt-form > fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 0.75rem 1rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+}
+
+.receipt-form p {
+  margin: 0;
+}
+
+.receipt-form p > label {
+  display: grid;
+  gap: 0.2rem;
+  font-weight: 600;
+}
+
+.receipt-form label > :is(input:not([type='radio']), select, textarea) {
+  width: 100%;
+  font-weight: 400;
+}
+
+.receipt-form label > textarea {
+  min-height: 4rem;
+  resize: vertical;
+}
+
+.receipt-form > fieldset > :not(p:has(> label)),
+.receipt-form > fieldset > p:has([name='productId']) {
+  grid-column: 1 / -1;
+}
+
+.receipt-form > fieldset > button {
+  justify-self: start;
+}
+
+@media (max-width: 520px) {
+  .receipt-form > fieldset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .receipt-form > fieldset > button {
+    width: 100%;
+  }
 }

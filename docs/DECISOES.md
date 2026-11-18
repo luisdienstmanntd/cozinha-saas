@@ -524,3 +524,11 @@
 - **Consequência:** nenhuma regra de negócio, RLS ou histórico muda; a produção continua dependendo de MFA obrigatório (preservado como condição de lançamento comercial; sua ausência vale só nos testes privados com dados fictícios), revisão de segurança independente, backup com teste de restauração e Q10.
 - **Revisar quando:** a 8.4 completa (produção) for autorizada.
 
+
+## D-068 — Consulta de produções recentes por dia (18/11/2026)
+
+- **Status:** implementada na branch de revisão, aguardando aceite.
+- **Decisão:** a lista de produções recentes abre em “Todas” e oferece “Hoje”, definido pela data civil da unidade. O filtro trabalha sobre a mesma consulta das 50 produções mais recentes. Formulários abertos nos cartões mantêm seus dados ao alternar o período.
+- **Motivo:** localizar preparações do turno mais rapidamente usando a consulta existente.
+- **Consequência:** o filtro tem o escopo da lista recente. Os quatro indicadores da validade seguem como contagens da unidade e a lista de recipientes continua paginada.
+- **Revisar quando:** houver demanda por histórico por período ou contagem completa de produções do dia.

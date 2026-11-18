@@ -68,3 +68,7 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 | Fase 8, fatia 8.4d — validação de isolamento e sessões no hospedado | Claude Code; PR em rascunho; script revisado após os 9 pontos de luis (conteúdo por linha, parada imediata, papéis/unidades, payloads válidos, 21 tabelas anônimas, JWT com bytes alterados, finally + logout local) e aguardando nova revisão; script ainda NÃO executado no hospedado. Migrações aplicadas e `rls_auto_enable` ajustada em 18/11/2026 | `FASE_08_4D_VALIDACAO_ISOLAMENTO.md`, `FASE_08_4C_MIGRACAO_HOSPEDADA.md` | luis cria 3 contas fictícias, executa o SQL do passo 2 e, depois de revisar o PR, roda o script na máquina dele. |
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
+
+## Interface operacional — 18/11/2026
+
+- Codex, implementação local verificada em `codex/interface-operacional`, na base `7d664d5`. E2E autenticado bloqueado pelo ambiente. [Registro](ia-tarefas/interface-operacional.md).
