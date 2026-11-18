@@ -16,6 +16,7 @@ import { VoidHandling } from '../../handling/components/VoidHandling';
 import { formatDate, kindLabels } from '../../handling/domain/handling';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import { DownloadLabels } from './DownloadLabels';
+import { isHostedLabels, labelOrigin } from '../application/labelOrigin';
 import {
   EXPIRED_NOTE,
   EXPIRED_TEXT,
@@ -120,7 +121,7 @@ export function LabelView({
     try {
       setData(fresh);
       const { makeLabelPdf } = await import('../application/pdf');
-      const blob = await makeLabelPdf(fresh, window.location.origin);
+      const blob = await makeLabelPdf(fresh, labelOrigin());
       if (!isCurrent()) return;
       const href = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -268,8 +269,9 @@ export function LabelView({
           <p>Código: {data.short_code}</p>
           <p>Identificação: {data.id}</p>
           <p>
-            Modelo PDF de demonstração: 100 × 100 mm. A impressão e a leitura
-            física ainda não foram validadas.
+            {isHostedLabels() ? 'Modelo PDF' : 'Modelo PDF de demonstração'}:
+            100 × 100 mm. A impressão e a leitura física ainda não foram
+            validadas.
           </p>
           {['localhost', '127.0.0.1', '[::1]'].includes(
             window.location.hostname,

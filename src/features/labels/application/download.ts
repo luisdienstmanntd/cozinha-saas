@@ -1,4 +1,5 @@
 import type { LabelGateway } from './labelGateway';
+import { labelOrigin } from './labelOrigin';
 
 // Baixa um PDF com uma etiqueta por página (desenho 7.2, "Baixar PDF de todas"). Cada recipiente é
 // relido e reautorizado no momento de gerar; reimpressão nunca grava nada (D-003). O gerador é
@@ -10,7 +11,7 @@ export async function downloadLabels(
 ): Promise<void> {
   const list = await Promise.all(ids.map((id) => gateway.get(id)));
   const { makeLabelsPdf } = await import('./pdf');
-  const blob = await makeLabelsPdf(list, window.location.origin);
+  const blob = await makeLabelsPdf(list, labelOrigin());
   const href = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = href;

@@ -24,6 +24,42 @@ const hostedUrl = z.string().refine((value) => {
   }
 });
 
+// Fatia 8.4b: endereço oficial do sistema (vai no QR das etiquetas). Só https, só o nome da máquina
+// (sem porta, usuário, caminho, parâmetros ou barra final), nome público com ponto e sem IP, localhost
+// ou sufixos internos. Trocar para um domínio próprio é só mudar a variável, sem mexer no código.
+const HOST_LABEL = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+const INTERNAL_SUFFIX =
+  /\.(local|localhost|internal|lan|home|test|invalid|example)$/;
+
+export function parseOfficialOrigin(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value);
+    const labels = url.hostname.split('.');
+    const valid =
+      url.protocol === 'https:' &&
+      value === url.origin &&
+      url.port === '' &&
+      url.username === '' &&
+      url.password === '' &&
+      url.pathname === '/' &&
+      url.search === '' &&
+      url.hash === '' &&
+      value.length <= 253 &&
+      labels.length >= 2 &&
+      labels.every((label) => HOST_LABEL.test(label)) &&
+      /^[a-z]{2,}$/.test(labels[labels.length - 1] ?? '') &&
+      !INTERNAL_SUFFIX.test(url.hostname);
+    return valid ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+const officialOrigin = z
+  .string()
+  .refine((value) => parseOfficialOrigin(value) !== null);
+
 const publishableKey = z.string().startsWith('sb_publishable_').min(20);
 
 const environmentSchema = z.discriminatedUnion('VITE_APP_MODE', [
@@ -39,6 +75,7 @@ const environmentSchema = z.discriminatedUnion('VITE_APP_MODE', [
     VITE_SUPABASE_URL: hostedUrl,
     VITE_SUPABASE_PUBLISHABLE_KEY: publishableKey,
     VITE_APP_ENV: z.enum(['testes', 'producao']),
+    VITE_APP_URL: officialOrigin,
   }),
 ]);
 
@@ -61,6 +98,7 @@ export function parseEnvironment(input: Record<string, unknown>) {
       url: result.data.VITE_SUPABASE_URL,
       publishableKey: result.data.VITE_SUPABASE_PUBLISHABLE_KEY,
       environmentName: result.data.VITE_APP_ENV as HostedEnvironmentName,
+      appUrl: result.data.VITE_APP_URL,
     };
   return {
     mode: 'local' as const,

@@ -12,6 +12,7 @@ import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import { storageLabels } from '../../catalog/domain/catalog';
 import { formatQuantity } from '../../../shared/format/quantity';
 import type { LabelData } from '../domain/label';
+import { isAuthorizedOrigin } from './labelOrigin';
 
 // Fatia 7.4 (desenho da Fase 7, seção 5.2): terceiro modelo, "Preparação própria", para o integral e as
 // porções de um lote produzido pela cozinha. Nenhum texto afirma conformidade (teste 16).
@@ -228,11 +229,8 @@ export async function makeLabelsPdf(
   if (list.length === 0) throw new Error('Nenhuma etiqueta para gerar.');
   for (const data of list) refuse(data);
   const url = new URL(origin);
-  if (
-    url.origin !== 'http://127.0.0.1:5173' &&
-    url.origin !== 'http://127.0.0.1:5174'
-  )
-    throw new Error('Endereço de demonstração indisponível.');
+  if (!isAuthorizedOrigin(url.origin))
+    throw new Error('Endereço não autorizado para o QR da etiqueta.');
   for (const data of list)
     if (textsOf(data).some((item) => SAFE_TEXT.test(item)))
       throw new Error(

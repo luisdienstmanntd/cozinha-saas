@@ -1,6 +1,7 @@
-import { expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import QRCode from 'qrcode';
-import { makeLabelPdf } from './pdf';
+import { makeLabelPdf, makeLabelsPdf } from './pdf';
+import { isHostedLabels, labelOrigin, setOfficialOrigin } from './labelOrigin';
 import { containerPath } from '../domain/label';
 import type { LabelData } from '../domain/label';
 
@@ -24,7 +25,7 @@ it('recusa caracteres sem suporte em vez de imprimir nome incompleto', async () 
 });
 it('recusa gerar QR para host fora da demonstração local', async () => {
   await expect(makeLabelPdf(label, 'https://externo.example')).rejects.toThrow(
-    'Endereço de demonstração indisponível',
+    'Endereço não autorizado',
   );
 });
 it('recusa gerar PDF de recipiente cuja manipulação foi anulada (fatia 6.4)', async () => {
@@ -443,4 +444,80 @@ it('V5B: nome longo demais para o modelo continua recusado em vez de impresso co
       'http://127.0.0.1:5173',
     ),
   ).rejects.toThrow('Conteúdo não cabe neste modelo de etiqueta.');
+});
+
+// Fatia 8.4b: ambiente hospedado. O QR leva o endereço oficial configurado; qualquer outro host
+// continua recusado. Os três modelos (recebimento, derivado, preparação) e o arquivo com várias
+// páginas funcionam com o endereço oficial.
+describe('endereço oficial hospedado (fatia 8.4b)', () => {
+  const official = 'https://cozzigo.pages.dev';
+  afterEach(() => setOfficialOrigin(null));
+
+  it('sem endereço oficial configurado, o host hospedado é recusado', async () => {
+    await expect(makeLabelPdf(plain, official)).rejects.toThrow(
+      'Endereço não autorizado',
+    );
+  });
+  it.each([
+    ['recebimento', plain],
+    ['derivado', derived],
+    ['preparação', prepared],
+    ['porção da preparação', preparedPortion],
+  ])(
+    'gera a etiqueta de %s com QR do endereço oficial',
+    async (_name, data) => {
+      setOfficialOrigin(official);
+      const spy = vi.spyOn(QRCode, 'toDataURL');
+      try {
+        const blob = await makeLabelPdf(data, labelOrigin());
+        expect(blob.size).toBeGreaterThan(1000);
+        expect(spy.mock.calls.map((call) => String(call[0]))).toEqual([
+          `${official}${containerPath(data.id)}`,
+        ]);
+      } finally {
+        spy.mockRestore();
+      }
+    },
+  );
+  it('várias etiquetas no mesmo arquivo usam o endereço oficial', async () => {
+    setOfficialOrigin(official);
+    const blob = await makeLabelsPdf([plain, derived, prepared], official);
+    const raw = new TextDecoder('latin1').decode(await blob.arrayBuffer());
+    expect(raw.match(/\/Type \/Page\b/g)).toHaveLength(3);
+  });
+  it.each([
+    'https://externo.example',
+    'https://cozzigo.pages.dev.externo.example',
+    'http://cozzigo.pages.dev',
+    'https://cozzigo.pages.dev:8443',
+    'https://preview.cozzigo.pages.dev',
+    'http://127.0.0.1:9999',
+  ])('recusa %s mesmo com o endereço oficial configurado', async (origin) => {
+    setOfficialOrigin(official);
+    await expect(makeLabelPdf(plain, origin)).rejects.toThrow(
+      'Endereço não autorizado',
+    );
+  });
+  it('endereço oficial inválido não é guardado', async () => {
+    setOfficialOrigin('https://localhost');
+    expect(isHostedLabels()).toBe(false);
+    await expect(makeLabelPdf(plain, 'https://localhost')).rejects.toThrow(
+      'Endereço não autorizado',
+    );
+  });
+  it('o ambiente local continua usando o endereço local', async () => {
+    expect(isHostedLabels()).toBe(false);
+    await expect(
+      makeLabelPdf(plain, 'http://127.0.0.1:5174'),
+    ).resolves.toBeInstanceOf(Blob);
+  });
+  it('as recusas de regra de negócio continuam valendo no ambiente hospedado', async () => {
+    setOfficialOrigin(official);
+    await expect(
+      makeLabelPdf({ ...plain, voided: true }, official),
+    ).rejects.toThrow('Manipulação anulada');
+    await expect(
+      makeLabelPdf({ ...plain, late_hold: true }, official),
+    ).rejects.toThrow('fora da janela de horário');
+  });
 });

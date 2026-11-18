@@ -42,9 +42,10 @@ Conflitos resolvidos (seis arquivos): `docs/DECISOES.md` e `docs/IA_ESTADO.md` (
 | `VITE_SUPABASE_URL` | Cloudflare | `https://<ref>.supabase.co` | sem barra final, sem caminho |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Cloudflare | `sb_publishable_…` | **publicável**; nunca a secreta nem a `service_role` |
 | `VITE_APP_ENV` | Cloudflare | `testes` | `producao` só no futuro projeto de produção |
+| `VITE_APP_URL` | Cloudflare | `https://cozzigo.pages.dev` | **nova na fatia 8.4b**: endereço oficial do QR das etiquetas; ver `docs/FASE_08_4B.md` |
 | `VITE_ALLOW_PUBLIC_DEMO` | — | não definir | só para uma demonstração pública intencional |
 
-Configure as quatro `VITE_*` em **Production e em Preview** (ou desligue os deploys de Preview): sem elas, o build de Preview falha de propósito. Chaves secretas e a senha do banco **não** vão ao Cloudflare nem ao GitHub.
+Configure as `VITE_*` em **Production e em Preview** (ou desligue os deploys de Preview): sem elas, o build de Preview falha de propósito. Chaves secretas e a senha do banco **não** vão ao Cloudflare nem ao GitHub.
 
 ## 5. Migrações no banco hospedado (preparado, não aplicado)
 
