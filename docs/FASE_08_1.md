@@ -88,3 +88,7 @@ CI real do GitHub (`workflow_dispatch` na branch da 8.1a; `quality` e `banco-api
 ## 7. Registros pendentes do aceite
 
 Com o aceite de luis: D-066 em `DECISOES.md`, linha da 8.1 em `IA_ESTADO.md` e as seis classes em `TESTES_QUALIDADE.md`, feitos no PR #41 (que entra por último) para não gerar conflito com a integração. Depois do aceite, **o primeiro lote de integração é exclusivamente o PR #28.**
+
+## 8. Recorrência da classe F depois do aceite (18/11/2026)
+
+Na integração, a classe F voltou duas vezes antes de o #43 entrar: no #37 (SHA `66f685c`, 16/11, já antes da 8.1) e no #38 (SHA `a6c530a`, tentativa 1 da rodada 44217166668, 18/11). As duas falharam em `finishing.spec.mjs:138` com 84,4 px, a mesma linha e o mesmo valor da classe F, o que confirma a causa. O #38 passou na tentativa 2 e foi integrado; o #43 (8.1b) entrou na `main` em `3141293` com a CI da `main` verde. O #39 passou na primeira tentativa. A estabilidade do teste corrigido na `main` ainda precisa de observação nas próximas execuções. Qualquer nova falha desse teste reabre a 8.1.
