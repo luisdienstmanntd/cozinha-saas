@@ -195,7 +195,7 @@ declare
   v_operational constant text[] := array[
     'batch_receipts', 'container_balances', 'container_handlings', 'containers', 'entity_changes',
     'handling_voids', 'location_moves', 'occurrence_decisions', 'occurrences', 'batch_productions',
-    'production_voids', 'stock_movements'];
+    'production_label_downloads', 'production_temperatures', 'production_voids', 'stock_movements'];
   v_configuration constant text[] := array[
     'establishment_settings', 'establishments', 'memberships', 'organizations', 'products',
     'storage_locations', 'suppliers'];

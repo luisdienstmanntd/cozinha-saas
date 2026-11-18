@@ -63,7 +63,7 @@ export function VoidProduction({
   }
   if (!open)
     return (
-      <button type="button" onClick={() => setOpen(true)}>
+      <button className="risk" type="button" onClick={() => setOpen(true)}>
         Anular produção
       </button>
     );
@@ -83,10 +83,14 @@ export function VoidProduction({
             onChange={(event) => setReason(event.target.value)}
           />
         </label>{' '}
-        <button type="submit" disabled={conflict}>
+        <button className="risk-confirm" type="submit" disabled={conflict}>
           Confirmar anulação
         </button>{' '}
-        <button type="button" onClick={() => setOpen(false)}>
+        <button
+          className="secondary"
+          type="button"
+          onClick={() => setOpen(false)}
+        >
           Cancelar
         </button>
         {error && <p role="alert">{error}</p>}

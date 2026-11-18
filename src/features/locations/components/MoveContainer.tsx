@@ -122,7 +122,7 @@ export function MoveContainer({
     return (
       <div role="status">
         Local registrado.{' '}
-        <button type="button" onClick={onClose}>
+        <button className="secondary" type="button" onClick={onClose}>
           Fechar
         </button>
       </div>
@@ -205,7 +205,7 @@ export function MoveContainer({
           Registrar local
         </button>
       )}{' '}
-      <button type="button" onClick={onClose}>
+      <button className="secondary" type="button" onClick={onClose}>
         Cancelar
       </button>
     </form>

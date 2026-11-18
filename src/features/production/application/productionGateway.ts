@@ -3,6 +3,7 @@ import type {
   ProductionInput,
   ProductionRow,
   ProductionVoidInput,
+  TemperatureInput,
 } from '../domain/production';
 
 // Recusa definitiva do banco: a operação não foi gravada. `conflict` = identificador usado com outros
@@ -23,4 +24,12 @@ export interface ProductionGateway {
   register(scope: CatalogScope, input: ProductionInput): Promise<string>;
   // Devolve o identificador da anulação.
   void(scope: CatalogScope, input: ProductionVoidInput): Promise<string>;
+  // Fatia 7.9: registra a temperatura medida (opcional, sem avaliação). Devolve o identificador.
+  recordTemperature?(
+    scope: CatalogScope,
+    input: TemperatureInput,
+  ): Promise<string>;
+  // Fatia 7.8: registra que a etiqueta do recipiente integral foi baixada (não mexe no estoque).
+  // Opcional: tela e testes anteriores seguem válidos.
+  recordLabelDownload?(scope: CatalogScope, containerId: string): Promise<void>;
 }

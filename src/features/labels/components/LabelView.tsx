@@ -19,8 +19,12 @@ import { DownloadLabels } from './DownloadLabels';
 import {
   EXPIRED_NOTE,
   EXPIRED_TEXT,
+  expiryBadgeText,
+  getExpiryStatus,
   isExpired,
 } from '../../batches/domain/expiryStatus';
+import { formatCivilDate } from '../../../shared/format/dates';
+import { formatQuantity } from '../../../shared/format/quantity';
 
 export function LabelView({
   id,
@@ -149,9 +153,45 @@ export function LabelView({
       data.batch_receipts.timezone,
     ),
   );
+  // V3 (B4): o mesmo selo da lista no topo da ficha (e da página do QR). Só aparece com fuso conhecido
+  // e para recipiente que ainda vale; o texto vem da mesma regra de data da lista.
+  const expiryDate = data
+    ? (data.effective?.expiry_date ?? data.batch_receipts.expiry_date)
+    : null;
+  const zone = data?.batch_receipts.timezone;
+  let badge: { tone: string; text: string } | null = null;
+  if (data && expiryDate && zone && !data.voided && !productionVoided) {
+    try {
+      badge =
+        data.balance <= 0
+          ? { tone: 'depleted', text: 'Esgotado' }
+          : {
+              tone: getExpiryStatus(expiryDate, zone),
+              text: expiryBadgeText(expiryDate, zone),
+            };
+    } catch {
+      badge = null;
+    }
+  }
   return (
     <section aria-label="Recipiente">
       <h2>Recipiente</h2>
+      {data && (
+        <p className="ficha-title">
+          <strong className="card-product">
+            {data.batch_receipts.products.name}
+          </strong>{' '}
+          <span className="card-code">{data.short_code}</span>
+          {badge && (
+            <>
+              {' '}
+              <span className={`expiry-badge tone-${badge.tone}`}>
+                {badge.text}
+              </span>
+            </>
+          )}
+        </p>
+      )}
       {error && <p role="alert">{error}</p>}
       {!data && !error && <p>Consultando recipiente…</p>}
       {data && (
@@ -189,9 +229,14 @@ export function LabelView({
           </p>
           <p>
             Quantidade inicial:{' '}
-            {data.effective?.initial_quantity ?? data.batch_receipts.quantity}{' '}
+            {formatQuantity(
+              data.effective?.initial_quantity ?? data.batch_receipts.quantity,
+            )}{' '}
             {data.batch_receipts.unit} — validade{' '}
-            {data.effective?.expiry_date ?? data.batch_receipts.expiry_date} (
+            {formatCivilDate(
+              data.effective?.expiry_date ?? data.batch_receipts.expiry_date,
+            )}{' '}
+            (
             {data.effective?.expiry_origin === 'handling'
               ? 'após manipulação'
               : data.batch_receipts.expiry_origin === 'original'
@@ -200,7 +245,8 @@ export function LabelView({
             )
           </p>
           <p>
-            Saldo atual: {data.balance} {data.batch_receipts.unit}
+            Saldo atual: {formatQuantity(data.balance)}{' '}
+            {data.batch_receipts.unit}
             {data.balance <= 0 && ' — esgotado, sem saldo neste recipiente'}
           </p>
           {expired && (
@@ -354,7 +400,7 @@ function OpenButton({
 }) {
   if (!onOpen) return <>{code}</>;
   return (
-    <button type="button" onClick={() => onOpen(id)}>
+    <button className="secondary" type="button" onClick={() => onOpen(id)}>
       Abrir {code}
     </button>
   );
@@ -395,7 +441,7 @@ function FamilyOrigin({
         Manipulado por {h.handled_by_name} — validade após a abertura{' '}
         {formatDate(h.expiry_date)}.
         {h.remainder === 'discarded' &&
-          ` Sobra de ${h.remainder_quantity} ${unit} descartada.`}
+          ` Sobra de ${formatQuantity(h.remainder_quantity)} ${unit} descartada.`}
       </p>
       {action}
     </div>
@@ -435,7 +481,7 @@ function FamilyOpenings({
               : ` — validade ${formatDate(h.expiry_date)}`}
             {h.remainder === 'sealed' &&
               !voided &&
-              ` — sobra de ${h.remainder_quantity} ${unit} segue fechada`}
+              ` — sobra de ${formatQuantity(h.remainder_quantity)} ${unit} segue fechada`}
             {!voided && children.length > 0 && (
               <p>
                 <DownloadLabels
@@ -457,7 +503,7 @@ function FamilyOpenings({
                   {child.position && h.kind === 'portioning'
                     ? ` porção ${child.position}`
                     : ''}{' '}
-                  — {voided ? 0 : child.balance} {unit}
+                  — {formatQuantity(voided ? 0 : child.balance)} {unit}
                   {voided && ' (zerado pela anulação)'}
                 </li>
               ))}

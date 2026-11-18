@@ -72,8 +72,8 @@ it('exige motivo para descarte e mostra o histórico sem alterar a entrada', asy
       gateway={{ list, record }}
     />,
   );
-  expect(await screen.findByText('Saldo registrado: 0.75 kg')).toBeVisible();
-  expect(screen.getByText(/Consumo — 0.25 kg/)).toBeVisible();
+  expect(await screen.findByText('Saldo registrado: 0,75 kg')).toBeVisible();
+  expect(screen.getByText(/Consumo — 0,25 kg/)).toBeVisible();
   await user.selectOptions(screen.getByLabelText('Tipo de saída'), 'discard');
   await user.type(screen.getByLabelText('Quantidade da saída'), '0.5');
   await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
@@ -322,11 +322,31 @@ it('confirma anulação integral com motivo e preserva o histórico', async () =
       gateway={{ list, record }}
     />,
   );
-  expect(await screen.findByText('Saldo registrado: 0.5 kg')).toBeVisible();
+  expect(await screen.findByText('Saldo registrado: 0,5 kg')).toBeVisible();
+  // V4 (M1): anular registro é de risco (contorno vermelho); a confirmação, vermelho cheio.
+  expect(screen.getByRole('button', { name: 'Anular registro' })).toHaveClass(
+    'risk',
+  );
   await user.click(screen.getByRole('button', { name: 'Anular registro' }));
   await user.type(screen.getByLabelText('Motivo da anulação'), 'erro');
+  expect(screen.getByRole('button', { name: 'Revisar anulação' })).toHaveClass(
+    'risk',
+  );
+  expect(screen.getByRole('button', { name: 'Voltar' })).toHaveClass(
+    'secondary',
+  );
   await user.click(screen.getByRole('button', { name: 'Revisar anulação' }));
   expect(screen.getByText(/não recupera alimento/i)).toBeVisible();
+  // V4 (M11): o aviso da anulação e o saldo depois dela nunca ficam em "Saiba mais".
+  expect(
+    screen.getByText(/não recupera alimento/i).closest('details'),
+  ).toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'Confirmar anulação' }),
+  ).toHaveClass('risk-confirm');
+  expect(
+    screen.getByRole('button', { name: 'Corrigir antes de enviar' }),
+  ).toHaveClass('secondary');
   expect(screen.getByText(/Registro original: Descarte/)).toHaveTextContent(
     '12345678',
   );
@@ -445,7 +465,7 @@ it('não permite anulação se a tentativa armazenada estiver inválida', async 
       gateway={{ list: vi.fn().mockResolvedValue([event]), record: vi.fn() }}
     />,
   );
-  expect(await screen.findByText('Saldo registrado: 0.5 kg')).toBeVisible();
+  expect(await screen.findByText('Saldo registrado: 0,5 kg')).toBeVisible();
   expect(
     screen.queryByRole('button', { name: 'Anular registro' }),
   ).not.toBeInTheDocument();
@@ -530,12 +550,12 @@ it('conta a transferência da manipulação como saída e não oferece anulá-la
       gateway={{ list, record: vi.fn() }}
     />,
   );
-  expect(await screen.findByText('Saldo registrado: 4.5 kg')).toBeVisible();
+  expect(await screen.findByText('Saldo registrado: 4,5 kg')).toBeVisible();
   expect(
     screen.getByText(/Transferência para recipientes derivados — 4 kg/),
   ).toBeVisible();
   expect(
-    screen.getByText(/Descarte de sobra da manipulação — 0.5 kg/),
+    screen.getByText(/Descarte de sobra da manipulação — 0,5 kg/),
   ).toBeVisible();
   // Só o consumo comum pode ser anulado aqui; a manipulação é desfeita pela anulação dela (6.4).
   expect(
@@ -606,7 +626,7 @@ it('conta a devolução da manipulação anulada como entrada e não oferece anu
   ).toBeVisible();
   expect(
     screen.getByText(
-      /Anulação do descarte de sobra \(manipulação anulada\) — 0.5 kg/,
+      /Anulação do descarte de sobra \(manipulação anulada\) — 0,5 kg/,
     ),
   ).toBeVisible();
   expect(
@@ -730,4 +750,164 @@ it('mostra a anulação de produção como saída e não oferece desfazê-la (fa
   expect(
     screen.queryByRole('button', { name: 'Anular registro' }),
   ).not.toBeInTheDocument();
+});
+
+it('mostra quem registrou pelo nome e a data no fuso, com identificadores recolhidos (V3)', async () => {
+  sessionStorage.clear();
+  const author = '22345678-1234-4234-8234-123456789abc';
+  const other = '32345678-1234-4234-8234-123456789abc';
+  const list = vi.fn().mockResolvedValue([
+    {
+      id: 'evento-1',
+      kind: 'consumption',
+      quantity: 0.25,
+      reason: null,
+      created_by: author,
+      created_at: '2026-11-14T23:00:31.357489+00:00',
+      timezone: 'America/Sao_Paulo',
+    },
+    {
+      id: 'evento-2',
+      kind: 'discard',
+      quantity: 0.25,
+      reason: 'dano',
+      created_by: other,
+      created_at: '2026-11-15T10:00:00Z',
+      timezone: 'America/Sao_Paulo',
+    },
+  ]);
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 1,
+        unit: 'kg',
+      }}
+      canCreate={false}
+      gateway={{ list, record: vi.fn() }}
+      loadMembers={vi.fn().mockResolvedValue([
+        { user_id: author, display_name: 'Ana Cozinha', role: 'owner' },
+        { user_id: other, display_name: null, role: 'member' },
+      ])}
+    />,
+  );
+  const first = (await screen.findByText(/14\/11\/2026 20:00/)).closest('li')!;
+  expect(await within(first).findByText(/por Ana Cozinha/)).toBeVisible();
+  const second = screen.getByText(/15\/11\/2026 07:00/).closest('li')!;
+  expect(second).toHaveTextContent('por pessoa sem nome de exibição');
+  // Identificadores continuam disponíveis para suporte, recolhidos.
+  const ids = within(first).getByText(/Registro evento-1/);
+  expect(ids).not.toBeVisible();
+  expect(ids).toHaveTextContent(`autor ${author}`);
+  expect(within(first).getByText('Identificadores (suporte)')).toBeVisible();
+});
+
+// V5 (M5, D-063): vírgula decimal na quantidade da saída.
+function decimalPanel(record = vi.fn().mockResolvedValue('evento')) {
+  sessionStorage.clear();
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 10,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{ list: vi.fn().mockResolvedValue([]), record }}
+    />,
+  );
+  return record;
+}
+
+it('V5: aceita 2,5 na saída, mostra com vírgula e envia 2.5', async () => {
+  const user = userEvent.setup();
+  const record = decimalPanel();
+  await user.type(await screen.findByLabelText('Quantidade da saída'), '2,5');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  expect(
+    screen.getByText('Tentativa pendente: consumo de 2,5 kg.'),
+  ).toBeVisible();
+  expect(
+    screen.getByText(/Saldo após a operação, se confirmada: 7,5 kg/),
+  ).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(record).toHaveBeenCalledTimes(1);
+  expect(record.mock.calls[0]?.[1]).toMatchObject({
+    kind: 'consumption',
+    quantity: '2.5',
+  });
+});
+
+it.each([
+  ['1.000,50', /não use separador de milhar/],
+  ['1,000.50', /não use separador de milhar/],
+  ['2.500', /Quantidade ambígua: "2\.500"/],
+  ['2,5 kg', /Confira tipo, quantidade e motivo\./],
+  ['0,0001', /Confira tipo, quantidade e motivo\./],
+])('V5: recusa %s na saída sem criar tentativa', async (typed, message) => {
+  const user = userEvent.setup();
+  const record = decimalPanel();
+  await user.type(await screen.findByLabelText('Quantidade da saída'), typed);
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  expect(screen.getByRole('alert')).toHaveTextContent(message);
+  expect(screen.queryByText(/Tentativa pendente/)).toBeNull();
+  expect(sessionStorage.length).toBe(0);
+  expect(record).not.toHaveBeenCalled();
+});
+
+it('V5: a dica da saída fala em vírgula ou ponto', async () => {
+  decimalPanel();
+  expect(
+    await screen.findByText(
+      'Use vírgula ou ponto para decimais, por exemplo 0,5. Não use separador de milhar.',
+    ),
+  ).toBeVisible();
+});
+
+// V5B (D-064): quantidades decimais do lote e do histórico com vírgula.
+it('V5B: quantidade inicial, saldo, histórico e anulação mostram vírgula', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 12.5,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'e1',
+            kind: 'consumption',
+            quantity: 0.25,
+            reason: null,
+            created_by: 'user',
+            created_at: '2026-11-13T12:00:00Z',
+            timezone: 'America/Sao_Paulo',
+          },
+        ]),
+        record: vi.fn(),
+      }}
+    />,
+  );
+  expect(await screen.findByText(/quantidade inicial 12,5 kg/)).toBeVisible();
+  expect(screen.getByText('Saldo registrado: 12,25 kg')).toBeVisible();
+  expect(screen.getByText(/Consumo — 0,25 kg/)).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Anular registro' }));
+  expect(screen.getByText(/Anular consumo de 0,25 kg\./)).toBeVisible();
+  expect(document.body).not.toHaveTextContent(/\d\.\d+ kg/);
 });

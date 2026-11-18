@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
+import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
+import { openArea } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 7.3: cadastrar a preparação, registrar a produção em passos (validade por extenso), ver o lote
@@ -11,7 +13,7 @@ async function signIn(page, user) {
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
 }
 
@@ -28,9 +30,8 @@ const has = (bytes, text) => bytes.includes(Buffer.from(text, 'latin1'));
 
 // Cadastra a preparação e registra uma produção de 6 l com validade daqui a 2 dias.
 async function produce(page) {
-  await page
-    .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-    .click();
+  await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+  await openArea(page, 'Cadastros');
   const catalog = page.getByRole('region', { name: 'Preparações próprias' });
   await catalog.getByRole('button', { name: 'Nova preparação' }).click();
   await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
@@ -40,6 +41,7 @@ async function produce(page) {
     .selectOption('refrigerated');
   await catalog.getByRole('button', { name: 'Cadastrar preparação' }).click();
   await expect(catalog).toContainText('Caldo de teste — l — Refrigerado');
+  await openArea(page, 'Produção');
   const panel = page.getByRole('region', { name: 'Produção da cozinha' });
   await panel.getByRole('button', { name: 'Registrar produção' }).click();
   const form = panel.getByRole('form', { name: 'Registrar produção' });
@@ -78,9 +80,8 @@ test('registrar e anular produção da cozinha pela tela', async ({
   await withCatalogFixture(async ({ users }) => {
     await page.goto('/');
     await signIn(page, users[0]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Cadastros');
 
     const catalog = page.getByRole('region', { name: 'Preparações próprias' });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
@@ -92,12 +93,14 @@ test('registrar e anular produção da cozinha pela tela', async ({
     await catalog.getByRole('button', { name: 'Cadastrar preparação' }).click();
     await expect(catalog).toContainText('Caldo de teste — l — Refrigerado');
     // A preparação não entra no recebimento.
+    await openArea(page, 'Receber');
     await expect(
       page
         .getByRole('combobox', { name: 'Produto', exact: true })
         .locator('option', { hasText: 'Caldo de teste' }),
     ).toHaveCount(0);
 
+    await openArea(page, 'Produção');
     const panel = page.getByRole('region', { name: 'Produção da cozinha' });
     await expect(panel).toContainText('Nenhuma produção registrada.');
     await panel.getByRole('button', { name: 'Registrar produção' }).click();
@@ -155,14 +158,16 @@ test('registrar e anular produção da cozinha pela tela', async ({
     const productions = panel.getByRole('list', { name: 'Produções recentes' });
     await expect(productions).toContainText('Caldo de teste');
     await expect(productions).toContainText('por Ana Teste');
+    await openArea(page, 'Validade');
     const rows = page.getByRole('list', { name: 'Recipientes e validade' });
     const row = rows
       .getByRole('listitem')
       .filter({ hasText: 'Caldo de teste' });
     await expect(row).toContainText('preparação própria');
-    await expect(row).toContainText('saldo 6 l de 6 l');
+    await expect(row).toContainText('Saldo 6 l de 6 l');
 
     // Anular: motivo obrigatório; depois o saldo é zero e a lista mostra ANULADA.
+    await openArea(page, 'Produção');
     await productions.getByRole('button', { name: 'Anular produção' }).click();
     const voidForm = panel.getByRole('form', { name: /Anular produção C-/ });
     await voidForm
@@ -175,10 +180,11 @@ test('registrar e anular produção da cozinha pela tela', async ({
     await expect(
       productions.getByRole('button', { name: 'Anular produção' }),
     ).toHaveCount(0);
+    await openArea(page, 'Validade');
     await expect(row).toHaveCount(0);
     await page.getByLabel('Mostrar esgotados').check();
-    await expect(row).toContainText('saldo 0 l de 6 l');
-    await row.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await expect(row).toContainText('Saldo 0 l de 6 l');
+    await row.getByRole('button', { name: 'Ver ficha' }).click();
     const container = page.getByRole('region', { name: 'Recipiente' });
     await expect(container).toContainText('Preparação própria');
     await expect(container).toContainText('ANULADO');
@@ -196,6 +202,7 @@ test('porções de uma preparação saem com o mesmo modelo de etiqueta', async 
     await page.goto('/');
     await signIn(page, users[0]);
     await produce(page);
+    await openArea(page, 'Validade');
     const row = page
       .getByRole('list', { name: 'Recipientes e validade' })
       .getByRole('listitem')
@@ -236,6 +243,7 @@ test('porções de uma preparação saem com o mesmo modelo de etiqueta', async 
       expect(has(pdf.bytes, text), text).toBe(true);
     expect(has(pdf.bytes, 'PRODUTO FRACIONADO')).toBe(false);
     // Depois do porcionamento, a produção não pode mais ser anulada (D-051).
+    await openArea(page, 'Produção');
     const productions = page
       .getByRole('region', { name: 'Produção da cozinha' })
       .getByRole('list', { name: 'Produções recentes' });
@@ -258,9 +266,8 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
   await withCatalogFixture(async ({ users }) => {
     await page.goto('/');
     await signIn(page, users[0]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Cadastros');
     const settings = page.getByRole('region', {
       name: 'Configurações da unidade',
     });
@@ -301,6 +308,7 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
       .selectOption('refrigerated');
     await catalog.getByRole('button', { name: 'Cadastrar preparação' }).click();
     await expect(catalog).toContainText('Caldo de teste — l — Refrigerado');
+    await openArea(page, 'Produção');
     const panel = page.getByRole('region', { name: 'Produção da cozinha' });
     await panel.getByRole('button', { name: 'Registrar produção' }).click();
     const ownerForm = panel.getByRole('form', { name: 'Registrar produção' });
@@ -315,12 +323,18 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
 
     await signIn(page, users[2]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    // O colaborador não vê o cadastro; vê as regras da unidade em Configurações.
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Áreas da unidade' })
+        .getByRole('link', { name: 'Receber' }),
+    ).toHaveCount(0);
+    await openArea(page, 'Configurações');
     await expect(settings).toContainText(
       'Somente o proprietário muda as configurações da unidade.',
     );
+    await openArea(page, 'Produção');
     await expect(panel).toContainText(
       'Você registra só a própria produção. Somente o proprietário anula produção.',
     );
@@ -356,9 +370,8 @@ test('janela de registro própria da preparação vale na tela de produção', a
   await withCatalogFixture(async ({ users }) => {
     await page.goto('/');
     await signIn(page, users[0]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Cadastros');
     const catalog = page.getByRole('region', { name: 'Preparações próprias' });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
@@ -379,6 +392,7 @@ test('janela de registro própria da preparação vale na tela de produção', a
       .click();
     await expect(catalog).toContainText('janela de registro: 4 horas');
 
+    await openArea(page, 'Produção');
     const panel = page.getByRole('region', { name: 'Produção da cozinha' });
     await panel.getByRole('button', { name: 'Registrar produção' }).click();
     const form = panel.getByRole('form', { name: 'Registrar produção' });
@@ -410,5 +424,130 @@ test('janela de registro própria da preparação vale na tela de produção', a
       form.getByText(/Registro mais de 4 horas depois da produção/),
     ).toBeVisible();
     await expect(form.getByLabel('Justificativa do atraso')).toBeVisible();
+  });
+});
+
+test('produção sem etiqueta baixada é avisada e o download tira o aviso', async ({
+  page,
+}, testInfo) => {
+  page.setDefaultTimeout(5000);
+  await withCatalogFixture(async ({ client, users, scopeA }) => {
+    // Produção registrada há 90 minutos (limite padrão da unidade: 1 hora), sem etiqueta baixada.
+    const owner = client();
+    const signed = await owner.auth.signInWithPassword({
+      email: users[0].email,
+      password: users[0].password,
+    });
+    expect(signed.error).toBeNull();
+    const scope = {
+      p_organization_id: scopeA.organization_id,
+      p_establishment_id: scopeA.establishment_id,
+    };
+    const product = await owner
+      .from('products')
+      .insert({
+        ...scopeA,
+        name: 'Caldo de teste',
+        unit: 'l',
+        kind: 'preparation',
+      })
+      .select('id')
+      .single();
+    expect(product.error).toBeNull();
+    for (const call of [
+      owner.rpc('set_product_storage_condition', {
+        ...scope,
+        p_product_id: product.data.id,
+        p_storage_condition: 'refrigerated',
+      }),
+      owner.rpc('set_member_display_name', {
+        p_organization_id: scopeA.organization_id,
+        p_user_id: users[0].id,
+        p_display_name: 'Ana Teste',
+      }),
+    ])
+      expect((await call).error).toBeNull();
+    const produced = await owner.rpc('register_production', {
+      ...scope,
+      p_product_id: product.data.id,
+      p_quantity: 6,
+      p_expiry_date: localDate(2),
+      p_produced_at: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+      p_handled_by: users[0].id,
+      p_note: null,
+      p_late_reason: null,
+      p_intent_id: randomUUID(),
+    });
+    expect(produced.error).toBeNull();
+
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Produção');
+    const panel = page.getByRole('region', { name: 'Produção da cozinha' });
+    const productions = panel.getByRole('list', { name: 'Produções recentes' });
+    await expect(productions).toContainText(
+      /sem download de etiqueta registrado há 1 hora e 3\d minutos \(acima de 1 hora\)/,
+    );
+    await expect(panel).toContainText(
+      '1 produção está sem download de etiqueta registrado há mais de 1 hora',
+    );
+
+    await download(
+      page,
+      testInfo,
+      productions.getByRole('button', { name: /^Baixar etiqueta \(C-/ }),
+      'aviso.pdf',
+    );
+    await expect(productions).not.toContainText(
+      'sem download de etiqueta registrado há',
+    );
+    await expect(panel).not.toContainText(
+      'está sem download de etiqueta registrado',
+    );
+  });
+});
+
+test('registrar a temperatura opcional da produção pela tela, sem avaliação', async ({
+  page,
+}) => {
+  page.setDefaultTimeout(5000);
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    const panel = await produce(page);
+    await expect(
+      panel.getByRole('region', { name: 'Resultado da produção' }),
+    ).toContainText(/Produção registrada no recipiente C-\d{6}/);
+    const productions = panel.getByRole('list', { name: 'Produções recentes' });
+    await productions
+      .getByRole('button', { name: /^Registrar temperatura C-/ })
+      .click();
+    const form = panel.getByRole('form', { name: /^Registrar temperatura C-/ });
+    await expect(form).toContainText('O sistema não avalia');
+    await form.getByLabel('Momento da medição').selectOption('cooling_end');
+    await form.getByLabel('Temperatura medida (°C)').fill('4,5');
+    await form
+      .getByRole('button', { name: 'Registrar temperatura medida' })
+      .click();
+    await expect(panel).toContainText('Temperatura registrada.');
+    await expect(
+      productions.getByRole('list', { name: /^Temperaturas de C-/ }),
+    ).toContainText(
+      /Fim do resfriamento: 4,5 °C, medida em .* registrada por Ana Teste \(informada; o sistema não avalia\)/,
+    );
+    // Valores extremos também só são registrados.
+    await productions
+      .getByRole('button', { name: /^Registrar temperatura C-/ })
+      .click();
+    await form.getByLabel('Momento da medição').selectOption('reheating');
+    await form.getByLabel('Temperatura medida (°C)').fill('80');
+    await form
+      .getByRole('button', { name: 'Registrar temperatura medida' })
+      .click();
+    await expect(
+      productions.getByRole('list', { name: /^Temperaturas de C-/ }),
+    ).toContainText('Reaquecimento: 80,0 °C');
+    await expect(panel).not.toContainText(/conforme/i);
   });
 });

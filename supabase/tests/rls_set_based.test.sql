@@ -60,6 +60,8 @@ select is(
   'occurrences.occurrences_read:SELECT:authenticated '
   'organizations.organizations_read:SELECT:authenticated '
   'organizations.organizations_update:UPDATE:authenticated '
+  'production_label_downloads.production_label_downloads_read:SELECT:authenticated '
+  'production_temperatures.production_temperatures_read:SELECT:authenticated '
   'production_voids.production_voids_read:SELECT:authenticated '
   'products.products_insert:INSERT:authenticated '
   'products.products_read:SELECT:authenticated '
@@ -67,7 +69,7 @@ select is(
   'storage_locations.storage_locations_read:SELECT:authenticated '
   'suppliers.suppliers_insert:INSERT:authenticated '
   'suppliers.suppliers_read:SELECT:authenticated',
-  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c), container_balances_read (6.2), container_handlings_read (6.3), handling_voids_read (6.4), occurrences_read e occurrence_decisions_read (6.5a), storage_locations_read e location_moves_read (6.9), batch_productions_read (7.1), production_voids_read (7.2), establishment_settings_read (7.6)');
+  'conjunto de políticas de public: as 13 anteriores inalteradas, mais entity_changes_read (6.0c), container_balances_read (6.2), container_handlings_read (6.3), handling_voids_read (6.4), occurrences_read e occurrence_decisions_read (6.5a), storage_locations_read e location_moves_read (6.9), batch_productions_read (7.1), production_voids_read (7.2), establishment_settings_read (7.6), production_label_downloads_read (7.8), production_temperatures_read (7.9)');
 
 select is(
   (select coalesce(string_agg(tablename || '.' || policyname, ',' order by tablename, policyname), '')

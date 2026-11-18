@@ -250,10 +250,17 @@ it('descartar apaga só a tentativa; falha na conferência só oferece conferir 
     screen.queryByRole('button', { name: 'Descartar tentativa' }),
   ).toBeNull();
   expect(screen.queryByRole('button', { name: 'Enviar novamente' })).toBeNull();
-  await user_.click(screen.getByRole('button', { name: 'Conferir de novo' }));
-  await user_.click(
-    await screen.findByRole('button', { name: 'Descartar tentativa' }),
+  // V4 (M1): conferir de novo é secundária (consulta).
+  expect(screen.getByRole('button', { name: 'Conferir de novo' })).toHaveClass(
+    'secondary',
   );
+  await user_.click(screen.getByRole('button', { name: 'Conferir de novo' }));
+  // V4 (M1): descartar tentativa pendente é ação de risco.
+  const discard = await screen.findByRole('button', {
+    name: 'Descartar tentativa',
+  });
+  expect(discard).toHaveClass('risk');
+  await user_.click(discard);
   expect(pendingStore.list(user)).toHaveLength(0);
 });
 
@@ -288,4 +295,31 @@ it('gateway de conferência lê find_operation pela RLS e valida a resposta', as
   });
   expect(await gateway.find(scope, intent(1))).toBeNull();
   await expect(gateway.find(scope, intent(1))).rejects.toThrow('conferir');
+});
+
+// V5B (D-064): o resumo da tentativa mostra a quantidade com vírgula (o que foi enviado segue com ponto).
+it('V5B: resumo da tentativa mostra a quantidade com vírgula', async () => {
+  const g = trackGateways(gateways(new Error('rede')), user);
+  await g.batches
+    .receive(scope, {
+      sourceCode: 'L-2',
+      quantity: '2.5',
+      intentId: intent(20),
+    } as never)
+    .catch(() => undefined);
+  await g.movements
+    .record(scope, {
+      kind: 'consumption',
+      quantity: '0.25',
+      intentId: intent(21),
+    } as never)
+    .catch(() => undefined);
+  const list = pendingStore.list(user);
+  expect(list.map((item) => item.summary)).toEqual([
+    'Recebimento do lote L-2 (2,5)',
+    'Consumo de 0,25',
+  ]);
+  expect(
+    list.map((item) => (item.input as { quantity: string }).quantity),
+  ).toEqual(['2.5', '0.25']);
 });

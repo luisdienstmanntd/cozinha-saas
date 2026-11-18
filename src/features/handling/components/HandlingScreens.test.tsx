@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { HandlingForm } from './HandlingForm';
@@ -279,7 +279,7 @@ it('derivado mostra origem, validade efetiva e gera a etiqueta de produto aberto
     />,
   );
   expect(
-    await screen.findByText(/validade 2026-12-01 \(após manipulação\)/),
+    await screen.findByText(/validade 01\/12\/2026 \(após manipulação\)/),
   ).toBeVisible();
   expect(
     screen.getByRole('button', { name: 'Gerar etiqueta PDF' }),
@@ -523,4 +523,234 @@ it('preparação própria com "igual ou menor": campo de validade, nunca maior q
     kind: 'portioning',
     expiryDate: '2030-01-02',
   });
+});
+
+// V5 (M5, D-063): vírgula decimal ao abrir e porcionar.
+function decimalForm(gw = gateway()) {
+  render(
+    <HandlingForm
+      scope={scope}
+      containerId={ids.box}
+      userId={ids.user}
+      gateway={gw}
+      onClose={vi.fn()}
+    />,
+  );
+  return gw;
+}
+
+it('V5: abre 4,5 kg, mostra soma e sobra com vírgula e envia 4.5', async () => {
+  const user = userEvent.setup();
+  const gw = decimalForm();
+  await user.type(
+    await screen.findByLabelText('Quantidade aberta (kg)'),
+    '4,5',
+  );
+  expect(
+    screen.getByText(/Soma: 4,5 kg de 10 kg — sobra: 5,5 kg\./),
+  ).toBeVisible();
+  await user.click(screen.getByLabelText('Sim, continua fechado'));
+  await user.type(
+    screen.getByLabelText('Validade após a abertura'),
+    '2026-12-01',
+  );
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  expect(
+    await screen.findByText('Abrir embalagem: 4,5 kg (total 4,5 kg)'),
+  ).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Confirmar registro' }));
+  expect(gw.handle).toHaveBeenCalledTimes(1);
+  expect(vi.mocked(gw.handle).mock.calls[0]![1]).toMatchObject({
+    kind: 'opening',
+    quantities: ['4.5'],
+    remainder: 'sealed',
+  });
+});
+
+it('V5: "Dividir igualmente" preenche com vírgula e o envio sai com ponto', async () => {
+  const user = userEvent.setup();
+  const gw = decimalForm();
+  await user.click(await screen.findByLabelText('Dividir em porções'));
+  const count = screen.getByLabelText(/Número de porções/);
+  fireEvent.change(count, { target: { value: '3' } });
+  await user.click(screen.getByRole('button', { name: 'Dividir igualmente' }));
+  expect(screen.getByLabelText('Porção 1 (kg)')).toHaveValue('3,333');
+  expect(screen.getByLabelText('Porção 2 (kg)')).toHaveValue('3,333');
+  expect(screen.getByLabelText('Porção 3 (kg)')).toHaveValue('3,334');
+  expect(
+    screen.getByText(/Soma: 10 kg de 10 kg — sobra: 0 kg\./),
+  ).toBeVisible();
+  await user.type(
+    screen.getByLabelText('Validade após a abertura'),
+    '2026-12-01',
+  );
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  await user.click(
+    await screen.findByRole('button', { name: 'Confirmar registro' }),
+  );
+  expect(vi.mocked(gw.handle).mock.calls[0]![1]).toMatchObject({
+    kind: 'portioning',
+    quantities: ['3.333', '3.333', '3.334'],
+    remainder: 'none',
+  });
+});
+
+it.each([
+  ['1.000,50', /não use separador de milhar/],
+  ['4.000', /Quantidade ambígua: "4\.000"/],
+  ['4,0001', /com vírgula ou ponto para decimais, por exemplo 0,5/],
+])('V5: recusa %s ao abrir, sem enviar', async (typed, message) => {
+  const user = userEvent.setup();
+  const gw = decimalForm();
+  await user.type(
+    await screen.findByLabelText('Quantidade aberta (kg)'),
+    typed,
+  );
+  await user.type(
+    screen.getByLabelText('Validade após a abertura'),
+    '2026-12-01',
+  );
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  expect(screen.getByRole('alert')).toHaveTextContent(message);
+  expect(gw.handle).not.toHaveBeenCalled();
+});
+
+it('V5: produto em unidades recusa 2,5 como recusava 2.5', async () => {
+  const user = userEvent.setup();
+  const gw = decimalForm(
+    gateway({
+      context: vi.fn().mockResolvedValue({ ...context, unit: 'un' }),
+    }),
+  );
+  await user.type(
+    await screen.findByLabelText('Quantidade aberta (un)'),
+    '2,5',
+  );
+  await user.click(screen.getByLabelText('Sim, continua fechado'));
+  await user.type(
+    screen.getByLabelText('Validade após a abertura'),
+    '2026-12-01',
+  );
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Este produto é medido em unidades inteiras.',
+  );
+  expect(gw.handle).not.toHaveBeenCalled();
+});
+
+// V5B (D-064): saldo, porções e sobras com vírgula no formulário, no resultado e na ficha.
+it('V5B: formulário mostra o saldo com vírgula', async () => {
+  render(
+    <HandlingForm
+      scope={scope}
+      containerId={ids.box}
+      userId={ids.user}
+      gateway={gateway({
+        context: vi.fn().mockResolvedValue({ ...context, balance: 12.5 }),
+      })}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText(/saldo 12,5 kg/)).toBeVisible();
+  expect(screen.queryByText(/12\.5/)).toBeNull();
+});
+
+it('V5B: resultado e ficha mostram sobra e porções com vírgula', async () => {
+  const user = userEvent.setup();
+  const created = {
+    handling: {
+      ...handlingRow,
+      remainder: 'sealed' as const,
+      remainder_quantity: 5.5,
+    },
+    voided: null,
+    children: [
+      {
+        id: ids.child,
+        short_code: 'C-000002',
+        position: 1,
+        initial_quantity: 4.5,
+        balance: 4.5,
+      },
+    ],
+  };
+  render(
+    <HandlingForm
+      scope={scope}
+      containerId={ids.box}
+      userId={ids.user}
+      gateway={gateway({ created: vi.fn().mockResolvedValue(created) })}
+      onClose={vi.fn()}
+    />,
+  );
+  await user.type(
+    await screen.findByLabelText('Quantidade aberta (kg)'),
+    '4,5',
+  );
+  await user.click(screen.getByLabelText('Sim, continua fechado'));
+  await user.type(
+    screen.getByLabelText('Validade após a abertura'),
+    '2026-12-01',
+  );
+  await user.click(screen.getByRole('button', { name: 'Revisar registro' }));
+  await user.click(
+    await screen.findByRole('button', { name: 'Confirmar registro' }),
+  );
+  const result = await screen.findByRole('region', {
+    name: 'Resultado da manipulação',
+  });
+  expect(result).toHaveTextContent('Sobra de 5,5 kg segue fechada');
+  expect(result).toHaveTextContent('4,5 kg');
+  expect(result).not.toHaveTextContent(/\d\.\d/);
+});
+
+it('V5B: a ficha do recipiente mostra quantidade inicial, saldo, sobra e derivados com vírgula', async () => {
+  const family: Family = {
+    created: null,
+    openings: [
+      {
+        handling: {
+          ...handlingRow,
+          remainder: 'sealed',
+          remainder_quantity: 6.5,
+        },
+        children: [
+          {
+            id: ids.child,
+            short_code: 'C-000002',
+            position: null,
+            initial_quantity: 3.5,
+            balance: 3.5,
+          },
+        ],
+        voided: null,
+      },
+    ] as never,
+    partial: false,
+  };
+  render(
+    <LabelView
+      id={ids.box}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({
+          ...labelData,
+          id: ids.box,
+          kind: 'integral',
+          balance: 6.5,
+          effective: undefined,
+          batch_receipts: { ...labelData.batch_receipts, quantity: 10.5 },
+        }),
+      }}
+      handling={gateway({ family: vi.fn().mockResolvedValue(family) })}
+      canHandle={() => true}
+      userId={ids.user}
+    />,
+  );
+  expect(await screen.findByText('Saldo atual: 6,5 kg')).toBeVisible();
+  expect(screen.getByText(/Quantidade inicial: 10,5 kg/)).toBeVisible();
+  expect(
+    await screen.findByText(/sobra de 6,5 kg segue fechada/),
+  ).toBeVisible();
+  expect(document.body).not.toHaveTextContent(/\d\.\d+ kg/);
 });

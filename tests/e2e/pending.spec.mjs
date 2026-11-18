@@ -1,23 +1,29 @@
 import { expect, test } from '@playwright/test';
+import { openArea } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.8, E2E 34 do desenho: fechar a aba com resultado incerto, reabrir e confirmar sem duplicar.
 // A falha é simulada na rede do navegador: a resposta se perde (o servidor gravou) ou o pedido nem
-// chega (o servidor não gravou). Recarregar encerra a sessão (ela não é persistida), então a
+// chega (o servidor não gravou). Recarregar mantém a sessão (V2, D-025), mas descarta a tela: a
 // tentativa pendente só pode vir do localStorage.
 async function signIn(page, user) {
   await page.getByLabel('E-mail').fill(user.email);
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-    .click();
+  await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+}
+
+// V2 e V1: depois de recarregar a sessão continua e o endereço reabre a unidade; só falta ir à
+// lista de validade.
+async function reopen(page) {
+  await openArea(page, 'Validade');
 }
 
 async function prepare(page) {
+  await openArea(page, 'Cadastros');
   await page.getByLabel('Nome do produto').fill('Arroz de teste');
   await page.getByLabel('Unidade de medida').selectOption('kg');
   await page
@@ -27,6 +33,7 @@ async function prepare(page) {
   await expect(page.getByText('Arroz de teste — kg — Ambiente')).toBeVisible();
   await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
   await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
+  await openArea(page, 'Receber');
   await expect(
     page
       .getByRole('combobox', { name: 'Fornecedor', exact: true })
@@ -71,10 +78,10 @@ for (const [name, serverSaves, expected] of [
       await expect(page.getByRole('alert')).toContainText(
         'Não foi possível registrar o recebimento',
       );
-      // "Fecha a aba": recarregar descarta a sessão e a tela; fica só o localStorage.
+      // "Fecha a aba": recarregar descarta a tela; fica só o localStorage.
       await page.unroute('**/rest/v1/rpc/receive_batch');
       await page.reload();
-      await signIn(page, users[0]);
+      await reopen(page);
       const banner = page.getByRole('region', {
         name: 'Registros não confirmados',
       });
@@ -102,7 +109,7 @@ for (const [name, serverSaves, expected] of [
       await expect(banner).toHaveCount(0);
       // Recarregar de novo: nada pendente, nenhum registro a mais.
       await page.reload();
-      await signIn(page, users[0]);
+      await reopen(page);
       await expect(
         page.getByRole('region', { name: 'Registros não confirmados' }),
       ).toHaveCount(0);
@@ -129,7 +136,7 @@ test('descartar tentativa que o servidor não tem', async ({ page }) => {
     await expect(page.getByRole('alert')).toBeVisible();
     await page.unroute('**/rest/v1/rpc/receive_batch');
     await page.reload();
-    await signIn(page, users[0]);
+    await reopen(page);
     const banner = page.getByRole('region', {
       name: 'Registros não confirmados',
     });

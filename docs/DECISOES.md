@@ -166,7 +166,7 @@
 - **Consequência:** novo dado pessoal; entra no procedimento de anonimização (P8).
 - **Revisar quando:** houver convite de membros ou perfil editável.
 
-## D-025 — Sessão no dispositivo da cozinha (proposta)
+## D-025 — Sessão no dispositivo da cozinha (proposta; detalhada pela D-059)
 
 - **Status:** proposta, a detalhar na trilha pré-piloto (fatia 6.10); não incluída na aprovação de planejamento como regra fechada.
 - **Decisão:** sessão persistente no aparelho fixo da cozinha com expiração curta por inatividade e saída visível; login individual rápido para registrar autoria.
@@ -432,6 +432,89 @@
 - **Motivo:** resposta 5 de luis ao questionário (14/11/2026), D-036, D-055.
 - **Consequência:** o aviso de produção sem etiqueta (7.8) e a temperatura opcional (7.9) seguem como fatias próprias.
 - **Revisar quando:** a nutricionista RT avaliar os valores operacionais.
+
+## D-057 — Aviso de produção sem etiqueta (14/11/2026)
+
+- **Status:** aceita por luis em 14/11/2026, 21:20 UTC (3 pontos, com observação); implementada na fatia 7.8 ([registro](FASE_07_8.md)).
+- **Decisão:** o download da etiqueta do recipiente integral de uma produção é registrado em tabela append-only, sem criar estoque (D-003), por quem pode registrar produção (D-019 e fatia 7.6). A tela de Produção avisa "sem download de etiqueta registrado há X" nas produções não anuladas, sem download e acima do tempo máximo configurado na unidade (D-055). O banco não bloqueia nada, porque não sabe se a etiqueta foi impressa ou colada. **Observação de luis:** o aviso nunca afirma que a etiqueta não foi impressa ou colada, só que não há download registrado. Limitações aceitas provisoriamente para o piloto: download pela página do QR não registrado e aviso só na tela de Produção.
+- **Motivo:** desenho da Fase 7 e resposta de luis ao questionário (aviso de 1 h sem etiqueta).
+- **Consequência:** a temperatura opcional (7.9) segue como fatia própria.
+- **Revisar quando:** a nutricionista RT avaliar o tempo e a observação do piloto mostrar se o aviso ajuda.
+
+## D-058 — Temperatura opcional da produção (14/11/2026)
+
+- **Status:** aceita por luis em 14/11/2026, 21:42 UTC (3 pontos); implementada na fatia 7.9 ([registro](FASE_07_9.md)).
+- **Decisão:** a produção da cozinha pode ter temperaturas registradas (fim do resfriamento, reaquecimento), de forma opcional, em tabela append-only, por quem pode registrar produção (D-019 e fatia 7.6; o colaborador só da própria). O sistema não classifica, não usa faixa, não cria ocorrência, não bloqueia e não mexe no estoque (D-003, como a D-027).
+- **Motivo:** resposta 7 de luis ao questionário (temperatura não obrigatória, mas a função deve existir) e desenho da Fase 7.
+- **Consequência:** fecha as fatias 7.1 a 7.9 do desenho; o que sobrar fica em `FASE_07_DESENHO.md`, seção 8.
+- **Observação de luis:** a faixa de -50 a 80 °C é só validação de entrada; o sistema nunca a usa para afirmar conformidade, liberar produto ou definir condição de conservação. Medição incorreta fica no histórico e se registra outra; a invalidação com motivo obrigatório, sem alterar o registro original, está no `BACKLOG.md`.
+- **Revisar quando:** a nutricionista RT definir faixas e a observação do piloto mostrar se falta correção ou anulação de medição.
+
+## D-059 — Sessão persistente com inatividade de 30 minutos (16/11/2026)
+
+- **Status:** ACEITA por luis em 16/11/2026, condicionada à CI verde do PR #32 (confirmada) ([registro](V2_SESSAO.md)). Detalha a D-025. Riscos conhecidos e checklist pré-deploy em `V2_SESSAO.md`.
+- **Decisão:** a sessão fica guardada no navegador (recarregar e abrir o QR não pedem login) e expira com 30 minutos sem uso. O limite vale no banco: toda requisição de usuário passa por `session_guard.check_request`, e as políticas RLS e as funções de escrita só valem com sessão ativa. Sair apaga a sessão no servidor.
+- **Motivo:** B2 da revisão visual (sessão caía a cada recarga; cada leitura de etiqueta exigiria e-mail e senha) e D-025.
+- **Consequência:** nova migração (`20261116000000_session_inactivity.sql`) que muda `has_membership` e `member_organizations`; reversão em `supabase/rollback/session_inactivity.sql`. Aparelho compartilhado: cada pessoa usa a própria conta; não há PIN nem troca rápida.
+- **Revisar quando:** a observação do piloto mostrar se 30 minutos atrapalham a cozinha, ou houver MFA e autenticação hospedada.
+
+
+## D-060 — Navegação por áreas da unidade (16/11/2026)
+
+- **Status:** ACEITA por luis em 16/11/2026 (PR #33), com ressalva: a perda de rascunhos ao trocar de unidade, atualizar acesso ou recarregar é aceita provisoriamente ([registro](V1_NAVEGACAO.md)).
+- **Decisão:** a unidade aberta tem cinco áreas (Validade, Receber, Produção, Locais, Cadastros), abre em Validade, com menu lateral no desktop e barra inferior no celular. A área está no endereço (`?unidade=&area=`). O colaborador vê só as áreas do perfil, apenas na interface; as permissões do banco não mudam. As áreas inativas ficam montadas e ocultas para não perder dados digitados.
+- **Motivo:** B1 da revisão visual (sem navegação) e autorização de luis de 16/11/2026.
+- **Consequência:** botão "Catálogo de X" passa a "Abrir X"; ferramentas da organização vão para Cadastros; V3 a V5 seguem como fatias próprias.
+- **Revisar quando:** a observação do piloto mostrar se as áreas e o perfil do colaborador atendem a cozinha.
+
+## D-061 — Lista de validade em cartões e ficha aberta pela lista (16/11/2026)
+
+- **Status:** ACEITA por luis em 16/11/2026, 12:43 UTC, com os seis pontos do relatório ([registro](V3_LISTA_VALIDADE.md)). V3 funcionalmente aceita; encerramento técnico condicionado à CI verde.
+- **Decisão:** cada recipiente da lista de Validade é um cartão: produto e código curto em destaque, selo de vencimento com texto e símbolo além da cor ("Vencido há N dias", "Vence hoje", "Vence amanhã", "Vence em N dias", "Esgotado"), validade em dd/mm/aaaa, saldo, lote e local. O UUID sai da lista e fica só na ficha (a busca pelo identificador continua). "Ver ficha" abre a ficha do recipiente no lugar da lista, para qualquer perfil e também para derivados, sem gravar nada; "Voltar para a lista" devolve o foco ao cartão. Datas e horários em dd/mm/aaaa HH:mm no fuso da unidade; o fuso aparece com nome legível. O histórico mostra o nome de exibição de quem registrou, com os identificadores recolhidos em "Identificadores (suporte)".
+- **Motivo:** B3, B4, M3, M4 e M6 da revisão visual e autorização de luis de 16/11/2026.
+- **Consequência:** só interface. O status continua vindo de `getExpiryStatus` (mesma data da unidade do banco); "em N dias" é a diferença de dias de calendário, sem nova faixa nem prazo. Nenhuma migração, política RLS ou função muda. O botão "Abrir etiqueta" da lista passa a "Ver ficha" e deixa de chamar `ensure_container`.
+- **Revisar quando:** a observação do piloto mostrar se o cartão e o selo bastam na cozinha, ou se os contadores devem virar filtros (fora desta fatia).
+
+## D-062 — Acabamento visual: níveis de botão, textos recolhíveis e celular (16/11/2026)
+
+- **Status:** ACEITA por luis em 16/11/2026, 21:10 UTC, com CI verde (PR #37). Aprovada para implementação em 16/11/2026, 13:10 UTC, com dez definições ([proposta](V4_PROPOSTA.md), [relatório](V4_ACABAMENTO.md)). V4 tecnicamente encerrada; sem merge nem deploy.
+- **Decisão:** três níveis de botão (principal verde cheio; secundário em contorno para consulta, navegação, fechamento e cancelamento; risco em contorno vermelho, com confirmação em vermelho cheio). Ações de risco: anular registro, anular manipulação, anular produção, descartar alimento, rejeitar ocorrência, desativar local e descartar tentativa pendente. Rádio e caixa alinhados ao texto, com o rótulo inteiro como alvo de 44 px. "Mudar de local" fecha após o sucesso e a confirmação fica no cartão. Só orientação geral e repetitiva vai para "Saiba mais"; alertas de validade, bloqueio, vencimento, responsabilidade, permissão, limitação do saldo físico e informação para confirmar operação crítica ficam sempre visíveis; nenhum texto apagado. Unidade vazia mostra primeiros passos por perfil. Rótulos visíveis curtos com o nome completo no nome acessível. No celular, "Mais ações" no cartão (sem esconder alertas nem o caminho do descarte) e título geral fora da tela (continua para leitor de tela), com unidade, usuário e Sair visíveis.
+- **Motivo:** M1, M2, M10, M11, D1 e D3 da revisão visual e limitações registradas nas V1 e V3.
+- **Consequência:** só interface. Nenhuma migração, política RLS, função do banco, regra de validade, estoque, permissão ou auditoria muda. Um E2E da Fase 6.9 deixou de clicar em "Fechar" depois de mudar de local e passou a verificar que o formulário fechou e que a confirmação recebeu o foco.
+- **Diretriz do aceite:** **uma só ação principal por contexto, sempre que possível**. Ficam como principais os botões que iniciam a operação central da tela (como "Nova preparação", "Registrar decisão" e "Abrir / porcionar"); as ações destrutivas continuam diferenciadas pelo estilo de risco.
+- **Revisar quando:** a observação do piloto mostrar se o critério de risco e os textos recolhidos atendem a cozinha.
+
+## D-063 — Vírgula decimal nas quantidades, sem separador de milhar (16/11/2026)
+
+- **Status:** ACEITA por luis em 16/11/2026, 22:08 UTC, com CI verde (PR #38) ([relatório](V5_VIRGULA_DECIMAL.md)). Autorizada em 16/11/2026, 21:10 UTC, com sete requisitos. luis confirmou que `1.500`, `1.000,50` e `1,000.50` continuam recusados com mensagem explicativa, sem separador de milhar. A exibição com vírgula nas demais telas e a vírgula na temperatura do recebimento foram tratadas na fatia complementar V5B ([V5B_PROPOSTA.md](V5B_PROPOSTA.md), D-064).
+- **Decisão:** nas quantidades digitadas (recebimento, saída, abrir/porcionar, produção), vírgula e ponto são separadores decimais. No máximo um separador; não há separador de milhar (`1.000,50`, `1,000.50` e `1.000.000` são recusados). Vírgula é sempre decimal. Ponto seguido de exatamente três dígitos com parte inteira diferente de zero (`1.500`) é recusado como ambíguo; `0.250` e `1.25` são aceitos. A conversão mora só na tela (`src/shared/format/quantity.ts`), que entrega a forma com ponto aos esquemas de domínio e às funções do banco de sempre. Os textos de conferência da digitação mostram a quantidade com vírgula.
+- **Motivo:** M5 da revisão visual; a cozinha brasileira digita vírgula, e um erro de milhar no saldo é pior do que pedir para digitar de novo.
+- **Consequência:** muda o que a tela aceita: `1.500`, antes aceito como um e meio, passa a ser recusado com orientação. Nenhuma migração, política RLS, função do banco, esquema de domínio, saldo, movimentação, permissão ou auditoria muda. Listas, cartões, histórico, ficha e etiquetas continuavam mostrando o valor gravado com ponto; a D-064 muda isso.
+- **Revisar quando:** a observação do piloto mostrar recusas frequentes de `1.500` com intenção decimal, ou quando a exibição com vírgula em todas as telas for aprovada.
+
+## D-064 — Quantidades exibidas com vírgula e temperatura com vírgula ou ponto (16/11/2026)
+
+- **Status:** ACEITA por luis em 17/11/2026, 13:17 UTC, com a correção da redação sobre `toFixed(3)` (arredonda, não trunca) ([relatório](V5B_EXIBICAO_VIRGULA.md), [proposta](V5B_PROPOSTA.md)). Aprovada por luis em 16/11/2026, 22:40 UTC, com quatro decisões e requisitos adicionais.
+- **Decisão:** toda quantidade e todo saldo mostrados ao usuário (cartão da lista, movimentações e histórico, ficha e página do QR, abrir/porcionar, ocorrências, produções, texto das tentativas pendentes e etiquetas PDF) passam por uma só função, `formatQuantity` (`src/shared/format/quantity.ts`): vírgula decimal, **sem separador de milhar** (`1500 kg`) e **só as casas necessárias**, até três (`12,5 kg`, não `12,500 kg`). A função trabalha sobre o texto do número e não arredonda o que está guardado; só arredonda (`toFixed(3)`, arredondamento e não truncamento) resíduo de conta em ponto flutuante além da terceira casa, que o banco nunca guarda; todo valor válido guardado, de 1 a 3 casas, é preservado exatamente. A temperatura do recebimento e a da produção aceitam vírgula ou ponto pela mesma função, `toDotTemperature` (`src/shared/format/temperature.ts`), que só troca a vírgula decimal pelo ponto: faixa de -50 a 80 °C e uma casa decimal continuam as de sempre, sem limite sanitário novo. Etiquetas já impressas não são alteradas nem reimpressas; as novas saem no formato brasileiro. O QR continua levando só a URL e o ID do recipiente.
+- **Motivo:** completar a V5 (D-063): a cozinha digita vírgula e passa a ler vírgula em todo lugar, com uma única fonte de formatação para tela e papel não divergirem.
+- **Consequência:** só exibição e leitura da temperatura digitada. Nenhuma migração, política RLS, função do banco, esquema de domínio, saldo, movimentação, permissão ou auditoria muda; o que é enviado ao banco continua sendo a forma com ponto de sempre. 19 asserções de testes antigos tiveram só o texto esperado trocado de ponto para vírgula (nenhuma enfraquecida); uma varredura automática impede que um texto volte a mostrar quantidade crua.
+- **Revisar quando:** a observação do piloto mostrar dúvida com valores sem separador de milhar (por exemplo `1500 kg`), ou se uma exportação de dados for criada (ela deve decidir o formato próprio).
+
+## D-065 — Integração individual dos PRs e Fase 8 de preparação para produção (17/11/2026)
+
+- **Status:** ACEITA por luis em 17/11/2026, 13:59 UTC ([plano](PLANO_INTEGRACAO.md), [diagnóstico](REVISAO_TECNICA_INTEGRADA.md)).
+- **Decisão:** (1) os PRs #28, #22 a #27, #29 a #34, #36 a #39 e depois #40 e #41 entram na `main` **um a um, com merge commit** (sem squash nem rebase), com CI verde no SHA do PR e na `main` depois de cada merge: 19 merges. O #35 será fechado sem merge depois que o #34 estiver na `main`. (2) Nova **Fase 8 — Preparação para produção e piloto operacional** (fatias 8.0 a 8.8); o antigo F8 "futuro" passa a ser **Fase 9**. (3) A fatia 8.1 (estabilização da CI e do E2E) vem antes da integração; depois do aceite dela, o primeiro lote é só o #28. (4) Proposta de proteção da `main` autorizada, sem aplicar. (5) Decisões de produção do diagnóstico: MFA obrigatório para proprietários antes do piloto, nome de exibição até 80 caracteres preservando o histórico, reversões das 7 migrações sem reversão destrutiva com dados reais (recuperação por backup e restauração), Cloudflare Pages + Supabase (banco preferencialmente em São Paulo), homologação e produção totalmente separadas, backup diário como mínimo com teste de restauração documentado e retenção definida com orientação jurídica e sanitária, revisão independente de segurança antes do piloto.
+- **Motivo:** a `main` está 17 PRs atrás; integrar com verificação a cada passo reduz o risco, e a CI instável precisa ser entendida antes (10 falhas em 100 execuções recentes).
+- **Consequência:** nenhuma funcionalidade comercial nova; os demais achados da revisão ficam no backlog. Diretrizes permanentes: não enfraquecer, remover nem desabilitar teste para obter CI verde; sem novas tentativas indiscriminadas; sem mudar regra de negócio; preservar segurança, auditoria, estoque, validade e permissões; investigar causa desconhecida; sem segredo, credencial ou dado pessoal em log; sem push direto, force-push, squash ou rebase na `main` durante a integração; sem deploy, contratação ou publicação sem autorização específica.
+- **Revisar quando:** ao fim de cada parada do plano (etapas 10, 12 e 19) e antes de qualquer contratação.
+
+## D-066 — Estabilização da CI e do E2E (fatia 8.1) e proteção da `main` (17/11/2026)
+
+- **Status:** ACEITA por luis em 17/11/2026, 15:16 UTC ([relatório](FASE_08_1.md), [proposta de proteção](PROTECAO_MAIN_PROPOSTA.md)).
+- **Decisão:** a CI roda por `pull_request`, `push` só na `main` e execução manual; as portas 54320-54329 ficam fora da faixa efêmera; o banco local sobe por script que não imprime credenciais e faz no máximo uma nova tentativa, só para "address already in use", com aviso e diagnóstico; o teste E2E do título mede depois de a unidade reabrir; a `main` recebe o ruleset `main-protegida` (PR obrigatório, 0 aprovações, conversas resolvidas, só merge commit, checks `quality` e `banco-api-e2e`, sem force-push, exclusão ou bypass, atualização estrita desligada, sem auto-merge).
+- **Motivo:** 10 falhas em 100 execuções, todas com causa explicada (seis classes); a classe da porta em uso é causa provável, não provada.
+- **Consequência:** nenhum teste foi enfraquecido nem regra de negócio alterada. Qualquer recorrência de falha de infraestrutura deve ser registrada.
+- **Revisar quando:** a classe A (porta em uso) reaparecer, ou ao fim da integração (reavaliar atualização estrita e 1 aprovação).
 
 ## D-067 — Ambiente hospedado de testes com dados fictícios (18/11/2026)
 

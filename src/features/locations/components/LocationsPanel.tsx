@@ -102,12 +102,15 @@ export function LocationsPanel({
               {canManage && (
                 <>
                   {' '}
+                  {/* V4: desativar é de risco; o rótulo visível é curto e o nome acessível mantém o local (D3). */}
                   <button
                     type="button"
+                    className={location.active ? 'risk' : undefined}
+                    aria-label={`${location.active ? 'Desativar' : 'Reativar'} ${location.name}`}
                     disabled={busy}
                     onClick={() => void toggle(location)}
                   >
-                    {location.active ? 'Desativar' : 'Reativar'} {location.name}
+                    {location.active ? 'Desativar' : 'Reativar'}
                   </button>
                 </>
               )}

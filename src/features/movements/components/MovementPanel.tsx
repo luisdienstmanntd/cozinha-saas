@@ -15,6 +15,22 @@ import {
 import { EXPIRED_NOTE, EXPIRED_TEXT } from '../../batches/domain/expiryStatus';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import type { BlockStatus } from '../../occurrences/domain/occurrence';
+import { formatDateTime } from '../../../shared/format/dates';
+import { MoreInfo } from '../../../shared/ui/MoreInfo';
+import {
+  QUANTITY_HINT,
+  formatQuantity,
+  quantityProblemText,
+  toDotQuantity,
+} from '../../../shared/format/quantity';
+
+// V3 (M4): quem registrou aparece pelo nome de exibição da organização. Sem nome (pessoa sem nome
+// de exibição ou sem acesso atual), mostra um texto neutro; os identificadores ficam recolhidos.
+type MemberName = { user_id: string; display_name: string | null };
+function authorName(names: Map<string, string> | null, id: string): string {
+  if (!names) return 'pessoa da organização';
+  return names.get(id) ?? 'pessoa sem nome de exibição';
+}
 
 const savedSchema = z
   .object({
@@ -35,6 +51,7 @@ export function MovementPanel({
   onRecorded,
   blocked,
   expired,
+  loadMembers,
 }: {
   scope: CatalogScope;
   userId: string;
@@ -54,7 +71,34 @@ export function MovementPanel({
   // Fatia 6.11: validade do recipiente já passou na data da unidade. O banco recusa o consumo; o
   // formulário só oferece o descarte.
   expired?: boolean;
+  // V3: nomes de exibição; sem a função, o histórico não mostra nomes.
+  loadMembers?: (scope: CatalogScope) => Promise<MemberName[]>;
 }) {
+  const [names, setNames] = useState<Map<string, string> | null>(null);
+  useEffect(() => {
+    if (!loadMembers) return;
+    let current = true;
+    void loadMembers({
+      organizationId: scope.organizationId,
+      establishmentId: scope.establishmentId,
+    }).then(
+      (rows) => {
+        if (current)
+          setNames(
+            new Map(
+              rows
+                .filter((row) => row.display_name)
+                .map((row) => [row.user_id, row.display_name!]),
+            ),
+          );
+      },
+      // Nomes são informação extra: o histórico continua sem eles.
+      () => undefined,
+    );
+    return () => {
+      current = false;
+    };
+  }, [loadMembers, scope.organizationId, scope.establishmentId]);
   const key = `movement-intent:${userId}:${scope.organizationId}:${scope.establishmentId}:${batch.id}`;
   const [events, setEvents] = useState<Movement[] | null>(null);
   const [error, setError] = useState('');
@@ -200,9 +244,11 @@ export function MovementPanel({
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fields = new FormData(e.currentTarget);
-    const quantity = String(fields.get('quantity') ?? '');
+    const typed = String(fields.get('quantity') ?? '');
     const kind = String(fields.get('kind'));
     const reason = String(fields.get('reason') ?? '').trim();
+    // V5 (D-063): vírgula ou ponto decimal; a validação de antes vale sobre a forma com ponto.
+    const quantity = toDotQuantity(typed) ?? '';
     if (
       !/^(?:0|[1-9]\d{0,9})(?:\.\d{1,3})?$/.test(quantity) ||
       Number(quantity) <= 0 ||
@@ -212,7 +258,9 @@ export function MovementPanel({
       (kind === 'discard' && !reason) ||
       reason.length > 500
     ) {
-      setError('Confira tipo, quantidade e motivo.');
+      setError(
+        quantityProblemText(typed) ?? 'Confira tipo, quantidade e motivo.',
+      );
       return;
     }
     const input: MovementInput = {
@@ -280,7 +328,7 @@ export function MovementPanel({
       <h3>Movimentações</h3>
       <p>
         {batch.productName} — {lotText(batch.sourceCode)} — quantidade inicial{' '}
-        {batch.quantity} {batch.unit}
+        {formatQuantity(batch.quantity)} {batch.unit}
       </p>
       <p>O saldo registrado não comprova a quantidade física.</p>
       {blocked && (
@@ -297,10 +345,14 @@ export function MovementPanel({
         </p>
       )}
       {notice && <p role="status">{notice}</p>}
-      <p>
-        Confira a operação antes de confirmar. Se fechar a aba após uma falha,
-        confira o histórico antes de registrar novamente.
-      </p>
+      {/* V4 (M11): orientação geral recolhida. Saldo após a operação, avisos de anulação, bloqueio e
+          vencido continuam sempre visíveis. */}
+      <MoreInfo>
+        <p>
+          Confira a operação antes de confirmar. Se fechar a aba após uma falha,
+          confira o histórico antes de registrar novamente.
+        </p>
+      </MoreInfo>
       {error && <p role="alert">{error}</p>}
       {!events && !error && <p>Consultando histórico…</p>}
       {stored.invalid && (
@@ -310,14 +362,18 @@ export function MovementPanel({
         </p>
       )}
       {!events && error && !rejected && (
-        <button disabled={busy} onClick={() => void refreshHistory()}>
+        <button
+          className="secondary"
+          disabled={busy}
+          onClick={() => void refreshHistory()}
+        >
           Tentar consultar histórico novamente
         </button>
       )}
       {events && remaining !== null && (
         <>
           <p>
-            Saldo registrado: {remaining} {batch.unit}
+            Saldo registrado: {formatQuantity(remaining)} {batch.unit}
           </p>
           <ul>
             {events.map((item) => (
@@ -339,16 +395,24 @@ export function MovementPanel({
                               ? 'Descarte de sobra da manipulação'
                               : 'Descarte'
                             : 'Consumo'}{' '}
-                — {item.quantity} {batch.unit} — {item.reason ?? 'sem motivo'} —{' '}
-                {item.created_at} — fuso {item.timezone} — autor{' '}
-                {item.created_by} — ID {item.id}
-                {item.kind === 'reversal' && (
-                  <> — movimento original {item.reverses_id}</>
-                )}
+                — {formatQuantity(item.quantity)} {batch.unit} —{' '}
+                {item.reason ?? 'sem motivo'} —{' '}
+                {formatDateTime(item.created_at, item.timezone)} — por{' '}
+                {authorName(names, item.created_by)}
                 {item.kind !== 'reversal' &&
                   events.some((event) => event.reverses_id === item.id) && (
                     <> — anulado</>
                   )}
+                <details className="support-ids">
+                  <summary>Identificadores (suporte)</summary>
+                  <p>
+                    Registro {item.id} — autor {item.created_by} — fuso{' '}
+                    {item.timezone} — instante {item.created_at}
+                    {item.kind === 'reversal' && (
+                      <> — movimento original {item.reverses_id}</>
+                    )}
+                  </p>
+                </details>
                 {canCreate &&
                   !stored.invalid &&
                   !pending &&
@@ -360,6 +424,7 @@ export function MovementPanel({
                   !item.handlingId &&
                   !events.some((event) => event.reverses_id === item.id) && (
                     <button
+                      className="risk"
                       disabled={busy}
                       type="button"
                       onClick={() => setReversing(item)}
@@ -381,7 +446,7 @@ export function MovementPanel({
               : pending.kind === 'discard'
                 ? 'descarte'
                 : 'consumo'}{' '}
-            de {pending.quantity} {batch.unit}.
+            de {formatQuantity(pending.quantity)} {batch.unit}.
           </p>
           {pending.reason && <p>Motivo: {pending.reason}</p>}
           {pending.kind === 'reversal' &&
@@ -390,8 +455,9 @@ export function MovementPanel({
               <p>
                 Registro original:{' '}
                 {original.kind === 'discard' ? 'Descarte' : 'Consumo'} —{' '}
-                {original.created_at} — motivo {original.reason ?? 'sem motivo'}{' '}
-                — ID {original.id}
+                {formatDateTime(original.created_at, original.timezone)} —
+                motivo {original.reason ?? 'sem motivo'} — por{' '}
+                {authorName(names, original.created_by)} — ID {original.id}
               </p>
             ) : (
               <p>
@@ -400,7 +466,11 @@ export function MovementPanel({
               </p>
             ))}
           {pending.kind === 'reversal' && events && !original && !rejected && (
-            <button disabled={busy} onClick={() => void refreshHistory()}>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => void refreshHistory()}
+            >
               Atualizar histórico
             </button>
           )}
@@ -413,15 +483,21 @@ export function MovementPanel({
           {reviewing && remaining !== null && (
             <p>
               Saldo após a operação, se confirmada:{' '}
-              {(Math.round(remaining * 1000) -
-                (pending.kind === 'reversal' ? -1 : 1) *
-                  Math.round(Number(pending.quantity) * 1000)) /
-                1000}{' '}
+              {formatQuantity(
+                (Math.round(remaining * 1000) -
+                  (pending.kind === 'reversal' ? -1 : 1) *
+                    Math.round(Number(pending.quantity) * 1000)) /
+                  1000,
+              )}{' '}
               {batch.unit}. O servidor confirmará o saldo atual.
             </p>
           )}
           {canCreate && !confirmed && !rejected && (
             <button
+              // V4 (M1): anular registro e descartar alimento são de risco (vermelho cheio).
+              className={
+                pending.kind === 'consumption' ? undefined : 'risk-confirm'
+              }
               disabled={
                 busy || !events || (pending.kind === 'reversal' && !original)
               }
@@ -438,13 +514,21 @@ export function MovementPanel({
             </button>
           )}
           {reviewing && (
-            <button disabled={busy} onClick={clearPending}>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={clearPending}
+            >
               Corrigir antes de enviar
             </button>
           )}
           {rejected && (
             <>
-              <button disabled={busy} onClick={() => void refreshHistory()}>
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() => void refreshHistory()}
+              >
                 Atualizar histórico
               </button>
               {reviewedHistory && (
@@ -455,7 +539,11 @@ export function MovementPanel({
             </>
           )}
           {confirmed && (
-            <button disabled={busy} onClick={clearPending}>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={clearPending}
+            >
               Limpar tentativa confirmada
             </button>
           )}
@@ -464,13 +552,17 @@ export function MovementPanel({
         <form onSubmit={reviewReversal}>
           <p>
             Anular {reversing.kind === 'discard' ? 'descarte' : 'consumo'} de{' '}
-            {reversing.quantity} {batch.unit}.
+            {formatQuantity(reversing.quantity)} {batch.unit}.
           </p>
           <label>
             Motivo da anulação <input name="reason" required maxLength={500} />
           </label>
-          <button>Revisar anulação</button>
-          <button type="button" onClick={() => setReversing(null)}>
+          <button className="risk">Revisar anulação</button>
+          <button
+            className="secondary"
+            type="button"
+            onClick={() => setReversing(null)}
+          >
             Voltar
           </button>
         </form>
@@ -494,7 +586,7 @@ export function MovementPanel({
               Motivo (obrigatório para descarte){' '}
               <input aria-label="Motivo" name="reason" maxLength={500} />
             </label>
-            <p>Use ponto para decimais, por exemplo 0.5.</p>
+            <p>{QUANTITY_HINT}</p>
             <button disabled={busy}>Registrar saída</button>
           </form>
         )

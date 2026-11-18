@@ -10,7 +10,7 @@ import { CONTAINER_PAGE_SIZE } from '../domain/container';
 // supabase/tests/list_containers.test.sql e tests/integration/list-containers.test.mjs.
 const batches = () => ({ list: vi.fn(), receive: vi.fn() });
 
-it('oculta etiqueta aberta quando atualizar recebimentos perde autorização', async () => {
+it('oculta a ficha aberta quando a releitura dos recebimentos perde autorização', async () => {
   const id = '12345678-1234-4234-8234-123456789abc';
   const row = containerRow({ container_id: id, product_name: 'Arroz' });
   const data = {
@@ -28,7 +28,11 @@ it('oculta etiqueta aberta quando atualizar recebimentos perde autorização', a
   };
   const containers = fakeContainers([row]);
   const user = userEvent.setup();
-  render(
+  const labels = {
+    ensure: vi.fn().mockResolvedValue(id),
+    get: vi.fn().mockResolvedValue(data),
+  };
+  const panel = (reloadToken: number) => (
     <BatchPanel
       scope={{ organizationId: 'org', establishmentId: 'unit' }}
       timezone="UTC"
@@ -41,22 +45,21 @@ it('oculta etiqueta aberta quando atualizar recebimentos perde autorização', a
       }}
       batches={batches()}
       containers={containers}
-      labels={{
-        ensure: vi.fn().mockResolvedValue(id),
-        get: vi.fn().mockResolvedValue(data),
-      }}
-    />,
+      labels={labels}
+      reloadToken={reloadToken}
+    />
   );
-  await user.click(
-    await screen.findByRole('button', { name: 'Abrir etiqueta' }),
-  );
+  const { rerender } = render(panel(0));
+  await user.click(await screen.findByRole('button', { name: 'Ver ficha' }));
   expect(
     await screen.findByRole('region', { name: 'Recipiente' }),
   ).toBeVisible();
+  // V3: a ficha abre direto pelo recipiente da lista, sem gravar nada (ensure não é chamado).
+  expect(labels.get).toHaveBeenCalledWith(id);
+  expect(labels.ensure).not.toHaveBeenCalled();
   containers.list.mockRejectedValueOnce(new Error('sem acesso'));
-  await user.click(
-    await screen.findByRole('button', { name: 'Atualizar recebimentos' }),
-  );
+  // Releitura disparada de fora (tentativa pendente resolvida, produção registrada).
+  rerender(panel(1));
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Não foi possível carregar todos',
   );
@@ -140,7 +143,7 @@ it('carrega a página seguinte a pedido, sem teto no navegador', async () => {
   ).not.toBeInTheDocument();
   const shown = within(list)
     .getAllByRole('listitem')
-    .map((item) => /recipiente (\S+)/.exec(item.textContent ?? '')?.[1]);
+    .map((item) => item.getAttribute('aria-labelledby'));
   expect(new Set(shown).size).toBe(CONTAINER_PAGE_SIZE + 5);
 });
 
@@ -192,13 +195,15 @@ it('atualiza a classificação na virada do dia da cozinha sem interação', asy
         />,
       );
     });
-    expect(screen.getByText(/Vence hoje: 1/)).toBeVisible();
-    expect(screen.getByText(/— Vence hoje —/)).toBeVisible();
+    const summary = screen.getByRole('group', { name: 'Resumo de validade' });
+    expect(summary).toHaveTextContent('Vencidos: 0 Vence hoje: 1');
+    expect(screen.getByText('Vence hoje')).toBeVisible();
     await act(async () => {
       vi.advanceTimersByTime(60000);
     });
-    expect(screen.getByText(/Vencidos: 1/)).toBeVisible();
-    expect(screen.getByText(/— Vencido —/)).toBeVisible();
+    expect(summary).toHaveTextContent('Vencidos: 1 Vence hoje: 0');
+    expect(screen.getByText('Vencido há 1 dia')).toBeVisible();
+    expect(screen.queryByText('Vence hoje')).not.toBeInTheDocument();
     expect(containers.summary).toHaveBeenLastCalledWith(
       { organizationId: 'org', establishmentId: 'unit' },
       '2026-01-01',
@@ -233,7 +238,9 @@ it('busca no servidor pelo nome do produto associado mesmo fora da lista de cat�
   await vi.waitFor(() =>
     expect(screen.getAllByRole('listitem')).toHaveLength(1),
   );
-  expect(screen.getByText(/Produto distante — C-\d+ — lote L1/)).toBeVisible();
+  const card = screen.getByRole('listitem', { name: /Produto distante C-\d+/ });
+  expect(card).toBeVisible();
+  expect(card).toHaveTextContent('· lote L1');
   expect(containers.list).toHaveBeenLastCalledWith(
     { organizationId: 'org', establishmentId: 'unit' },
     { includeDepleted: false, search: 'distante', after: null },
@@ -303,17 +310,13 @@ it('mostra o resumo de validade e busca produto, lote e recipiente', async () =>
   const dashboard = await screen.findByRole('region', {
     name: 'Painel de validade',
   });
-  expect(
-    await within(dashboard).findByText((text) =>
-      text.includes('Vence hoje: 1'),
-    ),
-  ).toBeVisible();
-  expect(
-    within(dashboard).getByText((text) => text.includes('Vence amanhã: 1')),
-  ).toBeVisible();
-  expect(
-    within(dashboard).getByText((text) => text.includes('Vencidos: 1')),
-  ).toBeVisible();
+  const summary = within(dashboard).getByRole('group', {
+    name: 'Resumo de validade',
+  });
+  expect(summary).toBeVisible();
+  expect(summary).toHaveTextContent(
+    'Vencidos: 1 Vence hoje: 1 Vence amanhã: 1 Posteriores: 0',
+  );
   const search = screen.getByRole('searchbox', {
     name: 'Buscar por produto, lote, código ou ID do recipiente',
   });
@@ -330,9 +333,12 @@ it('mostra o resumo de validade e busca produto, lote e recipiente', async () =>
   await vi.waitFor(() =>
     expect(screen.getAllByRole('listitem')).toHaveLength(1),
   );
+  // V3: a busca pelo identificador continua no servidor, mas o UUID não aparece no cartão.
   expect(
-    within(screen.getByRole('list')).getByText(/recipiente 30000000/),
+    await screen.findByRole('listitem', { name: /^Arroz C-\d+/ }),
   ).toBeVisible();
+  expect(screen.getAllByRole('listitem')).toHaveLength(1);
+  expect(screen.queryByText(/30000000-0000/)).not.toBeInTheDocument();
 });
 
 it('ordena por validade, mostra saldo em vez da quantidade recebida e esconde esgotados', async () => {
@@ -386,24 +392,22 @@ it('ordena por validade, mostra saldo em vez da quantidade recebida e esconde es
   const names = () =>
     within(list())
       .getAllByRole('listitem')
-      .map((item) => item.textContent?.split(' — ')[0]);
+      .map((item) => item.querySelector('.card-product')?.textContent);
   expect(names()).toEqual(['Frango', 'Queijo', 'Leite']);
-  expect(within(list()).getByText(/Queijo/)).toHaveTextContent(
-    'saldo 1.5 kg de 2.5 kg',
-  );
-  expect(within(list()).getByText(/Leite/)).toHaveTextContent(
-    'saldo 8 un de 12 un',
-  );
-  expect(screen.getByText(/Vencidos: 1 · Vence hoje: 0/)).toBeVisible();
+  const card = (name: string) =>
+    within(list()).getByRole('listitem', { name: new RegExp(`^${name} `) });
+  expect(card('Queijo')).toHaveTextContent('Saldo 1,5 kg de 2,5 kg');
+  expect(card('Leite')).toHaveTextContent('Saldo 8 un de 12 un');
+  const summary = () =>
+    screen.getByRole('group', { name: 'Resumo de validade' });
+  expect(summary()).toHaveTextContent('Vencidos: 1 Vence hoje: 0');
   await user.click(screen.getByRole('checkbox', { name: 'Mostrar esgotados' }));
   await vi.waitFor(() =>
     expect(names()).toEqual(['Frango', 'Creme', 'Queijo', 'Leite']),
   );
-  expect(within(list()).getByText(/Creme/)).toHaveTextContent(
-    'saldo 0 un de 6 un',
-  );
-  expect(within(list()).getByText(/Creme/)).toHaveTextContent('Esgotado');
-  expect(screen.getByText(/Vencidos: 1 · Vence hoje: 0/)).toBeVisible();
+  expect(card('Creme')).toHaveTextContent('Saldo 0 un de 6 un');
+  expect(card('Creme')).toHaveTextContent('Esgotado');
+  expect(summary()).toHaveTextContent('Vencidos: 1 Vence hoje: 0');
 });
 
 it('linha vencida com saldo mostra a faixa e não oferece manipular nem consumir (fatia 6.11)', async () => {
@@ -463,7 +467,7 @@ it('linha vencida com saldo mostra a faixa e não oferece manipular nem consumir
       within(expiredRow).queryByRole('button', { name: 'Abrir / porcionar' }),
     ).not.toBeInTheDocument();
     expect(
-      within(expiredRow).getByText(/manipulação indisponível: validade passou/),
+      within(expiredRow).getByText(/Manipulação indisponível: validade passou/),
     ).toBeVisible();
     expect(within(todayRow).queryByText(/VENCIDO/)).not.toBeInTheDocument();
     expect(

@@ -23,6 +23,12 @@ import {
   zonedToInstant,
 } from '../domain/handling';
 import { VoidHandling } from './VoidHandling';
+import {
+  QUANTITY_HINT,
+  toDotQuantity,
+  formatQuantity,
+  quantityProblemText,
+} from '../../../shared/format/quantity';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { DownloadLabels } from '../../labels/components/DownloadLabels';
 
@@ -157,7 +163,7 @@ export function HandlingForm({
           <strong>{BLOCK_TEXT[context.block]}</strong>: este recipiente não pode
           ser manipulado. Só o descarte é permitido.
         </p>
-        <button type="button" onClick={onClose}>
+        <button className="secondary" type="button" onClick={onClose}>
           Fechar
         </button>
       </section>
@@ -169,14 +175,16 @@ export function HandlingForm({
           {title} {context.short_code}
         </h4>
         <p role="status">Recipiente sem saldo registrado.</p>
-        <button type="button" onClick={onClose}>
+        <button className="secondary" type="button" onClick={onClose}>
           Fechar
         </button>
       </section>
     );
 
-  const portionQuantities =
+  // V5 (D-063): o que foi digitado (vírgula ou ponto) vira a forma com ponto antes das contas e do envio.
+  const typedQuantities =
     kind === 'opening' ? quantities.slice(0, 1) : quantities.slice(0, count);
+  const portionQuantities = typedQuantities.map((q) => toDotQuantity(q) ?? '');
   const { sumMilli, restMilli } = totals(portionQuantities, context.balance);
   const allValid = portionQuantities.every(isQuantity);
   const exceeds = restMilli < 0;
@@ -268,7 +276,8 @@ export function HandlingForm({
     setError('');
     if (!allValid || portionQuantities.length === 0)
       return setError(
-        `Informe a quantidade de cada porção em ${unit}, com ponto para decimais, por exemplo 0.5.`,
+        typedQuantities.map(quantityProblemText).find(Boolean) ??
+          `Informe a quantidade de cada porção em ${unit}, com vírgula ou ponto para decimais, por exemplo 0,5.`,
       );
     if (wholeUnits && portionQuantities.some((q) => q.includes('.')))
       return setError('Este produto é medido em unidades inteiras.');
@@ -373,11 +382,12 @@ export function HandlingForm({
               {child.position && info.kind === 'portioning'
                 ? ` — porção ${child.position}`
                 : ''}{' '}
-              — {voided ? 0 : child.initial_quantity} {unit}
+              — {formatQuantity(voided ? 0 : child.initial_quantity)} {unit}
               {onOpenContainer && (
                 <>
                   {' '}
                   <button
+                    className="secondary"
                     type="button"
                     onClick={() => onOpenContainer(child.id)}
                   >
@@ -401,13 +411,14 @@ export function HandlingForm({
         </ul>
         {info.remainder === 'sealed' && (
           <p>
-            Sobra de {info.remainder_quantity} {unit} segue fechada na embalagem
-            original ({context.short_code}).
+            Sobra de {formatQuantity(info.remainder_quantity)} {unit} segue
+            fechada na embalagem original ({context.short_code}).
           </p>
         )}
         {info.remainder === 'discarded' && (
           <p>
-            Sobra de {info.remainder_quantity} {unit} descartada.
+            Sobra de {formatQuantity(info.remainder_quantity)} {unit}{' '}
+            descartada.
           </p>
         )}
         {labels && !voided && (
@@ -431,7 +442,7 @@ export function HandlingForm({
             }}
           />
         )}{' '}
-        <button type="button" onClick={onClose}>
+        <button className="secondary" type="button" onClick={onClose}>
           Fechar
         </button>
       </section>
@@ -449,14 +460,16 @@ export function HandlingForm({
           </li>
           <li>
             {kind === 'opening' ? 'Abrir embalagem' : 'Dividir em porções'}:{' '}
-            {portionQuantities.map((q) => `${q} ${unit}`).join(' + ')} (total{' '}
-            {fromMilli(sumMilli)} {unit})
+            {portionQuantities
+              .map((q) => `${formatQuantity(q)} ${unit}`)
+              .join(' + ')}{' '}
+            (total {formatQuantity(fromMilli(sumMilli))} {unit})
           </li>
           <li>
             Sobra:{' '}
             {restMilli === 0
               ? 'nenhuma'
-              : `${fromMilli(restMilli)} ${unit} — ${
+              : `${formatQuantity(fromMilli(restMilli))} ${unit} — ${
                   effectiveRemainder() === 'sealed'
                     ? 'continua fechada na embalagem original'
                     : effectiveRemainder() === 'portion'
@@ -488,7 +501,12 @@ export function HandlingForm({
         <button type="button" disabled={busy} onClick={() => void confirm()}>
           Confirmar registro
         </button>{' '}
-        <button type="button" disabled={busy} onClick={() => setStage('form')}>
+        <button
+          className="secondary"
+          type="button"
+          disabled={busy}
+          onClick={() => setStage('form')}
+        >
           Voltar e corrigir
         </button>
       </section>
@@ -500,8 +518,9 @@ export function HandlingForm({
         {title} {context.short_code} — {context.product_name}
       </h4>
       <p>
-        {lotText(context.source_code, true)} — saldo {context.balance} {unit} —
-        validade {formatDate(context.expiry_date)} —{' '}
+        {lotText(context.source_code, true)} — saldo{' '}
+        {formatQuantity(context.balance)} {unit} — validade{' '}
+        {formatDate(context.expiry_date)} —{' '}
         {context.storage
           ? storageLabels[context.storage]
           : 'conservação não registrada'}{' '}
@@ -551,10 +570,13 @@ export function HandlingForm({
                 />
               </label>{' '}
               <button
+                className="secondary"
                 type="button"
                 onClick={() =>
                   setQuantities(
-                    splitEqually(context.balance, count, wholeUnits),
+                    splitEqually(context.balance, count, wholeUnits).map(
+                      formatQuantity,
+                    ),
                   )
                 }
               >
@@ -562,7 +584,7 @@ export function HandlingForm({
               </button>
             </p>
           )}
-          {portionQuantities.map((value, index) => (
+          {typedQuantities.map((value, index) => (
             <p key={index}>
               <label>
                 {kind === 'opening'
@@ -577,18 +599,18 @@ export function HandlingForm({
             </p>
           ))}
           <p>
-            Use ponto para decimais, por exemplo 0.5. Soma:{' '}
-            {fromMilli(sumMilli)} {unit} de {context.balance} {unit}
+            {QUANTITY_HINT} Soma: {formatQuantity(fromMilli(sumMilli))} {unit}{' '}
+            de {formatQuantity(context.balance)} {unit}
             {allValid &&
               (exceeds
                 ? ' — excede o saldo registrado.'
-                : ` — sobra: ${fromMilli(restMilli) || '0'} ${unit}.`)}
+                : ` — sobra: ${formatQuantity(fromMilli(restMilli) || '0')} ${unit}.`)}
           </p>
         </fieldset>
         {hasRest && (
           <fieldset disabled={busy}>
             <legend>
-              Sobra de {fromMilli(restMilli)} {unit}
+              Sobra de {formatQuantity(fromMilli(restMilli))} {unit}
             </legend>
             {integral && (
               <>
@@ -844,7 +866,12 @@ export function HandlingForm({
         <button type="submit" disabled={busy || conflict}>
           Revisar registro
         </button>{' '}
-        <button type="button" disabled={busy} onClick={onClose}>
+        <button
+          className="secondary"
+          type="button"
+          disabled={busy}
+          onClick={onClose}
+        >
           Cancelar
         </button>
       </form>

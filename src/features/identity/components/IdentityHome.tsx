@@ -3,6 +3,12 @@ import type { FormEvent, ReactNode } from 'react';
 import type { IdentityGateway } from '../application/identityGateway';
 import type { Access } from '../domain/identity';
 import { credentials, organizationName } from '../domain/identity';
+import type { SignOutReason } from '../application/identityGateway';
+import type { ActivityStore } from '../application/sessionActivity';
+import { defaultActivityStore } from '../application/sessionActivity';
+import { useSessionGuard } from '../application/useSessionGuard';
+import { parsePlace, placeSearch } from '../../navigation/domain/areas';
+import { EXPIRED_MESSAGE, SIGNED_OUT_MESSAGE, isIdle } from '../domain/session';
 
 type Organization = Access[number];
 type OrganizationChanged = (
@@ -15,6 +21,14 @@ type RenderOrganizationTools = (
   onChanged: OrganizationChanged,
   busy: boolean,
 ) => ReactNode;
+
+/** V1: o que a área da unidade precisa saber além do escopo. */
+export type UnitContext = {
+  unitName: string;
+  organizationName: string;
+  /** Ferramentas da organização (unidades e nome), mostradas em Cadastros. */
+  organizationTools: ReactNode;
+};
 
 // The callback is passed as a prop so it is only ever invoked from the tools'
 // event handlers, never while IdentityHome renders.
@@ -34,14 +48,47 @@ function OrganizationToolsSlot({
   return render(organization, owner, onChanged, busy);
 }
 
+function OrganizationForm({
+  organization,
+  busy,
+  onRename,
+}: {
+  organization: Organization;
+  busy: boolean;
+  onRename: (organization: Organization, value: unknown) => void;
+}) {
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onRename(organization, new FormData(event.currentTarget).get('name'));
+      }}
+    >
+      <label>
+        Nome da organização{' '}
+        <input
+          name="name"
+          defaultValue={organization.name}
+          maxLength={120}
+          required
+        />
+      </label>{' '}
+      <button disabled={busy}>Salvar nome</button>
+    </form>
+  );
+}
+
 export function IdentityHome({
   gateway,
   renderCatalog,
   renderDestination,
   renderOrganizationTools,
+  activity,
   environmentNotice,
 }: {
   gateway: IdentityGateway;
+  /** V2: última atividade no navegador; os testes passam uma em memória. */
+  activity?: ActivityStore;
   // Texto do ambiente (hospedado); sem ele vale o texto do ambiente local de demonstração.
   environmentNotice?: string;
   renderCatalog?: (
@@ -50,6 +97,7 @@ export function IdentityHome({
     canCreate: boolean,
     userId: string,
     timezone: string,
+    unit: UnitContext,
   ) => ReactNode;
   renderDestination?: (userId: string, access: Access) => ReactNode;
   renderOrganizationTools?: RenderOrganizationTools;
@@ -63,24 +111,147 @@ export function IdentityHome({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [catalogUnit, setCatalogUnit] = useState<string | null>(null);
+  // V1: a unidade aberta vem do endereço (?unidade=…), então recarregar e links diretos a mantêm.
+  const [catalogUnit, setCatalogUnit] = useState<string | null>(
+    () => parsePlace(window.location.search).unit,
+  );
   const generation = useRef(0);
+  const [store] = useState(() => activity ?? defaultActivityStore());
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  // Enquanto confere a sessão guardada, não mostra o formulário de entrada.
+  const [restoring, setRestoring] = useState(() => !!gateway.currentUser);
+
+  // Troca de usuário no mesmo aparelho: tudo o que era da pessoa anterior sai da tela.
+  function clearSession(message: string) {
+    generation.current++;
+    store.clear();
+    setUserId(null);
+    setSessionEmail(null);
+    setAccess([]);
+    setSkipped(0);
+    setCatalogUnit(null);
+    // O endereço não guarda a unidade da pessoa que saiu.
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}${placeSearch(window.location.search, null, null)}`,
+    );
+    setPassword('');
+    setBusy(false);
+    setRestoring(false);
+    setNotice('');
+    setError(message);
+  }
+  const clearRef = useRef(clearSession);
+  useEffect(() => {
+    clearRef.current = clearSession;
+  });
 
   useEffect(
     () =>
-      gateway.onSignOut(() => {
-        generation.current++;
-        setUserId(null);
-        setAccess([]);
-        setSkipped(0);
-        setCatalogUnit(null);
-        setPassword('');
-        setBusy(false);
-        setNotice('');
-        setError('Sessão encerrada. Entre novamente.');
-      }),
+      gateway.onSignOut((reason: SignOutReason = 'signed_out') =>
+        clearRef.current(
+          reason === 'expired' ? EXPIRED_MESSAGE : SIGNED_OUT_MESSAGE,
+        ),
+      ),
     [gateway],
   );
+
+  useEffect(() => {
+    function follow() {
+      setCatalogUnit(parsePlace(window.location.search).unit);
+    }
+    window.addEventListener('popstate', follow);
+    return () => window.removeEventListener('popstate', follow);
+  }, []);
+  function openUnit(id: string) {
+    window.history.pushState(
+      null,
+      '',
+      `${window.location.pathname}${placeSearch(window.location.search, id, 'validade')}`,
+    );
+    setCatalogUnit(id);
+  }
+  function closeUnit() {
+    window.history.pushState(
+      null,
+      '',
+      `${window.location.pathname}${placeSearch(window.location.search, null, null)}`,
+    );
+    setCatalogUnit(null);
+  }
+
+  async function expireSession() {
+    clearSession(EXPIRED_MESSAGE);
+    try {
+      await (gateway.expire ? gateway.expire() : gateway.signOut());
+    } catch (cause) {
+      setError(
+        `${EXPIRED_MESSAGE} ${cause instanceof Error ? cause.message : ''}`.trim(),
+      );
+    }
+  }
+  const expireRef = useRef(expireSession);
+  useEffect(() => {
+    expireRef.current = expireSession;
+  });
+
+  useSessionGuard({
+    active: userId !== null,
+    store,
+    ...(gateway.touch ? { touch: () => gateway.touch!() } : {}),
+    expire: () => void expireRef.current(),
+  });
+
+  // V2: recarregar a página ou abrir o QR reaproveita a sessão guardada, se ainda valer.
+  useEffect(() => {
+    if (!gateway.currentUser) return;
+    const current = ++generation.current;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const user = await gateway.currentUser!();
+        if (cancelled || current !== generation.current) return;
+        if (!user) {
+          setRestoring(false);
+          return;
+        }
+        if (isIdle(store.read(), Date.now())) {
+          await expireRef.current();
+          return;
+        }
+        const state = gateway.touch ? await gateway.touch() : 'ok';
+        if (cancelled || current !== generation.current) return;
+        if (state === 'expired') {
+          await expireRef.current();
+          return;
+        }
+        store.write(Date.now());
+        setUserId(user.id);
+        setSessionEmail(user.email);
+        setRestoring(false);
+        setBusy(true);
+        try {
+          await refresh(current);
+        } finally {
+          if (current === generation.current) setBusy(false);
+        }
+      } catch (cause) {
+        if (cancelled || current !== generation.current) return;
+        setRestoring(false);
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : 'Não foi possível confirmar a sessão. Tente novamente.',
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Só ao abrir a tela.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gateway]);
 
   async function run(action: () => Promise<void>) {
     const current = ++generation.current;
@@ -147,19 +318,70 @@ export function IdentityHome({
       const current = generation.current;
       const id = await gateway.signIn(input.data.email, input.data.password);
       if (current !== generation.current) return;
+      store.write(Date.now());
       setUserId(id);
+      setSessionEmail(input.data.email);
       setPassword('');
       await refresh(current);
     });
   }
 
+  function renameOrganization(organization: Organization, value: unknown) {
+    const parsed = organizationName.safeParse(value);
+    if (!parsed.success) {
+      // Local validation never reached the server: keep access visible.
+      setNotice('');
+      setError('Informe nome entre 1 e 120 caracteres.');
+      return;
+    }
+    void run(async () => {
+      const current = generation.current;
+      await gateway.rename(organization.id, parsed.data);
+      await refresh(current);
+      if (current === generation.current) setNotice('Nome atualizado.');
+    });
+  }
+  const environmentNote = (
+    <p className="environment-note">
+      {environmentNotice ??
+        'Ambiente local de demonstração, com dados descartáveis. Contas e vínculos são preparados pelo responsável pelos testes.'}
+    </p>
+  );
+  const refreshButton = (
+    <button
+      type="button"
+      className="secondary"
+      disabled={busy}
+      onClick={() => void run(() => refresh(generation.current))}
+    >
+      Atualizar acesso
+    </button>
+  );
+  // V1: unidade aberta (se o usuário tem acesso a ela).
+  const openTarget =
+    userId && catalogUnit
+      ? access.flatMap((organization) =>
+          organization.establishments
+            .filter((unit) => unit.id === catalogUnit)
+            .map((unit) => ({
+              organization,
+              unit,
+              owner: organization.memberships.some(
+                (m) => m.user_id === userId && m.role === 'owner',
+              ),
+            })),
+        )[0]
+      : undefined;
+
   return (
-    <main className="workspace">
+    <main className={openTarget ? 'workspace unit-open' : 'workspace'}>
+      {openTarget && (
+        <a className="skip-link" href="#conteudo-unidade">
+          Pular para o conteúdo
+        </a>
+      )}
       <h1>Cozinha SaaS — unidades, recebimentos e validade</h1>
-      <p>
-        {environmentNotice ??
-          'Ambiente local de demonstração, com dados descartáveis. Contas e vínculos são preparados pelo responsável pelos testes.'}
-      </p>
+      {!openTarget && environmentNote}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {skipped > 0 && (
@@ -169,7 +391,56 @@ export function IdentityHome({
           normalmente; atualize o acesso ou avise o responsável.
         </p>
       )}
-      {!userId ? (
+      {userId && (
+        <section aria-label="Sessão" className="session-bar">
+          <p className="session-who">
+            {openTarget ? (
+              <>
+                Unidade: <strong>{openTarget.unit.name}</strong>.{' '}
+              </>
+            ) : null}
+            {sessionEmail ? (
+              <>
+                Conectado como <strong>{sessionEmail}</strong>.
+              </>
+            ) : null}
+          </p>
+          <button
+            className="secondary"
+            type="button"
+            onClick={() =>
+              void (async () => {
+                clearSession('');
+                try {
+                  await gateway.signOut();
+                  // O aviso de "sessão encerrada" do evento não vale para quem tocou em Sair.
+                  setError('');
+                  setNotice('Você saiu da conta.');
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : 'Não foi possível encerrar a sessão no servidor.',
+                  );
+                }
+              })()
+            }
+          >
+            Sair
+          </button>
+          <details className="session-note">
+            <summary>Sobre a sessão e o ambiente</summary>
+            <p>
+              Sem uso por 30 minutos, a sessão é encerrada. Aparelho
+              compartilhado: cada pessoa entra com a própria conta.
+            </p>
+            {openTarget && environmentNote}
+          </details>
+        </section>
+      )}
+      {restoring && !userId ? (
+        <p role="status">Conferindo a sessão…</p>
+      ) : !userId ? (
         <form onSubmit={signIn}>
           <p>
             <label>
@@ -200,123 +471,115 @@ export function IdentityHome({
       ) : (
         <>
           {!busy && access.length > 0 && renderDestination?.(userId, access)}
-          <button
-            disabled={busy}
-            onClick={() => void run(() => refresh(generation.current))}
-          >
-            Atualizar acesso
-          </button>{' '}
-          <button
-            disabled={busy}
-            onClick={() =>
-              void run(async () => {
-                setAccess([]);
-                setCatalogUnit(null);
-                await gateway.signOut();
-                generation.current++;
-                setUserId(null);
-                setPassword('');
-                setBusy(false);
-                setError('');
-              })
-            }
-          >
-            Sair
-          </button>
-          {access.map((organization) => {
-            const owner = organization.memberships.some(
-              (m) => m.user_id === userId && m.role === 'owner',
-            );
-            return (
-              <section key={organization.id}>
-                <h2>{organization.name}</h2>
-                <p>Papel: {owner ? 'Proprietário' : 'Colaborador'}</p>
-                <ul>
-                  {organization.establishments.map((unit) => (
-                    <li key={unit.id}>
-                      {unit.name} — {unit.timezone}
-                      {renderCatalog && (
-                        <>
-                          {' '}
-                          <button
-                            aria-pressed={catalogUnit === unit.id}
-                            onClick={() => setCatalogUnit(unit.id)}
-                          >
-                            Catálogo de {unit.name}
-                          </button>
-                        </>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-                {renderOrganizationTools && (
-                  <OrganizationToolsSlot
-                    render={renderOrganizationTools}
-                    organization={organization}
-                    owner={owner}
-                    onChanged={changed}
-                    busy={busy}
-                  />
-                )}
-                {renderCatalog &&
-                  organization.establishments
-                    .filter((unit) => unit.id === catalogUnit)
-                    .map((unit) => (
-                      <section
-                        key={unit.id}
-                        aria-label={`Catálogo de ${unit.name}`}
-                      >
-                        <h3>Catálogo de {unit.name}</h3>
-                        {renderCatalog(
-                          organization.id,
-                          unit.id,
-                          owner,
-                          userId,
-                          unit.timezone,
-                        )}
-                      </section>
-                    ))}
-                {organization.establishments.length === 0 && (
-                  <p>Nenhuma unidade cadastrada.</p>
-                )}
-                {owner && (
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      const value = new FormData(event.currentTarget).get(
-                        'name',
-                      );
-                      const parsed = organizationName.safeParse(value);
-                      if (!parsed.success) {
-                        // Local validation never reached the server: keep access visible.
-                        setNotice('');
-                        setError('Informe nome entre 1 e 120 caracteres.');
-                        return;
-                      }
-                      void run(async () => {
-                        const current = generation.current;
-                        await gateway.rename(organization.id, parsed.data);
-                        await refresh(current);
-                        if (current === generation.current)
-                          setNotice('Nome atualizado.');
-                      });
-                    }}
+          {!openTarget && refreshButton}
+          {openTarget && renderCatalog ? (
+            <section
+              aria-label={`Unidade ${openTarget.unit.name}`}
+              className="unit-shell"
+            >
+              <header className="unit-header">
+                <div className="unit-title">
+                  <p>
+                    {openTarget.organization.name} · Papel:{' '}
+                    {openTarget.owner ? 'Proprietário' : 'Colaborador'}
+                  </p>
+                  <h2>{openTarget.unit.name}</h2>
+                </div>
+                <div className="unit-actions">
+                  {refreshButton}
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={closeUnit}
                   >
-                    <label>
-                      Nome da organização{' '}
-                      <input
-                        name="name"
-                        defaultValue={organization.name}
-                        maxLength={120}
-                        required
-                      />
-                    </label>{' '}
-                    <button disabled={busy}>Salvar nome</button>
-                  </form>
-                )}
-              </section>
-            );
-          })}
+                    Trocar de unidade
+                  </button>
+                </div>
+              </header>
+              {renderCatalog(
+                openTarget.organization.id,
+                openTarget.unit.id,
+                openTarget.owner,
+                userId,
+                openTarget.unit.timezone,
+                {
+                  unitName: openTarget.unit.name,
+                  organizationName: openTarget.organization.name,
+                  organizationTools: (
+                    <>
+                      {renderOrganizationTools && (
+                        <OrganizationToolsSlot
+                          render={renderOrganizationTools}
+                          organization={openTarget.organization}
+                          owner={openTarget.owner}
+                          onChanged={changed}
+                          busy={busy}
+                        />
+                      )}
+                      {openTarget.owner && (
+                        <OrganizationForm
+                          organization={openTarget.organization}
+                          busy={busy}
+                          onRename={renameOrganization}
+                        />
+                      )}
+                    </>
+                  ),
+                },
+              )}
+            </section>
+          ) : (
+            access.map((organization) => {
+              const owner = organization.memberships.some(
+                (m) => m.user_id === userId && m.role === 'owner',
+              );
+              return (
+                <section key={organization.id}>
+                  <h2>{organization.name}</h2>
+                  <p>Papel: {owner ? 'Proprietário' : 'Colaborador'}</p>
+                  <ul>
+                    {organization.establishments.map((unit) => (
+                      <li key={unit.id}>
+                        {unit.name} — {unit.timezone}
+                        {renderCatalog && (
+                          <>
+                            {' '}
+                            {/* V4 (D3): o nome da unidade está ao lado; continua no nome acessível. */}
+                            <button
+                              className="secondary"
+                              aria-label={`Abrir ${unit.name}`}
+                              onClick={() => openUnit(unit.id)}
+                            >
+                              Abrir
+                            </button>
+                          </>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {renderOrganizationTools && (
+                    <OrganizationToolsSlot
+                      render={renderOrganizationTools}
+                      organization={organization}
+                      owner={owner}
+                      onChanged={changed}
+                      busy={busy}
+                    />
+                  )}
+                  {organization.establishments.length === 0 && (
+                    <p>Nenhuma unidade cadastrada.</p>
+                  )}
+                  {owner && (
+                    <OrganizationForm
+                      organization={organization}
+                      busy={busy}
+                      onRename={renameOrganization}
+                    />
+                  )}
+                </section>
+              );
+            })
+          )}
         </>
       )}
     </main>

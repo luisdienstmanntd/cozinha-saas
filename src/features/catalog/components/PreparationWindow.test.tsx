@@ -76,17 +76,19 @@ describe('janela da preparação no catálogo', () => {
     const section = within(
       await screen.findByRole('region', { name: 'Preparações próprias' }),
     );
-    await user.click(
-      await section.findByRole('button', {
-        name: 'Janela de registro de Caldo de legumes',
-      }),
-    );
+    const opener = await section.findByRole('button', {
+      name: 'Janela de registro de Caldo de legumes',
+    });
+    expect(opener).toHaveTextContent(/^Janela de registro$/);
+    await user.click(opener);
     const field = section.getByLabelText(
       'Janela de registro da produção de Caldo de legumes (minutos)',
     );
     const save = section.getByRole('button', {
       name: 'Salvar janela de Caldo de legumes',
     });
+    // V4 (D3): rótulos visíveis curtos; o nome acessível mantém a preparação.
+    expect(save).toHaveTextContent(/^Salvar janela$/);
     expect(save).toBeDisabled();
     await user.type(field, '10');
     expect(save).toBeDisabled();

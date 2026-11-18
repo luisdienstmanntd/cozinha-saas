@@ -5,6 +5,7 @@ import type { OccurrenceGateway } from '../application/occurrenceGateway';
 import { DecisionRejected } from '../application/occurrenceGateway';
 import type { Decision, OccurrenceRow } from '../domain/occurrence';
 import { lotText } from '../../batches/domain/lot';
+import { formatQuantity } from '../../../shared/format/quantity';
 import {
   BLOCK_TEXT,
   decisionInputSchema,
@@ -106,8 +107,14 @@ function DecisionForm({
             />
           </label>
         </p>
-        <button type="submit">Confirmar decisão</button>{' '}
-        <button type="button" onClick={onCancel}>
+        {/* V4 (M1): rejeitar tira o item de circulação, então a confirmação fica no estilo de risco. */}
+        <button
+          type="submit"
+          className={decision === 'rejected' ? 'risk-confirm' : undefined}
+        >
+          Confirmar decisão
+        </button>{' '}
+        <button className="secondary" type="button" onClick={onCancel}>
           Cancelar
         </button>
         {error && <p role="alert">{error}</p>}
@@ -178,7 +185,7 @@ export function OccurrencePanel({
                   {row.containers
                     .map(
                       (container) =>
-                        `${container.short_code} (saldo ${container.balance} ${row.unit})`,
+                        `${container.short_code} (saldo ${formatQuantity(container.balance)} ${row.unit})`,
                     )
                     .join(', ')}
                 </>

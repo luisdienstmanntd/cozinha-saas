@@ -102,7 +102,7 @@ function renderPanel({
   return { batches, occurrences };
 }
 
-it('mostra o bloqueio no topo e na linha do recipiente, com motivo e tempo', async () => {
+it('mostra o bloqueio no alto, na linha do recipiente e no painel após a lista, com motivo e tempo', async () => {
   renderPanel();
   const blocks = await screen.findByRole('region', {
     name: 'Bloqueios e ocorrências',
@@ -115,6 +115,20 @@ it('mostra o bloqueio no topo e na linha do recipiente, com motivo e tempo', asy
   expect(blocks).toHaveTextContent('C-000042 (saldo 10 kg)');
   const list = screen.getByRole('list', { name: 'Recipientes e validade' });
   expect(list).toHaveTextContent('BLOQUEADO - aguardando decisão');
+  // V3: aviso no alto do painel de validade, com atalho; o painel completo vem depois da lista.
+  const dashboard = screen.getByRole('region', { name: 'Painel de validade' });
+  expect(dashboard).toHaveTextContent(
+    '1 ocorrência aberta com recipiente bloqueado.',
+  );
+  expect(
+    within(dashboard).getByRole('link', {
+      name: 'Ver bloqueios e ocorrências',
+    }),
+  ).toHaveAttribute('href', '#bloqueios');
+  expect(blocks.closest('#bloqueios')).not.toBeNull();
+  expect(
+    list.compareDocumentPosition(blocks) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
 });
 
 it('proprietário registra a decisão com justificativa e o painel é relido', async () => {
@@ -177,7 +191,16 @@ it('repete a mesma tentativa de decisão após falha e mostra recusa do banco', 
   const form = screen.getByRole('form', {
     name: 'Decisão da ocorrência de Frango',
   });
+  // V4 (M1): a confirmação só fica no estilo de risco quando a decisão é rejeitar.
+  const confirmDecision = within(form).getByRole('button', {
+    name: 'Confirmar decisão',
+  });
+  expect(confirmDecision).not.toHaveClass('risk-confirm');
   await user.click(within(form).getByLabelText(/Rejeitar/));
+  expect(confirmDecision).toHaveClass('risk-confirm');
+  expect(within(form).getByRole('button', { name: 'Cancelar' })).toHaveClass(
+    'secondary',
+  );
   await user.type(
     within(form).getByLabelText('Justificativa da decisão'),
     'Embalagem morna',
@@ -430,4 +453,82 @@ it('consumo de recipiente bloqueado é recusado na tela com a mensagem do banco 
   expect(await within(panel).findByRole('alert')).toHaveTextContent(
     'Recipiente bloqueado: ocorrência aguardando decisão do proprietário. Só o descarte é permitido.',
   );
+});
+
+it('V5B: o saldo do recipiente na ocorrência aparece com vírgula', async () => {
+  renderPanel({
+    rows: [
+      occurrence({
+        containers: [
+          {
+            container_id: containerId,
+            short_code: 'C-000042',
+            kind: 'integral',
+            balance: 10.5,
+          },
+        ],
+      }),
+    ],
+  });
+  const blocks = await screen.findByRole('region', {
+    name: 'Bloqueios e ocorrências',
+  });
+  expect(blocks).toHaveTextContent('C-000042 (saldo 10,5 kg)');
+  expect(blocks).not.toHaveTextContent('10.5');
+});
+
+// V5B (D-064): vírgula ou ponto na temperatura do recebimento, com as mesmas validações de antes.
+it.each([
+  ['3,5', '3.5'],
+  ['-18,5', '-18.5'],
+  ['-18.5', '-18.5'],
+  ['80,0', '80.0'],
+  ['-50', '-50'],
+])(
+  'V5B: temperatura %s do recebimento é enviada como %s',
+  async (typed, sent) => {
+    const { batches } = renderPanel({ rows: [] });
+    const user = userEvent.setup();
+    await fillReceipt(user);
+    await user.click(screen.getByLabelText('Temperatura medida'));
+    await user.type(screen.getByLabelText('Temperatura medida, em °C'), typed);
+    await user.click(
+      screen.getByRole('button', { name: 'Registrar recebimento' }),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Recebimento registrado.',
+    );
+    expect(batches.receive.mock.calls[0]![1]).toMatchObject({
+      temperatureStatus: 'measured',
+      receivedTemperatureC: sent,
+    });
+  },
+);
+
+it.each(['80,1', '-50,1', '4,25', '1.000,5', '3,5,5', 'quatro'])(
+  'V5B: temperatura %s do recebimento continua recusada, sem limite novo',
+  async (typed) => {
+    const { batches } = renderPanel({ rows: [] });
+    const user = userEvent.setup();
+    await fillReceipt(user);
+    await user.click(screen.getByLabelText('Temperatura medida'));
+    await user.type(screen.getByLabelText('Temperatura medida, em °C'), typed);
+    await user.click(
+      screen.getByRole('button', { name: 'Registrar recebimento' }),
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Confira a temperatura',
+    );
+    expect(batches.receive).not.toHaveBeenCalled();
+  },
+);
+
+it('V5B: o texto de ajuda da temperatura fala em vírgula ou ponto', async () => {
+  renderPanel({ rows: [] });
+  const user = userEvent.setup();
+  await fillReceipt(user);
+  await user.click(screen.getByLabelText('Temperatura medida'));
+  expect(
+    screen.getByText(/Use vírgula ou ponto para decimais, por exemplo -18,5\./),
+  ).toBeVisible();
 });

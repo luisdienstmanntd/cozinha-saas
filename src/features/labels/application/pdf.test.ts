@@ -1,5 +1,7 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
+import QRCode from 'qrcode';
 import { makeLabelPdf } from './pdf';
+import { containerPath } from '../domain/label';
 import type { LabelData } from '../domain/label';
 
 const label: LabelData = {
@@ -182,7 +184,7 @@ it('etiqueta de recebimento traz cabeçalho, fornecedor, conservação e entrada
     'RECEBIMENTO',
     'Fornecedor: Horta',
     'Conservação: Ambiente',
-    'Quantidade inicial: 1.25 kg (entrada)',
+    'Quantidade inicial: 1,25 kg (entrada)',
     'Validade: 01/01/2027 (original)',
   ])
     expect(text, item).toContain(item);
@@ -335,4 +337,110 @@ it('recusa preparação anulada, tardia sem liberação ou sem conservação, e 
 it('preparação bloqueada liberável leva a faixa e cabe na página', async () => {
   const text = await pdfText({ ...prepared, hold: 'pending' });
   expect(text).toContain('(BLOQUEADO)');
+});
+
+// V5B (D-064): quantidades decimais nas etiquetas saem com vírgula, sem separador de milhar e sem casas
+// sobrando; o QR continua levando só a URL e o ID; nome longo continua cabendo em uma página.
+const LONG_NAME = 'Açúcar integral de cozinha '.repeat(4).trim(); // 107 caracteres: cabe só no recebimento
+const LONG_FIT = 'Açúcar integral de cozinha '.repeat(3).trim(); // 80 caracteres: cabe na preparação
+const MID_NAME = 'Açúcar integral de cozinha '.repeat(2).trim(); // 53 caracteres: cabe no fracionado
+const pages = (text: string) =>
+  (text.match(/\/Type \/Page\b(?!s)/g) ?? []).length;
+const dotNumber = /\d\.\d+ (?:kg|l|un)\b/;
+
+it('V5B: etiqueta de recebimento mostra a entrada decimal com vírgula e cabe em uma página com nome longo', async () => {
+  const data: LabelData = {
+    ...plain,
+    storage: 'ambient',
+    balance: 12.5,
+    batch_receipts: {
+      ...plain.batch_receipts,
+      quantity: 12.5,
+      products: { name: LONG_NAME },
+      suppliers: { name: 'Horta' },
+    },
+  };
+  const text = await drawn(data);
+  expect(text).toContain('Quantidade inicial: 12,5 kg (entrada)');
+  expect(text.some((line) => dotNumber.test(line))).toBe(false);
+  expect(pages(await pdfText(data))).toBe(1);
+});
+it.each([
+  [1.25, '1,25'],
+  [0.001, '0,001'],
+  [3, '3'],
+  [1500, '1500'],
+  [999999999.999, '999999999,999'],
+])(
+  'V5B: etiqueta de preparação com %s mostra %s, nome longo e uma página',
+  async (quantity, shown) => {
+    const data: LabelData = {
+      ...prepared,
+      effective: { ...prepared.effective!, initial_quantity: quantity },
+      batch_receipts: {
+        ...prepared.batch_receipts,
+        quantity,
+        products: { name: LONG_FIT },
+      },
+    };
+    const text = await drawn(data);
+    // O modelo quebra a linha quando o texto é largo (999999999,999); o conteúdo continua inteiro.
+    expect(text.join(' ')).toContain(`Quantidade produzida: ${shown} l`);
+    expect(text.some((line) => dotNumber.test(line))).toBe(false);
+    expect(text.join(' ')).not.toMatch(/\d\.\d{3}\b/);
+    expect(pages(await pdfText(data))).toBe(1);
+  },
+);
+it('V5B: etiquetas de porção e de produto fracionado mostram a quantidade com vírgula', async () => {
+  const portion = await drawn({
+    ...preparedPortion,
+    effective: { ...preparedPortion.effective!, initial_quantity: 0.75 },
+  });
+  expect(portion).toContain('Quantidade da porção: 0,75 l');
+  const split = await drawn({
+    ...derived,
+    effective: { ...derived.effective!, initial_quantity: 2.5 },
+    batch_receipts: {
+      ...derived.batch_receipts,
+      products: { name: MID_NAME },
+    },
+  });
+  expect(split).toContain('Quantidade na criação: 2,5 kg');
+  expect(split.some((line) => dotNumber.test(line))).toBe(false);
+});
+it('V5B: o QR continua levando só a URL e o ID do recipiente, qualquer que seja a quantidade', async () => {
+  const spy = vi.spyOn(QRCode, 'toDataURL');
+  try {
+    const origin = 'http://127.0.0.1:5173';
+    await makeLabelPdf(plain, origin);
+    await makeLabelPdf(
+      {
+        ...plain,
+        balance: 12.5,
+        batch_receipts: { ...plain.batch_receipts, quantity: 12.5 },
+      },
+      origin,
+    );
+    const texts = spy.mock.calls.map((call) => String(call[0]));
+    expect(texts).toEqual([
+      `${origin}${containerPath(plain.id)}`,
+      `${origin}${containerPath(plain.id)}`,
+    ]);
+  } finally {
+    spy.mockRestore();
+  }
+});
+it('V5B: nome longo demais para o modelo continua recusado em vez de impresso cortado', async () => {
+  await expect(
+    makeLabelPdf(
+      {
+        ...prepared,
+        batch_receipts: {
+          ...prepared.batch_receipts,
+          products: { name: LONG_NAME },
+        },
+      },
+      'http://127.0.0.1:5173',
+    ),
+  ).rejects.toThrow('Conteúdo não cabe neste modelo de etiqueta.');
 });

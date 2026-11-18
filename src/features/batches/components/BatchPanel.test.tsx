@@ -205,3 +205,67 @@ it('mantém a mesma chave de reenvio após desmontar e abrir novamente', async (
   );
   sessionStorage.clear();
 });
+
+// V5 (M5, D-063): vírgula decimal na quantidade recebida.
+async function receiveWith(typed: string) {
+  sessionStorage.clear();
+  const product = {
+    id: '10000000-0000-4000-8000-000000000001',
+    name: 'Arroz',
+    unit: 'kg' as const,
+    storage_condition: 'ambient' as const,
+  };
+  const supplier = {
+    id: '10000000-0000-4000-8000-000000000002',
+    name: 'Horta',
+  };
+  const catalog = {
+    list: vi.fn(async (kind: string) =>
+      kind === 'products' ? [product] : [supplier],
+    ),
+    create: vi.fn(),
+    setStorageCondition: vi.fn(),
+  };
+  const receive = vi
+    .fn<BatchGateway['receive']>()
+    .mockResolvedValue('10000000-0000-4000-8000-000000000009');
+  const user = userEvent.setup();
+  render(
+    <BatchPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="America/Sao_Paulo"
+      canCreate
+      userId="user-a"
+      catalog={catalog}
+      batches={{ list: vi.fn().mockResolvedValue([]), receive }}
+      containers={fakeContainers([])}
+    />,
+  );
+  await user.selectOptions(await screen.findByLabelText('Produto'), product.id);
+  await user.selectOptions(screen.getByLabelText('Fornecedor'), supplier.id);
+  await user.type(screen.getByLabelText('Lote de origem'), '0001');
+  await user.type(screen.getByLabelText('Quantidade recebida'), typed);
+  await user.type(screen.getByLabelText('Data de validade'), '2027-01-01');
+  await user.click(
+    screen.getByRole('button', { name: 'Registrar recebimento' }),
+  );
+  return receive;
+}
+
+it('V5: recebimento aceita 1,25 e envia 1.25', async () => {
+  const receive = await receiveWith('1,25');
+  await vi.waitFor(() => expect(receive).toHaveBeenCalledTimes(1));
+  expect(receive.mock.calls[0]![1].quantity).toBe('1.25');
+});
+
+it.each([
+  ['1.000,50', /não use separador de milhar/],
+  ['1,000.50', /não use separador de milhar/],
+  ['1.250', /Quantidade ambígua: "1\.250"/],
+  ['1,2345', /Confira produto, fornecedor, quantidade e datas informadas\./],
+  ['abc', /Confira produto, fornecedor, quantidade e datas informadas\./],
+])('V5: recebimento recusa %s sem enviar', async (typed, message) => {
+  const receive = await receiveWith(typed);
+  expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  expect(receive).not.toHaveBeenCalled();
+});

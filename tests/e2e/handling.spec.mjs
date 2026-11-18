@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
+import { openArea } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.6, E2E 27, 28, 30, 31 e 33 do desenho (seção 8): abrir embalagem com sobra fechada,
@@ -11,7 +12,7 @@ async function signIn(page, user) {
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
 }
 
@@ -32,9 +33,8 @@ function ymd(offsetDays) {
 }
 
 async function receive(page, quantity) {
-  await page
-    .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-    .click();
+  await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+  await openArea(page, 'Cadastros');
   await page.getByLabel('Nome do produto').fill('Arroz de teste');
   await page.getByLabel('Unidade de medida').selectOption('kg');
   await page
@@ -44,6 +44,7 @@ async function receive(page, quantity) {
   await expect(page.getByText('Arroz de teste — kg — Ambiente')).toBeVisible();
   await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
   await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
+  await openArea(page, 'Receber');
   await expect(
     page
       .getByRole('combobox', { name: 'Fornecedor', exact: true })
@@ -60,6 +61,7 @@ async function receive(page, quantity) {
   await page.getByLabel('Data de validade').fill('2030-01-01');
   await page.getByRole('button', { name: 'Registrar recebimento' }).click();
   await expect(page.getByText('Recebimento registrado.')).toBeVisible();
+  await openArea(page, 'Validade');
 }
 
 test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', async ({
@@ -132,11 +134,11 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
       expect(has(opened.bytes, text), text).toBe(true);
     expect(has(opened.bytes, 'PRODUTO FRACIONADO')).toBe(false);
     await result.getByRole('button', { name: 'Fechar' }).click();
-    await expect(origin).toContainText('saldo 6 kg');
+    await expect(origin).toContainText('Saldo 6 kg');
     const derived = rows
       .getByRole('listitem')
       .filter({ hasText: '(derivado)' });
-    await expect(derived).toContainText('saldo 4 kg');
+    await expect(derived).toContainText('Saldo 4 kg');
     await expect(derived).toContainText('após manipulação');
 
     // E2E 28: porcionar o derivado em 3 de 1 kg; a sobra de 1 kg só pode ser porção ou descarte.
@@ -179,7 +181,7 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
     await result.getByRole('button', { name: 'Fechar' }).click();
 
     // E2E 31: QR da origem avisa que foi aberta e leva aos derivados.
-    await origin.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await origin.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     await expect(label).toContainText('Este recipiente foi aberto em');
     await expect(label).toContainText('Use a etiqueta nova');
@@ -214,9 +216,7 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
     // E2E 33: membro vê a mesma origem, sem ações de escrita.
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[2]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await expect(
       page.getByRole('button', { name: 'Abrir / porcionar' }),
     ).toHaveCount(0);
@@ -224,10 +224,8 @@ test('abrir, porcionar, consultar o QR da origem e anular; membro só lê', asyn
     // Proprietário anula a porcionamento pela tela da porção (nada foi consumido).
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[0]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
-    await origin.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await origin.getByRole('button', { name: 'Ver ficha' }).click();
     await family
       .getByRole('button', { name: /^Abrir C-/ })
       .first()

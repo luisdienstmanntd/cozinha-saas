@@ -87,7 +87,7 @@ reset role;
 select is(
   (select string_agg(c.relname, ',' order by c.relname collate "C") from pg_class c join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public' and c.relkind in ('r', 'p')),
-  'batch_productions,batch_receipts,container_balances,container_handlings,containers,entity_changes,establishment_settings,establishments,handling_voids,location_moves,memberships,occurrence_decisions,occurrences,organizations,production_voids,products,stock_movements,storage_locations,suppliers',
+  'batch_productions,batch_receipts,container_balances,container_handlings,containers,entity_changes,establishment_settings,establishments,handling_voids,location_moves,memberships,occurrence_decisions,occurrences,organizations,production_label_downloads,production_temperatures,production_voids,products,stock_movements,storage_locations,suppliers',
   'tabelas do schema public conferem com as listas do reset (atualize private.reset_test_environment ao criar tabela)');
 select throws_ok($$select * from private.reset_test_environment('operational', 'ZERAR AMBIENTE DE TESTES')$$, '55000',
   'Recusado: este banco não está declarado como ambiente de testes.', 'sem marcador, o reset é recusado');
@@ -114,8 +114,10 @@ select throws_ok($$delete from public.entity_changes$$, '55000', null, 'históri
 select lives_ok($$select private.assert_history_protected()$$, 'proteção do histórico íntegra');
 
 insert into auth.sessions (id, user_id) values ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001');
+insert into private.session_activity (session_id, user_id) values ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001');
 select lives_ok($$select * from private.reset_test_environment('everything', 'ZERAR AMBIENTE DE TESTES')$$, 'reset completo roda');
 select is((select count(*) from auth.sessions where id = 'b0000000-0000-0000-0000-000000000001'), 1::bigint, 'sessões de acesso não são tocadas pelo reset');
+select is((select count(*) from private.session_activity where session_id = 'b0000000-0000-0000-0000-000000000001'), 1::bigint, 'a atividade de sessão (V2) não é tocada pelo reset');
 select is((select kind from private.environment_marker), 'testes', 'o marcador do ambiente não é tocado pelo reset');
 select is((select count(*) from public.organizations) + (select count(*) from public.establishments) + (select count(*) from public.memberships), 0::bigint, 'reset completo apaga empresas, unidades e vínculos');
 select is((select count(*) from auth.users), 4::bigint, 'contas de acesso não são tocadas');

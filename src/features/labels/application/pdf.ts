@@ -10,6 +10,7 @@ import {
 } from '../domain/label';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import { storageLabels } from '../../catalog/domain/catalog';
+import { formatQuantity } from '../../../shared/format/quantity';
 import type { LabelData } from '../domain/label';
 
 // Fatia 7.4 (desenho da Fase 7, seção 5.2): terceiro modelo, "Preparação própria", para o integral e as
@@ -101,11 +102,13 @@ function preparationPage({ doc }: Page, data: LabelData) {
   // Abaixo da altura do QR (a partir de 61 mm) o texto fica na coluna da esquerda.
   y = Math.max(y, 61);
   row(`Conservação: ${storageLabels[storage]}`, 54, 1);
-  const quantity = data.effective?.initial_quantity ?? batch.quantity;
+  const shownQuantity = formatQuantity(
+    data.effective?.initial_quantity ?? batch.quantity,
+  );
   row(
     h
-      ? `Quantidade da porção: ${quantity} ${batch.unit}`
-      : `Quantidade produzida: ${quantity} ${batch.unit}`,
+      ? `Quantidade da porção: ${shownQuantity} ${batch.unit}`
+      : `Quantidade produzida: ${shownQuantity} ${batch.unit}`,
     54,
     2,
   );
@@ -145,7 +148,7 @@ function receiptPage({ doc }: Page, data: LabelData) {
   if (data.storage) row(`Conservação: ${storageLabels[data.storage]}`);
   y += 1;
   row(
-    `Quantidade inicial: ${data.effective?.initial_quantity ?? batch.quantity} ${batch.unit} (entrada)`,
+    `Quantidade inicial: ${formatQuantity(data.effective?.initial_quantity ?? batch.quantity)} ${batch.unit} (entrada)`,
   );
   row(
     `Validade: ${day(batch.expiry_date)} (${batch.expiry_origin === 'original' ? 'original' : 'responsável'})`,
@@ -199,7 +202,7 @@ function openedPage({ doc }: Page, data: LabelData) {
     row(`Porção ${h.position}${h.siblings ? ` de ${h.siblings}` : ''}`, 54, 1);
   if (data.effective)
     row(
-      `Quantidade na criação: ${data.effective.initial_quantity} ${batch.unit}`,
+      `Quantidade na criação: ${formatQuantity(data.effective.initial_quantity)} ${batch.unit}`,
       54,
       2,
     );

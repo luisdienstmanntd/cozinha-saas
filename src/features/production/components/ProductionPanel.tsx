@@ -10,6 +10,11 @@ import {
   isQuantity,
   zonedToInstant,
 } from '../../handling/domain/handling';
+import {
+  formatQuantity,
+  quantityProblemText,
+  toDotQuantity,
+} from '../../../shared/format/quantity';
 import type { ProductionGateway } from '../application/productionGateway';
 import { ProductionRejected } from '../application/productionGateway';
 import type { ProductionRow } from '../domain/production';
@@ -19,7 +24,11 @@ import {
   localDateOf,
   productionInputSchema,
   productionLateText,
+  unlabeledMinutes,
+  TEMPERATURE_MOMENTS,
+  formatTemperature,
 } from '../domain/production';
+import { RecordTemperature } from './RecordTemperature';
 import { VoidProduction } from './VoidProduction';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { DownloadLabels } from '../../labels/components/DownloadLabels';
@@ -183,6 +192,17 @@ function ProductionContents({
       .list({ organizationId, establishmentId })
       .then(setRows, () => setLoadError(LOAD_ERROR));
   }
+  // Fatia 7.8: o PDF já foi baixado; o horário é registrado para o aviso. Falha aqui não desfaz nada.
+  function recordDownload(containerId: string) {
+    if (!gateway.recordLabelDownload) return;
+    void gateway
+      .recordLabelDownload({ organizationId, establishmentId }, containerId)
+      .then(reloadList, () =>
+        setNotice(
+          'A etiqueta foi baixada, mas não foi possível registrar o horário. O aviso de produção sem download de etiqueta registrado pode continuar aparecendo.',
+        ),
+      );
+  }
   function resetIntent() {
     intent.current = null;
     try {
@@ -220,6 +240,7 @@ function ProductionContents({
         <h3>Produção da cozinha</h3>
         <p role="alert">{loadError}</p>
         <button
+          className="secondary"
           type="button"
           onClick={() => {
             setLoadError('');
@@ -261,12 +282,14 @@ function ProductionContents({
     producedDate && expiry ? daysBetween(producedDate, expiry) : null;
   const people = members.filter((member) => member.display_name);
   const selected = members.find((member) => member.user_id === handledBy);
+  // V5 (D-063): vírgula ou ponto decimal; o esquema de sempre recebe a forma com ponto.
+  const dotQuantity = toDotQuantity(quantity) ?? '';
 
   function build() {
     if (!instant) return null;
     return productionInputSchema.safeParse({
       productId,
-      quantity,
+      quantity: dotQuantity,
       expiryDate: expiry,
       producedAt: instant,
       handledBy,
@@ -284,11 +307,12 @@ function ProductionContents({
       return setError(
         'Defina a conservação da preparação no catálogo antes de registrar a produção.',
       );
-    if (!isQuantity(quantity))
+    if (!isQuantity(dotQuantity))
       return setError(
-        `Informe a quantidade produzida em ${unit}, com ponto para decimais, por exemplo 0.5.`,
+        quantityProblemText(quantity) ??
+          `Informe a quantidade produzida em ${unit}, com vírgula ou ponto para decimais, por exemplo 0,5.`,
       );
-    if (unit === 'un' && quantity.includes('.'))
+    if (unit === 'un' && dotQuantity.includes('.'))
       return setError('Esta preparação é medida em unidades inteiras.');
     if (!instant) return setError('Informe a data e a hora da produção.');
     if (new Date(instant).getTime() > now().getTime())
@@ -364,6 +388,12 @@ function ProductionContents({
     }
   }
 
+  const unlabeled = rows.flatMap((row) => {
+    const minutes = unlabeledMinutes(row, rules.unlabeled_limit_minutes, now());
+    return minutes === null ? [] : [{ row, minutes }];
+  });
+  const unlabeledLimit = durationText(rules.unlabeled_limit_minutes);
+
   const created = result
     ? rows.find((row) => row.batch_id === result.batchId)
     : undefined;
@@ -375,6 +405,15 @@ function ProductionContents({
         Preparações feitas na cozinha, com validade informada pelo responsável.
       </p>
       {notice && <p role="status">{notice}</p>}
+      {unlabeled.length > 0 && (
+        <p role="status">
+          {unlabeled.length === 1
+            ? '1 produção está sem download de etiqueta registrado'
+            : `${unlabeled.length} produções estão sem download de etiqueta registrado`}{' '}
+          há mais de {unlabeledLimit}. É só um aviso: o sistema registra o
+          download, não a impressão nem a aplicação da etiqueta.
+        </p>
+      )}
       <h4>Produções recentes</h4>
       {rows.length === 0 ? (
         <p>Nenhuma produção registrada.</p>
@@ -383,10 +422,10 @@ function ProductionContents({
           {rows.map((row) => (
             <li key={row.batch_id}>
               {row.product_name}
-              {row.short_code && ` — ${row.short_code}`} — {row.quantity}{' '}
-              {row.unit} — produzida em {when(row.produced_at, row.timezone)}{' '}
-              por {row.handled_by_name} — validade {formatDate(row.expiry_date)}{' '}
-              (definida pelo responsável)
+              {row.short_code && ` — ${row.short_code}`} —{' '}
+              {formatQuantity(row.quantity)} {row.unit} — produzida em{' '}
+              {when(row.produced_at, row.timezone)} por {row.handled_by_name} —
+              validade {formatDate(row.expiry_date)} (definida pelo responsável)
               {row.late &&
                 ` — registrada fora da janela de ${durationText(row.late_window_minutes ?? 120)}`}
               {labels && row.container_id && !row.voided && (
@@ -397,9 +436,57 @@ function ProductionContents({
                     ids={[row.container_id]}
                     filename={`etiqueta-${row.container_id}.pdf`}
                     label={`Baixar etiqueta${row.short_code ? ` (${row.short_code})` : ''}`}
+                    onDownloaded={
+                      canRegister
+                        ? () => recordDownload(row.container_id!)
+                        : undefined
+                    }
                   />
                 </>
               )}
+              {unlabeled.some((item) => item.row === row) && (
+                <strong>
+                  {' '}
+                  — sem download de etiqueta registrado há{' '}
+                  {durationText(
+                    unlabeled.find((item) => item.row === row)!.minutes,
+                  )}{' '}
+                  (acima de {unlabeledLimit})
+                </strong>
+              )}
+              {(row.temperatures ?? []).length > 0 && (
+                <ul
+                  aria-label={`Temperaturas de ${row.short_code ?? row.product_name}`}
+                >
+                  {(row.temperatures ?? []).map((item, index) => (
+                    <li key={index}>
+                      {TEMPERATURE_MOMENTS[item.moment]}:{' '}
+                      {formatTemperature(item.temperature_c)}, medida em{' '}
+                      {when(item.measured_at, row.timezone)}, registrada por{' '}
+                      {item.recorded_by_name} (informada; o sistema não avalia)
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {canRegister &&
+                !row.voided &&
+                (canCreate || row.handled_by === userId) && (
+                  <>
+                    {' '}
+                    <RecordTemperature
+                      scope={{ organizationId, establishmentId }}
+                      batchId={row.batch_id}
+                      label={row.short_code ?? row.product_name}
+                      timezone={row.timezone}
+                      gateway={gateway}
+                      now={now}
+                      onRecorded={() => {
+                        setNotice('Temperatura registrada.');
+                        reloadList();
+                      }}
+                    />
+                  </>
+                )}
               {row.voided ? (
                 <strong>
                   {' '}
@@ -458,6 +545,7 @@ function ProductionContents({
                 ids={[created.container_id]}
                 filename={`etiqueta-${created.container_id}.pdf`}
                 label="Baixar etiqueta"
+                onDownloaded={() => recordDownload(created.container_id!)}
               />
             </p>
           )}
@@ -468,7 +556,11 @@ function ProductionContents({
           <button type="button" onClick={startForm}>
             Registrar outra produção
           </button>{' '}
-          <button type="button" onClick={() => setStage('closed')}>
+          <button
+            className="secondary"
+            type="button"
+            onClick={() => setStage('closed')}
+          >
             Fechar
           </button>
         </section>
@@ -479,7 +571,7 @@ function ProductionContents({
           <ul>
             <li>Preparação: {selectedPreparation.name}</li>
             <li>
-              Quantidade: {quantity} {unit}
+              Quantidade: {formatQuantity(dotQuantity)} {unit}
             </li>
             <li>
               Produzida em: {shownProducedAt.replace('T', ' ')} (fuso {timezone}
@@ -518,6 +610,7 @@ function ProductionContents({
             Confirmar produção
           </button>{' '}
           <button
+            className="secondary"
             type="button"
             disabled={busy}
             onClick={() => setStage('form')}
@@ -714,6 +807,7 @@ function ProductionContents({
             Revisar produção
           </button>{' '}
           <button
+            className="secondary"
             type="button"
             disabled={busy}
             onClick={() => {

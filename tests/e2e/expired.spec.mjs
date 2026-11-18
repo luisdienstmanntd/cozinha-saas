@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openArea } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.11: recipiente vencido com saldo mostra a faixa VENCIDO no painel e na tela do recipiente
@@ -9,7 +10,7 @@ async function signIn(page, user) {
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
 }
 
@@ -46,9 +47,8 @@ test('vencido: faixa no painel e no QR, consumo indisponível e descarte registr
   await withCatalogFixture(async ({ users }) => {
     await page.goto('/');
     await signIn(page, users[0]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Cadastros');
     await page.getByLabel('Nome do produto').fill('Arroz de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
     await page
@@ -60,6 +60,7 @@ test('vencido: faixa no painel e no QR, consumo indisponível e descarte registr
     ).toBeVisible();
     await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
+    await openArea(page, 'Receber');
     await expect(
       page
         .getByRole('combobox', { name: 'Fornecedor', exact: true })
@@ -67,6 +68,7 @@ test('vencido: faixa no painel e no QR, consumo indisponível e descarte registr
     ).toHaveCount(1);
     await receive(page, 'V-ONTEM', localDate(-1));
     await receive(page, 'V-HOJE', localDate(0));
+    await openArea(page, 'Validade');
 
     const rows = page.getByRole('list', { name: 'Recipientes e validade' });
     const expired = rows.getByRole('listitem').filter({ hasText: 'V-ONTEM' });
@@ -95,13 +97,13 @@ test('vencido: faixa no painel e no QR, consumo indisponível e descarte registr
     await panel.getByRole('button', { name: 'Registrar saída' }).click();
     await panel.getByRole('button', { name: 'Confirmar saída' }).click();
     await expect(panel.getByText(/Descarte — 2 kg/)).toBeVisible();
-    await expect(expired).toContainText('saldo 3 kg');
+    await expect(expired).toContainText('Saldo 3 kg');
     await expired.screenshot({
       path: testInfo.outputPath('02-descarte-vencido.png'),
     });
 
     // Tela do recipiente (a mesma do QR).
-    await expired.getByRole('button', { name: 'Abrir etiqueta' }).click();
+    await expired.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     await expect(label.getByText('VENCIDO - somente descarte')).toBeVisible();
     await expect(

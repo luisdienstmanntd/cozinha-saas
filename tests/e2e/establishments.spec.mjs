@@ -1,13 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 import { checked } from '../../scripts/local-supabase.mjs';
+import { openArea } from './areas.mjs';
 
 async function signIn(page, user) {
   await page.getByLabel('E-mail').fill(user.email);
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
 }
 
@@ -40,7 +41,7 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
       'Informe nome entre 1 e 120 caracteres.',
     );
     await expect(
-      page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+      page.getByRole('button', { name: 'Abrir Cozinha principal' }),
     ).toBeVisible();
 
     await tools.getByLabel('Nome da nova unidade').fill('Cozinha de eventos');
@@ -70,8 +71,10 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
     expect(created).toHaveLength(1);
     expect(created[0].timezone).toBe('America/Manaus');
     await page
-      .getByRole('button', { name: 'Catálogo de Cozinha de eventos' })
+      .getByRole('button', { name: 'Abrir Cozinha de eventos' })
       .click();
+    // V1: as ferramentas da organização ficam em Cadastros da unidade aberta.
+    await openArea(page, 'Cadastros');
     await expect(page.getByText('Nenhum produto cadastrado.')).toBeVisible();
 
     await openTools();
@@ -89,8 +92,9 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
         .getByRole('status')
         .filter({ hasText: 'Nome da unidade atualizado.' }),
     ).toBeVisible();
+    await page.getByRole('button', { name: 'Trocar de unidade' }).click();
     await expect(
-      page.getByRole('button', { name: 'Catálogo de Cozinha fria' }),
+      page.getByRole('button', { name: 'Abrir Cozinha fria' }),
     ).toBeVisible();
     const unit = checked(
       await admin
@@ -128,8 +132,9 @@ for (const viewport of [
       await page.goto('/');
       await signIn(page, users[0]);
       await page
-        .getByRole('button', { name: 'Catálogo de Cozinha principal' })
+        .getByRole('button', { name: 'Abrir Cozinha principal' })
         .click();
+      await openArea(page, 'Cadastros');
       await expect(page.getByText('Nenhum produto cadastrado.')).toBeVisible();
       const overflow = await page.evaluate(
         () =>
@@ -138,7 +143,9 @@ for (const viewport of [
       );
       expect(overflow).toBeLessThanOrEqual(0);
       const small = await page.evaluate(() =>
-        [...globalThis.document.querySelectorAll('main button')]
+        [...globalThis.document.querySelectorAll('main button, main nav a')]
+          // V1: áreas inativas ficam ocultas (sem caixa na tela) e não contam.
+          .filter((el) => el.getClientRects().length > 0)
           .filter((el) => el.getBoundingClientRect().height < 44)
           .map((el) => el.textContent),
       );

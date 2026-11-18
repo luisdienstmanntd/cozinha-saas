@@ -652,3 +652,83 @@ describe('tela de produção', () => {
     ).toBeVisible();
   });
 });
+
+// V5 (M5, D-063): vírgula decimal na quantidade produzida.
+describe('quantidade com vírgula (V5)', () => {
+  it('aceita 2,5, mostra com vírgula na revisão e envia 2.5', async () => {
+    const gateway = production();
+    const user = userEvent.setup();
+    panel(gateway);
+    const form = await fillForm(user, { quantity: '2,5' });
+    await user.click(form.getByRole('button', { name: 'Revisar produção' }));
+    const review = within(
+      screen.getByRole('region', { name: 'Revisão da produção' }),
+    );
+    expect(review.getByText('Quantidade: 2,5 l')).toBeVisible();
+    await user.click(
+      review.getByRole('button', { name: 'Confirmar produção' }),
+    );
+    await waitFor(() => expect(gateway.register).toHaveBeenCalledTimes(1));
+    expect(gateway.register.mock.calls[0]![1]).toMatchObject({
+      quantity: '2.5',
+    });
+  });
+  it.each([
+    ['1.000,50', /não use separador de milhar/],
+    ['1,000.50', /não use separador de milhar/],
+    ['1.500', /Quantidade ambígua: "1\.500"/],
+    ['2,5,0', /não use separador de milhar/],
+    ['1,2345', /com vírgula ou ponto para decimais, por exemplo 0,5/],
+    ['0,0', /com vírgula ou ponto para decimais, por exemplo 0,5/],
+  ])('recusa %s antes da revisão', async (typed, message) => {
+    const gateway = production();
+    const user = userEvent.setup();
+    panel(gateway);
+    const form = await fillForm(user, { quantity: typed });
+    await user.click(form.getByRole('button', { name: 'Revisar produção' }));
+    expect(form.getByRole('alert')).toHaveTextContent(message);
+    expect(
+      screen.queryByRole('region', { name: 'Revisão da produção' }),
+    ).toBeNull();
+    expect(gateway.register).not.toHaveBeenCalled();
+  });
+  it('preparação em unidades recusa 2,5 como recusava 2.5', async () => {
+    const gateway = production();
+    const user = userEvent.setup();
+    panel(gateway, {
+      items: catalog([{ ...caldo, unit: 'un' as const }]),
+    });
+    await user.click(
+      await screen.findByRole('button', { name: 'Registrar produção' }),
+    );
+    const form = within(
+      screen.getByRole('form', { name: 'Registrar produção' }),
+    );
+    await user.selectOptions(form.getByLabelText('Preparação'), caldo.id);
+    await user.type(form.getByLabelText('Quantidade produzida (un)'), '2,5');
+    await user.type(form.getByLabelText('Validade'), '2026-11-16');
+    await user.selectOptions(form.getByLabelText('Produzida por'), cook);
+    await user.click(form.getByRole('button', { name: 'Revisar produção' }));
+    expect(form.getByRole('alert')).toHaveTextContent(
+      'Esta preparação é medida em unidades inteiras.',
+    );
+    expect(gateway.register).not.toHaveBeenCalled();
+  });
+});
+
+// V5B (D-064): a lista de produções mostra a quantidade com vírgula.
+describe('lista de produções (V5B)', () => {
+  it('mostra 2,5 l e 1500 l, sem ponto e sem separador de milhar', async () => {
+    const gateway = production([
+      row({ batch_id: id(31), quantity: 2.5 }),
+      row({ batch_id: id(32), quantity: 1500, short_code: 'C-000124' }),
+    ]);
+    panel(gateway);
+    const list = await screen.findByRole('list', {
+      name: /Produções recentes/,
+    });
+    expect(list).toHaveTextContent('C-000123 — 2,5 l');
+    expect(list).toHaveTextContent('C-000124 — 1500 l');
+    expect(list).not.toHaveTextContent(/\d\.\d/);
+  });
+});
