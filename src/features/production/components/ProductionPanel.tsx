@@ -20,7 +20,10 @@ import {
   productionInputSchema,
   productionLateText,
   unlabeledMinutes,
+  TEMPERATURE_MOMENTS,
+  formatTemperature,
 } from '../domain/production';
+import { RecordTemperature } from './RecordTemperature';
 import { VoidProduction } from './VoidProduction';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { DownloadLabels } from '../../labels/components/DownloadLabels';
@@ -442,6 +445,39 @@ function ProductionContents({
                   (acima de {unlabeledLimit})
                 </strong>
               )}
+              {(row.temperatures ?? []).length > 0 && (
+                <ul
+                  aria-label={`Temperaturas de ${row.short_code ?? row.product_name}`}
+                >
+                  {(row.temperatures ?? []).map((item, index) => (
+                    <li key={index}>
+                      {TEMPERATURE_MOMENTS[item.moment]}:{' '}
+                      {formatTemperature(item.temperature_c)}, medida em{' '}
+                      {when(item.measured_at, row.timezone)}, registrada por{' '}
+                      {item.recorded_by_name} (informada; o sistema não avalia)
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {canRegister &&
+                !row.voided &&
+                (canCreate || row.handled_by === userId) && (
+                  <>
+                    {' '}
+                    <RecordTemperature
+                      scope={{ organizationId, establishmentId }}
+                      batchId={row.batch_id}
+                      label={row.short_code ?? row.product_name}
+                      timezone={row.timezone}
+                      gateway={gateway}
+                      now={now}
+                      onRecorded={() => {
+                        setNotice('Temperatura registrada.');
+                        reloadList();
+                      }}
+                    />
+                  </>
+                )}
               {row.voided ? (
                 <strong>
                   {' '}
