@@ -276,3 +276,20 @@ footer {
   border-left: 4px solid #9b261a;
   padding: 0.15rem 0.4rem;
 }
+
+/* V2 (D-025): quem está conectado e o botão Sair ficam sempre no topo. */
+.session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #c9d6cf;
+  border-radius: 6px;
+  background: #f3f7f5;
+}
+.session-bar p {
+  margin: 0;
+  flex: 1 1 16rem;
+}

@@ -142,7 +142,10 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
         .getByText('Horta de teste', { exact: true }),
     ).toHaveCount(0);
     await page.reload();
-    await signIn();
+    // V2 (D-025): recarregar mantém a sessão; não pede entrada de novo.
+    await expect(
+      page.getByRole('button', { name: 'Entrar', exact: true }),
+    ).toHaveCount(0);
     await page
       .getByRole('button', { name: 'Catálogo de Cozinha principal' })
       .click();

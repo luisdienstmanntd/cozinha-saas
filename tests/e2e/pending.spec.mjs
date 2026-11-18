@@ -3,7 +3,7 @@ import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.8, E2E 34 do desenho: fechar a aba com resultado incerto, reabrir e confirmar sem duplicar.
 // A falha é simulada na rede do navegador: a resposta se perde (o servidor gravou) ou o pedido nem
-// chega (o servidor não gravou). Recarregar encerra a sessão (ela não é persistida), então a
+// chega (o servidor não gravou). Recarregar mantém a sessão (V2, D-025), mas descarta a tela: a
 // tentativa pendente só pode vir do localStorage.
 async function signIn(page, user) {
   await page.getByLabel('E-mail').fill(user.email);
@@ -12,6 +12,13 @@ async function signIn(page, user) {
   await expect(
     page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
   ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Catálogo de Cozinha principal' })
+    .click();
+}
+
+// V2: depois de recarregar a sessão continua; só falta reabrir o catálogo da unidade.
+async function reopen(page) {
   await page
     .getByRole('button', { name: 'Catálogo de Cozinha principal' })
     .click();
@@ -71,10 +78,10 @@ for (const [name, serverSaves, expected] of [
       await expect(page.getByRole('alert')).toContainText(
         'Não foi possível registrar o recebimento',
       );
-      // "Fecha a aba": recarregar descarta a sessão e a tela; fica só o localStorage.
+      // "Fecha a aba": recarregar descarta a tela; fica só o localStorage.
       await page.unroute('**/rest/v1/rpc/receive_batch');
       await page.reload();
-      await signIn(page, users[0]);
+      await reopen(page);
       const banner = page.getByRole('region', {
         name: 'Registros não confirmados',
       });
@@ -102,7 +109,7 @@ for (const [name, serverSaves, expected] of [
       await expect(banner).toHaveCount(0);
       // Recarregar de novo: nada pendente, nenhum registro a mais.
       await page.reload();
-      await signIn(page, users[0]);
+      await reopen(page);
       await expect(
         page.getByRole('region', { name: 'Registros não confirmados' }),
       ).toHaveCount(0);
@@ -129,7 +136,7 @@ test('descartar tentativa que o servidor não tem', async ({ page }) => {
     await expect(page.getByRole('alert')).toBeVisible();
     await page.unroute('**/rest/v1/rpc/receive_batch');
     await page.reload();
-    await signIn(page, users[0]);
+    await reopen(page);
     const banner = page.getByRole('region', {
       name: 'Registros não confirmados',
     });
