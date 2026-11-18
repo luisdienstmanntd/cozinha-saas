@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 import { checked } from '../../scripts/local-supabase.mjs';
+import { openArea } from './areas.mjs';
 import { readFile } from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
@@ -20,15 +21,19 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       await page.getByLabel('Senha').fill(users[0].password);
       await page.getByRole('button', { name: 'Entrar', exact: true }).click();
       await expect(
-        page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+        page.getByRole('button', { name: 'Abrir Cozinha principal' }),
       ).toBeVisible();
       await expect(page.getByText('Cozinha de outra empresa')).toHaveCount(0);
     }
     await page.goto('/');
     await signIn();
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    // V1: a unidade abre em Validade; o cadastro fica em Cadastros.
+    await expect(page.getByRole('link', { name: 'Validade' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await openArea(page, 'Cadastros');
     await page.getByLabel('Nome do produto').fill('Arroz de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
     // Fatia 6.5b: conservação definida no cadastro, exigida no recebimento.
@@ -46,6 +51,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
         .getByRole('region', { name: 'Fornecedores' })
         .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
+    await openArea(page, 'Receber');
     await expect(
       page
         .getByRole('combobox', { name: 'Produto', exact: true })
@@ -67,6 +73,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await page.getByLabel('Data de validade').fill('2030-01-01');
     await page.getByRole('button', { name: 'Registrar recebimento' }).click();
     await expect(page.getByText('Recebimento registrado.')).toBeVisible();
+    await openArea(page, 'Validade');
     await expect(page.getByText(/lote 0001/)).toBeVisible();
     await page.getByRole('button', { name: 'Abrir etiqueta' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
@@ -106,6 +113,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     ).toBeVisible();
     await movements.getByLabel('Quantidade da saída').fill('0.5');
     await movements.getByRole('button', { name: 'Registrar saída' }).click();
+    await openArea(page, 'Cadastros');
     await page
       .getByRole('button', { name: 'Gerenciar unidades de Empresa de teste A' })
       .click();
@@ -116,6 +124,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(
       page.getByRole('region', { name: 'Movimentações' }),
     ).toHaveCount(0);
+    await openArea(page, 'Validade');
     await page.getByRole('button', { name: 'Ver movimentações' }).click();
     await expect(movements.getByText(/Tentativa pendente/)).toBeVisible();
     await movements.getByRole('button', { name: 'Repetir tentativa' }).click();
@@ -125,14 +134,15 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(movements.getByText(/Consumo — 0.5 kg/)).toBeVisible();
     // Fatia 6.2: a linha do painel mostra o saldo do servidor, não a quantidade recebida.
     await expect(results.getByText(/saldo 0.75 kg de 1.25 kg/)).toBeVisible();
+    await openArea(page, 'Cadastros');
     await page.getByLabel('Nome do fornecedor').fill('HORTA DE TESTE');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(page.getByRole('alert')).toHaveText(
       'Esse nome já está cadastrado neste estabelecimento.',
     );
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha auxiliar' })
-      .click();
+    await page.getByRole('button', { name: 'Trocar de unidade' }).click();
+    await page.getByRole('button', { name: 'Abrir Cozinha auxiliar' }).click();
+    await openArea(page, 'Cadastros');
     await expect(page.getByText('Nenhum produto cadastrado.')).toBeVisible();
     await expect(page.getByText('Nenhum fornecedor cadastrado.')).toBeVisible();
     await expect(page.getByText('Arroz de teste — kg')).toHaveCount(0);
@@ -146,15 +156,22 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),
     ).toHaveCount(0);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    // V1: o endereço guarda a unidade e a área, então recarregar volta ao mesmo lugar (Cadastros
+    // da cozinha auxiliar); troca para a principal e confere o cadastro dela.
+    await expect(page.getByRole('link', { name: 'Cadastros' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await page.getByRole('button', { name: 'Trocar de unidade' }).click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Cadastros');
     await expect(page.getByText('Arroz de teste — kg')).toBeVisible();
     await expect(
       page
         .getByRole('region', { name: 'Fornecedores' })
         .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
+    await openArea(page, 'Validade');
     await expect(page.getByText(/lote 0001/)).toBeVisible();
     await page.getByRole('button', { name: 'Ver movimentações' }).click();
     await expect(page.getByText('Saldo registrado: 0.75 kg')).toBeVisible();

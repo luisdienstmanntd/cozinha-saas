@@ -47,6 +47,9 @@ type Props = {
   // Fatia 6.6: abrir / porcionar a partir da linha (só quem escreve vê o botão).
   handling?: HandlingGateway;
   locations?: LocationGateway;
+  // V1: qual parte aparece. Sem o parâmetro, as duas (como antes). A outra continua montada, só oculta,
+  // para não perder o que foi digitado ao trocar de área.
+  area?: 'validade' | 'receber';
 };
 type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 // key: consulta a que a página pertence; página de outra consulta conta como carregando.
@@ -75,7 +78,10 @@ function BatchContents({
   occurrences,
   handling,
   locations,
+  area,
 }: Props) {
+  const showValidade = area === undefined || area === 'validade';
+  const showReceber = area === undefined || area === 'receber';
   const [catalogData, setCatalogData] = useState<Catalog | null>(null);
   const [listing, setListing] = useState<Listing | null>(null);
   const [summary, setSummary] = useState<ExpirySummary | null>(null);
@@ -450,18 +456,20 @@ function BatchContents({
 
   return (
     <section aria-label="Recebimentos de lote">
-      <h3>Recebimentos de lote</h3>
-      {labelId && labels && (
-        <LabelView
-          key={labelId}
-          id={labelId}
-          gateway={labels}
-          handling={handling}
-          canHandle={() => canCreate}
-          userId={userId}
-          onOpenContainer={setLabelId}
-        />
-      )}
+      {showReceber && <h3>Recebimentos de lote</h3>}
+      <div hidden={!showValidade}>
+        {labelId && labels && (
+          <LabelView
+            key={labelId}
+            id={labelId}
+            gateway={labels}
+            handling={handling}
+            canHandle={() => canCreate}
+            userId={userId}
+            onOpenContainer={setLabelId}
+          />
+        )}
+      </div>
       {error && <p role="alert">{error}</p>}
       {error === 'Esta tentativa já foi usada com outros dados.' && (
         <div>
@@ -534,466 +542,486 @@ function BatchContents({
       )}
       {ready && catalogData && referenceDate && summary && (
         <>
-          {occurrences && occurrenceRows && (
-            <>
-              <OccurrencePanel
-                rows={occurrenceRows}
-                decided={showDecided ? decidedRows : null}
-                scope={{ organizationId, establishmentId }}
-                gateway={occurrences}
-                canDecide={canCreate}
-                now={now}
-                onDecided={(message) => {
-                  reload();
-                  setNotice(message);
-                }}
-              />
+          <div hidden={!showValidade}>
+            {occurrences && occurrenceRows && (
+              <>
+                <OccurrencePanel
+                  rows={occurrenceRows}
+                  decided={showDecided ? decidedRows : null}
+                  scope={{ organizationId, establishmentId }}
+                  gateway={occurrences}
+                  canDecide={canCreate}
+                  now={now}
+                  onDecided={(message) => {
+                    reload();
+                    setNotice(message);
+                  }}
+                />
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showDecided}
+                    onChange={(event) => {
+                      setDecidedRows(null);
+                      setShowDecided(event.target.checked);
+                    }}
+                  />{' '}
+                  Mostrar todas as ocorrências, inclusive decididas
+                </label>
+                {showDecided && !decidedRows && <p>Carregando ocorrências…</p>}
+              </>
+            )}
+            <section aria-label="Painel de validade">
+              <h4>Validade</h4>
+              <p>
+                Recipientes com saldo, do vencimento mais próximo para o mais
+                distante. Recipientes esgotados não entram nas contagens.
+              </p>
+              <p>
+                Fuso: {timezone}. Data de referência: {referenceDate}.
+                Referência: relógio deste dispositivo. Novos registros podem
+                exigir atualização. Após mudar o fuso da unidade, atualize o
+                acesso.
+              </p>
+              {shown && (
+                <p>
+                  Última consulta: {shown.fetchedAt.toISOString()} (relógio
+                  deste dispositivo).
+                </p>
+              )}
+              <button type="button" onClick={reload}>
+                Atualizar recebimentos
+              </button>
+              <p>
+                Vencidos: {summary.overdue} · Vence hoje: {summary.due_today} ·{' '}
+                Vence amanhã: {summary.due_tomorrow} · Posteriores:{' '}
+                {summary.later}
+              </p>
+              <label>
+                Buscar por produto, lote, código ou ID do recipiente{' '}
+                <input
+                  type="search"
+                  aria-label="Buscar por produto, lote, código ou ID do recipiente"
+                  value={search}
+                  maxLength={120}
+                  onChange={(event) => {
+                    setMoreError('');
+                    setSearch(event.target.value);
+                  }}
+                />
+              </label>{' '}
               <label>
                 <input
                   type="checkbox"
-                  checked={showDecided}
+                  checked={includeDepleted}
                   onChange={(event) => {
-                    setDecidedRows(null);
-                    setShowDecided(event.target.checked);
+                    setMoreError('');
+                    setIncludeDepleted(event.target.checked);
                   }}
                 />{' '}
-                Mostrar todas as ocorrências, inclusive decididas
+                Mostrar esgotados
               </label>
-              {showDecided && !decidedRows && <p>Carregando ocorrências…</p>}
-            </>
-          )}
-          <section aria-label="Painel de validade">
-            <h4>Validade</h4>
-            <p>
-              Recipientes com saldo, do vencimento mais próximo para o mais
-              distante. Recipientes esgotados não entram nas contagens.
-            </p>
-            <p>
-              Fuso: {timezone}. Data de referência: {referenceDate}. Referência:
-              relógio deste dispositivo. Novos registros podem exigir
-              atualização. Após mudar o fuso da unidade, atualize o acesso.
-            </p>
-            {shown && (
+            </section>
+            {!shown ? (
+              <p>Carregando recipientes…</p>
+            ) : shown.rows.length === 0 ? (
               <p>
-                Última consulta: {shown.fetchedAt.toISOString()} (relógio deste
-                dispositivo).
+                {query.trim()
+                  ? 'Nenhum recipiente corresponde à busca.'
+                  : includeDepleted
+                    ? 'Nenhum recebimento registrado.'
+                    : 'Nenhum recipiente com saldo.'}
               </p>
-            )}
-            <button type="button" onClick={reload}>
-              Atualizar recebimentos
-            </button>
-            <p>
-              Vencidos: {summary.overdue} · Vence hoje: {summary.due_today} ·{' '}
-              Vence amanhã: {summary.due_tomorrow} · Posteriores:{' '}
-              {summary.later}
-            </p>
-            <label>
-              Buscar por produto, lote, código ou ID do recipiente{' '}
-              <input
-                type="search"
-                aria-label="Buscar por produto, lote, código ou ID do recipiente"
-                value={search}
-                maxLength={120}
-                onChange={(event) => {
-                  setMoreError('');
-                  setSearch(event.target.value);
-                }}
-              />
-            </label>{' '}
-            <label>
-              <input
-                type="checkbox"
-                checked={includeDepleted}
-                onChange={(event) => {
-                  setMoreError('');
-                  setIncludeDepleted(event.target.checked);
-                }}
-              />{' '}
-              Mostrar esgotados
-            </label>
-          </section>
-          {!shown ? (
-            <p>Carregando recipientes…</p>
-          ) : shown.rows.length === 0 ? (
-            <p>
-              {query.trim()
-                ? 'Nenhum recipiente corresponde à busca.'
-                : includeDepleted
-                  ? 'Nenhum recebimento registrado.'
-                  : 'Nenhum recipiente com saldo.'}
-            </p>
-          ) : (
-            <>
-              <ul aria-label="Recipientes e validade">
-                {shown.rows.map((row) => {
-                  const depleted = row.balance <= 0;
-                  const status = getExpiryStatus(
-                    row.expiry_date,
-                    timezone,
-                    now,
-                  );
-                  // Fatia 6.11: vencido com saldo. O banco recusa o consumo e a manipulação; só o descarte passa.
-                  const expired = !depleted && status === 'overdue';
-                  return (
-                    <li key={row.container_id}>
-                      {row.product_name} — {row.short_code}
-                      {row.kind === 'derived' && ' (derivado)'} —{' '}
-                      {lotText(row.source_code)} — saldo {row.balance}{' '}
-                      {row.unit} de {row.initial_quantity} {row.unit} — validade{' '}
-                      {row.expiry_date} (
-                      {row.expiry_origin === 'handling'
-                        ? 'após manipulação'
-                        : row.batch_expiry_origin === 'original'
-                          ? 'original'
-                          : 'definida pelo responsável'}
-                      ) — {depleted ? 'Esgotado' : statusLabels[status]} —
-                      recipiente {row.container_id}
-                      {placed.has(row.container_id) && !depleted && (
-                        <>
-                          {' '}
-                          — local: {placed.get(row.container_id)!.location_name}
-                        </>
-                      )}
-                      {expired && (
-                        <strong className="expired-band">
-                          {' '}
-                          — {EXPIRED_TEXT}
-                        </strong>
-                      )}
-                      {blocked.has(row.container_id) && (
-                        <strong>
-                          {' '}
-                          — {BLOCK_TEXT[blocked.get(row.container_id)!]}
-                        </strong>
-                      )}
-                      {canCreate &&
-                        locations &&
-                        handling &&
-                        !depleted &&
-                        !blocked.has(row.container_id) && (
+            ) : (
+              <>
+                <ul aria-label="Recipientes e validade">
+                  {shown.rows.map((row) => {
+                    const depleted = row.balance <= 0;
+                    const status = getExpiryStatus(
+                      row.expiry_date,
+                      timezone,
+                      now,
+                    );
+                    // Fatia 6.11: vencido com saldo. O banco recusa o consumo e a manipulação; só o descarte passa.
+                    const expired = !depleted && status === 'overdue';
+                    return (
+                      <li key={row.container_id}>
+                        {row.product_name} — {row.short_code}
+                        {row.kind === 'derived' && ' (derivado)'} —{' '}
+                        {lotText(row.source_code)} — saldo {row.balance}{' '}
+                        {row.unit} de {row.initial_quantity} {row.unit} —
+                        validade {row.expiry_date} (
+                        {row.expiry_origin === 'handling'
+                          ? 'após manipulação'
+                          : row.batch_expiry_origin === 'original'
+                            ? 'original'
+                            : 'definida pelo responsável'}
+                        ) — {depleted ? 'Esgotado' : statusLabels[status]} —
+                        recipiente {row.container_id}
+                        {placed.has(row.container_id) && !depleted && (
                           <>
                             {' '}
-                            <button
-                              type="button"
-                              onClick={() => setMoveId(row.container_id)}
-                            >
-                              Mudar de local
-                            </button>
+                            — local:{' '}
+                            {placed.get(row.container_id)!.location_name}
                           </>
                         )}
-                      {locations && handling && moveId === row.container_id && (
-                        <MoveContainer
-                          key={row.container_id}
-                          scope={{ organizationId, establishmentId }}
-                          containerId={row.container_id}
-                          userId={userId}
-                          gateway={locations}
-                          loadMembers={(target) => handling.members(target)}
-                          setDisplayName={(target, id, name) =>
-                            handling.setDisplayName(target, id, name)
-                          }
-                          current={placed.get(row.container_id)}
-                          onMoved={() => loadPlaces()}
-                          onClose={() => setMoveId(null)}
-                        />
-                      )}
-                      {movements && row.kind === 'integral' && (
-                        <button
-                          type="button"
-                          onClick={() => setMovementId(row.container_id)}
-                        >
-                          Ver movimentações
-                        </button>
-                      )}
-                      {movements &&
-                        row.kind === 'integral' &&
-                        movementId === row.container_id && (
-                          <MovementPanel
-                            key={row.container_id}
-                            scope={{ organizationId, establishmentId }}
-                            userId={userId}
-                            batch={{
-                              id: row.batch_id,
-                              productName: row.product_name,
-                              sourceCode: row.source_code,
-                              quantity: row.initial_quantity,
-                              unit: row.unit,
-                            }}
-                            canCreate={canCreate}
-                            gateway={movements}
-                            blocked={blocked.get(row.container_id)}
-                            expired={expired}
-                            onRecorded={() => {
-                              refreshRow(row.container_id);
-                              // O descarte pode tirar uma rejeitada da lista de bloqueios.
-                              if (blocked.has(row.container_id) && occurrences)
-                                void occurrences
-                                  .list(
-                                    { organizationId, establishmentId },
-                                    'open',
-                                  )
-                                  .then(setOccurrenceRows, () => fail());
-                            }}
-                          />
-                        )}
-                      {canCreate &&
-                        handling &&
-                        !depleted &&
-                        !blocked.has(row.container_id) &&
-                        !expired && (
-                          <>
+                        {expired && (
+                          <strong className="expired-band">
                             {' '}
-                            <button
-                              type="button"
-                              onClick={() => setHandlingId(row.container_id)}
-                            >
-                              {row.source_code === null
-                                ? 'Porcionar'
-                                : 'Abrir / porcionar'}
-                            </button>
-                          </>
+                            — {EXPIRED_TEXT}
+                          </strong>
                         )}
-                      {canCreate &&
-                        handling &&
-                        blocked.has(row.container_id) && (
-                          <em>
+                        {blocked.has(row.container_id) && (
+                          <strong>
                             {' '}
-                            — manipulação indisponível enquanto o bloqueio durar
-                          </em>
+                            — {BLOCK_TEXT[blocked.get(row.container_id)!]}
+                          </strong>
                         )}
-                      {canCreate &&
-                        handling &&
-                        expired &&
-                        !blocked.has(row.container_id) && (
-                          <em> — manipulação indisponível: validade passou</em>
-                        )}
-                      {handling && handlingId === row.container_id && (
-                        <HandlingForm
-                          key={row.container_id}
-                          scope={{ organizationId, establishmentId }}
-                          containerId={row.container_id}
-                          userId={userId}
-                          gateway={handling}
-                          labels={labels}
-                          onChanged={() => refreshRow(row.container_id)}
-                          onClose={() => {
-                            setHandlingId(null);
-                            reload();
-                          }}
-                        />
-                      )}
-                      {canCreate && labels && row.kind === 'integral' && (
-                        <>
-                          {' '}
+                        {canCreate &&
+                          locations &&
+                          handling &&
+                          !depleted &&
+                          !blocked.has(row.container_id) && (
+                            <>
+                              {' '}
+                              <button
+                                type="button"
+                                onClick={() => setMoveId(row.container_id)}
+                              >
+                                Mudar de local
+                              </button>
+                            </>
+                          )}
+                        {locations &&
+                          handling &&
+                          moveId === row.container_id && (
+                            <MoveContainer
+                              key={row.container_id}
+                              scope={{ organizationId, establishmentId }}
+                              containerId={row.container_id}
+                              userId={userId}
+                              gateway={locations}
+                              loadMembers={(target) => handling.members(target)}
+                              setDisplayName={(target, id, name) =>
+                                handling.setDisplayName(target, id, name)
+                              }
+                              current={placed.get(row.container_id)}
+                              onMoved={() => loadPlaces()}
+                              onClose={() => setMoveId(null)}
+                            />
+                          )}
+                        {movements && row.kind === 'integral' && (
                           <button
                             type="button"
-                            disabled={busy}
-                            onClick={() => {
-                              setBusy(true);
-                              setError('');
-                              void labels
-                                .ensure(
-                                  { organizationId, establishmentId },
-                                  row.batch_id,
-                                )
-                                .then(
-                                  (id) => setLabelId(id),
-                                  () =>
-                                    setError(
-                                      'Não foi possível preparar o recipiente. Confira seu acesso.',
-                                    ),
-                                )
-                                .finally(() => setBusy(false));
-                            }}
+                            onClick={() => setMovementId(row.container_id)}
                           >
-                            Abrir etiqueta
+                            Ver movimentações
                           </button>
-                        </>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              {shown.next && (
-                <button type="button" disabled={loadingMore} onClick={loadMore}>
-                  Carregar mais recipientes
-                </button>
-              )}
-              {moreError && <p role="alert">{moreError}</p>}
-            </>
-          )}
-          {canCreate && (
-            <form onSubmit={(event) => void submit(event)}>
-              <fieldset disabled={busy}>
-                <p>
-                  <label>
-                    Produto{' '}
-                    <select
-                      name="productId"
-                      required
-                      value={productId}
-                      onChange={(event) => {
-                        setProductId(event.target.value);
-                        setTemperatureStatus('');
-                      }}
-                    >
-                      <option value="" disabled>
-                        Selecione
-                      </option>
-                      {catalogData.products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({p.unit})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </p>
-                {selectedProduct && !storage && (
-                  <p role="alert">
-                    Defina a conservação deste produto no catálogo antes de
-                    receber.
-                  </p>
-                )}
-                {storage && (
-                  <p>
-                    Conservação: {storageLabels[storage]} (definida no produto)
-                  </p>
-                )}
-                {storage === 'ambient' && (
-                  <p>
-                    <label>
-                      Temperatura medida no recebimento, em °C (opcional){' '}
-                      <input
-                        name="temperature"
-                        inputMode="decimal"
-                        maxLength={5}
-                      />
-                    </label>
-                  </p>
-                )}
-                {(storage === 'refrigerated' || storage === 'frozen') && (
-                  <fieldset>
-                    <legend>Temperatura no recebimento</legend>
-                    <label>
-                      <input
-                        type="radio"
-                        name="temperatureStatus"
-                        value="measured"
-                        checked={temperatureStatus === 'measured'}
-                        onChange={() => setTemperatureStatus('measured')}
-                      />{' '}
-                      Temperatura medida
-                    </label>{' '}
-                    <label>
-                      <input
-                        type="radio"
-                        name="temperatureStatus"
-                        value="not_measured"
-                        checked={temperatureStatus === 'not_measured'}
-                        onChange={() => setTemperatureStatus('not_measured')}
-                      />{' '}
-                      Não foi possível medir
-                    </label>
-                    {temperatureStatus === 'measured' && (
-                      <p>
-                        <label>
-                          Temperatura medida, em °C{' '}
-                          <input
-                            name="temperature"
-                            required
-                            inputMode="decimal"
-                            maxLength={5}
+                        )}
+                        {movements &&
+                          row.kind === 'integral' &&
+                          movementId === row.container_id && (
+                            <MovementPanel
+                              key={row.container_id}
+                              scope={{ organizationId, establishmentId }}
+                              userId={userId}
+                              batch={{
+                                id: row.batch_id,
+                                productName: row.product_name,
+                                sourceCode: row.source_code,
+                                quantity: row.initial_quantity,
+                                unit: row.unit,
+                              }}
+                              canCreate={canCreate}
+                              gateway={movements}
+                              blocked={blocked.get(row.container_id)}
+                              expired={expired}
+                              onRecorded={() => {
+                                refreshRow(row.container_id);
+                                // O descarte pode tirar uma rejeitada da lista de bloqueios.
+                                if (
+                                  blocked.has(row.container_id) &&
+                                  occurrences
+                                )
+                                  void occurrences
+                                    .list(
+                                      { organizationId, establishmentId },
+                                      'open',
+                                    )
+                                    .then(setOccurrenceRows, () => fail());
+                              }}
+                            />
+                          )}
+                        {canCreate &&
+                          handling &&
+                          !depleted &&
+                          !blocked.has(row.container_id) &&
+                          !expired && (
+                            <>
+                              {' '}
+                              <button
+                                type="button"
+                                onClick={() => setHandlingId(row.container_id)}
+                              >
+                                {row.source_code === null
+                                  ? 'Porcionar'
+                                  : 'Abrir / porcionar'}
+                              </button>
+                            </>
+                          )}
+                        {canCreate &&
+                          handling &&
+                          blocked.has(row.container_id) && (
+                            <em>
+                              {' '}
+                              — manipulação indisponível enquanto o bloqueio
+                              durar
+                            </em>
+                          )}
+                        {canCreate &&
+                          handling &&
+                          expired &&
+                          !blocked.has(row.container_id) && (
+                            <em>
+                              {' '}
+                              — manipulação indisponível: validade passou
+                            </em>
+                          )}
+                        {handling && handlingId === row.container_id && (
+                          <HandlingForm
+                            key={row.container_id}
+                            scope={{ organizationId, establishmentId }}
+                            containerId={row.container_id}
+                            userId={userId}
+                            gateway={handling}
+                            labels={labels}
+                            onChanged={() => refreshRow(row.container_id)}
+                            onClose={() => {
+                              setHandlingId(null);
+                              reload();
+                            }}
                           />
-                        </label>{' '}
-                        Use ponto para decimais, por exemplo -18.5. O sistema
-                        registra o valor e não o avalia.
-                      </p>
-                    )}
-                    {temperatureStatus === 'not_measured' && (
-                      <>
+                        )}
+                        {canCreate && labels && row.kind === 'integral' && (
+                          <>
+                            {' '}
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => {
+                                setBusy(true);
+                                setError('');
+                                void labels
+                                  .ensure(
+                                    { organizationId, establishmentId },
+                                    row.batch_id,
+                                  )
+                                  .then(
+                                    (id) => setLabelId(id),
+                                    () =>
+                                      setError(
+                                        'Não foi possível preparar o recipiente. Confira seu acesso.',
+                                      ),
+                                  )
+                                  .finally(() => setBusy(false));
+                              }}
+                            >
+                              Abrir etiqueta
+                            </button>
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {shown.next && (
+                  <button
+                    type="button"
+                    disabled={loadingMore}
+                    onClick={loadMore}
+                  >
+                    Carregar mais recipientes
+                  </button>
+                )}
+                {moreError && <p role="alert">{moreError}</p>}
+              </>
+            )}
+          </div>
+          <div hidden={!showReceber}>
+            {canCreate && (
+              <form onSubmit={(event) => void submit(event)}>
+                <fieldset disabled={busy}>
+                  <p>
+                    <label>
+                      Produto{' '}
+                      <select
+                        name="productId"
+                        required
+                        value={productId}
+                        onChange={(event) => {
+                          setProductId(event.target.value);
+                          setTemperatureStatus('');
+                        }}
+                      >
+                        <option value="" disabled>
+                          Selecione
+                        </option>
+                        {catalogData.products.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p.unit})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </p>
+                  {selectedProduct && !storage && (
+                    <p role="alert">
+                      Defina a conservação deste produto no catálogo antes de
+                      receber.
+                    </p>
+                  )}
+                  {storage && (
+                    <p>
+                      Conservação: {storageLabels[storage]} (definida no
+                      produto)
+                    </p>
+                  )}
+                  {storage === 'ambient' && (
+                    <p>
+                      <label>
+                        Temperatura medida no recebimento, em °C (opcional){' '}
+                        <input
+                          name="temperature"
+                          inputMode="decimal"
+                          maxLength={5}
+                        />
+                      </label>
+                    </p>
+                  )}
+                  {(storage === 'refrigerated' || storage === 'frozen') && (
+                    <fieldset>
+                      <legend>Temperatura no recebimento</legend>
+                      <label>
+                        <input
+                          type="radio"
+                          name="temperatureStatus"
+                          value="measured"
+                          checked={temperatureStatus === 'measured'}
+                          onChange={() => setTemperatureStatus('measured')}
+                        />{' '}
+                        Temperatura medida
+                      </label>{' '}
+                      <label>
+                        <input
+                          type="radio"
+                          name="temperatureStatus"
+                          value="not_measured"
+                          checked={temperatureStatus === 'not_measured'}
+                          onChange={() => setTemperatureStatus('not_measured')}
+                        />{' '}
+                        Não foi possível medir
+                      </label>
+                      {temperatureStatus === 'measured' && (
                         <p>
                           <label>
-                            Justificativa (por que não foi possível medir){' '}
-                            <textarea
-                              name="temperatureReason"
+                            Temperatura medida, em °C{' '}
+                            <input
+                              name="temperature"
                               required
-                              maxLength={300}
+                              inputMode="decimal"
+                              maxLength={5}
                             />
-                          </label>
+                          </label>{' '}
+                          Use ponto para decimais, por exemplo -18.5. O sistema
+                          registra o valor e não o avalia.
                         </p>
-                        <p role="note">
-                          O recebimento ficará bloqueado para uso até a decisão
-                          do responsável.
-                        </p>
-                      </>
-                    )}
-                  </fieldset>
-                )}
-                <p>
-                  <label>
-                    Fornecedor{' '}
-                    <select name="supplierId" required defaultValue="">
-                      <option value="" disabled>
-                        Selecione
-                      </option>
-                      {catalogData.suppliers.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </p>
-                <p>
-                  <label>
-                    Lote de origem{' '}
-                    <input name="sourceCode" required maxLength={120} />
-                  </label>
-                </p>
-                <p>
-                  <label>
-                    Quantidade recebida{' '}
-                    <input name="quantity" required inputMode="decimal" />
-                  </label>
-                </p>
-                <p>
-                  <label>
-                    Origem da validade{' '}
-                    <select
-                      value={origin}
-                      onChange={(e) => setOrigin(e.target.value)}
-                    >
-                      <option value="original">Original</option>
-                      <option value="responsible">
-                        Definida pelo responsável
-                      </option>
-                    </select>
-                  </label>
-                </p>
-                <p>
-                  <label>
-                    Data de validade{' '}
-                    <input name="expiryDate" type="date" required />
-                  </label>
-                </p>
-                {origin === 'responsible' && (
+                      )}
+                      {temperatureStatus === 'not_measured' && (
+                        <>
+                          <p>
+                            <label>
+                              Justificativa (por que não foi possível medir){' '}
+                              <textarea
+                                name="temperatureReason"
+                                required
+                                maxLength={300}
+                              />
+                            </label>
+                          </p>
+                          <p role="note">
+                            O recebimento ficará bloqueado para uso até a
+                            decisão do responsável.
+                          </p>
+                        </>
+                      )}
+                    </fieldset>
+                  )}
                   <p>
                     <label>
-                      Validade original, se conhecida{' '}
-                      <input name="originalExpiryDate" type="date" />
+                      Fornecedor{' '}
+                      <select name="supplierId" required defaultValue="">
+                        <option value="" disabled>
+                          Selecione
+                        </option>
+                        {catalogData.suppliers.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
                     </label>
                   </p>
-                )}
-                <p>
-                  A validade deve ser informada ou confirmada pelo profissional
-                  responsável.
-                </p>
-                <button disabled={busy || (!!selectedProduct && !storage)}>
-                  Registrar recebimento
-                </button>
-              </fieldset>
-            </form>
-          )}
+                  <p>
+                    <label>
+                      Lote de origem{' '}
+                      <input name="sourceCode" required maxLength={120} />
+                    </label>
+                  </p>
+                  <p>
+                    <label>
+                      Quantidade recebida{' '}
+                      <input name="quantity" required inputMode="decimal" />
+                    </label>
+                  </p>
+                  <p>
+                    <label>
+                      Origem da validade{' '}
+                      <select
+                        value={origin}
+                        onChange={(e) => setOrigin(e.target.value)}
+                      >
+                        <option value="original">Original</option>
+                        <option value="responsible">
+                          Definida pelo responsável
+                        </option>
+                      </select>
+                    </label>
+                  </p>
+                  <p>
+                    <label>
+                      Data de validade{' '}
+                      <input name="expiryDate" type="date" required />
+                    </label>
+                  </p>
+                  {origin === 'responsible' && (
+                    <p>
+                      <label>
+                        Validade original, se conhecida{' '}
+                        <input name="originalExpiryDate" type="date" />
+                      </label>
+                    </p>
+                  )}
+                  <p>
+                    A validade deve ser informada ou confirmada pelo
+                    profissional responsável.
+                  </p>
+                  <button disabled={busy || (!!selectedProduct && !storage)}>
+                    Registrar recebimento
+                  </button>
+                </fieldset>
+              </form>
+            )}
+          </div>
         </>
       )}
     </section>

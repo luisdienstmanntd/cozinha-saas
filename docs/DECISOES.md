@@ -458,3 +458,11 @@
 - **Consequência:** nova migração (`20261116000000_session_inactivity.sql`) que muda `has_membership` e `member_organizations`; reversão em `supabase/rollback/session_inactivity.sql`. Aparelho compartilhado: cada pessoa usa a própria conta; não há PIN nem troca rápida.
 - **Revisar quando:** a observação do piloto mostrar se 30 minutos atrapalham a cozinha, ou houver MFA e autenticação hospedada.
 
+
+## D-060 — Navegação por áreas da unidade (16/11/2026)
+
+- **Status:** ACEITA por luis em 16/11/2026 (PR #33), com ressalva: a perda de rascunhos ao trocar de unidade, atualizar acesso ou recarregar é aceita provisoriamente ([registro](V1_NAVEGACAO.md)).
+- **Decisão:** a unidade aberta tem cinco áreas (Validade, Receber, Produção, Locais, Cadastros), abre em Validade, com menu lateral no desktop e barra inferior no celular. A área está no endereço (`?unidade=&area=`). O colaborador vê só as áreas do perfil, apenas na interface; as permissões do banco não mudam. As áreas inativas ficam montadas e ocultas para não perder dados digitados.
+- **Motivo:** B1 da revisão visual (sem navegação) e autorização de luis de 16/11/2026.
+- **Consequência:** botão "Catálogo de X" passa a "Abrir X"; ferramentas da organização vão para Cadastros; V3 a V5 seguem como fatias próprias.
+- **Revisar quando:** a observação do piloto mostrar se as áreas e o perfil do colaborador atendem a cozinha.

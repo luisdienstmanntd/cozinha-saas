@@ -4,7 +4,7 @@ import { IdentityHome } from '../features/identity/components/IdentityHome';
 import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
 import { LocationsPanel } from '../features/locations/components/LocationsPanel';
 import { BatchPanel } from '../features/batches/components/BatchPanel';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { trackGateways } from '../features/pending/application/trackGateways';
 import { PendingAttempts } from '../features/pending/components/PendingAttempts';
 import type { PendingAttempt } from '../features/pending/domain/pending';
@@ -17,6 +17,15 @@ import {
 import { ProductionPanel } from '../features/production/components/ProductionPanel';
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 import { SettingsPanel } from '../features/settings/components/SettingsPanel';
+import { UnitNav } from '../features/navigation/components/UnitNav';
+import {
+  areasFor,
+  parsePlace,
+  placeSearch,
+  resolveArea,
+} from '../features/navigation/domain/areas';
+import type { AreaId } from '../features/navigation/domain/areas';
+import type { UnitContext } from '../features/identity/components/IdentityHome';
 
 function Workspace({
   configuration,
@@ -25,6 +34,7 @@ function Workspace({
   canCreate,
   userId,
   timezone,
+  unit,
 }: {
   configuration: NonNullable<ReturnType<typeof configureApp>> & {
     mode: 'local';
@@ -34,6 +44,7 @@ function Workspace({
   canCreate: boolean;
   userId: string;
   timezone: string;
+  unit: UnitContext;
 }) {
   const [revision, setRevision] = useState(0);
   const [pendingToken, setPendingToken] = useState(0);
@@ -42,6 +53,42 @@ function Workspace({
   // Fatia 7.6: configuração salva muda quem registra produção e a janela.
   const [settingsToken, setSettingsToken] = useState(0);
   const scope = { organizationId, establishmentId };
+  // V1: a unidade se divide em áreas. Todas ficam montadas e as inativas só ocultas (`hidden`),
+  // então o que foi digitado em um formulário não se perde ao trocar de área.
+  const areas = useMemo(
+    () =>
+      areasFor({
+        owner: canCreate,
+        production: !!configuration.production,
+        locations: !!configuration.locations,
+      }),
+    [canCreate, configuration.production, configuration.locations],
+  );
+  const [area, setArea] = useState<AreaId>(() =>
+    resolveArea(parsePlace(window.location.search).area, areas),
+  );
+  const content = useRef<HTMLDivElement>(null);
+  const moved = useRef(false);
+  useEffect(() => {
+    function follow() {
+      setArea(resolveArea(parsePlace(window.location.search).area, areas));
+    }
+    window.addEventListener('popstate', follow);
+    return () => window.removeEventListener('popstate', follow);
+  }, [areas]);
+  useEffect(() => {
+    // Leitor de tela e teclado seguem para o conteúdo da área escolhida (não na primeira carga).
+    if (moved.current) content.current?.focus();
+    moved.current = true;
+  }, [area]);
+  const hrefFor = (next: AreaId) =>
+    `${window.location.pathname}${placeSearch(window.location.search, establishmentId, next)}`;
+  function select(next: AreaId) {
+    if (next === area) return;
+    window.history.pushState(null, '', hrefFor(next));
+    setArea(next);
+  }
+  const current = areas.find((item) => item.id === area) ?? areas[0]!;
   // Escritas passam pelo decorador: tentativa de resultado incerto fica guardada até ser conferida.
   const tracked = useMemo(
     () =>
@@ -87,69 +134,97 @@ function Workspace({
     }
   }
   return (
-    <>
-      <PendingAttempts
-        scope={scope}
-        userId={userId}
-        timezone={timezone}
-        operations={configuration.operations}
-        resend={resend}
-        onResolved={() => setPendingToken((value) => value + 1)}
+    <div className="unit-layout">
+      <UnitNav
+        areas={areas}
+        current={area}
+        hrefFor={hrefFor}
+        onSelect={select}
       />
-      <CatalogPanel
-        gateway={configuration.catalog}
-        scope={scope}
-        canCreate={canCreate}
-        onCreated={() => setRevision((value) => value + 1)}
-      />
-      <SettingsPanel
-        scope={scope}
-        gateway={configuration.settings}
-        canEdit={canCreate}
-        onSaved={() => setSettingsToken((value) => value + 1)}
-      />
-      {tracked.production && (
-        <ProductionPanel
+      <div
+        id="conteudo-unidade"
+        ref={content}
+        tabIndex={-1}
+        className="unit-content"
+        aria-label={`${unit.unitName}: ${current.label}`}
+        role="region"
+      >
+        {/* Registros não confirmados valem para qualquer área. */}
+        <PendingAttempts
           scope={scope}
-          timezone={timezone}
           userId={userId}
-          canCreate={canCreate}
-          catalog={configuration.catalog}
-          gateway={tracked.production}
-          loadMembers={tracked.handling.members}
-          setDisplayName={tracked.handling.setDisplayName}
-          catalogRevision={revision}
-          reloadToken={pendingToken}
-          labels={configuration.labels}
-          onChanged={() => setStockToken((value) => value + 1)}
-          settings={configuration.settings}
-          settingsRevision={settingsToken}
+          timezone={timezone}
+          operations={configuration.operations}
+          resend={resend}
+          onResolved={() => setPendingToken((value) => value + 1)}
         />
-      )}
-      <BatchPanel
-        catalog={configuration.catalog}
-        batches={tracked.batches}
-        containers={configuration.containers}
-        scope={scope}
-        timezone={timezone}
-        canCreate={canCreate}
-        catalogRevision={revision}
-        reloadToken={pendingToken + stockToken}
-        userId={userId}
-        labels={configuration.labels}
-        movements={tracked.movements}
-        occurrences={tracked.occurrences}
-        handling={tracked.handling}
-        locations={tracked.locations}
-      />
-      {tracked.locations && (
-        <LocationsPanel
-          scope={scope}
-          gateway={tracked.locations}
-          canManage={canCreate}
-        />
-      )}
-    </>
+        <div hidden={area !== 'validade' && area !== 'receber'}>
+          <BatchPanel
+            area={area === 'receber' ? 'receber' : 'validade'}
+            catalog={configuration.catalog}
+            batches={tracked.batches}
+            containers={configuration.containers}
+            scope={scope}
+            timezone={timezone}
+            canCreate={canCreate}
+            catalogRevision={revision}
+            reloadToken={pendingToken + stockToken}
+            userId={userId}
+            labels={configuration.labels}
+            movements={tracked.movements}
+            occurrences={tracked.occurrences}
+            handling={tracked.handling}
+            locations={tracked.locations}
+          />
+        </div>
+        {tracked.production && (
+          <div hidden={area !== 'producao'}>
+            <ProductionPanel
+              scope={scope}
+              timezone={timezone}
+              userId={userId}
+              canCreate={canCreate}
+              catalog={configuration.catalog}
+              gateway={tracked.production}
+              loadMembers={tracked.handling.members}
+              setDisplayName={tracked.handling.setDisplayName}
+              catalogRevision={revision}
+              reloadToken={pendingToken}
+              labels={configuration.labels}
+              onChanged={() => setStockToken((value) => value + 1)}
+              settings={configuration.settings}
+              settingsRevision={settingsToken}
+            />
+          </div>
+        )}
+        {tracked.locations && (
+          <div hidden={area !== 'locais'}>
+            <LocationsPanel
+              scope={scope}
+              gateway={tracked.locations}
+              canManage={canCreate}
+            />
+          </div>
+        )}
+        <div hidden={area !== 'cadastros'}>
+          {canCreate && (
+            <CatalogPanel
+              gateway={configuration.catalog}
+              scope={scope}
+              canCreate={canCreate}
+              onCreated={() => setRevision((value) => value + 1)}
+            />
+          )}
+          <SettingsPanel
+            scope={scope}
+            gateway={configuration.settings}
+            canEdit={canCreate}
+            onSaved={() => setSettingsToken((value) => value + 1)}
+          />
+          {canCreate && unit.organizationTools}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -236,6 +311,7 @@ export function App({
           canCreate,
           userId,
           timezone,
+          unit,
         ) => (
           <Workspace
             configuration={configuration}
@@ -244,6 +320,7 @@ export function App({
             canCreate={canCreate}
             userId={userId}
             timezone={timezone}
+            unit={unit}
           />
         )}
       />

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
+import { openArea } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.5b, E2E 29 e 33 do desenho (seção 8): recebimento sem medição gera etiqueta com faixa,
@@ -11,7 +12,7 @@ async function signIn(page, user) {
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
 }
 
@@ -32,9 +33,8 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
   await withCatalogFixture(async ({ users }) => {
     await page.goto('/');
     await signIn(page, users[0]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Cadastros');
     await page.getByLabel('Nome do produto').fill('Frango de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
     await page
@@ -46,6 +46,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     ).toBeVisible();
     await page.getByLabel('Nome do fornecedor').fill('Granja de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
+    await openArea(page, 'Receber');
     await expect(
       page
         .getByRole('combobox', { name: 'Fornecedor', exact: true })
@@ -79,6 +80,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
       ),
     ).toBeVisible();
 
+    await openArea(page, 'Validade');
     const blocks = page.getByRole('region', {
       name: 'Bloqueios e ocorrências',
     });
@@ -118,9 +120,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     // E2E 33: membro vê o bloqueio e não a ação de decisão.
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[2]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await expect(blocks).toContainText('BLOQUEADO - aguardando decisão');
     await expect(blocks).toContainText(
       'Somente o proprietário registra a decisão.',
@@ -135,9 +135,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     // Proprietário libera com justificativa; o bloqueio sai e a reimpressão vem sem a faixa.
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[0]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await blocks.getByRole('button', { name: 'Registrar decisão' }).click();
     const decision = page.getByRole('form', {
       name: 'Decisão da ocorrência de Frango de teste',

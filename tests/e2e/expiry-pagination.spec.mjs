@@ -88,9 +88,7 @@ test('consulta mais de mil recebimentos e busca produto fora do catálogo carreg
     await page.getByLabel('E-mail').fill(users[0].email);
     await page.getByLabel('Senha').fill(users[0].password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     const dashboard = page.getByRole('region', { name: 'Painel de validade' });
     await expect(dashboard.getByText(/Vencidos: 1001/)).toBeVisible({
       timeout: 30000,

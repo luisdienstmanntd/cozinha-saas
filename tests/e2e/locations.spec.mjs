@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openArea } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.9, E2E 25 do desenho: criar locais, mudar o recipiente de local (com confirmação quando a
@@ -8,14 +9,13 @@ async function signIn(page, user) {
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
 }
 
 async function receive(page, quantity) {
-  await page
-    .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-    .click();
+  await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+  await openArea(page, 'Cadastros');
   await page.getByLabel('Nome do produto').fill('Arroz de teste');
   await page.getByLabel('Unidade de medida').selectOption('kg');
   await page
@@ -25,6 +25,7 @@ async function receive(page, quantity) {
   await expect(page.getByText('Arroz de teste — kg — Ambiente')).toBeVisible();
   await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
   await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
+  await openArea(page, 'Receber');
   await expect(
     page
       .getByRole('combobox', { name: 'Fornecedor', exact: true })
@@ -41,6 +42,7 @@ async function receive(page, quantity) {
   await page.getByLabel('Data de validade').fill('2030-01-01');
   await page.getByRole('button', { name: 'Registrar recebimento' }).click();
   await expect(page.getByText('Recebimento registrado.')).toBeVisible();
+  await openArea(page, 'Validade');
 }
 
 test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade', async ({
@@ -51,6 +53,7 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
     await page.goto('/');
     await signIn(page, users[0]);
     await receive(page, '10');
+    await openArea(page, 'Locais');
 
     const panel = page.getByRole('region', { name: 'Locais de armazenamento' });
     await panel.getByLabel('Nome do local').fill('Despensa');
@@ -68,6 +71,7 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
       'Já existe um local com esse nome',
     );
 
+    await openArea(page, 'Validade');
     const rows = page.getByRole('list', { name: 'Recipientes e validade' });
     const row = rows.getByRole('listitem').filter({ hasText: 'lote 0001' });
     await expect(row).not.toContainText('local:');
@@ -115,8 +119,10 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
     await expect(row).toContainText('validade 2030-01-01');
 
     // Local desativado não aparece como destino.
+    await openArea(page, 'Locais');
     await panel.getByRole('button', { name: 'Desativar Despensa' }).click();
     await expect(panel).toContainText('(desativado)');
+    await openArea(page, 'Validade');
     await row.getByRole('button', { name: 'Mudar de local' }).click();
     const last = page.getByRole('form', { name: 'Mudar de local' });
     await expect(
@@ -132,9 +138,8 @@ test('membro vê os locais, mas não cria nem muda de local', async ({
   await withCatalogFixture(async ({ users }) => {
     await page.goto('/');
     await signIn(page, users[0]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Locais');
     const panel = page.getByRole('region', { name: 'Locais de armazenamento' });
     await panel.getByLabel('Nome do local').fill('Despensa');
     await panel.getByRole('button', { name: 'Criar local' }).click();
@@ -143,9 +148,8 @@ test('membro vê os locais, mas não cria nem muda de local', async ({
     await page.reload();
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[2]);
-    await page
-      .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-      .click();
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Locais');
     const view = page.getByRole('region', { name: 'Locais de armazenamento' });
     await expect(view).toContainText('Despensa — Refrigerado');
     await expect(view.getByLabel('Nome do local')).toHaveCount(0);

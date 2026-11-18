@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openArea } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.8, E2E 34 do desenho: fechar a aba com resultado incerto, reabrir e confirmar sem duplicar.
@@ -10,21 +11,19 @@ async function signIn(page, user) {
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Catálogo de Cozinha principal' }),
+    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
   ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-    .click();
+  await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
 }
 
-// V2: depois de recarregar a sessão continua; só falta reabrir o catálogo da unidade.
+// V2 e V1: depois de recarregar a sessão continua e o endereço reabre a unidade; só falta ir à
+// lista de validade.
 async function reopen(page) {
-  await page
-    .getByRole('button', { name: 'Catálogo de Cozinha principal' })
-    .click();
+  await openArea(page, 'Validade');
 }
 
 async function prepare(page) {
+  await openArea(page, 'Cadastros');
   await page.getByLabel('Nome do produto').fill('Arroz de teste');
   await page.getByLabel('Unidade de medida').selectOption('kg');
   await page
@@ -34,6 +33,7 @@ async function prepare(page) {
   await expect(page.getByText('Arroz de teste — kg — Ambiente')).toBeVisible();
   await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
   await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
+  await openArea(page, 'Receber');
   await expect(
     page
       .getByRole('combobox', { name: 'Fornecedor', exact: true })
