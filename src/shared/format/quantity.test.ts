@@ -174,6 +174,33 @@ describe('formatQuantity (V5B)', () => {
     expect(formatQuantity(1e-7)).toBe('0');
     expect(formatQuantity(1.5e3)).toBe('1500');
   });
+  it('além de 3 casas arredonda e não trunca', () => {
+    expect(formatQuantity(0.0006)).toBe('0,001');
+    expect(formatQuantity('0.0006')).toBe('0,001');
+    expect(formatQuantity(0.9996)).toBe('1');
+    expect(formatQuantity(2.0004)).toBe('2');
+    expect(formatQuantity('1.2346')).toBe('1,235');
+  });
+  it('preserva todo valor válido guardado (até 3 casas), como texto e como número', () => {
+    const expected = (milli: number) => {
+      const whole = Math.trunc(milli / 1000);
+      const frac = String(milli % 1000)
+        .padStart(3, '0')
+        .replace(/0+$/, '');
+      return frac ? `${whole},${frac}` : String(whole);
+    };
+    const check = (milli: number) => {
+      const stored = `${Math.trunc(milli / 1000)}.${String(milli % 1000).padStart(3, '0')}`;
+      expect(formatQuantity(stored), stored).toBe(expected(milli));
+      expect(formatQuantity(Number(stored)), `n:${stored}`).toBe(
+        expected(milli),
+      );
+    };
+    // todos os milésimos de 0,001 a 25,000 e de 999.990,000 a 999.999.999,999 (passos do fim da faixa)
+    for (let m = 1; m <= 25000; m++) check(m);
+    for (let m = 999_999_999_999 - 20_000; m <= 999_999_999_999; m++) check(m);
+    for (let m = 1_000; m <= 999_999_999_999; m += 7_654_321_017) check(m);
+  });
   it('ida e volta: o que se mostra, digitado de novo, vira o mesmo número guardado', () => {
     for (const stored of [
       0.001, 0.25, 1.25, 12.5, 333.333, 1500, 999999999.999,
