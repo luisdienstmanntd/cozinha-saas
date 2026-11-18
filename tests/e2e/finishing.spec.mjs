@@ -135,9 +135,14 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
       name: 'Cozinha SaaS — unidades, recebimentos e validade',
     });
     await expect(title).toHaveCount(1);
-    expect((await title.boundingBox()).height).toBeLessThanOrEqual(1);
     const bar = page.getByRole('region', { name: 'Sessão' });
+    // Fatia 8.1b (D-065): depois do reload o título só encolhe quando a unidade volta a abrir
+    // (`.workspace.unit-open`, styles.css). Esperar o nome da unidade na barra antes de medir; medir
+    // antes disso lia o título inteiro (84 px) e falhou uma vez na CI. O limite de 1 px não mudou.
     await expect(bar).toContainText('Cozinha principal');
+    await expect
+      .poll(async () => (await title.boundingBox())?.height ?? Infinity)
+      .toBeLessThanOrEqual(1);
     await expect(bar).toContainText(users[0].email);
     await expect(bar.getByRole('button', { name: 'Sair' })).toBeInViewport();
     const mobileCard = page
