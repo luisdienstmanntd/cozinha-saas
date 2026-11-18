@@ -68,9 +68,9 @@ describe('hospedagem (fatia 8.4a)', () => {
     expect(document.body.textContent).not.toContain('abcdefghij0123456789');
     expect(document.body.textContent).not.toContain('sb_publishable_');
   });
-  it('configuração hospedada completa abre o acesso com aviso de ambiente de testes', () => {
+  it('configuração hospedada completa abre o acesso com aviso de ambiente de testes', async () => {
     render(<App configuration={configureApp(hosted, 'cozinha.pages.dev')} />);
     expect(screen.getByText('Ambiente de testes.')).toBeVisible();
-    expect(screen.getByLabelText(/E-mail/)).toBeVisible();
+    expect(await screen.findByLabelText(/E-mail/)).toBeVisible();
   });
 });
