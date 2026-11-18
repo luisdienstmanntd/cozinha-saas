@@ -1,4 +1,6 @@
-# Fase 8, fatia 8.4a — Modo hospedado e ambiente de testes (D-066)
+# Fase 8, fatia 8.4a — Modo hospedado e ambiente de testes (D-067)
+
+> **Estado (18/11/2026, 00:39 UTC):** proposta **aprovada por luis, com aceite final condicionado a seis pontos**. A seção 13 registra cada um e como foi tratado. A numeração anterior "D-066" era do `FASE_08_1` (estabilização da CI e proteção da `main`); esta decisão é a **D-067**. O PR #44 aguarda a integração da cadeia; depois disso resolvo os conflitos sem reescrever histórico e rodo a bateria completa no código combinado.
 
 Antecipa parcialmente a fatia 8.4 (hospedagem) do `PLANO_INTEGRACAO.md` para que luis use o sistema definitivo com **dados fictícios** e o refine aos poucos. **Nada aqui foi aplicado no Supabase hospedado nem implantado no Cloudflare Pages**; tudo foi validado só no Supabase local descartável. Nada afirma conformidade sanitária (Q10 segue pendente). Sem merge, deploy, contratação ou alteração no banco hospedado sem autorização específica de luis.
 
@@ -24,7 +26,7 @@ Conferido no GitHub em 18/11/2026: a `main` (`98cfa5d`) já tem #42 (CI), #28, #
 | 9 | Validar RLS, permissões, sessões e isolamento | Seção 7. |
 | 10 | Zerar o banco de testes | `private.reset_test_environment`, com marcador de ambiente e quatro travas. Seção 9. |
 
-## 3. Decisão D-066
+## 3. Decisão D-067
 
 - **Decisão:** a 8.4a entrega o necessário para um ambiente hospedado **de testes**, com dados fictícios, em projeto Supabase próprio. A produção terá projeto e domínio separados (decisão 6 da revisão técnica) e continua exigindo MFA obrigatório, revisão de segurança independente, backup com teste de restauração e a conferência da nutricionista RT.
 - **Motivo:** pedido de luis de 18/11/2026 de usar o sistema definitivo com dados fictícios enquanto o refina.
@@ -93,11 +95,11 @@ Esperado: nenhuma linha `FALHA`. Avisos ("AVISO") pedem conferência manual no p
 
 `select * from private.reset_test_environment('operational', 'ZERAR AMBIENTE DE TESTES');` no SQL Editor.
 
-Travas, todas obrigatórias: (1) sessão de administração do banco (não funciona pela API); (2) o marcador `private.environment_marker` precisa existir e ser `testes` — **sem marcador, ou com `producao`, recusa** (e `producao` é irreversível: não volta a `testes`, não é apagado nem truncado); (3) a frase de confirmação exata; (4) transação única, sem `CASCADE` (se uma tabela mantida referenciar uma apagada, falha em vez de apagar mais), com verificação final `assert_history_protected()`.
+Travas, todas obrigatórias: (1) sessão de administração do banco (não funciona pela API) e **cadeado administrativo**: só uma operação administrativa por vez (a segunda recebe erro `55P03` na hora); (2) o marcador `private.environment_marker` precisa existir e ser `testes` — **sem marcador, ou com `producao`, recusa** (e `producao` é irreversível: não volta a `testes`, não é apagado nem truncado; declarar `producao` exige uma frase de confirmação); (3) escopo e frase exatos — **escopo nulo, vazio ou desconhecido é recusado**; (4) **lista explícita de tabelas** (abaixo); (5) transação única, sem `CASCADE`, espera de no máximo 15 s por tabela em uso (desiste sem apagar) e verificação final `assert_history_protected()`.
 
-- `operational`: apaga recebimentos, recipientes, saldos, movimentos, manipulações, anulações, produções, ocorrências, mudanças de local e a auditoria; **mantém** empresas, unidades, vínculos, catálogo, fornecedores, locais e configurações. Tabelas futuras do schema `public` entram como operacionais.
-- `everything`: apaga também essas.
-- Contas de acesso (Authentication > Users) **nunca** são tocadas pela função; apague-as pelo painel se quiser recomeçar do zero.
+- **Listas explícitas** (dentro da função): *operacionais* — `batch_receipts`, `container_balances`, `container_handlings`, `containers`, `entity_changes`, `handling_voids`, `location_moves`, `occurrence_decisions`, `occurrences`, `batch_productions`, `production_voids`, `stock_movements`; *configuração* — `establishment_settings`, `establishments`, `memberships`, `organizations`, `products`, `storage_locations`, `suppliers`. **Fail-closed:** se existir no schema `public` uma tabela que não está em nenhuma lista (ou uma lista citar tabela inexistente), o reset **recusa** e diz qual; um teste pgTAP falha junto, avisando quem criar tabela nova para classificá-la. (Ao integrar a cadeia, `production_label_downloads` e `production_temperatures` entram na lista operacional na mesma hora do rebase.)
+- `operational`: apaga as tabelas operacionais e **mantém** as de configuração. `everything`: apaga as duas listas.
+- **Registros auxiliares de sessão:** o reset **não toca** em `auth.users`, `auth.sessions`, `private.session_activity` (V2) nem no marcador. Motivo: contas e sessões não têm dado de negócio; apagar `session_activity` só reiniciaria o relógio de inatividade, e apagar `auth.sessions` derrubaria quem está usando o site sem necessidade. Quem perde vínculo no `everything` passa a não enxergar nada (RLS). Para recomeçar também as contas, apague-as em Authentication > Users. Teste: uma linha de `auth.sessions` sobrevive ao reset completo.
 - Os gatilhos append-only são suspensos **só dentro da função** e restaurados exatamente como estavam (`ENABLE ALWAYS` incluído); o teste confirma que o histórico volta a recusar `DELETE`.
 - Devolve a contagem de linhas removidas por tabela.
 - Alternativa mais drástica, sem SQL: apagar e recriar o projeto no Supabase (muda URL e chaves; exige atualizar o Cloudflare).
@@ -132,21 +134,31 @@ Travas, todas obrigatórias: (1) sessão de administração do banco (não funci
 |---|---|
 | `format:check`, `lint`, `typecheck`, `build` | ok |
 | `build` com `CF_PAGES=1` e sem variáveis | **falha de propósito** com mensagem explícita; com as quatro variáveis, passa e gera `dist/_headers` |
-| Vitest | 330 passaram (inclui `environment`, `buildGuard`/cabeçalhos e `App`) |
+| Vitest | 330 passaram |
 | `test:ci-scripts` | 10 passaram (5 novos do verificador) |
-| pgTAP | 1376 passaram (49 novos em `hosted_provisioning.test.sql`) |
+| pgTAP | 1389 passaram (62 em `hosted_provisioning.test.sql`) |
 | Advisors de segurança (`--fail-on warn`) | sem problemas |
-| Integração | 42 passaram (5 novos em `signup-lockdown.test.mjs`) |
+| Integração | 43 passaram (6 novos: cadastro, sessões, vínculo revogado, concorrência administrativa) |
 | E2E (Playwright, Chromium) | 19 passaram, sem alteração nos existentes |
+| **Mesma bateria com os privilégios padrão de tabelas nova removidos** (exposição automática desligada, ponto 6) | pgTAP 1389, advisors sem problemas, integração 43, E2E 19: tudo verde |
 | CSP em navegador real (dist servido com o `_headers`) | tela de acesso e faixa renderizam; console sem violações |
 
 Nenhum teste existente foi alterado, removido ou enfraquecido. Não executado: nada no Supabase hospedado nem no Cloudflare (por ordem de luis).
 
 ## 12. Limites e decisões para luis
 
-1. **Aceite da fatia 8.4a e do D-066.** Sem ele, nada segue.
-2. **Quando integrar:** esta fatia espera a cadeia (conflito de 4 arquivos, previsto e mecânico). Posso rebasear quando você pedir.
-3. **Deploy automático do Cloudflare:** veja o passo 0; só você controla quando o primeiro deploy acontece.
-4. **MFA obrigatório** para proprietários continua sem implementação (decisão 2); para o ambiente de testes com dados fictícios sugiro adiar, mas a produção não deve começar sem ele.
+1. **Aceite final da 8.4a e da D-067**, depois dos seis pontos da seção 13.
+2. **Quando integrar:** esta fatia espera a cadeia (conflito de 4 arquivos, previsto e mecânico). Rebase sem reescrever histórico (merge da `main` na branch) e bateria completa no código combinado quando a cadeia entrar.
+3. **Deploy automático do Cloudflare:** veja o passo 0 do guia; só você controla quando o primeiro deploy acontece. Nenhuma migração foi nem será aplicada no Supabase hospedado sem sua autorização específica.
+4. **MFA obrigatório:** ver ponto 5 da seção 13.
 5. **Proprietário único no piloto** (decisão de 12/11/2026) continua valendo; as funções de provisionamento aceitam o papel `owner` para colaboradores só se você pedir explicitamente.
 6. **Pendências do piloto inalteradas:** nutricionista RT (Q10), teste físico de impressão, MFA, backup/restauração.
+
+## 13. Condições do aceite de luis (18/11/2026, 00:39 UTC) e como foram tratadas
+
+1. **Numeração duplicada D-066.** A D-066 é da fatia 8.1 (plano de integração). Esta decisão virou **D-067** em `DECISOES.md`, `IA_ESTADO.md`, na migração, nos testes e neste relatório. Conferi no GitHub: nenhuma branch usa D-067.
+2. **Lista explícita de tabelas no reset.** Feito (seção 9), com recusa quando o schema e as listas divergem e teste que acusa a divergência.
+3. **Operações administrativas simultâneas e escopos nulos/inválidos.** Cadeado `pg_try_advisory_xact_lock` comum a bootstrap, vínculo de colaborador, declaração do ambiente e reset (erro `55P03` para a segunda); `lock_timeout` de 15 s no reset. Escopo nulo, vazio ou desconhecido, confirmação nula, tipo de ambiente nulo, papel nulo, empresa nula e fuso nulo são recusados com erro claro (antes, um escopo nulo **passava** pela conferência, o que foi corrigido). Testes: pgTAP (nulos e inválidos) e integração com duas sessões `psql` reais (`admin-concurrency.test.mjs`).
+4. **Registros auxiliares de sessão no reset.** Decisão e justificativa na seção 9 (não são tocados). Na integração com a V2, `private.session_activity` fica fora das duas listas de propósito; o teste de catálogo só cobre o schema `public`.
+5. **MFA obrigatório antes do lançamento comercial.** Preservado como condição de lançamento: continua pendente (I-16, decisão 2 da revisão técnica) e **ausente apenas nos testes privados com dados fictícios**. Para que isso não seja esquecido: (a) `private.declare_environment('producao', …)` exige a frase `PRODUCAO COM MFA OBRIGATORIO`, que é um reconhecimento humano, **não uma verificação técnica**; (b) a faixa "Ambiente de testes" deixa claro que é teste; (c) a D-067 e este relatório listam MFA entre os requisitos de produção. A implementação do MFA obrigatório (cadastro do fator na interface e exigência de nível de autenticação nas políticas) segue como fatia própria, a pedir por você.
+6. **Compatibilidade com a exposição automática de tabelas desativada.** O `config.toml` já traz `auto_expose_new_tables = false`, mas o Supabase local **não aplica** essa chave aos privilégios padrão (conferi: o `postgres` ainda concede privilégios a `anon`/`authenticated`/`service_role` em tabelas novas); por isso o teste local comum **não** prova a compatibilidade. Fiz a prova direta: uma migração temporária (não versionada) removeu esses privilégios padrão antes das demais e a bateria inteira rodou assim. Resultado na seção 11. As migrações já concedem tudo explicitamente (`revoke all` + `grant` por tabela/coluna/função), e as novas funções administrativas são só do schema `private`, sem tabela nova no `public`.

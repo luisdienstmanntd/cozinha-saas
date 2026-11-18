@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { localSupabase, checked } from '../../scripts/local-supabase.mjs';
 import { verifyProject } from '../../scripts/hosted/verify-hosted.mjs';
 
-// Fatia 8.4a (D-066): cadastro público restrito. O Supabase local roda com enable_signup=false, como o
+// Fatia 8.4a (D-067): cadastro público restrito. O Supabase local roda com enable_signup=false, como o
 // ambiente hospedado deve rodar. Mesmo se alguém conseguisse criar uma conta, ela não teria acesso a nada
 // (defesa em profundidade: a autorização vem do vínculo, não da existência da conta).
 test('cadastro público e login anônimo são recusados', async () => {

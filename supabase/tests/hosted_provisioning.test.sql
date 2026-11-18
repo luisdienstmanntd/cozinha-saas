@@ -1,4 +1,4 @@
--- Fatia 8.4a (D-066): provisionamento do ambiente hospedado e reset do banco de testes.
+-- Fatia 8.4a (D-067): provisionamento do ambiente hospedado e reset do banco de testes.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
@@ -16,7 +16,7 @@ select is(
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     cross join (select rolname from pg_roles where rolname in ('anon', 'authenticated', 'service_role')) r
     where n.nspname = 'private'
-      and p.proname in ('assert_admin_session', 'declare_environment', 'find_confirmed_user', 'bootstrap_owner_organization',
+      and p.proname in ('assert_admin_session', 'acquire_admin_lock', 'declare_environment', 'find_confirmed_user', 'bootstrap_owner_organization',
                         'add_member_to_organization', 'reset_test_environment', 'protect_environment_marker')
       and has_function_privilege(r.rolname, p.oid, 'execute')),
   '', 'anon, authenticated e service_role não executam nenhuma função administrativa');
@@ -42,6 +42,9 @@ select throws_ok($$select * from private.bootstrap_owner_organization('dono@test
   '22023', null, 'nome de exibição vazio recusado');
 select throws_ok(format($$select * from private.bootstrap_owner_organization('dono@teste.example', 'Ana', %L, 'Cozinha Central')$$, repeat('x', 81)),
   '22023', null, 'nome da empresa acima de 80 caracteres recusado');
+select throws_ok($$select * from private.bootstrap_owner_organization('dono@teste.example', 'Ana', 'Empresa Um', 'Cozinha Central', null)$$, '22023', null, 'fuso nulo recusado');
+select throws_ok($$select * from private.bootstrap_owner_organization(null, 'Ana', 'Empresa Um', 'Cozinha Central')$$, '22023', null, 'e-mail nulo recusado');
+select throws_ok($$select * from private.bootstrap_owner_organization('dono@teste.example', 'Ana', null, 'Cozinha Central')$$, '22023', null, 'empresa sem nome recusada');
 select is((select count(*) from public.organizations), 0::bigint, 'nenhuma recusa deixou empresa pela metade');
 
 select lives_ok($$create temporary table boot1 as select * from private.bootstrap_owner_organization('  DONO@teste.example ', 'Ana', 'Empresa Um', 'Cozinha Central')$$,
@@ -55,6 +58,8 @@ select throws_ok($$select * from private.bootstrap_owner_organization('outro@tes
 -- Colaborador ---------------------------------------------------------------------------------------
 select throws_ok(format($$select private.add_member_to_organization(%L, 'colab@teste.example', 'Bia', 'admin')$$, (select organization_id from boot1)),
   '22023', null, 'papel inválido recusado');
+select throws_ok(format($$select private.add_member_to_organization(%L, 'colab@teste.example', 'Bia', null)$$, (select organization_id from boot1)), '22023', null, 'papel nulo recusado');
+select throws_ok($$select private.add_member_to_organization(null, 'colab@teste.example', 'Bia')$$, 'P0002', null, 'empresa nula recusada');
 select throws_ok($$select private.add_member_to_organization('99999999-9999-9999-9999-999999999999', 'colab@teste.example', 'Bia')$$,
   'P0002', null, 'empresa inexistente recusada');
 select lives_ok(format($$select private.add_member_to_organization(%L, 'colab@teste.example', 'Bia')$$, (select organization_id from boot1)), 'colaborador vinculado');
@@ -77,12 +82,24 @@ select is((select count(*) from public.organizations) + (select count(*) from pu
 reset role;
 
 -- Reset do ambiente de testes ------------------------------------------------------------------------
+-- As listas explícitas do reset cobrem exatamente as tabelas do schema public (uma tabela nova sem
+-- classificação faz o reset recusar; este teste falha junto, avisando quem criou a tabela).
+select is(
+  (select string_agg(c.relname, ',' order by c.relname collate "C") from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'batch_productions,batch_receipts,container_balances,container_handlings,containers,entity_changes,establishment_settings,establishments,handling_voids,location_moves,memberships,occurrence_decisions,occurrences,organizations,production_voids,products,stock_movements,storage_locations,suppliers',
+  'tabelas do schema public conferem com as listas do reset (atualize private.reset_test_environment ao criar tabela)');
 select throws_ok($$select * from private.reset_test_environment('operational', 'ZERAR AMBIENTE DE TESTES')$$, '55000',
   'Recusado: este banco não está declarado como ambiente de testes.', 'sem marcador, o reset é recusado');
 select throws_ok($$select private.declare_environment('homologacao')$$, '22023', null, 'tipo de ambiente inválido');
+select throws_ok($$select private.declare_environment(null)$$, '22023', null, 'tipo de ambiente nulo recusado');
+select throws_ok($$select private.declare_environment('producao')$$, '22023', null, 'produção sem frase de confirmação recusada');
 select lives_ok($$select private.declare_environment('testes')$$, 'declara ambiente de testes');
 select throws_ok($$select * from private.reset_test_environment('operational', 'zerar')$$, '22023', 'Confirmação incorreta; nada foi apagado.', 'frase errada recusada');
-select throws_ok($$select * from private.reset_test_environment('tudo', 'ZERAR AMBIENTE DE TESTES')$$, '22023', null, 'escopo inválido recusado');
+select throws_ok($$select * from private.reset_test_environment('tudo', 'ZERAR AMBIENTE DE TESTES')$$, '22023', 'Escopo: operational ou everything.', 'escopo inválido recusado');
+select throws_ok($$select * from private.reset_test_environment(null, 'ZERAR AMBIENTE DE TESTES')$$, '22023', 'Escopo: operational ou everything.', 'escopo nulo recusado');
+select throws_ok($$select * from private.reset_test_environment('operational', null)$$, '22023', 'Confirmação incorreta; nada foi apagado.', 'confirmação nula recusada');
+select throws_ok($$select * from private.reset_test_environment('', 'ZERAR AMBIENTE DE TESTES')$$, '22023', null, 'escopo vazio recusado');
 update public.organizations set name = 'Empresa Um Editada' where name = 'Empresa Um';
 select cmp_ok((select count(*) from public.entity_changes), '>=', 1::bigint, 'há auditoria antes do reset');
 select throws_ok($$delete from public.entity_changes$$, '55000', null, 'histórico segue protegido antes do reset');
@@ -96,12 +113,15 @@ update public.organizations set name = 'Empresa Um Final' where name = 'Empresa 
 select throws_ok($$delete from public.entity_changes$$, '55000', null, 'histórico volta a recusar apagar depois do reset');
 select lives_ok($$select private.assert_history_protected()$$, 'proteção do histórico íntegra');
 
+insert into auth.sessions (id, user_id) values ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001');
 select lives_ok($$select * from private.reset_test_environment('everything', 'ZERAR AMBIENTE DE TESTES')$$, 'reset completo roda');
+select is((select count(*) from auth.sessions where id = 'b0000000-0000-0000-0000-000000000001'), 1::bigint, 'sessões de acesso não são tocadas pelo reset');
+select is((select kind from private.environment_marker), 'testes', 'o marcador do ambiente não é tocado pelo reset');
 select is((select count(*) from public.organizations) + (select count(*) from public.establishments) + (select count(*) from public.memberships), 0::bigint, 'reset completo apaga empresas, unidades e vínculos');
 select is((select count(*) from auth.users), 4::bigint, 'contas de acesso não são tocadas');
 
 -- Produção é irreversível ---------------------------------------------------------------------------
-select lives_ok($$select private.declare_environment('producao')$$, 'declara produção');
+select lives_ok($$select private.declare_environment('producao', 'PRODUCAO COM MFA OBRIGATORIO')$$, 'declara produção com a frase de confirmação');
 select throws_ok($$select * from private.reset_test_environment('operational', 'ZERAR AMBIENTE DE TESTES')$$, '55000', null, 'produção recusa reset');
 select throws_ok($$select private.declare_environment('testes')$$, '55000', 'Ambiente de produção não volta a ser testes.', 'produção não volta a testes');
 select throws_ok($$delete from private.environment_marker$$, '55000', null, 'marcador de produção não é apagado');
