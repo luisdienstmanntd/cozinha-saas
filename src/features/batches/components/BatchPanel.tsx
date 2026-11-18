@@ -38,9 +38,11 @@ import { storageLabels } from '../../catalog/domain/catalog';
 import { useCompactLayout } from '../../../shared/ui/useCompactLayout';
 import { MoreInfo } from '../../../shared/ui/MoreInfo';
 import {
+  formatQuantity,
   quantityProblemText,
   toDotQuantity,
 } from '../../../shared/format/quantity';
+import { toDotTemperature } from '../../../shared/format/temperature';
 import { FirstSteps } from './FirstSteps';
 import type { AreaLinks } from './FirstSteps';
 
@@ -411,7 +413,10 @@ function BatchContents({
       );
       return;
     }
-    const temperature = String(values.get('temperature') ?? '').trim();
+    // V5B (D-064): vírgula ou ponto; a validação de sempre (-50 a 80 °C, uma casa) vale sobre a forma com ponto.
+    const temperature = toDotTemperature(
+      String(values.get('temperature') ?? ''),
+    );
     const status =
       storage === 'ambient'
         ? temperature
@@ -752,9 +757,10 @@ function BatchContents({
                             <dt>Saldo</dt>{' '}
                             <dd>
                               <strong>
-                                {row.balance} {row.unit}
+                                {formatQuantity(row.balance)} {row.unit}
                               </strong>{' '}
-                              de {row.initial_quantity} {row.unit}
+                              de {formatQuantity(row.initial_quantity)}{' '}
+                              {row.unit}
                             </dd>
                           </div>
                           {place && (
@@ -1124,8 +1130,8 @@ function BatchContents({
                               maxLength={5}
                             />
                           </label>{' '}
-                          Use ponto para decimais, por exemplo -18.5. O sistema
-                          registra o valor e não o avalia.
+                          Use vírgula ou ponto para decimais, por exemplo -18,5.
+                          O sistema registra o valor e não o avalia.
                         </p>
                       )}
                       {temperatureStatus === 'not_measured' && (

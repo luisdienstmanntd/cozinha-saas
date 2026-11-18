@@ -24,6 +24,7 @@ import {
   isExpired,
 } from '../../batches/domain/expiryStatus';
 import { formatCivilDate } from '../../../shared/format/dates';
+import { formatQuantity } from '../../../shared/format/quantity';
 
 export function LabelView({
   id,
@@ -228,7 +229,9 @@ export function LabelView({
           </p>
           <p>
             Quantidade inicial:{' '}
-            {data.effective?.initial_quantity ?? data.batch_receipts.quantity}{' '}
+            {formatQuantity(
+              data.effective?.initial_quantity ?? data.batch_receipts.quantity,
+            )}{' '}
             {data.batch_receipts.unit} — validade{' '}
             {formatCivilDate(
               data.effective?.expiry_date ?? data.batch_receipts.expiry_date,
@@ -242,7 +245,8 @@ export function LabelView({
             )
           </p>
           <p>
-            Saldo atual: {data.balance} {data.batch_receipts.unit}
+            Saldo atual: {formatQuantity(data.balance)}{' '}
+            {data.batch_receipts.unit}
             {data.balance <= 0 && ' — esgotado, sem saldo neste recipiente'}
           </p>
           {expired && (
@@ -437,7 +441,7 @@ function FamilyOrigin({
         Manipulado por {h.handled_by_name} — validade após a abertura{' '}
         {formatDate(h.expiry_date)}.
         {h.remainder === 'discarded' &&
-          ` Sobra de ${h.remainder_quantity} ${unit} descartada.`}
+          ` Sobra de ${formatQuantity(h.remainder_quantity)} ${unit} descartada.`}
       </p>
       {action}
     </div>
@@ -477,7 +481,7 @@ function FamilyOpenings({
               : ` — validade ${formatDate(h.expiry_date)}`}
             {h.remainder === 'sealed' &&
               !voided &&
-              ` — sobra de ${h.remainder_quantity} ${unit} segue fechada`}
+              ` — sobra de ${formatQuantity(h.remainder_quantity)} ${unit} segue fechada`}
             {!voided && children.length > 0 && (
               <p>
                 <DownloadLabels
@@ -499,7 +503,7 @@ function FamilyOpenings({
                   {child.position && h.kind === 'portioning'
                     ? ` porção ${child.position}`
                     : ''}{' '}
-                  — {voided ? 0 : child.balance} {unit}
+                  — {formatQuantity(voided ? 0 : child.balance)} {unit}
                   {voided && ' (zerado pela anulação)'}
                 </li>
               ))}

@@ -396,7 +396,7 @@ it('ordena por validade, mostra saldo em vez da quantidade recebida e esconde es
   expect(names()).toEqual(['Frango', 'Queijo', 'Leite']);
   const card = (name: string) =>
     within(list()).getByRole('listitem', { name: new RegExp(`^${name} `) });
-  expect(card('Queijo')).toHaveTextContent('Saldo 1.5 kg de 2.5 kg');
+  expect(card('Queijo')).toHaveTextContent('Saldo 1,5 kg de 2,5 kg');
   expect(card('Leite')).toHaveTextContent('Saldo 8 un de 12 un');
   const summary = () =>
     screen.getByRole('group', { name: 'Resumo de validade' });

@@ -1,6 +1,6 @@
 # V5B — Proposta: exibição com vírgula e temperatura do recebimento
 
-**Proposta, sem implementação.** Preparada por autorização de luis em 16/11/2026, 22:08 UTC (aceite da V5/D-063, PR #38). Nada aqui foi implementado; o levantamento foi feito só lendo o código. Depende da V5 (vírgula nas quantidades digitadas). Sem merge nem deploy. Se aprovada, entraria como D-064.
+**Proposta aprovada e implementada** (ver [V5B_EXIBICAO_VIRGULA.md](V5B_EXIBICAO_VIRGULA.md)). Preparada por autorização de luis em 16/11/2026, 22:08 UTC (aceite da V5/D-063, PR #38). Nada aqui foi implementado; o levantamento foi feito só lendo o código. Depende da V5 (vírgula nas quantidades digitadas). Sem merge nem deploy. Se aprovada, entraria como D-064.
 
 ## Objetivo
 
@@ -93,4 +93,4 @@ Datas e horas (já em formato brasileiro desde a V3), filtros por categoria, avi
 
 ## Aceite
 
-Aguardando a aprovação de luis. Sem implementação, merge ou deploy até lá.
+**Aprovada por luis em 16/11/2026, 22:40 UTC**, com as quatro decisões: (1) exibir sem separador de milhar (`1500 kg`); (2) mostrar só as casas necessárias, até três (`12,5 kg`, não `12,500 kg`); (3) função compartilhada para aceitar vírgula ou ponto na temperatura do recebimento e da produção, com todas as validações existentes; (4) etiquetas já impressas ficam como estão, sem reimpressão automática, e as novas usam o formato brasileiro. Implementada na branch `claude/revisao-v5b-exibicao-virgula` (D-064).

@@ -382,7 +382,7 @@ export function HandlingForm({
               {child.position && info.kind === 'portioning'
                 ? ` — porção ${child.position}`
                 : ''}{' '}
-              — {voided ? 0 : child.initial_quantity} {unit}
+              — {formatQuantity(voided ? 0 : child.initial_quantity)} {unit}
               {onOpenContainer && (
                 <>
                   {' '}
@@ -411,13 +411,14 @@ export function HandlingForm({
         </ul>
         {info.remainder === 'sealed' && (
           <p>
-            Sobra de {info.remainder_quantity} {unit} segue fechada na embalagem
-            original ({context.short_code}).
+            Sobra de {formatQuantity(info.remainder_quantity)} {unit} segue
+            fechada na embalagem original ({context.short_code}).
           </p>
         )}
         {info.remainder === 'discarded' && (
           <p>
-            Sobra de {info.remainder_quantity} {unit} descartada.
+            Sobra de {formatQuantity(info.remainder_quantity)} {unit}{' '}
+            descartada.
           </p>
         )}
         {labels && !voided && (
@@ -517,8 +518,9 @@ export function HandlingForm({
         {title} {context.short_code} — {context.product_name}
       </h4>
       <p>
-        {lotText(context.source_code, true)} — saldo {context.balance} {unit} —
-        validade {formatDate(context.expiry_date)} —{' '}
+        {lotText(context.source_code, true)} — saldo{' '}
+        {formatQuantity(context.balance)} {unit} — validade{' '}
+        {formatDate(context.expiry_date)} —{' '}
         {context.storage
           ? storageLabels[context.storage]
           : 'conservação não registrada'}{' '}

@@ -5,6 +5,7 @@ import type { OccurrenceGateway } from '../application/occurrenceGateway';
 import { DecisionRejected } from '../application/occurrenceGateway';
 import type { Decision, OccurrenceRow } from '../domain/occurrence';
 import { lotText } from '../../batches/domain/lot';
+import { formatQuantity } from '../../../shared/format/quantity';
 import {
   BLOCK_TEXT,
   decisionInputSchema,
@@ -184,7 +185,7 @@ export function OccurrencePanel({
                   {row.containers
                     .map(
                       (container) =>
-                        `${container.short_code} (saldo ${container.balance} ${row.unit})`,
+                        `${container.short_code} (saldo ${formatQuantity(container.balance)} ${row.unit})`,
                     )
                     .join(', ')}
                 </>

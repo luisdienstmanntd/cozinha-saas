@@ -72,8 +72,8 @@ it('exige motivo para descarte e mostra o histórico sem alterar a entrada', asy
       gateway={{ list, record }}
     />,
   );
-  expect(await screen.findByText('Saldo registrado: 0.75 kg')).toBeVisible();
-  expect(screen.getByText(/Consumo — 0.25 kg/)).toBeVisible();
+  expect(await screen.findByText('Saldo registrado: 0,75 kg')).toBeVisible();
+  expect(screen.getByText(/Consumo — 0,25 kg/)).toBeVisible();
   await user.selectOptions(screen.getByLabelText('Tipo de saída'), 'discard');
   await user.type(screen.getByLabelText('Quantidade da saída'), '0.5');
   await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
@@ -322,7 +322,7 @@ it('confirma anulação integral com motivo e preserva o histórico', async () =
       gateway={{ list, record }}
     />,
   );
-  expect(await screen.findByText('Saldo registrado: 0.5 kg')).toBeVisible();
+  expect(await screen.findByText('Saldo registrado: 0,5 kg')).toBeVisible();
   // V4 (M1): anular registro é de risco (contorno vermelho); a confirmação, vermelho cheio.
   expect(screen.getByRole('button', { name: 'Anular registro' })).toHaveClass(
     'risk',
@@ -465,7 +465,7 @@ it('não permite anulação se a tentativa armazenada estiver inválida', async 
       gateway={{ list: vi.fn().mockResolvedValue([event]), record: vi.fn() }}
     />,
   );
-  expect(await screen.findByText('Saldo registrado: 0.5 kg')).toBeVisible();
+  expect(await screen.findByText('Saldo registrado: 0,5 kg')).toBeVisible();
   expect(
     screen.queryByRole('button', { name: 'Anular registro' }),
   ).not.toBeInTheDocument();
@@ -550,12 +550,12 @@ it('conta a transferência da manipulação como saída e não oferece anulá-la
       gateway={{ list, record: vi.fn() }}
     />,
   );
-  expect(await screen.findByText('Saldo registrado: 4.5 kg')).toBeVisible();
+  expect(await screen.findByText('Saldo registrado: 4,5 kg')).toBeVisible();
   expect(
     screen.getByText(/Transferência para recipientes derivados — 4 kg/),
   ).toBeVisible();
   expect(
-    screen.getByText(/Descarte de sobra da manipulação — 0.5 kg/),
+    screen.getByText(/Descarte de sobra da manipulação — 0,5 kg/),
   ).toBeVisible();
   // Só o consumo comum pode ser anulado aqui; a manipulação é desfeita pela anulação dela (6.4).
   expect(
@@ -626,7 +626,7 @@ it('conta a devolução da manipulação anulada como entrada e não oferece anu
   ).toBeVisible();
   expect(
     screen.getByText(
-      /Anulação do descarte de sobra \(manipulação anulada\) — 0.5 kg/,
+      /Anulação do descarte de sobra \(manipulação anulada\) — 0,5 kg/,
     ),
   ).toBeVisible();
   expect(
@@ -870,4 +870,44 @@ it('V5: a dica da saída fala em vírgula ou ponto', async () => {
       'Use vírgula ou ponto para decimais, por exemplo 0,5. Não use separador de milhar.',
     ),
   ).toBeVisible();
+});
+
+// V5B (D-064): quantidades decimais do lote e do histórico com vírgula.
+it('V5B: quantidade inicial, saldo, histórico e anulação mostram vírgula', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Arroz',
+        sourceCode: 'L1',
+        quantity: 12.5,
+        unit: 'kg',
+      }}
+      canCreate
+      gateway={{
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'e1',
+            kind: 'consumption',
+            quantity: 0.25,
+            reason: null,
+            created_by: 'user',
+            created_at: '2026-11-13T12:00:00Z',
+            timezone: 'America/Sao_Paulo',
+          },
+        ]),
+        record: vi.fn(),
+      }}
+    />,
+  );
+  expect(await screen.findByText(/quantidade inicial 12,5 kg/)).toBeVisible();
+  expect(screen.getByText('Saldo registrado: 12,25 kg')).toBeVisible();
+  expect(screen.getByText(/Consumo — 0,25 kg/)).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Anular registro' }));
+  expect(screen.getByText(/Anular consumo de 0,25 kg\./)).toBeVisible();
+  expect(document.body).not.toHaveTextContent(/\d\.\d+ kg/);
 });

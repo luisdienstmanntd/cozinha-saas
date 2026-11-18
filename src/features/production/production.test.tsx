@@ -715,3 +715,20 @@ describe('quantidade com vírgula (V5)', () => {
     expect(gateway.register).not.toHaveBeenCalled();
   });
 });
+
+// V5B (D-064): a lista de produções mostra a quantidade com vírgula.
+describe('lista de produções (V5B)', () => {
+  it('mostra 2,5 l e 1500 l, sem ponto e sem separador de milhar', async () => {
+    const gateway = production([
+      row({ batch_id: id(31), quantity: 2.5 }),
+      row({ batch_id: id(32), quantity: 1500, short_code: 'C-000124' }),
+    ]);
+    panel(gateway);
+    const list = await screen.findByRole('list', {
+      name: /Produções recentes/,
+    });
+    expect(list).toHaveTextContent('C-000123 — 2,5 l');
+    expect(list).toHaveTextContent('C-000124 — 1500 l');
+    expect(list).not.toHaveTextContent(/\d\.\d/);
+  });
+});

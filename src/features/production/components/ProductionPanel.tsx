@@ -422,10 +422,10 @@ function ProductionContents({
           {rows.map((row) => (
             <li key={row.batch_id}>
               {row.product_name}
-              {row.short_code && ` — ${row.short_code}`} — {row.quantity}{' '}
-              {row.unit} — produzida em {when(row.produced_at, row.timezone)}{' '}
-              por {row.handled_by_name} — validade {formatDate(row.expiry_date)}{' '}
-              (definida pelo responsável)
+              {row.short_code && ` — ${row.short_code}`} —{' '}
+              {formatQuantity(row.quantity)} {row.unit} — produzida em{' '}
+              {when(row.produced_at, row.timezone)} por {row.handled_by_name} —
+              validade {formatDate(row.expiry_date)} (definida pelo responsável)
               {row.late &&
                 ` — registrada fora da janela de ${durationText(row.late_window_minutes ?? 120)}`}
               {labels && row.container_id && !row.voided && (

@@ -110,13 +110,18 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     expect(bytes.includes(Buffer.from('0001'))).toBe(true);
     expect(bytes.includes(Buffer.from('Validade: 01/01/2030'))).toBe(true);
     expect(bytes.includes(Buffer.from('Quantidade inicial:'))).toBe(true);
+    // V5B (D-064): a quantidade decimal da etiqueta sai com vírgula.
+    expect(bytes.includes(Buffer.from('Quantidade inicial: 1,25 kg'))).toBe(
+      true,
+    );
+    expect(bytes.includes(Buffer.from('1.25 kg'))).toBe(false);
     expect(pdf.suggestedFilename()).toBe(`etiqueta-${id}.pdf`);
     await page.getByRole('button', { name: '← Voltar para a lista' }).click();
     await search.clear();
     await page.getByRole('button', { name: 'Ver movimentações' }).click();
     const movements = page.getByRole('region', { name: 'Movimentações' });
     await expect(
-      movements.getByText('Saldo registrado: 1.25 kg'),
+      movements.getByText('Saldo registrado: 1,25 kg'),
     ).toBeVisible();
     await movements.getByLabel('Quantidade da saída').fill('0.5');
     await movements.getByRole('button', { name: 'Registrar saída' }).click();
@@ -136,11 +141,11 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(movements.getByText(/Tentativa pendente/)).toBeVisible();
     await movements.getByRole('button', { name: 'Repetir tentativa' }).click();
     await expect(
-      movements.getByText('Saldo registrado: 0.75 kg'),
+      movements.getByText('Saldo registrado: 0,75 kg'),
     ).toBeVisible();
-    await expect(movements.getByText(/Consumo — 0.5 kg/)).toBeVisible();
+    await expect(movements.getByText(/Consumo — 0,5 kg/)).toBeVisible();
     // Fatia 6.2: a linha do painel mostra o saldo do servidor, não a quantidade recebida.
-    await expect(results.getByText(/Saldo 0.75 kg de 1.25 kg/)).toBeVisible();
+    await expect(results.getByText(/Saldo 0,75 kg de 1,25 kg/)).toBeVisible();
     await openArea(page, 'Cadastros');
     await page.getByLabel('Nome do fornecedor').fill('HORTA DE TESTE');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
@@ -181,7 +186,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await openArea(page, 'Validade');
     await expect(page.getByText(/lote 0001/)).toBeVisible();
     await page.getByRole('button', { name: 'Ver movimentações' }).click();
-    await expect(page.getByText('Saldo registrado: 0.75 kg')).toBeVisible();
+    await expect(page.getByText('Saldo registrado: 0,75 kg')).toBeVisible();
     const reopened = page.getByRole('region', { name: 'Movimentações' });
     await reopened.getByLabel('Tipo de saída').selectOption('discard');
     await reopened.getByLabel('Quantidade da saída').fill('0.75');
@@ -189,10 +194,10 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await reopened.getByRole('button', { name: 'Registrar saída' }).click();
     await reopened.getByRole('button', { name: 'Confirmar saída' }).click();
     await expect(reopened.getByText('Saldo registrado: 0 kg')).toBeVisible();
-    await expect(reopened.getByText(/Descarte — 0.75 kg/)).toBeVisible();
+    await expect(reopened.getByText(/Descarte — 0,75 kg/)).toBeVisible();
     const consumed = reopened
       .getByRole('listitem')
-      .filter({ hasText: 'Consumo — 0.5 kg' });
+      .filter({ hasText: 'Consumo — 0,5 kg' });
     await consumed.getByRole('button', { name: 'Anular registro' }).click();
     await reopened
       .getByLabel('Motivo da anulação')
@@ -200,7 +205,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await reopened.getByRole('button', { name: 'Revisar anulação' }).click();
     await expect(reopened.getByText(/não recupera alimento/)).toBeVisible();
     await reopened.getByRole('button', { name: 'Confirmar anulação' }).click();
-    await expect(reopened.getByText('Saldo registrado: 0.5 kg')).toBeVisible();
+    await expect(reopened.getByText('Saldo registrado: 0,5 kg')).toBeVisible();
     await expect(consumed).toContainText('anulado');
     await expect(reopened.getByText(/Anulação do registro/)).toBeVisible();
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
@@ -230,7 +235,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     });
     await expect(resolved.getByText(`Identificação: ${id}`)).toBeVisible();
     // Fatia 6.2: a rota do QR mostra o saldo atual (1.25 − 0.5 − 0.75 + 0.5 anulado) e o código curto.
-    await expect(resolved.getByText('Saldo atual: 0.5 kg')).toBeVisible();
+    await expect(resolved.getByText('Saldo atual: 0,5 kg')).toBeVisible();
     await expect(resolved.getByText(/^Código: C-\d{6,}$/)).toBeVisible();
     const secondDownload = page.waitForEvent('download');
     await resolved.getByRole('button', { name: 'Gerar etiqueta PDF' }).click();
@@ -295,5 +300,10 @@ test('modelo PDF comporta nome longo com acentuação', async ({
   });
   const pdf = Buffer.from(result);
   expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+  // V5B (D-064): valor decimal com vírgula e nome longo inteiro, em uma página só.
+  const text = pdf.toString('latin1');
+  expect(text).toContain('Quantidade inicial: 1,25 kg');
+  expect(text).not.toMatch(/\d\.\d+ kg/);
+  expect((text.match(/\/Type \/Page\b(?!s)/g) ?? []).length).toBe(1);
   await writeFile(testInfo.outputPath('etiqueta-longa.pdf'), pdf);
 });

@@ -186,7 +186,7 @@ it('mostra o saldo do servidor e o código curto, e avisa quando esgotado (fatia
       }}
     />,
   );
-  expect(await screen.findByText('Saldo atual: 3.5 kg')).toBeVisible();
+  expect(await screen.findByText('Saldo atual: 3,5 kg')).toBeVisible();
   expect(screen.getByText('Código: C-000042')).toBeVisible();
   expect(screen.queryByText(/esgotado/)).not.toBeInTheDocument();
   unmount();

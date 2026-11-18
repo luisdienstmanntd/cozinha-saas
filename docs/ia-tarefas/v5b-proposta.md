@@ -2,7 +2,7 @@
 
 - **ID:** v5b-proposta
 - **Responsável / sessão:** Claude Code (thread "Implementar V5 vírgula decimal")
-- **Estado:** aguardando_aceite
+- **Estado:** concluida (proposta aprovada por luis em 16/11/2026, 22:40 UTC; implementação em `v5b-exibicao-virgula`)
 - **Objetivo e aceite:** preparar `V5B_PROPOSTA.md` com impacto, riscos e testes para exibir quantidades com vírgula em todas as telas brasileiras (listas, histórico, fichas, QR e etiquetas PDF) e aceitar vírgula na temperatura do recebimento, sem novos limites sanitários, sem alterar valores nem precisão no banco. **Sem implementar** até a aprovação de luis.
 - **Branch / base:** `claude/revisao-v5-virgula-decimal` (PR #38); só documentação.
 - **Arquivos e recursos em uso:** `docs/V5B_PROPOSTA.md`, este registro, `IA_ESTADO.md`. Nenhum código.

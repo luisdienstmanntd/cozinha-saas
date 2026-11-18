@@ -328,7 +328,7 @@ export function MovementPanel({
       <h3>Movimentações</h3>
       <p>
         {batch.productName} — {lotText(batch.sourceCode)} — quantidade inicial{' '}
-        {batch.quantity} {batch.unit}
+        {formatQuantity(batch.quantity)} {batch.unit}
       </p>
       <p>O saldo registrado não comprova a quantidade física.</p>
       {blocked && (
@@ -373,7 +373,7 @@ export function MovementPanel({
       {events && remaining !== null && (
         <>
           <p>
-            Saldo registrado: {remaining} {batch.unit}
+            Saldo registrado: {formatQuantity(remaining)} {batch.unit}
           </p>
           <ul>
             {events.map((item) => (
@@ -395,7 +395,8 @@ export function MovementPanel({
                               ? 'Descarte de sobra da manipulação'
                               : 'Descarte'
                             : 'Consumo'}{' '}
-                — {item.quantity} {batch.unit} — {item.reason ?? 'sem motivo'} —{' '}
+                — {formatQuantity(item.quantity)} {batch.unit} —{' '}
+                {item.reason ?? 'sem motivo'} —{' '}
                 {formatDateTime(item.created_at, item.timezone)} — por{' '}
                 {authorName(names, item.created_by)}
                 {item.kind !== 'reversal' &&
@@ -551,7 +552,7 @@ export function MovementPanel({
         <form onSubmit={reviewReversal}>
           <p>
             Anular {reversing.kind === 'discard' ? 'descarte' : 'consumo'} de{' '}
-            {reversing.quantity} {batch.unit}.
+            {formatQuantity(reversing.quantity)} {batch.unit}.
           </p>
           <label>
             Motivo da anulação <input name="reason" required maxLength={500} />
