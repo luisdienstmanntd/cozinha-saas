@@ -94,10 +94,15 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
       .getByLabel('Novo local')
       .selectOption({ label: 'Despensa — Ambiente' });
     await form.getByRole('button', { name: 'Registrar local' }).click();
+    // V4 (M10): o formulário fecha sozinho e a confirmação fica no cartão, com o foco.
+    const moved = row
+      .getByRole('status')
+      .filter({ hasText: 'Local registrado' });
+    await expect(moved).toBeVisible();
+    await expect(moved).toBeFocused();
     await expect(
-      page.getByRole('status').filter({ hasText: 'Local registrado' }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: 'Fechar' }).click();
+      page.getByRole('form', { name: 'Mudar de local' }),
+    ).toHaveCount(0);
     await expect(row).toContainText('Local Despensa');
 
     // Divergência: ambiente em câmara fria pede confirmação explícita.
@@ -113,7 +118,12 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
     );
     await expect(row).toContainText('Local Despensa');
     await again.getByRole('button', { name: 'Registrar mesmo assim' }).click();
-    await page.getByRole('button', { name: 'Fechar' }).click();
+    await expect(
+      row.getByRole('status').filter({ hasText: 'Local registrado' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('form', { name: 'Mudar de local' }),
+    ).toHaveCount(0);
     await expect(row).toContainText('Local Câmara fria 01');
     // Saldo e validade seguem os mesmos.
     await expect(row).toContainText('Saldo 10 kg de 10 kg');

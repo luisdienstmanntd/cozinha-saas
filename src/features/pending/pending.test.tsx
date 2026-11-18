@@ -250,10 +250,17 @@ it('descartar apaga só a tentativa; falha na conferência só oferece conferir 
     screen.queryByRole('button', { name: 'Descartar tentativa' }),
   ).toBeNull();
   expect(screen.queryByRole('button', { name: 'Enviar novamente' })).toBeNull();
-  await user_.click(screen.getByRole('button', { name: 'Conferir de novo' }));
-  await user_.click(
-    await screen.findByRole('button', { name: 'Descartar tentativa' }),
+  // V4 (M1): conferir de novo é secundária (consulta).
+  expect(screen.getByRole('button', { name: 'Conferir de novo' })).toHaveClass(
+    'secondary',
   );
+  await user_.click(screen.getByRole('button', { name: 'Conferir de novo' }));
+  // V4 (M1): descartar tentativa pendente é ação de risco.
+  const discard = await screen.findByRole('button', {
+    name: 'Descartar tentativa',
+  });
+  expect(discard).toHaveClass('risk');
+  await user_.click(discard);
   expect(pendingStore.list(user)).toHaveLength(0);
 });
 

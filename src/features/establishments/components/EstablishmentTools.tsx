@@ -72,6 +72,7 @@ export function EstablishmentTools({
   const headingId = `unidades-${organization.id}`;
   const toggle = (
     <button
+      className="secondary"
       type="button"
       aria-expanded={open}
       aria-controls={headingId + '-painel'}
@@ -180,7 +181,13 @@ export function EstablishmentTools({
                       required
                     />
                   </label>{' '}
-                  <button disabled={blocked}>Renomear {unit.name}</button>
+                  {/* V4 (D3): o nome já está no campo ao lado; continua no nome acessível. */}
+                  <button
+                    disabled={blocked}
+                    aria-label={`Renomear ${unit.name}`}
+                  >
+                    Renomear
+                  </button>
                 </form>
                 <p className="hint">Fuso: {timezoneLabel(unit.timezone)}</p>
               </li>
@@ -204,6 +211,7 @@ export function EstablishmentTools({
               Confirmar criação
             </button>{' '}
             <button
+              className="secondary"
               type="button"
               disabled={blocked}
               onClick={() => {

@@ -235,6 +235,7 @@ function ProductionContents({
         <h3>Produção da cozinha</h3>
         <p role="alert">{loadError}</p>
         <button
+          className="secondary"
           type="button"
           onClick={() => {
             setLoadError('');
@@ -547,7 +548,11 @@ function ProductionContents({
           <button type="button" onClick={startForm}>
             Registrar outra produção
           </button>{' '}
-          <button type="button" onClick={() => setStage('closed')}>
+          <button
+            className="secondary"
+            type="button"
+            onClick={() => setStage('closed')}
+          >
             Fechar
           </button>
         </section>
@@ -597,6 +602,7 @@ function ProductionContents({
             Confirmar produção
           </button>{' '}
           <button
+            className="secondary"
             type="button"
             disabled={busy}
             onClick={() => setStage('form')}
@@ -793,6 +799,7 @@ function ProductionContents({
             Revisar produção
           </button>{' '}
           <button
+            className="secondary"
             type="button"
             disabled={busy}
             onClick={() => {

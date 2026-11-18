@@ -403,6 +403,7 @@ export function IdentityHome({
             ) : null}
           </p>
           <button
+            className="secondary"
             type="button"
             onClick={() =>
               void (async () => {
@@ -540,8 +541,13 @@ export function IdentityHome({
                         {renderCatalog && (
                           <>
                             {' '}
-                            <button onClick={() => openUnit(unit.id)}>
-                              Abrir {unit.name}
+                            {/* V4 (D3): o nome da unidade está ao lado; continua no nome acessível. */}
+                            <button
+                              className="secondary"
+                              aria-label={`Abrir ${unit.name}`}
+                              onClick={() => openUnit(unit.id)}
+                            >
+                              Abrir
                             </button>
                           </>
                         )}

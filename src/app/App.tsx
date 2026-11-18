@@ -175,6 +175,7 @@ function Workspace({
             occurrences={tracked.occurrences}
             handling={tracked.handling}
             locations={tracked.locations}
+            areaLinks={{ hrefFor, onSelect: select }}
           />
         </div>
         {tracked.production && (
