@@ -7,6 +7,7 @@ const hosted = {
   VITE_SUPABASE_URL: 'https://abcdefghij0123456789.supabase.co',
   VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_exemplo_sem_segredo',
   VITE_APP_ENV: 'testes',
+  VITE_APP_URL: 'https://cozzigo.pages.dev',
 };
 
 describe('validação do build', () => {

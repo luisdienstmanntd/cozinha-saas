@@ -35,7 +35,7 @@ export function assertBuildEnvironment(env: BuildEnvironment) {
     return { hosted: true as const, supabaseUrl: config.url };
   } catch {
     throw new Error(
-      'Build interrompido: configuração hospedada ausente ou inválida. Defina VITE_APP_MODE=hosted, VITE_SUPABASE_URL (https://<projeto>.supabase.co), VITE_SUPABASE_PUBLISHABLE_KEY (sb_publishable_...) e VITE_APP_ENV (testes ou producao). Veja docs/FASE_08_4A.md.',
+      'Build interrompido: configuração hospedada ausente ou inválida. Defina VITE_APP_MODE=hosted, VITE_SUPABASE_URL (https://<projeto>.supabase.co), VITE_SUPABASE_PUBLISHABLE_KEY (sb_publishable_...), VITE_APP_ENV (testes ou producao), VITE_APP_URL (endereço oficial https, sem barra final, ex.: https://cozzigo.pages.dev). Veja docs/FASE_08_4A.md.',
     );
   }
 }

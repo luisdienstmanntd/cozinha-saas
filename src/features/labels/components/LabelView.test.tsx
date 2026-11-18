@@ -3,6 +3,7 @@ import { expect, it, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { LabelView } from './LabelView';
 import { makeLabelPdf } from '../application/pdf';
+import { setOfficialOrigin } from '../application/labelOrigin';
 
 vi.mock('../application/pdf', () => ({
   makeLabelPdf: vi.fn().mockRejectedValue(new Error('Falha ao gerar PDF.')),
@@ -547,5 +548,63 @@ it('mostra o selo de validade e a data no formato brasileiro no topo da ficha (V
     ).toBeVisible();
   } finally {
     vi.useRealTimers();
+  }
+});
+
+// Fatia 8.4b: no ambiente hospedado o texto não diz "demonstração" e o QR usa o endereço oficial.
+const hostedData = {
+  id: '12345678-1234-4234-8234-123456789abc',
+  short_code: 'C-000001',
+  balance: 1,
+  batch_receipts: {
+    source_code: '0001',
+    quantity: 1,
+    unit: 'kg',
+    expiry_date: '2027-01-01',
+    expiry_origin: 'original' as const,
+    products: { name: 'Arroz' },
+  },
+};
+it('local e demonstração mantêm o aviso de modelo de demonstração', async () => {
+  setOfficialOrigin(null);
+  render(
+    <LabelView
+      id={hostedData.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue(hostedData),
+      }}
+    />,
+  );
+  expect(await screen.findByText(/Modelo PDF de demonstração/)).toBeVisible();
+});
+it('ambiente hospedado não chama o modelo de demonstração e usa o endereço oficial no QR', async () => {
+  const user = userEvent.setup();
+  setOfficialOrigin('https://cozzigo.pages.dev');
+  vi.mocked(makeLabelPdf).mockResolvedValueOnce(new Blob());
+  vi.stubGlobal('URL', { ...URL, createObjectURL: vi.fn(() => 'blob:x') });
+  try {
+    render(
+      <LabelView
+        id={hostedData.id}
+        gateway={{
+          ensure: vi.fn(),
+          get: vi.fn().mockResolvedValue(hostedData),
+        }}
+      />,
+    );
+    expect(await screen.findByText(/Modelo PDF: 100/)).toBeVisible();
+    expect(screen.queryByText(/de demonstração/)).not.toBeInTheDocument();
+    expect(screen.getByText(/ainda não foram validadas/)).toBeVisible();
+    await user.click(
+      await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
+    );
+    expect(makeLabelPdf).toHaveBeenLastCalledWith(
+      hostedData,
+      'https://cozzigo.pages.dev',
+    );
+  } finally {
+    setOfficialOrigin(null);
+    vi.unstubAllGlobals();
   }
 });

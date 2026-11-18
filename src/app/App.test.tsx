@@ -1,7 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { App } from './App';
 import { configureApp } from './configureApp';
+import {
+  isHostedLabels,
+  labelOrigin,
+  setOfficialOrigin,
+} from '../features/labels/application/labelOrigin';
 
 describe('inicialização', () => {
   it('apresenta demonstração com configuração válida', () => {
@@ -29,6 +34,7 @@ describe('hospedagem (fatia 8.4a)', () => {
     VITE_SUPABASE_URL: 'https://abcdefghij0123456789.supabase.co',
     VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_exemplo_sem_segredo',
     VITE_APP_ENV: 'testes',
+    VITE_APP_URL: 'https://cozzigo.pages.dev',
   };
   it('hospedagem sem variáveis falha de forma explícita, não vira demonstração', () => {
     const configuration = configureApp({}, 'cozinha.pages.dev');
@@ -72,5 +78,28 @@ describe('hospedagem (fatia 8.4a)', () => {
     render(<App configuration={configureApp(hosted, 'cozinha.pages.dev')} />);
     expect(screen.getByText('Ambiente de testes.')).toBeVisible();
     expect(await screen.findByLabelText(/E-mail/)).toBeVisible();
+  });
+});
+
+describe('endereço oficial das etiquetas (fatia 8.4b)', () => {
+  const hosted = {
+    VITE_APP_MODE: 'hosted',
+    VITE_SUPABASE_URL: 'https://abcdefghij0123456789.supabase.co',
+    VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_exemplo_sem_segredo',
+    VITE_APP_ENV: 'testes',
+    VITE_APP_URL: 'https://cozzigo.pages.dev',
+  };
+  afterEach(() => setOfficialOrigin(null));
+  it('hospedagem guarda o endereço oficial e a hospedagem sem ele falha', () => {
+    expect(configureApp(hosted, 'cozzigo.pages.dev')).not.toBeNull();
+    expect(labelOrigin()).toBe('https://cozzigo.pages.dev');
+    expect(
+      configureApp({ ...hosted, VITE_APP_URL: undefined }, 'cozzigo.pages.dev'),
+    ).toBeNull();
+  });
+  it('demonstração não guarda endereço oficial', () => {
+    configureApp(hosted, 'cozzigo.pages.dev');
+    configureApp({ VITE_APP_MODE: 'demo' });
+    expect(isHostedLabels()).toBe(false);
   });
 });

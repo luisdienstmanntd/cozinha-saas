@@ -9,6 +9,7 @@ import {
 import { createSessionFetch } from '../features/identity/data/sessionFetch';
 import { createOccurrenceGateway } from '../features/occurrences/data/supabaseOccurrences';
 import { createCatalogGateway } from '../features/catalog/data/supabaseCatalog';
+import { setOfficialOrigin } from '../features/labels/application/labelOrigin';
 import { createClient } from '@supabase/supabase-js';
 import { createBatchGateway } from '../features/batches/data/supabaseBatches';
 import { createContainerGateway } from '../features/batches/data/supabaseContainers';
@@ -37,6 +38,7 @@ export function configureApp(
   try {
     const config = parseEnvironment(environment);
     assertModeAllowedOnHost(config.mode, hostname, environment);
+    setOfficialOrigin(config.mode === 'hosted' ? config.appUrl : null);
     if (config.mode === 'demo') return { mode: 'demo' as const };
     // V2 (D-025): a sessão fica guardada neste navegador (recarregar e abrir o QR não pedem login);
     // quem limita a inatividade a 30 minutos é o banco (session_guard.check_request), e o aplicativo

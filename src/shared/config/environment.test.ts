@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { assertModeAllowedOnHost, parseEnvironment } from './environment';
+import {
+  assertModeAllowedOnHost,
+  parseEnvironment,
+  parseOfficialOrigin,
+} from './environment';
 
 describe('configuração de demonstração', () => {
   it('usa demonstração quando não há configuração', () => {
@@ -45,6 +49,7 @@ describe('configuração hospedada (fatia 8.4a)', () => {
     VITE_SUPABASE_URL: 'https://abcdefghij0123456789.supabase.co',
     VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_exemplo_sem_segredo',
     VITE_APP_ENV: 'testes',
+    VITE_APP_URL: 'https://cozzigo.pages.dev',
   };
   it('aceita a configuração hospedada completa', () => {
     expect(parseEnvironment(hosted)).toEqual({
@@ -52,6 +57,7 @@ describe('configuração hospedada (fatia 8.4a)', () => {
       url: 'https://abcdefghij0123456789.supabase.co',
       publishableKey: 'sb_publishable_exemplo_sem_segredo',
       environmentName: 'testes',
+      appUrl: 'https://cozzigo.pages.dev',
     });
     expect(parseEnvironment({ ...hosted, VITE_APP_ENV: 'producao' }).mode).toBe(
       'hosted',
@@ -61,6 +67,41 @@ describe('configuração hospedada (fatia 8.4a)', () => {
     ['sem endereço', { VITE_SUPABASE_URL: undefined }],
     ['sem chave', { VITE_SUPABASE_PUBLISHABLE_KEY: undefined }],
     ['sem nome do ambiente', { VITE_APP_ENV: undefined }],
+    ['sem endereço oficial', { VITE_APP_URL: undefined }],
+    ['endereço oficial vazio', { VITE_APP_URL: '' }],
+    ['endereço oficial http', { VITE_APP_URL: 'http://cozzigo.pages.dev' }],
+    [
+      'endereço oficial com barra final',
+      { VITE_APP_URL: 'https://cozzigo.pages.dev/' },
+    ],
+    [
+      'endereço oficial com caminho',
+      { VITE_APP_URL: 'https://cozzigo.pages.dev/app' },
+    ],
+    [
+      'endereço oficial com porta',
+      { VITE_APP_URL: 'https://cozzigo.pages.dev:8443' },
+    ],
+    [
+      'endereço oficial com usuário',
+      { VITE_APP_URL: 'https://x@cozzigo.pages.dev' },
+    ],
+    [
+      'endereço oficial com parâmetro',
+      { VITE_APP_URL: 'https://cozzigo.pages.dev?a=1' },
+    ],
+    [
+      'endereço oficial com maiúsculas',
+      { VITE_APP_URL: 'https://CozziGo.pages.dev' },
+    ],
+    ['endereço oficial local', { VITE_APP_URL: 'https://localhost' }],
+    ['endereço oficial IP', { VITE_APP_URL: 'https://203.0.113.10' }],
+    ['endereço oficial sem ponto', { VITE_APP_URL: 'https://cozzigo' }],
+    ['endereço oficial interno', { VITE_APP_URL: 'https://cozzigo.internal' }],
+    [
+      'endereço oficial com espaço',
+      { VITE_APP_URL: 'https://cozzigo .pages.dev' },
+    ],
     ['nome de ambiente desconhecido', { VITE_APP_ENV: 'staging' }],
     ['chave secreta', { VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_secret_exemplo' }],
     [
@@ -131,5 +172,19 @@ describe('modo permitido por máquina', () => {
     expect(() =>
       assertModeAllowedOnHost('hosted', 'cozinha.pages.dev', {}),
     ).not.toThrow();
+  });
+});
+
+describe('endereço oficial (fatia 8.4b)', () => {
+  it.each([
+    'https://cozzigo.pages.dev',
+    'https://app.cozzigo.com.br',
+    'https://cozzigo.com',
+  ])('aceita %s', (value) => {
+    expect(parseOfficialOrigin(value)).toBe(value);
+  });
+  it('recusa o que não é texto', () => {
+    expect(parseOfficialOrigin(undefined)).toBeNull();
+    expect(parseOfficialOrigin(42)).toBeNull();
   });
 });
