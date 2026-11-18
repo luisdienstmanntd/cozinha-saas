@@ -1,6 +1,6 @@
 # Fase 8, fatia 8.4a — Modo hospedado e ambiente de testes (D-067)
 
-> **Estado (18/11/2026):** proposta **aprovada por luis, com aceite final condicionado a seis pontos**; a `main` (`1e3cd0e`) já foi incorporada à branch e a bateria rodou no código combinado. A seção 13 registra cada um e como foi tratado. A numeração anterior "D-066" era do `FASE_08_1` (estabilização da CI e proteção da `main`); esta decisão é a **D-067**. 
+> **Estado (18/11/2026, 02:46 UTC):** **aceita definitivamente por luis** (com a D-067) e integrada na `main` pelo PR #44 (`d05a6e7`, CI verde). Nada foi aplicado no Supabase hospedado nem implantado no Cloudflare; ambos exigem autorização específica de luis.
 
 Antecipa parcialmente a fatia 8.4 (hospedagem) do `PLANO_INTEGRACAO.md` para que luis use o sistema definitivo com **dados fictícios** e o refine aos poucos. **Nada aqui foi aplicado no Supabase hospedado nem implantado no Cloudflare Pages**; tudo foi validado só no Supabase local descartável. Nada afirma conformidade sanitária (Q10 segue pendente). Sem merge, deploy, contratação ou alteração no banco hospedado sem autorização específica de luis.
 
