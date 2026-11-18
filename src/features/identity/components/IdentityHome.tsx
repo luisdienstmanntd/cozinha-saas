@@ -84,10 +84,13 @@ export function IdentityHome({
   renderDestination,
   renderOrganizationTools,
   activity,
+  environmentNotice,
 }: {
   gateway: IdentityGateway;
   /** V2: última atividade no navegador; os testes passam uma em memória. */
   activity?: ActivityStore;
+  // Texto do ambiente (hospedado); sem ele vale o texto do ambiente local de demonstração.
+  environmentNotice?: string;
   renderCatalog?: (
     organizationId: string,
     establishmentId: string,
@@ -340,8 +343,8 @@ export function IdentityHome({
   }
   const environmentNote = (
     <p className="environment-note">
-      Ambiente local de demonstração, com dados descartáveis. Contas e vínculos
-      são preparados pelo responsável pelos testes.
+      {environmentNotice ??
+        'Ambiente local de demonstração, com dados descartáveis. Contas e vínculos são preparados pelo responsável pelos testes.'}
     </p>
   );
   const refreshButton = (

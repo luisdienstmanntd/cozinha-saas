@@ -1,4 +1,7 @@
-import { parseEnvironment } from '../shared/config/environment';
+import {
+  assertModeAllowedOnHost,
+  parseEnvironment,
+} from '../shared/config/environment';
 import {
   AUTH_STORAGE_KEY,
   createIdentityGateway,
@@ -26,10 +29,15 @@ function browserStorage(): Storage | null {
   }
 }
 
-export function configureApp(environment: Record<string, unknown>) {
+// `hostname` vem de window.location na inicialização; o padrão é a máquina local (testes e desenvolvimento).
+export function configureApp(
+  environment: Record<string, unknown>,
+  hostname = 'localhost',
+) {
   try {
     const config = parseEnvironment(environment);
-    if (config.mode !== 'local') return { mode: 'demo' as const };
+    assertModeAllowedOnHost(config.mode, hostname, environment);
+    if (config.mode === 'demo') return { mode: 'demo' as const };
     // V2 (D-025): a sessão fica guardada neste navegador (recarregar e abrir o QR não pedem login);
     // quem limita a inatividade a 30 minutos é o banco (session_guard.check_request), e o aplicativo
     // sai da conta quando a API responde SESSION_EXPIRED.
@@ -46,7 +54,9 @@ export function configureApp(environment: Record<string, unknown>) {
       global: { fetch: events.fetch },
     });
     return {
-      mode: 'local' as const,
+      mode: config.mode,
+      environmentName:
+        config.mode === 'hosted' ? config.environmentName : undefined,
       identity: createIdentityGateway(client, { events, storage }),
       catalog: createCatalogGateway(client),
       batches: createBatchGateway(client),

@@ -58,6 +58,10 @@ Com Docker no PATH e Node 24: `npm run db:start`, `npm run test:db` e `npm run t
 
 Modo local da interface requer `VITE_APP_MODE=local`, `VITE_SUPABASE_URL=http://127.0.0.1:54321` e `VITE_SUPABASE_PUBLISHABLE_KEY` obtida da instância local em `.env.local` ignorado pelo Git. Nunca colocar chave administrativa no frontend. Não há provisionamento de contas pela interface nem conta de demonstração permanente; a integração cria e remove contas temporárias.
 
+## Fase 8.4a — ambiente hospedado de testes
+
+Modo `hosted` (Cloudflare Pages + Supabase) para uso com **dados fictícios**; não é produção. Em hospedagem, configuração ausente ou errada interrompe o build e nunca cai na demonstração. Variáveis em `.env.example`; relatório, procedimentos e o guia de configurações pessoais em [docs/FASE_08_4A.md](docs/FASE_08_4A.md).
+
 ## Fase 03A — catálogo por estabelecimento
 
 Após entrar, escolha o catálogo do estabelecimento. Membros ativos consultam produtos e fornecedores; proprietários ativos também podem cadastrá-los. O produto exige uma unidade de medida. Fornecedores permanecem independentes dos produtos até o registro de origem do lote em um incremento posterior.
