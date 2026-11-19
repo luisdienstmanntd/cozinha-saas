@@ -1,3 +1,4 @@
+import { catalogSections } from '../features/navigation/domain/catalogSections';
 import type { configureApp } from './configureApp';
 import { EnvironmentBanner } from './EnvironmentBanner';
 import { DemoHome } from '../features/demo/components/DemoHome';
@@ -70,6 +71,7 @@ function Workspace({
   );
   const content = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
+  const keepNavigationFocus = useRef(false);
   useEffect(() => {
     function follow() {
       setArea(resolveArea(parsePlace(window.location.search).area, areas));
@@ -79,13 +81,24 @@ function Workspace({
   }, [areas]);
   useEffect(() => {
     // Leitor de tela e teclado seguem para o conteúdo da área escolhida (não na primeira carga).
-    if (moved.current) content.current?.focus();
+    const section =
+      area === 'cadastros' &&
+      catalogSections.find(({ id }) => window.location.hash === `#${id}`);
+    const destination = section ? document.getElementById(section.id) : null;
+    if (destination) {
+      destination.focus({ preventScroll: true });
+      destination.scrollIntoView?.({ block: 'start' });
+    } else if (moved.current && !keepNavigationFocus.current) {
+      content.current?.focus();
+    }
+    keepNavigationFocus.current = false;
     moved.current = true;
   }, [area]);
   const hrefFor = (next: AreaId) =>
     `${window.location.pathname}${placeSearch(window.location.search, establishmentId, next)}`;
-  function select(next: AreaId) {
+  function select(next: AreaId, options?: { keepFocus: boolean }) {
     if (next === area) return;
+    keepNavigationFocus.current = options?.keepFocus ?? false;
     window.history.pushState(null, '', hrefFor(next));
     setArea(next);
   }
@@ -141,6 +154,7 @@ function Workspace({
         current={area}
         hrefFor={hrefFor}
         onSelect={select}
+        catalogMenu={canCreate}
       />
       <div
         id="conteudo-unidade"
@@ -214,16 +228,35 @@ function Workspace({
               gateway={configuration.catalog}
               scope={scope}
               canCreate={canCreate}
+              sectionIds={[
+                catalogSections[0].id,
+                catalogSections[1].id,
+                catalogSections[2].id,
+              ]}
               onCreated={() => setRevision((value) => value + 1)}
             />
           )}
-          <SettingsPanel
-            scope={scope}
-            gateway={configuration.settings}
-            canEdit={canCreate}
-            onSaved={() => setSettingsToken((value) => value + 1)}
-          />
-          {canCreate && unit.organizationTools}
+          <div
+            id={catalogSections[3].id}
+            className="catalog-destination"
+            tabIndex={-1}
+          >
+            <SettingsPanel
+              scope={scope}
+              gateway={configuration.settings}
+              canEdit={canCreate}
+              onSaved={() => setSettingsToken((value) => value + 1)}
+            />
+          </div>
+          {canCreate && unit.organizationTools && (
+            <div
+              id={catalogSections[4].id}
+              className="catalog-destination"
+              tabIndex={-1}
+            >
+              {unit.organizationTools}
+            </div>
+          )}
         </div>
       </div>
     </div>

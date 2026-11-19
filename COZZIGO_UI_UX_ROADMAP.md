@@ -80,3 +80,7 @@ Autorização, RLS, escopo por organização, auditoria, operações idempotente
 ## Fundações implementadas
 
 O login, o menu lateral, a navegação inferior e o cabeçalho usam a primeira versão dos tokens. A Inter variável é servida pela própria aplicação. Formulários, botões, cartões e estados de validade herdam a paleta compartilhada. A arte oficial é usada no login, na demonstração e no menu. O C aparece no cabeçalho compacto e na aba do navegador. A reorganização funcional de cada área continua nas etapas previstas acima.
+
+## Submenu de Cadastros
+
+O proprietário pode expandir Cadastros e ir diretamente para Produtos, Fornecedores, Preparações próprias, Configurações da unidade ou Organização. O submenu aparece abaixo da área no desktop e acima da barra inferior no celular. Cada destino tem uma âncora e mantém os formulários montados para preservar o que foi digitado. Colaboradores continuam com Configurações em modo de leitura.

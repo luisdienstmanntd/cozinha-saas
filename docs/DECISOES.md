@@ -532,3 +532,9 @@
 - **Motivo:** localizar preparações do turno mais rapidamente usando a consulta existente.
 - **Consequência:** o filtro tem o escopo da lista recente. Os quatro indicadores da validade seguem como contagens da unidade e a lista de recipientes continua paginada.
 - **Revisar quando:** houver demanda por histórico por período ou contagem completa de produções do dia.
+
+## D-069 — Destinos de Cadastros no menu da unidade
+
+- **Decisão:** Cadastros expande seções existentes com links de âncora e foco em cada destino. Escape recolhe a lista e devolve o foco ao acionador. No celular, escolher um destino também recolhe a lista.
+- **Motivo:** reduzir a rolagem para localizar os formulários e preservar as URLs e os rascunhos da área.
+- **Consequência:** a lista de destinos depende da permissão já usada na área. Configurações continua como destino direto para colaboradores.

@@ -76,6 +76,14 @@ test('proprietário: cinco áreas, Validade ao abrir, unidade, usuário e Sair s
       }),
     ).toBeVisible();
     await expect(page.getByLabel('Nome da organização')).toBeVisible();
+    await expect(areaLink(page, 'Cadastros')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await areaLink(page, 'Fornecedores').click();
+    await expect(page).toHaveURL(/#cadastro-fornecedores$/);
+    await expect(page.locator('#cadastro-fornecedores')).toBeFocused();
+    await expect(areaLink(page, 'Produtos')).toBeVisible();
     // Desktop: menu à esquerda do conteúdo.
     const menu = await nav(page).boundingBox();
     const content = await page

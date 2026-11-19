@@ -39,6 +39,56 @@ describe('navegação da unidade (V1)', () => {
       '/?unidade=x&area=locais',
     );
   });
+  it('expõe as opções de Cadastros somente para o proprietário e recolhe com Escape', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const { rerender } = render(
+      <UnitNav
+        catalogMenu
+        areas={areas}
+        current="validade"
+        hrefFor={hrefFor}
+        onSelect={onSelect}
+      />,
+    );
+    const catalog = screen.getByRole('link', { name: 'Cadastros' });
+    expect(catalog).toHaveAttribute('aria-expanded', 'false');
+    await user.click(catalog);
+    expect(onSelect).toHaveBeenCalledWith('cadastros', { keepFocus: true });
+    rerender(
+      <UnitNav
+        catalogMenu
+        areas={areas}
+        current="cadastros"
+        hrefFor={hrefFor}
+        onSelect={onSelect}
+      />,
+    );
+    expect(catalog).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('link', { name: 'Fornecedores' })).toHaveAttribute(
+      'href',
+      hrefFor('cadastros') + '#cadastro-fornecedores',
+    );
+    await user.tab();
+    expect(screen.getByRole('link', { name: 'Produtos' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(catalog).toHaveFocus();
+    expect(catalog).toHaveAttribute('aria-expanded', 'false');
+    expect(
+      screen.queryByRole('link', { name: 'Produtos' }),
+    ).not.toBeInTheDocument();
+    rerender(
+      <UnitNav
+        areas={areasFor({ owner: false, production: true, locations: true })}
+        current="cadastros"
+        hrefFor={hrefFor}
+        onSelect={onSelect}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Configurações' }),
+    ).not.toHaveAttribute('aria-expanded');
+  });
   it('clique simples troca de área sem recarregar; com tecla modificadora segue o navegador', async () => {
     const onSelect = vi.fn();
     render(

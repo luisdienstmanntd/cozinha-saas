@@ -76,3 +76,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Identidade CozziGo — 18/11/2026
 
 - Comparativo de seis telas e roadmap concluídos localmente em `codex/cozzigo-proposta-visual`, com fundações, logomarca e favicon implementados localmente em `codex/cozzigo-fundacoes`. E2E autenticado bloqueado pelo armazenamento do Docker. [Registro](ia-tarefas/cozzigo-identidade-visual.md).
+
+## Submenu de Cadastros
+
+- Implementação local verificada em `codex/submenu-cadastros`; E2E autenticado pendente. [Registro](ia-tarefas/submenu-cadastros.md).
