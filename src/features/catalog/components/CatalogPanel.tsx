@@ -17,6 +17,7 @@ import type {
 } from '../domain/catalog';
 
 type Props = {
+  sectionIds?: readonly [string, string, string];
   gateway: CatalogGateway;
   scope: CatalogScope;
   canCreate: boolean;
@@ -489,9 +490,27 @@ export function CatalogPanel(props: Props) {
   return (
     <div key={key}>
       {!props.canCreate && <p>Somente proprietários podem cadastrar itens.</p>}
-      <CatalogSection {...props} kind="products" />
-      <CatalogSection {...props} kind="suppliers" />
-      <CatalogSection {...props} kind="preparations" />
+      <div
+        id={props.sectionIds?.[0]}
+        className="catalog-destination"
+        tabIndex={props.sectionIds ? -1 : undefined}
+      >
+        <CatalogSection {...props} kind="products" />
+      </div>
+      <div
+        id={props.sectionIds?.[1]}
+        className="catalog-destination"
+        tabIndex={props.sectionIds ? -1 : undefined}
+      >
+        <CatalogSection {...props} kind="suppliers" />
+      </div>
+      <div
+        id={props.sectionIds?.[2]}
+        className="catalog-destination"
+        tabIndex={props.sectionIds ? -1 : undefined}
+      >
+        <CatalogSection {...props} kind="preparations" />
+      </div>
     </div>
   );
 }

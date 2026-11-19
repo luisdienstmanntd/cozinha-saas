@@ -1,3 +1,6 @@
+import { useId, useRef, useState } from 'react';
+import { useCompactLayout } from '../../../shared/ui/useCompactLayout';
+import { catalogSections } from '../domain/catalogSections';
 import brandLogo from '../../../shared/ui/brand/cozzigo.webp';
 import type { Area, AreaId } from '../domain/areas';
 
@@ -23,56 +26,119 @@ export function UnitNav({
   current,
   hrefFor,
   onSelect,
+  catalogMenu = false,
 }: {
   areas: Area[];
   current: AreaId;
   hrefFor: (area: AreaId) => string;
-  onSelect: (area: AreaId) => void;
+  onSelect: (area: AreaId, options?: { keepFocus: boolean }) => void;
+  catalogMenu?: boolean;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const compact = useCompactLayout();
+  const submenuId = useId();
+  const catalogLink = useRef<HTMLAnchorElement>(null);
+  const expanded = current === 'cadastros' && !collapsed;
   return (
     <nav aria-label="Áreas da unidade" className="unit-nav">
       <div className="unit-nav-brand">
         <img src={brandLogo} alt="CozziGo" />
       </div>
       <ul>
-        {areas.map((area) => (
-          <li key={area.id}>
-            <a
-              href={hrefFor(area.id)}
-              aria-current={area.id === current ? 'page' : undefined}
-              onClick={(event) => {
-                // Clique com tecla modificadora segue o comportamento normal do navegador.
-                if (
-                  event.defaultPrevented ||
-                  event.button !== 0 ||
-                  event.metaKey ||
-                  event.ctrlKey ||
-                  event.shiftKey ||
-                  event.altKey
-                )
-                  return;
-                event.preventDefault();
-                onSelect(area.id);
-              }}
+        {areas.map((area) => {
+          const hasSubmenu = catalogMenu && area.id === 'cadastros';
+          return (
+            <li
+              key={area.id}
+              onKeyDown={
+                hasSubmenu
+                  ? (event) => {
+                      if (event.key !== 'Escape' || !expanded) return;
+                      event.preventDefault();
+                      setCollapsed(true);
+                      catalogLink.current?.focus();
+                    }
+                  : undefined
+              }
             >
-              <svg
-                aria-hidden="true"
-                focusable="false"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <a
+                href={hrefFor(area.id)}
+                ref={hasSubmenu ? catalogLink : undefined}
+                aria-expanded={hasSubmenu ? expanded : undefined}
+                aria-controls={hasSubmenu ? submenuId : undefined}
+                aria-current={area.id === current ? 'page' : undefined}
+                onClick={(event) => {
+                  // Clique com tecla modificadora segue o comportamento normal do navegador.
+                  if (
+                    event.defaultPrevented ||
+                    event.button !== 0 ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                  )
+                    return;
+                  event.preventDefault();
+                  if (hasSubmenu && current === 'cadastros') {
+                    setCollapsed(expanded);
+                    return;
+                  }
+                  setCollapsed(false);
+                  if (hasSubmenu) onSelect(area.id, { keepFocus: true });
+                  else onSelect(area.id);
+                }}
               >
-                <path d={areaPaths[area.id]} />
-              </svg>
-              {area.label}
-            </a>
-          </li>
-        ))}
+                <svg
+                  aria-hidden="true"
+                  focusable="false"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d={areaPaths[area.id]} />
+                </svg>
+                {area.label}
+                {hasSubmenu && (
+                  <span className="unit-nav-chevron" aria-hidden="true" />
+                )}
+              </a>
+              {hasSubmenu && (
+                <ul
+                  id={submenuId}
+                  className="unit-nav-submenu"
+                  hidden={!expanded}
+                >
+                  {catalogSections.map(({ id, label }) => (
+                    <li key={id}>
+                      <a
+                        href={`${hrefFor(area.id)}#${id}`}
+                        onClick={(event) => {
+                          if (
+                            compact &&
+                            event.button === 0 &&
+                            !event.ctrlKey &&
+                            !event.metaKey &&
+                            !event.shiftKey &&
+                            !event.altKey
+                          ) {
+                            setCollapsed(true);
+                          }
+                        }}
+                      >
+                        {label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );
