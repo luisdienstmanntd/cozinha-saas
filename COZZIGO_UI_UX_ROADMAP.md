@@ -77,3 +77,7 @@ O refinamento dá unidade visual a cabeçalho, menu e painéis, e separa as aç�
 4. **Validação de implementação.** Rodar lint, tipos, testes, build e E2E autenticado em ambiente descartável. Medir contraste da cascata real. Conferir teclado, leitor de tela, foco não obstruído, áreas de toque, reflow em 320 px, zoom a 200%, desktop, dois perfis e preservação de rascunho e rotas. Testar estados vazio, erro, carregando, contato com validade vencida e ausência de temperatura. Confirmar CSP, tema e legibilidade do favicon nas duas superfícies.
 
 Autorização, RLS, escopo por organização, auditoria, operações idempotentes, sessão e acesso a PDF/QR continuam regidos pelas decisões existentes. A interface não introduz novos poderes nem novas regras de validade. Deploy, migrações e merge na `main` requerem autorização.
+
+## Fundações implementadas
+
+O login, o menu lateral, a navegação inferior e o cabeçalho usam a primeira versão dos tokens. A Inter variável é servida pela própria aplicação. Formulários, botões, cartões e estados de validade herdam a paleta compartilhada. A marca aparece em texto até a chegada da matriz original. A preparação da arte, o favicon e a reorganização funcional de cada área continuam nas etapas previstas acima.

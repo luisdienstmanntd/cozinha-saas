@@ -374,7 +374,9 @@ export function IdentityHome({
       : undefined;
 
   return (
-    <main className={openTarget ? 'workspace unit-open' : 'workspace'}>
+    <main
+      className={`workspace${openTarget ? ' unit-open' : userId ? '' : ' sign-in'}`}
+    >
       {openTarget && (
         <a className="skip-link" href="#conteudo-unidade">
           Pular para o conteúdo
@@ -441,7 +443,12 @@ export function IdentityHome({
       {restoring && !userId ? (
         <p role="status">Conferindo a sessão…</p>
       ) : !userId ? (
-        <form onSubmit={signIn}>
+        <form
+          className="sign-in-form"
+          aria-labelledby="sign-in-title"
+          onSubmit={signIn}
+        >
+          <h2 id="sign-in-title">Entre na sua conta</h2>
           <p>
             <label>
               E-mail{' '}

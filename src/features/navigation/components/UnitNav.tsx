@@ -30,6 +30,7 @@ export function UnitNav({
 }) {
   return (
     <nav aria-label="Áreas da unidade" className="unit-nav">
+      <span className="unit-nav-brand">CozziGo</span>
       <ul>
         {areas.map((area) => (
           <li key={area.id}>

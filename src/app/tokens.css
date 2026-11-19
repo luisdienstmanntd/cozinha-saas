@@ -1,0 +1,51 @@
+/* Inter Variable, Latin subset from @fontsource-variable/inter 5.2.5, under OFL 1.1. */
+@font-face {
+  font-family: Inter;
+  src: url('./fonts/inter-latin-wght.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --font-ui: Inter, system-ui, sans-serif;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --radius-control: 0.5rem;
+  --radius-panel: 0.75rem;
+  --touch-target: 44px;
+
+  --surface-canvas: #f6f7f9;
+  --surface-panel: #fff;
+  --surface-hover: #edf2f7;
+  --surface-nav: #272f35;
+  --surface-nav-hover: #374151;
+  --text-primary: #272f35;
+  --text-secondary: #58677a;
+  --text-on-dark: #fff;
+  --border-subtle: #e2e8f0;
+  --border-control: #758398;
+  --focus-light: #c2410c;
+  --focus-dark: #fff;
+
+  --brand-accent: #ff5900;
+  --brand-on-accent: #1a1f24;
+  --action-primary: #c2410c;
+  --action-primary-hover: #9a3412;
+  --action-on-primary: #fff;
+  --action-selected: #fff0e6;
+
+  --success-text: #15803d;
+  --info-text: #1e40af;
+  --info-surface: #eff6ff;
+  --info-edge: #2563eb;
+  --warning-text: #92400e;
+  --warning-surface: #fffbeb;
+  --warning-edge: #b45309;
+  --danger-text: #b91c1c;
+  --danger-surface: #fef2f2;
+  --danger-hover: #991b1b;
+}

@@ -37,6 +37,20 @@ async function login() {
   return user;
 }
 describe('acesso multiempresa', () => {
+  it('apresenta o formulário de login identificado com campos para gerenciadores de senhas', async () => {
+    render(<IdentityHome gateway={gateway()} />);
+    expect(
+      await screen.findByRole('form', { name: 'Entre na sua conta' }),
+    ).toBeVisible();
+    expect(screen.getByLabelText('E-mail')).toHaveAttribute(
+      'autocomplete',
+      'username',
+    );
+    expect(screen.getByLabelText('Senha')).toHaveAttribute(
+      'autocomplete',
+      'current-password',
+    );
+  });
   it('entra, consulta unidades, edita nome e limpa dados ao sair', async () => {
     const service = gateway();
     render(<IdentityHome gateway={service} />);
