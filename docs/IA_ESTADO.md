@@ -72,3 +72,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Interface operacional — 18/11/2026
 
 - Codex, implementação local verificada em `codex/interface-operacional`, na base `7d664d5`. E2E autenticado bloqueado pelo ambiente. [Registro](ia-tarefas/interface-operacional.md).
+
+## Identidade CozziGo — 18/11/2026
+
+- Comparativo de seis telas e roadmap concluídos localmente em `codex/cozzigo-proposta-visual`, aguardando aceite visual. [Registro](ia-tarefas/cozzigo-identidade-visual.md).
