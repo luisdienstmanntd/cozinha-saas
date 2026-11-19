@@ -505,7 +505,11 @@ function BatchContents({
 
   return (
     <section aria-label="Recebimentos de lote">
-      {showReceber && <h3>Recebimentos de lote</h3>}
+      {showReceber && (
+        <header className="operation-heading">
+          <h3>Recebimentos de lote</h3>
+        </header>
+      )}
       <div hidden={!showValidade}>
         {labelId && labels && (
           <div className="container-ficha">
@@ -1047,7 +1051,10 @@ function BatchContents({
           </div>
           <div hidden={!showReceber}>
             {canCreate && (
-              <form onSubmit={(event) => void submit(event)}>
+              <form
+                className="receipt-form"
+                onSubmit={(event) => void submit(event)}
+              >
                 <fieldset disabled={busy}>
                   <p>
                     <label>

@@ -1,3 +1,5 @@
+import brandLogo from '../../../shared/ui/brand/cozzigo.webp';
+import brandMark from '../../../shared/ui/brand/cozzigo-mark.webp';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import type { IdentityGateway } from '../application/identityGateway';
@@ -374,13 +376,18 @@ export function IdentityHome({
       : undefined;
 
   return (
-    <main className={openTarget ? 'workspace unit-open' : 'workspace'}>
+    <main
+      className={`workspace${openTarget ? ' unit-open' : userId ? '' : ' sign-in'}`}
+    >
       {openTarget && (
         <a className="skip-link" href="#conteudo-unidade">
           Pular para o conteúdo
         </a>
       )}
-      <h1>CozziGo — unidades, recebimentos e validade</h1>
+      {!userId && <img className="sign-in-brand" src={brandLogo} alt="" />}
+      <h1 className={userId ? undefined : 'visually-hidden'}>
+        CozziGo — unidades, recebimentos e validade
+      </h1>
       {!openTarget && environmentNote}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
@@ -441,7 +448,12 @@ export function IdentityHome({
       {restoring && !userId ? (
         <p role="status">Conferindo a sessão…</p>
       ) : !userId ? (
-        <form onSubmit={signIn}>
+        <form
+          className="sign-in-form"
+          aria-labelledby="sign-in-title"
+          onSubmit={signIn}
+        >
+          <h2 id="sign-in-title">Entre na sua conta</h2>
           <p>
             <label>
               E-mail{' '}
@@ -483,7 +495,16 @@ export function IdentityHome({
                     {openTarget.organization.name} · Papel:{' '}
                     {openTarget.owner ? 'Proprietário' : 'Colaborador'}
                   </p>
-                  <h2>{openTarget.unit.name}</h2>
+                  <h2>
+                    <img
+                      className="unit-brand-mark"
+                      src={brandMark}
+                      alt=""
+                      width="32"
+                      height="32"
+                    />
+                    {openTarget.unit.name}
+                  </h2>
                 </div>
                 <div className="unit-actions">
                   {refreshButton}

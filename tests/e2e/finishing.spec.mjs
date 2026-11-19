@@ -5,7 +5,7 @@ import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 // V4 (D-062): acabamento visual. Passo a passo da unidade vazia, rádio alinhado com rótulo de 44 px,
 // três níveis de botão, "Mudar de local" que fecha, "Mais ações" no celular (teclado) e cabeçalho
 // compacto. Dados sintéticos.
-const RISK = 'rgb(155, 38, 26)';
+const RISK = 'rgb(185, 28, 28)';
 
 async function signIn(page, user) {
   await page.getByLabel('E-mail').fill(user.email);
@@ -98,8 +98,8 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     const register = page.getByRole('button', {
       name: 'Registrar recebimento',
     });
-    // M1: ação principal em verde cheio.
-    await expect(register).toHaveCSS('background-color', 'rgb(33, 79, 64)');
+    // M1: ação principal em laranja escuro.
+    await expect(register).toHaveCSS('background-color', 'rgb(194, 65, 12)');
     await register.click();
     await expect(page.getByText('Recebimento registrado.')).toBeVisible();
 

@@ -376,6 +376,29 @@ describe('tentativa pendente da produção', () => {
 });
 
 describe('tela de produção', () => {
+  it('filtra produções recentes pelo dia civil da unidade e permite voltar à lista', async () => {
+    const user = userEvent.setup();
+    panel(
+      production([
+        row(),
+        row({
+          batch_id: id(24),
+          short_code: 'C-000124',
+          product_name: 'Molho',
+          produced_at: '2026-11-14T01:00:00Z',
+        }),
+      ]),
+    );
+    const filter = await screen.findByRole('button', { name: 'Hoje' });
+    expect(screen.getByText('Molho')).toBeVisible();
+    await user.click(filter);
+    expect(filter).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Caldo de legumes')).toBeVisible();
+    expect(screen.getByText('Molho')).not.toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Todas' }));
+    expect(screen.getByText('Molho')).toBeVisible();
+  });
+
   it('registra em passos: formulário, revisão por extenso e confirmação', async () => {
     const gateway = production();
     const user = userEvent.setup();
