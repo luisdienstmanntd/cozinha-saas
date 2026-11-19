@@ -80,3 +80,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Submenu de Cadastros
 
 - Implementação local verificada em `codex/submenu-cadastros`; E2E autenticado pendente. [Registro](ia-tarefas/submenu-cadastros.md).
+
+## Redesign estrutural
+
+- Três propostas renderizadas e revisadas, aguardando escolha, em `codex/redesign-estrutural-propostas`. [Registro](ia-tarefas/redesign-estrutural.md).
