@@ -1,3 +1,5 @@
+import brandLogo from '../../../shared/ui/brand/cozzigo.webp';
+import brandMark from '../../../shared/ui/brand/cozzigo-mark.webp';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import type { IdentityGateway } from '../application/identityGateway';
@@ -382,7 +384,10 @@ export function IdentityHome({
           Pular para o conteúdo
         </a>
       )}
-      <h1>CozziGo — unidades, recebimentos e validade</h1>
+      {!userId && <img className="sign-in-brand" src={brandLogo} alt="" />}
+      <h1 className={userId ? undefined : 'visually-hidden'}>
+        CozziGo — unidades, recebimentos e validade
+      </h1>
       {!openTarget && environmentNote}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
@@ -490,7 +495,16 @@ export function IdentityHome({
                     {openTarget.organization.name} · Papel:{' '}
                     {openTarget.owner ? 'Proprietário' : 'Colaborador'}
                   </p>
-                  <h2>{openTarget.unit.name}</h2>
+                  <h2>
+                    <img
+                      className="unit-brand-mark"
+                      src={brandMark}
+                      alt=""
+                      width="32"
+                      height="32"
+                    />
+                    {openTarget.unit.name}
+                  </h2>
                 </div>
                 <div className="unit-actions">
                   {refreshButton}

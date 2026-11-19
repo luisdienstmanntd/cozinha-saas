@@ -1,3 +1,4 @@
+import brandLogo from '../../../shared/ui/brand/cozzigo.webp';
 import { useDemoAcknowledgement } from '../application/useDemoAcknowledgement';
 
 const steps = [
@@ -26,7 +27,7 @@ export function DemoHome() {
       </a>
       <header className="site-header">
         <a className="wordmark" href="#conteudo">
-          CozziGo
+          <img src={brandLogo} alt="CozziGo" />
         </a>
         <span className="badge">Ambiente de demonstração</span>
       </header>

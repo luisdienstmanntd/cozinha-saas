@@ -8,12 +8,11 @@ A arte fornecida define a tipografia, a proporção, o C original (corpo grafite
 
 | Arquivo previsto | Tratamento e uso |
 | --- | --- |
-| `cozzigo-light.webp` | Arte recortada com transparência, sem o subtítulo ou as linhas laterais. Login e cabeçalhos claros. |
-| `cozzigo-dark.webp` | A mesma arte transparente, exibida sobre base branca no componente de marca para preservar cores e contraformas. Topo do menu grafite. |
-| `cozzigo-mark.webp` | Apenas os dois componentes originais do C, com respiro proporcional. Cabeçalho compacto. |
-| `favicon.png` e `favicon.ico` | Símbolo original, inspecionado em 16, 32 e 48 px e em temas claros e escuros do navegador. |
+| `cozzigo.webp` | Arte oficial transparente e sem subtítulo. Usada no login e na demonstração, e sobre base branca no menu grafite. |
+| `cozzigo-mark.webp` | Recorte do C fornecido em `c.png`, com fundo transparente e margem uniforme. Cabeçalho compacto. |
+| `favicon.png` e `favicon.ico` | Mesmo C, usado no favicon PNG de 32 px e no ICO com 16, 32 e 48 px. |
 
-Remover o fundo e o subtítulo por máscara/recorte, preservando os pixels do preenchimento, a proporção e o antialiasing da origem. Verificar halos no claro e no grafite, contraformas transparentes e ausência de pixels das letras adjacentes no símbolo. A placa clara é uma superfície do componente. A imagem da conversa foi usada como referência visual. A edição fiel depende do PNG original, preferencialmente com resolução nativa, ou da matriz vetorial oficial. O protótipo atual aponta a posição da marca com texto de reserva.
+Os arquivos `logo.png` e `c.png` vieram no ZIP oficial. A remoção do fundo preservou o preenchimento das letras e suavizou as bordas da transparência. A logomarca fornecida já estava sem subtítulo. A placa clara do menu mantém as cores do ativo em superfícies escuras.
 
 ## Design tokens propostos
 
@@ -80,4 +79,4 @@ Autorização, RLS, escopo por organização, auditoria, operações idempotente
 
 ## Fundações implementadas
 
-O login, o menu lateral, a navegação inferior e o cabeçalho usam a primeira versão dos tokens. A Inter variável é servida pela própria aplicação. Formulários, botões, cartões e estados de validade herdam a paleta compartilhada. A marca aparece em texto até a chegada da matriz original. A preparação da arte, o favicon e a reorganização funcional de cada área continuam nas etapas previstas acima.
+O login, o menu lateral, a navegação inferior e o cabeçalho usam a primeira versão dos tokens. A Inter variável é servida pela própria aplicação. Formulários, botões, cartões e estados de validade herdam a paleta compartilhada. A arte oficial é usada no login, na demonstração e no menu. O C aparece no cabeçalho compacto e na aba do navegador. A reorganização funcional de cada área continua nas etapas previstas acima.

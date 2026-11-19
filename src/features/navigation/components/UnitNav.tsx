@@ -1,3 +1,4 @@
+import brandLogo from '../../../shared/ui/brand/cozzigo.webp';
 import type { Area, AreaId } from '../domain/areas';
 
 const areaPaths: Record<AreaId, string> = {
@@ -30,7 +31,9 @@ export function UnitNav({
 }) {
   return (
     <nav aria-label="Áreas da unidade" className="unit-nav">
-      <span className="unit-nav-brand">CozziGo</span>
+      <div className="unit-nav-brand">
+        <img src={brandLogo} alt="CozziGo" />
+      </div>
       <ul>
         {areas.map((area) => (
           <li key={area.id}>
