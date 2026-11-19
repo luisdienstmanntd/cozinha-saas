@@ -16,3 +16,12 @@
 ## A implementar após aprovação
 
 Controlador de unidade e página com compatibilidade para as URLs da navegação V1, âncoras do PR #53 e QR. Rascunhos em memória por usuário, organização, unidade e operação. Os quatro indicadores reais devem vir de `containers.summary` no fuso da unidade; a fila do dashboard usa uma amostra explicitada da listagem com cursor. Etiquetas partem de recipientes existentes e consultas de leitura. Preservar gateways, papéis, RLS e a recuperação de operações pendentes.
+
+## 19/11/2026 — Mesa operacional escolhida
+
+- Autorizada a implementação da Mesa com alertas antes dos indicadores no celular. Branch `codex/mesa-operacional`.
+- Critérios: shell autenticado responsivo, páginas de cadastro independentes, formulário sob demanda, indicadores reais e compatibilidade com links legados. Etapas verificáveis de navegação, leitura operacional e apresentação. Sem banco, merge ou deploy.
+
+- Implementados: shell e seletor, Visão geral, página de Etiquetas, páginas independentes de cadastro/configuração, gaveta de criação e consulta de Locais com criação sob demanda. Recebimentos continua como página dedicada ao registro, e o histórico dos recipientes em Validades.
+- Verificação: lint, tipos, build, 595 testes na bateria completa e 90 testes focados na revisão seguinte. Chromium com app real e gateways simulados verificou 1440, 768, 390 e 320 px, alertas primeiro no móvel, busca, fechamento pelo teclado, rascunho isolado entre duas unidades e link de Etiquetas. Capturas de antes/depois em desktop, tablet e celular revisadas por QA.
+- Bloqueio: Playwright autenticado não inicializou porque o Supabase local está indisponível. Não foram executadas migrações. Não houve push, merge nem deploy.

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openArea } from './areas.mjs';
+import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // V5 (M5, D-063): vírgula decimal nas quantidades do recebimento, da saída, de abrir/porcionar e da
@@ -36,7 +36,7 @@ test('recebimento, saída e abrir aceitam vírgula e recusam milhar e ambiguidad
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
+    await newCatalogItem(page, 'Produtos');
     await page.getByLabel('Nome do produto').fill('Feijão de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
     await page
@@ -46,6 +46,7 @@ test('recebimento, saída e abrir aceitam vírgula e recusam milhar e ambiguidad
     await expect(
       page.getByText('Feijão de teste — kg — Ambiente'),
     ).toBeVisible();
+    await newCatalogItem(page, 'Fornecedores');
     await page.getByLabel('Nome do fornecedor').fill('Armazém de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await openArea(page, 'Receber');
@@ -157,7 +158,7 @@ test('produção aceita vírgula e recusa entrada ambígua', async ({ page }) =>
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
+    await openArea(page, 'Preparações próprias');
     const catalog = page.getByRole('region', { name: 'Preparações próprias' });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Molho de teste');

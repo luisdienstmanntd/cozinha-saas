@@ -7,6 +7,13 @@ export const AREA_IDS = [
   'producao',
   'locais',
   'cadastros',
+  'visao-geral',
+  'etiquetas',
+  'produtos',
+  'fornecedores',
+  'preparacoes',
+  'config-unidade',
+  'config-organizacao',
 ] as const;
 export type AreaId = (typeof AREA_IDS)[number];
 

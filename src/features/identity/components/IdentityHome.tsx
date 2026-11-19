@@ -26,6 +26,7 @@ type RenderOrganizationTools = (
 
 /** V1: o que a área da unidade precisa saber além do escopo. */
 export type UnitContext = {
+  active?: boolean;
   unitName: string;
   organizationName: string;
   /** Ferramentas da organização (unidades e nome), mostradas em Cadastros. */
@@ -87,12 +88,14 @@ export function IdentityHome({
   renderOrganizationTools,
   activity,
   environmentNotice,
+  operationalShell = false,
 }: {
   gateway: IdentityGateway;
   /** V2: última atividade no navegador; os testes passam uma em memória. */
   activity?: ActivityStore;
   // Texto do ambiente (hospedado); sem ele vale o texto do ambiente local de demonstração.
   environmentNotice?: string;
+  operationalShell?: boolean;
   renderCatalog?: (
     organizationId: string,
     establishmentId: string,
@@ -117,6 +120,10 @@ export function IdentityHome({
   const [catalogUnit, setCatalogUnit] = useState<string | null>(
     () => parsePlace(window.location.search).unit,
   );
+  const [visitedUnits, setVisitedUnits] = useState<string[]>(() => {
+    const unit = parsePlace(window.location.search).unit;
+    return unit ? [unit] : [];
+  });
   const generation = useRef(0);
   const [store] = useState(() => activity ?? defaultActivityStore());
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
@@ -132,6 +139,7 @@ export function IdentityHome({
     setAccess([]);
     setSkipped(0);
     setCatalogUnit(null);
+    setVisitedUnits([]);
     // O endereço não guarda a unidade da pessoa que saiu.
     window.history.replaceState(
       null,
@@ -161,7 +169,12 @@ export function IdentityHome({
 
   useEffect(() => {
     function follow() {
-      setCatalogUnit(parsePlace(window.location.search).unit);
+      const next = parsePlace(window.location.search).unit;
+      setCatalogUnit(next);
+      if (next)
+        setVisitedUnits((previous) =>
+          previous.includes(next) ? previous : [...previous, next],
+        );
     }
     window.addEventListener('popstate', follow);
     return () => window.removeEventListener('popstate', follow);
@@ -170,9 +183,13 @@ export function IdentityHome({
     window.history.pushState(
       null,
       '',
-      `${window.location.pathname}${placeSearch(window.location.search, id, 'validade')}`,
+      `${window.location.pathname}${placeSearch(window.location.search, id, operationalShell ? 'visao-geral' : 'validade')}`,
     );
     setCatalogUnit(id);
+    setVisitedUnits((previous) =>
+      previous.includes(id) ? previous : [...previous, id],
+    );
+    if (operationalShell) window.dispatchEvent(new PopStateEvent('popstate'));
   }
   function closeUnit() {
     window.history.pushState(
@@ -360,31 +377,45 @@ export function IdentityHome({
     </button>
   );
   // V1: unidade aberta (se o usuário tem acesso a ela).
-  const openTarget =
-    userId && catalogUnit
-      ? access.flatMap((organization) =>
-          organization.establishments
-            .filter((unit) => unit.id === catalogUnit)
-            .map((unit) => ({
-              organization,
-              unit,
-              owner: organization.memberships.some(
-                (m) => m.user_id === userId && m.role === 'owner',
-              ),
-            })),
-        )[0]
-      : undefined;
+  const targets = userId
+    ? access.flatMap((organization) =>
+        organization.establishments.map((unit) => ({
+          organization,
+          unit,
+          owner: organization.memberships.some(
+            (m) => m.user_id === userId && m.role === 'owner',
+          ),
+        })),
+      )
+    : [];
+  const openTarget = targets.find((target) => target.unit.id === catalogUnit);
+  const showShell = operationalShell && !!userId;
+  const pageClass = showShell
+    ? `mesa-workspace ${openTarget ? 'unit-open' : 'mesa-selection'}`
+    : openTarget
+      ? 'unit-open'
+      : userId
+        ? ''
+        : 'sign-in';
 
   return (
-    <main
-      className={`workspace${openTarget ? ' unit-open' : userId ? '' : ' sign-in'}`}
-    >
+    <main className={`workspace ${pageClass}`}>
       {openTarget && (
         <a className="skip-link" href="#conteudo-unidade">
           Pular para o conteúdo
         </a>
       )}
       {!userId && <img className="sign-in-brand" src={brandLogo} alt="" />}
+      {showShell && !openTarget && (
+        <aside
+          className="mesa-sidebar mesa-selection-side"
+          aria-label="CozziGo"
+        >
+          <div className="mesa-nav-brand">
+            <img src={brandLogo} alt="CozziGo" />
+          </div>
+        </aside>
+      )}
       <h1 className={userId ? undefined : 'visually-hidden'}>
         CozziGo — unidades, recebimentos e validade
       </h1>
@@ -399,7 +430,52 @@ export function IdentityHome({
         </p>
       )}
       {userId && (
-        <section aria-label="Sessão" className="session-bar">
+        <section
+          aria-label="Sessão"
+          className={showShell ? 'session-bar mesa-topbar' : 'session-bar'}
+        >
+          {showShell && (
+            <div className="mesa-unit-select">
+              <img
+                className="unit-brand-mark"
+                src={brandMark}
+                alt=""
+                width="32"
+                height="32"
+              />
+              <label>
+                <span className="visually-hidden">Unidade</span>
+                <select
+                  value={catalogUnit ?? ''}
+                  onChange={(event) =>
+                    event.target.value
+                      ? openUnit(event.target.value)
+                      : closeUnit()
+                  }
+                >
+                  <option value="">Todas as unidades</option>
+                  {targets.map((target) => (
+                    <option key={target.unit.id} value={target.unit.id}>
+                      {target.unit.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+          {showShell && (
+            <details className="mesa-account">
+              <summary>Minha conta</summary>
+              <div>
+                <strong>{sessionEmail}</strong>
+                {openTarget && (
+                  <p>{openTarget.owner ? 'Proprietário' : 'Colaborador'}</p>
+                )}
+                {refreshButton}
+                <p>A sessão encerra após 30 minutos sem uso.</p>
+              </div>
+            </details>
+          )}
           <p className="session-who">
             {openTarget ? (
               <>
@@ -483,71 +559,80 @@ export function IdentityHome({
       ) : (
         <>
           {!busy && access.length > 0 && renderDestination?.(userId, access)}
-          {!openTarget && refreshButton}
+          {!openTarget && !showShell && refreshButton}
+          {showShell && !openTarget && targets.length > 0 && (
+            <header className="mesa-page-heading mesa-selection-heading">
+              <h2>Unidades</h2>
+              <p>Selecione a unidade que deseja acompanhar.</p>
+            </header>
+          )}
           {openTarget && renderCatalog ? (
             <section
               aria-label={`Unidade ${openTarget.unit.name}`}
               className="unit-shell"
             >
-              <header className="unit-header">
-                <div className="unit-title">
-                  <p>
-                    {openTarget.organization.name} · Papel:{' '}
-                    {openTarget.owner ? 'Proprietário' : 'Colaborador'}
-                  </p>
-                  <h2>
-                    <img
-                      className="unit-brand-mark"
-                      src={brandMark}
-                      alt=""
-                      width="32"
-                      height="32"
-                    />
-                    {openTarget.unit.name}
-                  </h2>
-                </div>
-                <div className="unit-actions">
-                  {refreshButton}
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={closeUnit}
-                  >
-                    Trocar de unidade
-                  </button>
-                </div>
-              </header>
-              {renderCatalog(
-                openTarget.organization.id,
-                openTarget.unit.id,
-                openTarget.owner,
-                userId,
-                openTarget.unit.timezone,
-                {
-                  unitName: openTarget.unit.name,
-                  organizationName: openTarget.organization.name,
-                  organizationTools: (
-                    <>
-                      {renderOrganizationTools && (
-                        <OrganizationToolsSlot
-                          render={renderOrganizationTools}
-                          organization={openTarget.organization}
-                          owner={openTarget.owner}
-                          onChanged={changed}
-                          busy={busy}
-                        />
-                      )}
-                      {openTarget.owner && (
-                        <OrganizationForm
-                          organization={openTarget.organization}
-                          busy={busy}
-                          onRename={renameOrganization}
-                        />
-                      )}
-                    </>
-                  ),
-                },
+              {!showShell && (
+                <header className="unit-header">
+                  <div className="unit-title">
+                    <p>
+                      {openTarget.organization.name} · Papel:{' '}
+                      {openTarget.owner ? 'Proprietário' : 'Colaborador'}
+                    </p>
+                    <h2>
+                      <img
+                        className="unit-brand-mark"
+                        src={brandMark}
+                        alt=""
+                        width="32"
+                        height="32"
+                      />
+                      {openTarget.unit.name}
+                    </h2>
+                  </div>
+                  <div className="unit-actions">
+                    {refreshButton}
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={closeUnit}
+                    >
+                      Trocar de unidade
+                    </button>
+                  </div>
+                </header>
               )}
+              {!operationalShell &&
+                renderCatalog(
+                  openTarget.organization.id,
+                  openTarget.unit.id,
+                  openTarget.owner,
+                  userId,
+                  openTarget.unit.timezone,
+                  {
+                    unitName: openTarget.unit.name,
+                    organizationName: openTarget.organization.name,
+                    organizationTools: (
+                      <>
+                        {renderOrganizationTools && (
+                          <OrganizationToolsSlot
+                            render={renderOrganizationTools}
+                            organization={openTarget.organization}
+                            owner={openTarget.owner}
+                            onChanged={changed}
+                            busy={busy}
+                          />
+                        )}
+                        {openTarget.owner && (
+                          <OrganizationForm
+                            organization={openTarget.organization}
+                            busy={busy}
+                            onRename={renameOrganization}
+                          />
+                        )}
+                      </>
+                    ),
+                  },
+                )}
             </section>
           ) : (
             access.map((organization) => {
@@ -555,7 +640,14 @@ export function IdentityHome({
                 (m) => m.user_id === userId && m.role === 'owner',
               );
               return (
-                <section key={organization.id}>
+                <section
+                  key={organization.id}
+                  className={
+                    operationalShell
+                      ? 'mesa-panel mesa-organization-card'
+                      : undefined
+                  }
+                >
                   <h2>{organization.name}</h2>
                   <p>Papel: {owner ? 'Proprietário' : 'Colaborador'}</p>
                   <ul>
@@ -601,6 +693,50 @@ export function IdentityHome({
               );
             })
           )}
+          {operationalShell &&
+            renderCatalog &&
+            targets
+              .filter((target) => visitedUnits.includes(target.unit.id))
+              .map((target) => {
+                const active = target.unit.id === catalogUnit;
+                return (
+                  <div
+                    key={`${userId}:${target.organization.id}:${target.unit.id}`}
+                    hidden={!active}
+                  >
+                    {renderCatalog(
+                      target.organization.id,
+                      target.unit.id,
+                      target.owner,
+                      userId,
+                      target.unit.timezone,
+                      {
+                        active,
+                        unitName: target.unit.name,
+                        organizationName: target.organization.name,
+                        organizationTools: target.owner && (
+                          <>
+                            {renderOrganizationTools && (
+                              <OrganizationToolsSlot
+                                render={renderOrganizationTools}
+                                organization={target.organization}
+                                owner
+                                busy={busy}
+                                onChanged={changed}
+                              />
+                            )}
+                            <OrganizationForm
+                              organization={target.organization}
+                              busy={busy}
+                              onRename={renameOrganization}
+                            />
+                          </>
+                        ),
+                      },
+                    )}
+                  </div>
+                );
+              })}
         </>
       )}
     </main>

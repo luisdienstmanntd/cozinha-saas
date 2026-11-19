@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
-import { openArea } from './areas.mjs';
+import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.5b, E2E 29 e 33 do desenho (seção 8): recebimento sem medição gera etiqueta com faixa,
@@ -34,7 +34,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
+    await newCatalogItem(page, 'Produtos');
     await page.getByLabel('Nome do produto').fill('Frango de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
     await page
@@ -44,6 +44,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     await expect(
       page.getByText('Frango de teste — kg — Refrigerado'),
     ).toBeVisible();
+    await newCatalogItem(page, 'Fornecedores');
     await page.getByLabel('Nome do fornecedor').fill('Granja de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await openArea(page, 'Receber');

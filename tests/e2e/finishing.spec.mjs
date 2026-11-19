@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openArea } from './areas.mjs';
+import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // V4 (D-062): acabamento visual. Passo a passo da unidade vazia, rádio alinhado com rótulo de 44 px,
@@ -29,6 +29,7 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     });
     await expect(openUnit).toHaveText('Abrir');
     await openUnit.click();
+    await openArea(page, 'Validade');
 
     // D1: unidade vazia mostra os primeiros passos, com link para a área certa.
     const steps = page.getByRole('region', { name: 'Primeiros passos' });
@@ -37,7 +38,8 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     await steps
       .getByRole('link', { name: 'Cadastrar produtos e fornecedores' })
       .click();
-    await expect(page).toHaveURL(/area=cadastros/);
+    await expect(page).toHaveURL(/area=produtos/);
+    await newCatalogItem(page, 'Produtos');
     await page.getByLabel('Nome do produto').fill('Frango de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
     await page
@@ -47,6 +49,7 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     await expect(
       page.getByText('Frango de teste — kg — Refrigerado'),
     ).toBeVisible();
+    await newCatalogItem(page, 'Fornecedores');
     await page.getByLabel('Nome do fornecedor').fill('Granja de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     // O formulário de Receber fica montado (oculto) e recebe o fornecedor novo.
@@ -106,6 +109,7 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     // Local para o teste de "Mudar de local".
     await openArea(page, 'Locais');
     const panel = page.getByRole('region', { name: 'Locais de armazenamento' });
+    await panel.getByRole('button', { name: 'Novo local' }).click();
     await panel.getByLabel('Nome do local').fill('Câmara fria 01');
     await panel.getByLabel('Condição do local').selectOption('refrigerated');
     await panel.getByRole('button', { name: 'Criar local' }).click();
@@ -194,6 +198,7 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     // Colaborador no celular: só consulta, sem "Mais ações".
     await signIn(page, users[2]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Validade');
     const memberCard = page
       .getByRole('list', { name: 'Recipientes e validade' })
       .getByRole('listitem')

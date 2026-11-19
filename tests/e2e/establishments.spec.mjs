@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 import { checked } from '../../scripts/local-supabase.mjs';
-import { openArea } from './areas.mjs';
+import { openArea, chooseUnitList } from './areas.mjs';
 
 async function signIn(page, user) {
   await page.getByLabel('E-mail').fill(user.email);
@@ -74,9 +74,10 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
       .getByRole('button', { name: 'Abrir Cozinha de eventos' })
       .click();
     // V1: as ferramentas da organização ficam em Cadastros da unidade aberta.
-    await openArea(page, 'Cadastros');
+    await openArea(page, 'Produtos');
     await expect(page.getByText('Nenhum produto cadastrado.')).toBeVisible();
 
+    await openArea(page, 'Organização');
     await openTools();
     const renamed = page.getByRole('region', {
       name: 'Unidades de Empresa de teste A',
@@ -92,7 +93,7 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
         .getByRole('status')
         .filter({ hasText: 'Nome da unidade atualizado.' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Trocar de unidade' }).click();
+    await chooseUnitList(page);
     await expect(
       page.getByRole('button', { name: 'Abrir Cozinha fria' }),
     ).toBeVisible();
@@ -134,7 +135,7 @@ for (const viewport of [
       await page
         .getByRole('button', { name: 'Abrir Cozinha principal' })
         .click();
-      await openArea(page, 'Cadastros');
+      await openArea(page, 'Produtos');
       await expect(page.getByText('Nenhum produto cadastrado.')).toBeVisible();
       const overflow = await page.evaluate(
         () =>

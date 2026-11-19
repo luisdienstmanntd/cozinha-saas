@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openArea } from './areas.mjs';
+import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.9, E2E 25 do desenho: criar locais, mudar o recipiente de local (com confirmação quando a
@@ -15,7 +15,7 @@ async function signIn(page, user) {
 
 async function receive(page, quantity) {
   await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-  await openArea(page, 'Cadastros');
+  await newCatalogItem(page, 'Produtos');
   await page.getByLabel('Nome do produto').fill('Arroz de teste');
   await page.getByLabel('Unidade de medida').selectOption('kg');
   await page
@@ -23,6 +23,7 @@ async function receive(page, quantity) {
     .selectOption('ambient');
   await page.getByRole('button', { name: 'Cadastrar produto' }).click();
   await expect(page.getByText('Arroz de teste — kg — Ambiente')).toBeVisible();
+  await newCatalogItem(page, 'Fornecedores');
   await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
   await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
   await openArea(page, 'Receber');
@@ -56,15 +57,18 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
     await openArea(page, 'Locais');
 
     const panel = page.getByRole('region', { name: 'Locais de armazenamento' });
+    await panel.getByRole('button', { name: 'Novo local' }).click();
     await panel.getByLabel('Nome do local').fill('Despensa');
     await panel.getByLabel('Condição do local').selectOption('ambient');
     await panel.getByRole('button', { name: 'Criar local' }).click();
     await expect(panel).toContainText('Despensa — Ambiente');
+    await panel.getByRole('button', { name: 'Novo local' }).click();
     await panel.getByLabel('Nome do local').fill('Câmara fria 01');
     await panel.getByLabel('Condição do local').selectOption('refrigerated');
     await panel.getByRole('button', { name: 'Criar local' }).click();
     await expect(panel).toContainText('Câmara fria 01 — Refrigerado');
     // Nome repetido é recusado pelo banco.
+    await panel.getByRole('button', { name: 'Novo local' }).click();
     await panel.getByLabel('Nome do local').fill('despensa');
     await panel.getByRole('button', { name: 'Criar local' }).click();
     await expect(panel.getByRole('alert')).toContainText(
@@ -152,6 +156,7 @@ test('membro vê os locais, mas não cria nem muda de local', async ({
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await openArea(page, 'Locais');
     const panel = page.getByRole('region', { name: 'Locais de armazenamento' });
+    await panel.getByRole('button', { name: 'Novo local' }).click();
     await panel.getByLabel('Nome do local').fill('Despensa');
     await panel.getByRole('button', { name: 'Criar local' }).click();
     await expect(panel).toContainText('Despensa — Refrigerado');

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CatalogGateway } from '../application/catalogGateway';
 import {
@@ -18,6 +18,8 @@ import type {
 
 type Props = {
   sectionIds?: readonly [string, string, string];
+  page?: CatalogKind | null;
+  active?: boolean;
   gateway: CatalogGateway;
   scope: CatalogScope;
   canCreate: boolean;
@@ -222,6 +224,8 @@ function CatalogSection({
   scope: { organizationId, establishmentId },
   canCreate,
   onCreated,
+  page,
+  active,
   kind,
 }: Props & { kind: CatalogKind }) {
   const product = kind !== 'suppliers';
@@ -233,7 +237,58 @@ function CatalogSection({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   // Fatia 7.3: o cadastro de preparação abre por escolha, para não repetir na tela os campos do produto.
-  const [formOpen, setFormOpen] = useState(kind !== 'preparations');
+  const standalone = page !== undefined;
+  const [formOpen, setFormOpen] = useState(
+    !standalone && kind !== 'preparations',
+  );
+  const [search, setSearch] = useState('');
+  const [condition, setCondition] = useState('');
+  const [pageNumber, setPageNumber] = useState(0);
+  const drawer = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const headingId = useId();
+  const actionLabel =
+    kind === 'products'
+      ? 'Novo produto'
+      : kind === 'suppliers'
+        ? 'Novo fornecedor'
+        : 'Nova preparação';
+  const pageSize = 12;
+  const filtered =
+    list.status === 'ready'
+      ? list.items.filter(
+          (item) =>
+            item.name
+              .toLocaleLowerCase('pt-BR')
+              .includes(search.trim().toLocaleLowerCase('pt-BR')) &&
+            (!condition || (item.storage_condition ?? 'pending') === condition),
+        )
+      : [];
+  const visibleItems = standalone
+    ? filtered.slice(pageNumber * pageSize, (pageNumber + 1) * pageSize)
+    : filtered;
+
+  useEffect(() => {
+    const dialog = drawer.current;
+    if (
+      !standalone ||
+      !dialog ||
+      !formOpen ||
+      page !== kind ||
+      active === false
+    )
+      return;
+    dialog.showModal();
+    return () => {
+      if (dialog.open) dialog.close();
+    };
+  }, [standalone, formOpen, page, kind, active]);
+
+  function closeDrawer() {
+    drawer.current?.close();
+    setFormOpen(false);
+    trigger.current?.focus();
+  }
 
   useEffect(() => {
     let current = true;
@@ -306,7 +361,8 @@ function CatalogSection({
         );
       else {
         setNotice(text.created);
-        if (kind === 'preparations') setFormOpen(false);
+        if (standalone) closeDrawer();
+        else if (kind === 'preparations') setFormOpen(false);
       }
     } catch (cause) {
       setError(message(cause, 'Falha no cadastro.'));
@@ -315,9 +371,121 @@ function CatalogSection({
     }
   }
 
+  const form = (
+    <form onSubmit={(event) => void submit(event)}>
+      {standalone && <h2 id={headingId}>{actionLabel}</h2>}
+      <p>
+        <label>
+          {text.nameLabel} <input name="name" maxLength={120} required />
+        </label>
+      </p>
+      {product && (
+        <p>
+          <label>
+            Unidade de medida{' '}
+            <select name="unit" defaultValue="" required>
+              <option value="" disabled>
+                Selecione
+              </option>
+              {units.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+          </label>
+        </p>
+      )}
+      {product && (
+        <p>
+          <label>
+            Conservação{' '}
+            <select name="storageCondition" defaultValue="" required>
+              <option value="" disabled>
+                Selecione
+              </option>
+              {storageConditions.map((condition) => (
+                <option key={condition} value={condition}>
+                  {storageLabels[condition]}
+                </option>
+              ))}
+            </select>
+          </label>{' '}
+          {kind === 'preparations' ? PREPARATION_STORAGE_HINT : STORAGE_HINT}
+        </p>
+      )}
+      <button disabled={saving}>{text.submit}</button>
+      {error && <p role="alert">{error}</p>}
+      {standalone && (
+        <button
+          className="secondary"
+          type="button"
+          disabled={saving}
+          onClick={closeDrawer}
+        >
+          Fechar
+        </button>
+      )}
+      {!standalone && notice && <p role="status">{notice}</p>}
+    </form>
+  );
   return (
-    <section aria-label={title}>
-      <h3>{title}</h3>
+    <section aria-label={title} hidden={standalone && page !== kind}>
+      {standalone ? (
+        <header className="mesa-page-heading mesa-catalog-heading">
+          <div>
+            <h2>{title}</h2>
+            <p>Consulte e mantenha os cadastros desta unidade.</p>
+          </div>
+          {canCreate && list.status === 'ready' && (
+            <button
+              ref={trigger}
+              type="button"
+              onClick={() => setFormOpen(true)}
+            >
+              {actionLabel}
+            </button>
+          )}
+        </header>
+      ) : (
+        <h3>{title}</h3>
+      )}
+      {standalone && notice && <p role="status">{notice}</p>}
+      {standalone && list.status === 'ready' && (
+        <div className="mesa-panel mesa-panel-heading">
+          <label>
+            Pesquisar {title.toLowerCase()}{' '}
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPageNumber(0);
+              }}
+            />
+          </label>
+          {product && (
+            <label>
+              Filtrar por conservação{' '}
+              <select
+                value={condition}
+                onChange={(event) => {
+                  setCondition(event.target.value);
+                  setPageNumber(0);
+                }}
+              >
+                <option value="">Todas</option>
+                {storageConditions.map((value) => (
+                  <option key={value} value={value}>
+                    {storageLabels[value]}
+                  </option>
+                ))}
+                <option value="pending">Pendente</option>
+              </select>
+            </label>
+          )}
+        </div>
+      )}
       {list.status === 'loading' && (
         <p role="status">Carregando {title.toLowerCase()}…</p>
       )}
@@ -342,11 +510,19 @@ function CatalogSection({
               A lista mostra até 1.000 itens; outros itens podem não aparecer.
             </p>
           )}
-          {list.items.length === 0 ? (
-            <p>{text.empty}</p>
+          {visibleItems.length === 0 ? (
+            <p>
+              {list.items.length === 0
+                ? text.empty
+                : 'Nenhum cadastro encontrado com esses filtros.'}
+            </p>
           ) : (
-            <ul>
-              {list.items.map((item) => (
+            <ul
+              className={
+                standalone ? 'mesa-catalog-list mesa-panel' : undefined
+              }
+            >
+              {visibleItems.map((item) => (
                 <li key={item.id}>
                   {item.name}
                   {item.unit && ` — ${item.unit}`}
@@ -421,7 +597,31 @@ function CatalogSection({
               ))}
             </ul>
           )}
-          {canCreate && !formOpen && (
+          {standalone && filtered.length > pageSize && (
+            <div className="mesa-action-row">
+              <button
+                className="secondary"
+                type="button"
+                disabled={!pageNumber}
+                onClick={() => setPageNumber(pageNumber - 1)}
+              >
+                Anterior
+              </button>
+              <span>
+                Página {pageNumber + 1} de{' '}
+                {Math.ceil(filtered.length / pageSize)}
+              </span>
+              <button
+                className="secondary"
+                type="button"
+                disabled={(pageNumber + 1) * pageSize >= filtered.length}
+                onClick={() => setPageNumber(pageNumber + 1)}
+              >
+                Próxima
+              </button>
+            </div>
+          )}
+          {!standalone && canCreate && !formOpen && (
             <>
               <button type="button" onClick={() => setFormOpen(true)}>
                 Nova preparação
@@ -429,58 +629,24 @@ function CatalogSection({
               {notice && <p role="status">{notice}</p>}
             </>
           )}
-          {canCreate && formOpen && (
-            <form onSubmit={(event) => void submit(event)}>
-              <p>
-                <label>
-                  {text.nameLabel}{' '}
-                  <input name="name" maxLength={120} required />
-                </label>
-              </p>
-              {product && (
-                <p>
-                  <label>
-                    Unidade de medida{' '}
-                    <select name="unit" defaultValue="" required>
-                      <option value="" disabled>
-                        Selecione
-                      </option>
-                      {units.map((unit) => (
-                        <option key={unit} value={unit}>
-                          {unit}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </p>
-              )}
-              {product && (
-                <p>
-                  <label>
-                    Conservação{' '}
-                    <select name="storageCondition" defaultValue="" required>
-                      <option value="" disabled>
-                        Selecione
-                      </option>
-                      {storageConditions.map((condition) => (
-                        <option key={condition} value={condition}>
-                          {storageLabels[condition]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>{' '}
-                  {kind === 'preparations'
-                    ? PREPARATION_STORAGE_HINT
-                    : STORAGE_HINT}
-                </p>
-              )}
-              <button disabled={saving}>{text.submit}</button>
-              {error && <p role="alert">{error}</p>}
-              {notice && <p role="status">{notice}</p>}
-            </form>
-          )}
         </>
       )}
+      {canCreate &&
+        (standalone ? (
+          <dialog
+            className="mesa-drawer"
+            ref={drawer}
+            aria-labelledby={headingId}
+            onCancel={(event) => {
+              event.preventDefault();
+              if (!saving) closeDrawer();
+            }}
+          >
+            {form}
+          </dialog>
+        ) : (
+          list.status === 'ready' && formOpen && form
+        ))}
     </section>
   );
 }

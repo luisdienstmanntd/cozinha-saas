@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import { storageConditions, storageLabels } from '../../catalog/domain/catalog';
@@ -15,13 +15,17 @@ export function LocationsPanel({
   gateway,
   canManage,
   onChanged,
+  operational = false,
 }: {
   scope: CatalogScope;
   gateway: LocationGateway;
   canManage: boolean;
   onChanged?: () => void;
+  operational?: boolean;
 }) {
   const [locations, setLocations] = useState<StorageLocation[] | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const titleId = useId();
   const [name, setName] = useState('');
   const [condition, setCondition] = useState<StorageCondition>('refrigerated');
   const [busy, setBusy] = useState(false);
@@ -50,6 +54,7 @@ export function LocationsPanel({
       });
       intent.current = crypto.randomUUID();
       setName('');
+      setFormOpen(false);
       load();
       onChanged?.();
     } catch (cause) {
@@ -82,19 +87,44 @@ export function LocationsPanel({
   }
 
   return (
-    <section aria-labelledby="locations-title">
-      <h3 id="locations-title">Locais de armazenamento</h3>
-      <p>
-        Locais ajudam a achar o recipiente na cozinha. Mudar de local não altera
-        saldo, validade nem conservação.
-      </p>
+    <section aria-labelledby={titleId}>
+      {operational ? (
+        <header className="mesa-page-heading mesa-catalog-heading">
+          <div>
+            <h2 id={titleId}>Locais de armazenamento</h2>
+            <p>
+              Localize recipientes na unidade e gerencie os pontos de
+              armazenamento.
+            </p>
+          </div>
+          {canManage && (
+            <button
+              type="button"
+              aria-expanded={formOpen}
+              onClick={() => setFormOpen(!formOpen)}
+            >
+              {formOpen ? 'Fechar cadastro' : 'Novo local'}
+            </button>
+          )}
+        </header>
+      ) : (
+        <>
+          <h3 id={titleId}>Locais de armazenamento</h3>
+          <p>
+            Locais ajudam a achar o recipiente na cozinha. Mudar de local não
+            altera saldo, validade nem conservação.
+          </p>
+        </>
+      )}
       {error && <p role="alert">{error}</p>}
       {locations === null ? (
         <p>Carregando locais…</p>
       ) : locations.length === 0 ? (
         <p>Nenhum local cadastrado nesta unidade.</p>
       ) : (
-        <ul>
+        <ul
+          className={operational ? 'mesa-panel mesa-catalog-list' : undefined}
+        >
           {locations.map((location) => (
             <li key={location.id}>
               {location.name} — {storageLabels[location.condition]}
@@ -119,7 +149,11 @@ export function LocationsPanel({
         </ul>
       )}
       {canManage && (
-        <form onSubmit={(event) => void create(event)}>
+        <form
+          hidden={operational && !formOpen}
+          className={operational ? 'mesa-panel mesa-panel-heading' : undefined}
+          onSubmit={(event) => void create(event)}
+        >
           <label>
             Nome do local
             <input

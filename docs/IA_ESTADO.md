@@ -83,4 +83,4 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## Redesign estrutural
 
-- Três propostas renderizadas e revisadas, aguardando escolha, em `codex/redesign-estrutural-propostas`. [Registro](ia-tarefas/redesign-estrutural.md).
+- Mesa operacional implementada localmente, E2E autenticado pendente, na branch `codex/mesa-operacional`. [Registro](ia-tarefas/redesign-estrutural.md).
