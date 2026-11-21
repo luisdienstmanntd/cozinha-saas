@@ -269,3 +269,35 @@ it.each([
   expect(await screen.findByRole('alert')).toHaveTextContent(message);
   expect(receive).not.toHaveBeenCalled();
 });
+
+it('orienta o recebimento sem produtos e fornecedores, com destinos diretos', async () => {
+  const onSelect = vi.fn();
+  const user = userEvent.setup();
+  render(
+    <BatchPanel
+      area="receber"
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="America/Sao_Paulo"
+      canCreate
+      userId="owner"
+      catalog={{
+        list: vi.fn().mockResolvedValue([]),
+        create: vi.fn(),
+        setStorageCondition: vi.fn(),
+      }}
+      batches={{ list: vi.fn().mockResolvedValue([]), receive: vi.fn() }}
+      containers={fakeContainers([])}
+      areaLinks={{ hrefFor: (id) => `?area=${id}`, onSelect }}
+    />,
+  );
+  await user.click(
+    await screen.findByRole('link', { name: 'Cadastrar produto' }),
+  );
+  expect(onSelect).toHaveBeenCalledWith('produtos');
+  expect(
+    screen.getByRole('link', { name: 'Cadastrar fornecedor' }),
+  ).toHaveAttribute('href', '?area=fornecedores');
+  expect(
+    screen.queryByRole('button', { name: 'Registrar recebimento' }),
+  ).not.toBeInTheDocument();
+});

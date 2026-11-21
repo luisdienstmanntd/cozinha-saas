@@ -544,3 +544,10 @@
 - **Decisão:** shell autenticado com Visão geral, páginas operacionais e subpáginas de administração. As URLs legadas de Cadastros resolvem para o destino compatível com o perfil. O estado de trabalho de unidades visitadas fica em memória enquanto a sessão e o vínculo continuam válidos.
 - **Motivo:** concentrar a consulta no conteúdo da página e tirar os formulários de criação da listagem, mantendo o contexto da unidade.
 - **Dados:** os totais vêm do resumo autorizado por unidade. Alertas são um recorte explícito; rótulos de validade não classificam segurança. Etiquetas reutilizam a ficha e o acesso de leitura existente.
+
+## D-071 — Orientação operacional para compras e cozinha
+
+- **Decisão:** reduzir a administração inicialmente exposta, nomear Locais pela função real, ordenar recebimento por identificação/validade/temperatura e orientar pré-requisitos de cadastro conforme o perfil existente. Produção usa formulário responsivo, sem alterar seu processo de revisão.
+- **Motivo:** reduzir campos sem caminho de conclusão e a troca de contexto nas entregas e no preparo.
+- **Consequência:** somente frontend. Nenhuma permissão, migração, regra de alimento ou movimentação muda. O trabalho em compras continua limitado aos cadastros e recebimentos já existentes.
+- **Validação:** testes de navegação, estados sem cadastros, rascunhos e responsividade; aceite humano pendente.

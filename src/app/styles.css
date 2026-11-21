@@ -1751,3 +1751,60 @@ footer {
     font-size: 0.85rem;
   }
 }
+
+/* Fluxos operacionais: ordem de leitura estável no desktop e no celular. */
+.receipt-form .process-section {
+  grid-column: 1 / -1;
+  margin: var(--space-2) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+.production-form {
+  max-width: 52rem;
+}
+.production-form > fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  background: var(--surface-panel);
+}
+.production-form > fieldset > p {
+  margin: 0;
+  min-width: 0;
+}
+.production-form label {
+  display: grid;
+  gap: var(--space-1);
+}
+.production-form label > :is(input:not([type='checkbox']), select, textarea) {
+  width: 100%;
+  min-width: 0;
+}
+.production-form
+  > fieldset
+  > :is(
+    p:first-child,
+    p:has(select[aria-label]),
+    p:has(textarea),
+    [role='alert'],
+    [role='note']
+  ) {
+  grid-column: 1 / -1;
+}
+@media (max-width: 600px) {
+  .production-form > fieldset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .production-form > button {
+    width: 100%;
+    margin: var(--space-2) 0 0;
+  }
+  .mesa-sidebar.mobile-open {
+    max-height: 65dvh;
+    overflow-y: auto;
+  }
+}
