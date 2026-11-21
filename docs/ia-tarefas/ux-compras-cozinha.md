@@ -2,7 +2,7 @@
 
 - **ID:** ux-compras-cozinha
 - **Responsável / sessão:** Codex /root
-- **Estado:** em_andamento
+- **Estado:** aguardando_aceite
 - **Objetivo e aceite:** reduzir navegação administrativa, orientar cadastros ausentes conforme permissão e ordenar processos de recebimento/produção; preservar validações, rascunhos e regras de autorização.
 - **Branch / worktree / base:** codex/ux-compras-cozinha, /workspace/work/cozinha-saas, main 820f77d.
 - **Arquivos e recursos em uso:** navegação, BatchPanel, ProductionPanel, estilos e testes relacionados. Nenhum banco hospedado.
@@ -27,3 +27,9 @@
 - Revisão independente final de arquitetura/QA sem bloqueadores; observação do título vazio atendida.
 - E2E atualizado com navegação administrativa recolhida e percursos em 390 e 320 px: cadastro de produto/fornecedor, retorno ao rascunho de recebimento, cadastro de preparação e retorno ao rascunho de produção. Resultado autenticado ainda pendente da CI.
 - Próximo passo: publicar branch e PR para CI e prévia. Sem merge nem produção neste incremento antes do aceite.
+
+## CI e correção de seletores
+- PR #56 publicado, código inicial db64a1f. CI 44912885486: qualidade aprovada; banco, análise de segurança e integração passaram; E2E com 31 aprovados e 5 falhas.
+- Três falhas por correspondência parcial entre região da página e região interna de Locais; matcher agora usa nome exato. Duas falhas dos percursos novos por matcher de label contendo o texto das opções de preparação; seleção agora usa o papel combobox e nome acessível.
+- Gate de navegador segue obrigatório; nova execução pendente. A prévia da Cloudflare foi publicada e respondeu HTTP 200. Sem merge/produção; melhoria entregue para avaliação após CI.
+- 16 testes focados após o último ajuste visual passaram. Checklist final e resultados da CI ficam no PR #56.

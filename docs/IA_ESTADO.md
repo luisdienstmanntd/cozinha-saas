@@ -91,4 +91,4 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## UX compras e cozinha — 21/11/2026
 
-- Codex, em andamento em `codex/ux-compras-cozinha`, base `820f77d`. Revisão e melhorias de navegação, pré-requisitos e formulários, sem backend. [Registro](ia-tarefas/ux-compras-cozinha.md).
+- Codex, aguardando aceite no PR #56, em `codex/ux-compras-cozinha`, base `820f77d`. Revisão e melhorias de navegação, pré-requisitos e formulários, sem backend. [Registro](ia-tarefas/ux-compras-cozinha.md).

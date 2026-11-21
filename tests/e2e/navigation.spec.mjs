@@ -190,7 +190,10 @@ test('o que foi digitado não se perde ao trocar de área; endereço e voltar fu
       'page',
     );
     await expect(
-      page.getByRole('region', { name: 'Locais de armazenamento' }),
+      page.getByRole('region', {
+        name: 'Locais de armazenamento',
+        exact: true,
+      }),
     ).toBeVisible();
     // Unidade que a pessoa não tem: não abre nada.
     await page.goto('/?unidade=00000000-0000-4000-8000-000000000001');
@@ -292,7 +295,7 @@ for (const width of [390, 320]) {
         .click();
       const form = page.getByRole('form', { name: 'Registrar produção' });
       await form
-        .getByLabel('Preparação', { exact: true })
+        .getByRole('combobox', { name: 'Preparação', exact: true })
         .selectOption({ label: 'Molho operacional (kg)' });
       const quantity = form.getByLabel('Quantidade produzida (kg)');
       await quantity.fill('2,5');
