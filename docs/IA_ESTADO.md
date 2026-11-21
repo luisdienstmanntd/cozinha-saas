@@ -88,3 +88,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Correção do E2E da Mesa operacional — 21/11/2026
 
 - Claude Code, branch `claude/correcao-e2e-mesa-operacional` sobre o PR #54. Corrige as 24 falhas de E2E da CI sem mudar o escopo da D-070; aguarda CI e aceite. [Registro](ia-tarefas/correcao-e2e-mesa-operacional.md).
+
+## UX compras e cozinha — 21/11/2026
+
+- Codex, em andamento em `codex/ux-compras-cozinha`, base `820f77d`. Revisão e melhorias de navegação, pré-requisitos e formulários, sem backend. [Registro](ia-tarefas/ux-compras-cozinha.md).

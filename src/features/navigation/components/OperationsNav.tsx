@@ -48,9 +48,18 @@ export function OperationsNav({
   const mobileLayout = useCompactLayout();
   const compactSidebar = compact && !mobileLayout;
   const [openGroups, setOpenGroups] = useState({
-    catalog: true,
-    settings: true,
+    catalog: Object.hasOwn(catalogPages, current),
+    settings: current.startsWith('config-'),
   });
+
+  const [groupPage, setGroupPage] = useState(current);
+  if (groupPage !== current) {
+    setGroupPage(current);
+    setOpenGroups({
+      catalog: Object.hasOwn(catalogPages, current),
+      settings: current.startsWith('config-'),
+    });
+  }
 
   function follow(event: MouseEvent<HTMLAnchorElement>, id: AreaId) {
     if (

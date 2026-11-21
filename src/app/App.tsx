@@ -215,6 +215,7 @@ function Workspace({
         {tracked.production && (
           <div hidden={area !== 'producao'}>
             <ProductionPanel
+              areaLinks={{ hrefFor, onSelect: select }}
               scope={scope}
               timezone={timezone}
               userId={userId}
