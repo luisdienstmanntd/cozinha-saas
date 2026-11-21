@@ -1278,3 +1278,476 @@ footer {
     text-align: left;
   }
 }
+
+/* Mesa operacional */
+.workspace.mesa-workspace {
+  max-width: none;
+  margin: 0;
+  padding: 0 0 var(--space-6) 14rem;
+  min-height: 100vh;
+}
+.mesa-workspace:has(> div:not([hidden]) .mesa-sidebar.is-compact) {
+  padding-left: 4.75rem;
+}
+.workspace.mesa-workspace > h1:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  margin: 0;
+}
+.workspace.mesa-workspace .mesa-topbar {
+  min-height: 3.75rem;
+  padding: var(--space-2) var(--space-6);
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: var(--surface-panel);
+  margin: 0;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+.mesa-unit-select {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-right: auto;
+  min-width: 0;
+}
+.mesa-unit-select label {
+  min-width: 0;
+}
+.mesa-unit-select select {
+  width: min(23ch, 100%);
+}
+.mesa-topbar .session-who,
+.mesa-topbar .session-note {
+  display: none;
+}
+.mesa-account {
+  position: relative;
+}
+.mesa-account > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  cursor: pointer;
+  padding: 0 var(--space-2);
+}
+.mesa-account > div {
+  position: absolute;
+  right: 0;
+  width: min(17rem, 85vw);
+  padding: var(--space-3);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 8px 24px #272f3520;
+}
+.mesa-workspace .unit-layout {
+  display: block;
+  margin: 0;
+  padding: var(--space-6);
+}
+.mesa-sidebar {
+  position: fixed;
+  z-index: 25;
+  inset: 0 auto 0 0;
+  width: 14rem;
+  padding: var(--space-4) var(--space-3);
+  color: var(--text-on-dark);
+  background: var(--surface-nav);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.mesa-sidebar.is-compact {
+  width: 4.75rem;
+}
+.mesa-nav-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.mesa-nav-brand img {
+  width: 8rem;
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--surface-panel);
+}
+.workspace .mesa-sidebar button {
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  padding: var(--space-1) var(--space-2);
+}
+.mesa-sidebar nav,
+.mesa-sidebar nav > div,
+.operation-subnav {
+  display: grid;
+  gap: var(--space-1);
+}
+.mesa-sidebar nav {
+  gap: var(--space-4);
+}
+.mesa-nav-heading {
+  margin: 0;
+  padding: 0 var(--space-2);
+  color: #c3ceda;
+  text-transform: uppercase;
+  font-size: 0.73rem;
+  letter-spacing: 0.07em;
+}
+.mesa-sidebar nav a,
+.workspace .operation-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-1) var(--space-2);
+  color: inherit;
+  border-radius: var(--radius-control);
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+.workspace .operation-group-toggle {
+  width: 100%;
+  justify-content: space-between;
+}
+.mesa-sidebar nav a:hover,
+.workspace .mesa-sidebar button:hover {
+  background: var(--surface-nav-hover);
+}
+.mesa-sidebar nav a[aria-current='page'] {
+  background: var(--surface-nav-hover);
+  box-shadow: inset 3px 0 var(--brand-accent);
+}
+.mesa-sidebar :focus-visible {
+  outline-color: var(--focus-dark);
+  outline-offset: -3px;
+}
+.operation-icon {
+  color: #ffd0b3;
+  width: 1.25rem;
+  text-align: center;
+  flex: none;
+}
+.operation-subnav {
+  margin-left: var(--space-2);
+  border-left: 1px solid var(--border-control);
+  padding-left: var(--space-1);
+}
+.mesa-nav-unit {
+  margin-top: auto;
+  color: #c3ceda;
+  font-size: 0.85rem;
+}
+.mesa-sidebar.is-compact
+  :is(
+    .mesa-nav-heading,
+    .operation-nav-label,
+    .mesa-nav-unit,
+    .operation-group-toggle
+  ) {
+  display: none;
+}
+.mesa-sidebar.is-compact .operation-subnav {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+.mesa-sidebar.is-compact .mesa-nav-brand {
+  flex-direction: column;
+}
+.mesa-sidebar.is-compact .mesa-nav-brand img {
+  width: 2.5rem;
+}
+.mesa-workspace .mesa-mobile-menu {
+  display: none;
+}
+.mesa-page-heading {
+  margin-bottom: var(--space-4);
+}
+.mesa-page-heading h2,
+.mesa-overview h3 {
+  margin: 0;
+}
+.mesa-page-heading p {
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0;
+}
+.mesa-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.mesa-overview .mesa-page-heading {
+  margin: 0;
+}
+.mesa-panel {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  min-width: 0;
+}
+.mesa-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.mesa-stats > div {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+}
+.mesa-stats span,
+.mesa-panel-message {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.mesa-stats strong {
+  font-size: 1.65rem;
+  font-variant-numeric: tabular-nums;
+}
+.mesa-danger,
+.mesa-status.overdue {
+  color: var(--danger-text);
+}
+.mesa-warning,
+.mesa-status.today,
+.mesa-status.tomorrow {
+  color: var(--warning-text);
+}
+.mesa-status {
+  background: var(--surface-hover);
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  display: inline-block;
+}
+.mesa-status.overdue {
+  background: var(--danger-surface);
+}
+.mesa-status.today,
+.mesa-status.tomorrow {
+  background: var(--warning-surface);
+}
+.mesa-panel-heading,
+.mesa-catalog-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.mesa-panel-heading,
+.mesa-panel-message {
+  padding: var(--space-3) var(--space-4);
+}
+.mesa-panel-message {
+  margin: 0;
+}
+.mesa-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.mesa-table :is(th, td) {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+.mesa-table th {
+  background: var(--surface-canvas);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.mesa-table small {
+  display: block;
+  color: var(--text-secondary);
+}
+.mesa-shortcuts {
+  order: 0;
+}
+.mesa-alerts {
+  order: 1;
+}
+.mesa-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.mesa-catalog-list {
+  list-style: none;
+  padding: 0;
+}
+.mesa-catalog-list > li {
+  padding: var(--space-3) var(--space-4);
+}
+.mesa-catalog-list > li + li {
+  border-top: 1px solid var(--border-subtle);
+}
+.mesa-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(100%, 29rem);
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: var(--space-6);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  border: 0;
+}
+.mesa-drawer::backdrop {
+  background: #272f3570;
+}
+.mesa-drawer form label {
+  display: grid;
+  gap: var(--space-1);
+}
+.workspace .mesa-drawer button + button {
+  margin-left: var(--space-2);
+}
+
+@media (max-width: 899px) {
+  .workspace.mesa-workspace,
+  .workspace.mesa-workspace:has(> div:not([hidden]) .mesa-sidebar.is-compact) {
+    padding: 0 0 var(--space-6);
+  }
+  .workspace.mesa-workspace .mesa-topbar {
+    padding: var(--space-2);
+  }
+  .mesa-workspace .unit-layout {
+    padding: var(--space-3);
+  }
+  .mesa-workspace .mesa-mobile-menu {
+    position: sticky;
+    top: 4rem;
+    z-index: 9;
+    display: inline-flex;
+    margin: 0 0 var(--space-3);
+  }
+  .mesa-sidebar,
+  .mesa-sidebar.is-compact {
+    position: static;
+    width: auto;
+    display: none;
+    border-radius: var(--radius-panel);
+  }
+  .mesa-sidebar.mobile-open {
+    display: flex;
+    margin-bottom: var(--space-4);
+  }
+  .mesa-sidebar .mesa-collapse {
+    display: none;
+  }
+  .mesa-sidebar.is-compact .mesa-nav-heading,
+  .mesa-sidebar.is-compact .operation-nav-label,
+  .mesa-sidebar.is-compact .mesa-nav-unit {
+    display: initial;
+  }
+  .workspace .mesa-sidebar.is-compact .operation-group-toggle {
+    display: flex;
+  }
+  .mesa-sidebar .mesa-nav-brand {
+    flex-direction: row;
+  }
+
+  .mesa-alerts {
+    order: -1;
+  }
+  .mesa-overview .mesa-page-heading {
+    order: -2;
+  }
+  .mesa-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .mesa-topbar .unit-brand-mark {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+  .workspace.mesa-workspace .mesa-topbar {
+    gap: var(--space-1);
+  }
+  .workspace.mesa-workspace .mesa-topbar button {
+    padding-inline: var(--space-2);
+  }
+  .mesa-table thead {
+    position: absolute;
+    clip-path: inset(50%);
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .mesa-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: var(--space-2);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .mesa-table td {
+    border: 0;
+    padding: var(--space-1) var(--space-2);
+  }
+  .mesa-table td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+  }
+}
+.mesa-organization-card {
+  padding: var(--space-4);
+  margin: var(--space-4) 0;
+}
+.workspace .mesa-organization-card h2 {
+  margin: 0;
+}
+.mesa-organization-card > ul {
+  padding-inline-start: var(--space-4);
+}
+.mesa-catalog-list > li > form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.mesa-selection .mesa-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.mesa-selection > :is(.mesa-organization-card, .mesa-selection-heading) {
+  margin-inline: var(--space-6);
+}
+.mesa-selection-heading {
+  margin-top: var(--space-6);
+}
+.mesa-selection > .environment-note,
+.mesa-selection > p[role] {
+  padding-inline: var(--space-6);
+}
+@media (max-width: 560px) {
+  .workspace.mesa-workspace .mesa-topbar {
+    flex-wrap: nowrap;
+  }
+  .mesa-unit-select,
+  .mesa-unit-select label {
+    flex: 1;
+    min-width: 0;
+  }
+  .mesa-unit-select select {
+    width: 100%;
+  }
+  .mesa-account > summary {
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+}

@@ -1,3 +1,4 @@
+import { openArea } from './areas.mjs';
 import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -89,6 +90,7 @@ test('consulta mais de mil recebimentos e busca produto fora do catálogo carreg
     await page.getByLabel('Senha').fill(users[0].password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Validade');
     const dashboard = page.getByRole('region', { name: 'Painel de validade' });
     await expect(dashboard.getByText(/Vencidos: 1001/)).toBeVisible({
       timeout: 30000,

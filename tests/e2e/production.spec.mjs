@@ -31,8 +31,11 @@ const has = (bytes, text) => bytes.includes(Buffer.from(text, 'latin1'));
 // Cadastra a preparação e registra uma produção de 6 l com validade daqui a 2 dias.
 async function produce(page) {
   await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-  await openArea(page, 'Cadastros');
-  const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+  await openArea(page, 'Preparações próprias');
+  const catalog = page.getByRole('region', {
+    name: 'Preparações próprias',
+    exact: true,
+  });
   await catalog.getByRole('button', { name: 'Nova preparação' }).click();
   await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
   await catalog.getByLabel('Unidade de medida').selectOption('l');
@@ -81,9 +84,12 @@ test('registrar e anular produção da cozinha pela tela', async ({
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
+    await openArea(page, 'Preparações próprias');
 
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
     await catalog.getByLabel('Unidade de medida').selectOption('l');
@@ -267,7 +273,7 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
+    await openArea(page, 'Unidade');
     const settings = page.getByRole('region', {
       name: 'Configurações da unidade',
     });
@@ -299,7 +305,11 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
     );
 
     // O proprietário cadastra a preparação e define o nome de exibição do colaborador.
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    await openArea(page, 'Preparações próprias');
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
     await catalog.getByLabel('Unidade de medida').selectOption('l');
@@ -328,9 +338,9 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
     await expect(
       page
         .getByRole('navigation', { name: 'Áreas da unidade' })
-        .getByRole('link', { name: 'Receber' }),
+        .getByRole('link', { name: 'Recebimentos' }),
     ).toHaveCount(0);
-    await openArea(page, 'Configurações');
+    await openArea(page, 'Unidade');
     await expect(settings).toContainText(
       'Somente o proprietário muda as configurações da unidade.',
     );
@@ -371,8 +381,11 @@ test('janela de registro própria da preparação vale na tela de produção', a
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    await openArea(page, 'Preparações próprias');
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
     await catalog.getByLabel('Unidade de medida').selectOption('l');

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { openArea } from './areas.mjs';
+import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 import { checked } from '../../scripts/local-supabase.mjs';
 
@@ -25,7 +25,7 @@ test('quantidade e temperatura decimais: vírgula na lista, histórico, ficha, Q
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
+    await newCatalogItem(page, 'Produtos');
     await page.getByLabel('Nome do produto').fill(LONG_NAME);
     await page.getByLabel('Unidade de medida').selectOption('kg');
     await page
@@ -33,6 +33,7 @@ test('quantidade e temperatura decimais: vírgula na lista, histórico, ficha, Q
       .selectOption('frozen');
     await page.getByRole('button', { name: 'Cadastrar produto' }).click();
     await expect(page.getByText(`${LONG_NAME} — kg — Congelado`)).toBeVisible();
+    await newCatalogItem(page, 'Fornecedores');
     await page.getByLabel('Nome do fornecedor').fill('Granja de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
 
@@ -152,8 +153,11 @@ test('produção decimal: lista e etiqueta PDF da preparação com vírgula e no
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    await openArea(page, 'Preparações próprias');
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill(name);
     await catalog.getByLabel('Unidade de medida').selectOption('l');

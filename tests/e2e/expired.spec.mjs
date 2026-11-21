@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openArea } from './areas.mjs';
+import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.11: recipiente vencido com saldo mostra a faixa VENCIDO no painel e na tela do recipiente
@@ -48,7 +48,7 @@ test('vencido: faixa no painel e no QR, consumo indisponível e descarte registr
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
+    await newCatalogItem(page, 'Produtos');
     await page.getByLabel('Nome do produto').fill('Arroz de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
     await page
@@ -58,6 +58,7 @@ test('vencido: faixa no painel e no QR, consumo indisponível e descarte registr
     await expect(
       page.getByText('Arroz de teste — kg — Ambiente'),
     ).toBeVisible();
+    await newCatalogItem(page, 'Fornecedores');
     await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await openArea(page, 'Receber');

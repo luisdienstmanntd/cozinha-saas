@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openArea } from './areas.mjs';
+import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // V3: lista de validade em cartões. Selo com texto (não só cor), datas dd/mm/aaaa, nenhum UUID na
@@ -49,7 +49,7 @@ test('cartões de validade legíveis no celular e ficha aberta pelo colaborador'
     await page.goto('/');
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
-    await openArea(page, 'Cadastros');
+    await newCatalogItem(page, 'Produtos');
     await page.getByLabel('Nome do produto').fill('Arroz de teste');
     await page.getByLabel('Unidade de medida').selectOption('kg');
     await page
@@ -59,6 +59,7 @@ test('cartões de validade legíveis no celular e ficha aberta pelo colaborador'
     await expect(
       page.getByText('Arroz de teste — kg — Ambiente'),
     ).toBeVisible();
+    await newCatalogItem(page, 'Fornecedores');
     await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await openArea(page, 'Receber');
@@ -76,6 +77,7 @@ test('cartões de validade legíveis no celular e ficha aberta pelo colaborador'
     await page.setViewportSize({ width: 390, height: 844 });
     await signIn(page, users[2]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Validade');
     const list = page.getByRole('list', { name: 'Recipientes e validade' });
     const card = (code) => list.getByRole('listitem').filter({ hasText: code });
     await expect(card('C-ONTEM')).toContainText('Vencido há 1 dia');

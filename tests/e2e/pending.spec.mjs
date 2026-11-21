@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openArea } from './areas.mjs';
+import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 
 // Fatia 6.8, E2E 34 do desenho: fechar a aba com resultado incerto, reabrir e confirmar sem duplicar.
@@ -23,7 +23,7 @@ async function reopen(page) {
 }
 
 async function prepare(page) {
-  await openArea(page, 'Cadastros');
+  await newCatalogItem(page, 'Produtos');
   await page.getByLabel('Nome do produto').fill('Arroz de teste');
   await page.getByLabel('Unidade de medida').selectOption('kg');
   await page
@@ -31,6 +31,7 @@ async function prepare(page) {
     .selectOption('ambient');
   await page.getByRole('button', { name: 'Cadastrar produto' }).click();
   await expect(page.getByText('Arroz de teste — kg — Ambiente')).toBeVisible();
+  await newCatalogItem(page, 'Fornecedores');
   await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
   await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
   await openArea(page, 'Receber');

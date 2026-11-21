@@ -1,4 +1,10 @@
-import { catalogSections } from '../features/navigation/domain/catalogSections';
+import {
+  workspaceAreas,
+  workspacePage,
+} from '../features/navigation/domain/workspaceAreas';
+import { OperationsOverview } from '../features/overview/components/OperationsOverview';
+import { LabelDirectory } from '../features/labels/components/LabelDirectory';
+import { OperationsNav } from '../features/navigation/components/OperationsNav';
 import type { configureApp } from './configureApp';
 import { EnvironmentBanner } from './EnvironmentBanner';
 import { DemoHome } from '../features/demo/components/DemoHome';
@@ -19,13 +25,7 @@ import {
 import { ProductionPanel } from '../features/production/components/ProductionPanel';
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 import { SettingsPanel } from '../features/settings/components/SettingsPanel';
-import { UnitNav } from '../features/navigation/components/UnitNav';
-import {
-  areasFor,
-  parsePlace,
-  placeSearch,
-  resolveArea,
-} from '../features/navigation/domain/areas';
+import { parsePlace, placeSearch } from '../features/navigation/domain/areas';
 import type { AreaId } from '../features/navigation/domain/areas';
 import type { UnitContext } from '../features/identity/components/IdentityHome';
 
@@ -59,48 +59,46 @@ function Workspace({
   // então o que foi digitado em um formulário não se perde ao trocar de área.
   const areas = useMemo(
     () =>
-      areasFor({
-        owner: canCreate,
-        production: !!configuration.production,
-        locations: !!configuration.locations,
-      }),
+      workspaceAreas(
+        canCreate,
+        !!configuration.production,
+        !!configuration.locations,
+      ),
     [canCreate, configuration.production, configuration.locations],
   );
-  const [area, setArea] = useState<AreaId>(() =>
-    resolveArea(parsePlace(window.location.search).area, areas),
-  );
+  const [requested, setRequested] = useState(() => ({
+    search: window.location.search,
+    hash: window.location.hash,
+  }));
+  const area = workspacePage(requested.search, requested.hash, areas);
   const content = useRef<HTMLDivElement>(null);
-  const moved = useRef(false);
-  const keepNavigationFocus = useRef(false);
+  const previous = useRef(area);
   useEffect(() => {
     function follow() {
-      setArea(resolveArea(parsePlace(window.location.search).area, areas));
+      if (parsePlace(window.location.search).unit !== establishmentId) return;
+      setRequested({
+        search: window.location.search,
+        hash: window.location.hash,
+      });
     }
     window.addEventListener('popstate', follow);
     return () => window.removeEventListener('popstate', follow);
-  }, [areas]);
+  }, [establishmentId]);
   useEffect(() => {
-    // Leitor de tela e teclado seguem para o conteúdo da área escolhida (não na primeira carga).
-    const section =
-      area === 'cadastros' &&
-      catalogSections.find(({ id }) => window.location.hash === `#${id}`);
-    const destination = section ? document.getElementById(section.id) : null;
-    if (destination) {
-      destination.focus({ preventScroll: true });
-      destination.scrollIntoView?.({ block: 'start' });
-    } else if (moved.current && !keepNavigationFocus.current) {
-      content.current?.focus();
+    if (previous.current !== area && unit.active !== false) {
+      if (window.scrollY > 0) window.scrollTo({ top: 0 });
+      content.current?.focus({ preventScroll: true });
     }
-    keepNavigationFocus.current = false;
-    moved.current = true;
-  }, [area]);
-  const hrefFor = (next: AreaId) =>
-    `${window.location.pathname}${placeSearch(window.location.search, establishmentId, next)}`;
-  function select(next: AreaId, options?: { keepFocus: boolean }) {
-    if (next === area) return;
-    keepNavigationFocus.current = options?.keepFocus ?? false;
+    previous.current = area;
+  }, [area, unit.active]);
+  function hrefFor(next: AreaId) {
+    const destination = next === 'cadastros' ? 'produtos' : next;
+    return `${window.location.pathname}${placeSearch(window.location.search, establishmentId, destination)}`;
+  }
+  function select(next: AreaId) {
+    if (next === area && !window.location.hash) return;
     window.history.pushState(null, '', hrefFor(next));
-    setArea(next);
+    setRequested({ search: window.location.search, hash: '' });
   }
   const current = areas.find((item) => item.id === area) ?? areas[0]!;
   // Escritas passam pelo decorador: tentativa de resultado incerto fica guardada até ser conferida.
@@ -149,15 +147,15 @@ function Workspace({
   }
   return (
     <div className="unit-layout">
-      <UnitNav
+      <OperationsNav
         areas={areas}
         current={area}
         hrefFor={hrefFor}
-        onSelect={select}
-        catalogMenu={canCreate}
+        select={select}
+        unitName={unit.unitName}
       />
       <div
-        id="conteudo-unidade"
+        id={unit.active === false ? undefined : 'conteudo-unidade'}
         ref={content}
         tabIndex={-1}
         className="unit-content"
@@ -165,14 +163,35 @@ function Workspace({
         role="region"
       >
         {/* Registros não confirmados valem para qualquer área. */}
-        <PendingAttempts
-          scope={scope}
-          userId={userId}
-          timezone={timezone}
-          operations={configuration.operations}
-          resend={resend}
-          onResolved={() => setPendingToken((value) => value + 1)}
-        />
+        {unit.active !== false && (
+          <PendingAttempts
+            scope={scope}
+            userId={userId}
+            timezone={timezone}
+            operations={configuration.operations}
+            resend={resend}
+            onResolved={() => setPendingToken((value) => value + 1)}
+          />
+        )}
+        {area === 'visao-geral' && unit.active !== false && (
+          <OperationsOverview
+            scope={scope}
+            timezone={timezone}
+            containers={configuration.containers}
+            locations={configuration.locations}
+            occurrences={configuration.occurrences}
+            revision={pendingToken + stockToken}
+            areas={areas}
+            select={select}
+          />
+        )}
+        {area === 'etiquetas' && unit.active !== false && (
+          <LabelDirectory
+            scope={scope}
+            containers={configuration.containers}
+            revision={pendingToken + stockToken}
+          />
+        )}
         <div hidden={area !== 'validade' && area !== 'receber'}>
           <BatchPanel
             area={area === 'receber' ? 'receber' : 'validade'}
@@ -219,45 +238,41 @@ function Workspace({
               scope={scope}
               gateway={tracked.locations}
               canManage={canCreate}
+              operational
             />
           </div>
         )}
-        <div hidden={area !== 'cadastros'}>
-          {canCreate && (
-            <CatalogPanel
-              gateway={configuration.catalog}
-              scope={scope}
-              canCreate={canCreate}
-              sectionIds={[
-                catalogSections[0].id,
-                catalogSections[1].id,
-                catalogSections[2].id,
-              ]}
-              onCreated={() => setRevision((value) => value + 1)}
-            />
-          )}
-          <div
-            id={catalogSections[3].id}
-            className="catalog-destination"
-            tabIndex={-1}
-          >
-            <SettingsPanel
-              scope={scope}
-              gateway={configuration.settings}
-              canEdit={canCreate}
-              onSaved={() => setSettingsToken((value) => value + 1)}
-            />
-          </div>
-          {canCreate && unit.organizationTools && (
-            <div
-              id={catalogSections[4].id}
-              className="catalog-destination"
-              tabIndex={-1}
-            >
-              {unit.organizationTools}
-            </div>
-          )}
+        {canCreate && (
+          <CatalogPanel
+            gateway={configuration.catalog}
+            scope={scope}
+            canCreate={canCreate}
+            page={
+              area === 'produtos'
+                ? 'products'
+                : area === 'fornecedores'
+                  ? 'suppliers'
+                  : area === 'preparacoes'
+                    ? 'preparations'
+                    : null
+            }
+            active={unit.active !== false}
+            onCreated={() => setRevision((value) => value + 1)}
+          />
+        )}
+        <div hidden={area !== 'config-unidade'}>
+          <SettingsPanel
+            scope={scope}
+            gateway={configuration.settings}
+            canEdit={canCreate}
+            onSaved={() => setSettingsToken((value) => value + 1)}
+          />
         </div>
+        {canCreate && (
+          <div hidden={area !== 'config-organizacao'}>
+            {unit.organizationTools}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -333,6 +348,7 @@ export function App({
               : undefined
           }
           gateway={configuration.identity}
+          operationalShell
           renderOrganizationTools={(organization, owner, onChanged, busy) => (
             <EstablishmentTools
               gateway={configuration.establishments}

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
+import { openAccount } from './areas.mjs';
 
 // V2 (D-025): sessão persistente, QR sem novo login, Sair, troca de usuário e expiração.
 const DB = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
@@ -28,6 +29,8 @@ test('recarregar e abrir o QR não pedem login; Sair encerra; troca de usuário 
     await expect(
       page.getByRole('button', { name: 'Sair', exact: true }),
     ).toBeVisible();
+    // D-070 (Mesa): o e-mail da sessão fica em "Minha conta".
+    await openAccount(page);
     await expect(page.getByText(users[0].email)).toBeVisible();
 
     await page.reload();
@@ -87,6 +90,8 @@ test('sessão parada além de 30 minutos é recusada pelo servidor mesmo com a t
       `update auth.sessions set created_at = now() - interval '31 minutes' where user_id = '${users[0].id}'`,
     );
     // A tela ainda está aberta; a próxima chamada ao servidor é recusada e a sessão cai.
+    // D-070 (Mesa): "Atualizar acesso" fica em "Minha conta".
+    await openAccount(page);
     await page.getByRole('button', { name: 'Atualizar acesso' }).click();
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),

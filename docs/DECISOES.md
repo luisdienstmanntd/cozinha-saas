@@ -538,3 +538,9 @@
 - **Decisão:** Cadastros expande seções existentes com links de âncora e foco em cada destino. Escape recolhe a lista e devolve o foco ao acionador. No celular, escolher um destino também recolhe a lista.
 - **Motivo:** reduzir a rolagem para localizar os formulários e preservar as URLs e os rascunhos da área.
 - **Consequência:** a lista de destinos depende da permissão já usada na área. Configurações continua como destino direto para colaboradores.
+
+## D-070 — Mesa operacional e páginas por finalidade
+
+- **Decisão:** shell autenticado com Visão geral, páginas operacionais e subpáginas de administração. As URLs legadas de Cadastros resolvem para o destino compatível com o perfil. O estado de trabalho de unidades visitadas fica em memória enquanto a sessão e o vínculo continuam válidos.
+- **Motivo:** concentrar a consulta no conteúdo da página e tirar os formulários de criação da listagem, mantendo o contexto da unidade.
+- **Dados:** os totais vêm do resumo autorizado por unidade. Alertas são um recorte explícito; rótulos de validade não classificam segurança. Etiquetas reutilizam a ficha e o acesso de leitura existente.

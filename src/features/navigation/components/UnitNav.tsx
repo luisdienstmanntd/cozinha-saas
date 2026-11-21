@@ -4,7 +4,7 @@ import { catalogSections } from '../domain/catalogSections';
 import brandLogo from '../../../shared/ui/brand/cozzigo.webp';
 import type { Area, AreaId } from '../domain/areas';
 
-const areaPaths: Record<AreaId, string> = {
+const areaPaths: Partial<Record<AreaId, string>> = {
   validade:
     'M7 3v4m10-4v4M4 10h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm4 10 2 2 4-4',
   receber:

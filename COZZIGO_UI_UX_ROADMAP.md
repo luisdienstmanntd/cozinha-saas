@@ -84,3 +84,9 @@ O login, o menu lateral, a navegação inferior e o cabeçalho usam a primeira v
 ## Submenu de Cadastros
 
 O proprietário pode expandir Cadastros e ir diretamente para Produtos, Fornecedores, Preparações próprias, Configurações da unidade ou Organização. O submenu aparece abaixo da área no desktop e acima da barra inferior no celular. Cada destino tem uma âncora e mantém os formulários montados para preservar o que foi digitado. Colaboradores continuam com Configurações em modo de leitura.
+
+## Mesa operacional
+
+A direção aprovada usa indicadores e tabela no desktop e coloca os alertas antes dos indicadores no celular. A navegação passa a agrupar Principal, Operação e Administração. Os cadastros usam páginas independentes, consulta com busca e filtros quando aplicáveis, e criação em painel lateral. Links antigos de Cadastros, Validades e QR continuam resolvíveis.
+
+A Visão geral consulta o resumo completo de validade e mostra um recorte de até seis recipientes com saldo. Etiquetas consulta a listagem paginada de recipientes e leva à ficha existente para download autorizado. Cadastros pagina os registros retornados pelo gateway, cujo limite continua explícito na interface. Rascunhos ficam em memória por usuário e unidade enquanto a sessão e os acessos permanecem válidos.
