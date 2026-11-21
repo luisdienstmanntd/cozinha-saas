@@ -1,6 +1,6 @@
 # Correção do E2E da Mesa operacional (PR #54)
 
-- **Responsável / estado:** Claude Code. Aguardando a CI (E2E autenticado) e o aceite de luis.
+- **Responsável / estado:** Claude Code. `aguardando_aceite`: bateria inteira verde na CI (commit 22fa701).
 - **Base:** `codex/mesa-operacional` em `5a118fc` (PR #54, D-070 aprovada). Branch `claude/correcao-e2e-mesa-operacional`; PR em rascunho com base no PR #54.
 - **Objetivo:** devolver a bateria inteira ao verde no PR #54 sem enfraquecer testes e sem mudar o escopo aprovado da Mesa. Nenhuma alteração de banco, hospedado, merge ou deploy.
 
@@ -27,9 +27,9 @@ Na CI do PR #54 (run 44536069292), 24 de 35 testes E2E falharam; lint, tipos, Vi
 ## Verificação
 
 - Local: lint, TypeScript, Vitest (596), testes de scripts de CI (29) e build passaram nas duas rodadas.
-- CI: E2E de 24 falhas (PR #54) para 10 na primeira rodada e 1 na segunda (segundo login do teste de ocorrências, mesma causa da Visão geral).
+- CI: E2E de 24 falhas (PR #54) para 10 na primeira rodada e 1 na segunda (segundo login do teste de ocorrências, mesma causa da Visão geral). Terceira rodada (22fa701) verde: quality (lint, tipos, Vitest, scripts, build), pgTAP 1496, integração e E2E 35 de 35.
 - E2E, pgTAP e integração não rodaram aqui: o proxy deste ambiente bloqueia o download das imagens Docker do Supabase. A validação deles é a CI do PR.
 
 ## Próximo passo
 
-Conferir a CI. Se o E2E ficar verde, luis decide se incorpora esta correção ao PR #54 (mesclar este PR na branch do Codex) antes de mesclar o #54 na main.
+Luis decide se incorpora esta correção ao PR #54 (mesclar este PR na branch do Codex) antes de mesclar o #54 na main.
