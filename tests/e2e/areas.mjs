@@ -32,3 +32,13 @@ export async function chooseUnitList(page) {
     .getByRole('combobox', { name: 'Unidade', exact: true })
     .selectOption('');
 }
+
+// D-070 (Mesa): e-mail da sessão e "Atualizar acesso" ficam no menu "Minha conta".
+export async function openAccount(page) {
+  const account = page
+    .getByRole('region', { name: 'Sessão' })
+    .getByText('Minha conta', { exact: true });
+  const details = page.locator('details.mesa-account');
+  if (!(await details.evaluate((element) => element.open)))
+    await account.click();
+}

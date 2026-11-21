@@ -642,7 +642,9 @@ function CatalogSection({
               if (!saving) closeDrawer();
             }}
           >
-            {form}
+            {/* Só o painel aberto tem formulário no documento: páginas ocultas não deixam campos
+                repetidos (ex.: dois "Unidade de medida") para leitores de tela e testes. */}
+            {formOpen && form}
           </dialog>
         ) : (
           list.status === 'ready' && formOpen && form

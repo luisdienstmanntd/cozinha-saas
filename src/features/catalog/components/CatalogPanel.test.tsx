@@ -267,3 +267,44 @@ it('cadastra preparação própria em seção separada, com unidade e conservaç
     unit: 'l',
   });
 });
+
+it('Mesa (D-070): painel fechado não deixa formulário no documento; só o aberto tem campos', async () => {
+  // jsdom não implementa <dialog>.showModal/close.
+  const proto = HTMLDialogElement.prototype as Partial<HTMLDialogElement>;
+  proto.showModal = function (this: HTMLDialogElement) {
+    this.setAttribute('open', '');
+  };
+  proto.close = function (this: HTMLDialogElement) {
+    this.removeAttribute('open');
+  };
+  try {
+    const gateway: CatalogGateway = {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      setStorageCondition: vi.fn(),
+    };
+    const user = userEvent.setup();
+    render(
+      <CatalogPanel
+        scope={scope}
+        gateway={gateway}
+        canCreate
+        page="preparations"
+      />,
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Nova preparação' }),
+    );
+    // Uma única "Unidade de medida": a do painel de preparação; o de produtos (página oculta) não tem campos.
+    expect(
+      screen.getAllByLabelText('Unidade de medida', { selector: 'select' }),
+    ).toHaveLength(1);
+    expect(screen.getByLabelText('Nome da preparação')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Nome do produto')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(screen.queryByLabelText('Unidade de medida')).toBeNull();
+  } finally {
+    delete proto.showModal;
+    delete proto.close;
+  }
+});

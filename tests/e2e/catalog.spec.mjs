@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 import { checked } from '../../scripts/local-supabase.mjs';
-import { openArea, newCatalogItem, chooseUnitList } from './areas.mjs';
+import {
+  openArea,
+  newCatalogItem,
+  chooseUnitList,
+  openAccount,
+} from './areas.mjs';
 import { readFile } from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
@@ -267,6 +272,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
         .update({ revoked_at: new Date().toISOString() })
         .eq('user_id', users[0].id),
     );
+    await openAccount(page);
     await page.getByRole('button', { name: 'Atualizar acesso' }).click();
     await expect(page.getByRole('alert')).toHaveText(
       'Nenhum vínculo ativo. Solicite acesso ao responsável.',

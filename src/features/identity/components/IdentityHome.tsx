@@ -476,18 +476,21 @@ export function IdentityHome({
               </div>
             </details>
           )}
-          <p className="session-who">
-            {openTarget ? (
-              <>
-                Unidade: <strong>{openTarget.unit.name}</strong>.{' '}
-              </>
-            ) : null}
-            {sessionEmail ? (
-              <>
-                Conectado como <strong>{sessionEmail}</strong>.
-              </>
-            ) : null}
-          </p>
+          {/* Na Mesa, unidade e e-mail ficam no seletor e em "Minha conta"; não repetir oculto. */}
+          {!showShell && (
+            <p className="session-who">
+              {openTarget ? (
+                <>
+                  Unidade: <strong>{openTarget.unit.name}</strong>.{' '}
+                </>
+              ) : null}
+              {sessionEmail ? (
+                <>
+                  Conectado como <strong>{sessionEmail}</strong>.
+                </>
+              ) : null}
+            </p>
+          )}
           <button
             className="secondary"
             type="button"
