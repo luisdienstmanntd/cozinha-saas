@@ -53,7 +53,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(
       page
-        .getByRole('region', { name: 'Fornecedores' })
+        .getByRole('region', { name: 'Fornecedores', exact: true })
         .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
     await openArea(page, 'Receber');
@@ -170,7 +170,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(page.getByText('Nenhum fornecedor cadastrado.')).toBeVisible();
     await expect(
       page
-        .getByRole('region', { name: 'Fornecedores' })
+        .getByRole('region', { name: 'Fornecedores', exact: true })
         .getByText('Horta de teste', { exact: true }),
     ).toHaveCount(0);
     await page.reload();
@@ -190,7 +190,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await openArea(page, 'Fornecedores');
     await expect(
       page
-        .getByRole('region', { name: 'Fornecedores' })
+        .getByRole('region', { name: 'Fornecedores', exact: true })
         .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
     await openArea(page, 'Validade');

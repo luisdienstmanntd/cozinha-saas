@@ -123,6 +123,8 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[2]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    // D-070: a unidade abre na Visão geral; os bloqueios ficam em Validades.
+    await openArea(page, 'Validade');
     await expect(blocks).toContainText('BLOQUEADO - aguardando decisão');
     await expect(blocks).toContainText(
       'Somente o proprietário registra a decisão.',

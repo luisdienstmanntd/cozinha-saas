@@ -14,13 +14,20 @@ Na CI do PR #54 (run 44536069292), 24 de 35 testes E2E falharam; lint, tipos, Vi
 
 ## 21/11/2026 — correção
 
-- `CatalogPanel.tsx`: o painel lateral só contém o formulário enquanto está aberto (`formOpen`). Ao trocar de unidade com o painel aberto, `formOpen` continua verdadeiro e o rascunho permanece; fechar o painel ("Fechar" ou Esc) descarta o que não foi salvo, como antes acontecia com "Nova preparação".
+- `CatalogPanel.tsx`: o painel lateral só ganha o formulário quando é aberto pela primeira vez e o mantém, com o rascunho, depois de fechado ("Fechar", Esc ou troca de área), até um cadastro concluído. Painéis nunca abertos não deixam campos no documento.
 - `IdentityHome.tsx`: no shell da Mesa o parágrafo oculto "Conectado como" não é mais renderizado; o e-mail aparece uma vez, em "Minha conta". Fora da Mesa (demo) nada muda.
 - Testes: novo teste de componente que reproduz o problema (falha sem a correção com dois campos e passa com ela). No E2E, novo auxiliar `openAccount` em `tests/e2e/areas.mjs`; `session.spec.mjs` e `catalog.spec.mjs` abrem "Minha conta" antes de conferir o e-mail e de tocar em "Atualizar acesso". As asserções continuam as mesmas.
 
+## 21/11/2026 — segunda rodada (CI do PR #55, 10 de 35 falhando)
+
+- A primeira versão descartava o rascunho ao fechar o painel, o que o teste de navegação da D-070 proíbe; corrigido como descrito acima e coberto no teste de componente.
+- A região da área ("Cozinha principal: Preparações próprias") agora contém o nome da seção, então `getByRole('region', { name: 'Preparações próprias' })` casava duas regiões. Os testes passaram a usar `exact: true`, como o próprio PR #54 já fazia para Produtos.
+- Pela D-070 a unidade abre na Visão geral; o teste de ocorrências abre Validades antes de conferir os bloqueios vistos pelo colaborador.
+
 ## Verificação
 
-- Local: lint, TypeScript, Vitest (596), testes de scripts de CI (29) e build passaram.
+- Local: lint, TypeScript, Vitest (596), testes de scripts de CI (29) e build passaram nas duas rodadas.
+- CI, primeira rodada: E2E de 24 para 10 falhas.
 - E2E, pgTAP e integração não rodaram aqui: o proxy deste ambiente bloqueia o download das imagens Docker do Supabase. A validação deles é a CI do PR.
 
 ## Próximo passo
