@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
 import { checked } from '../../scripts/local-supabase.mjs';
-import { openArea, newCatalogItem, chooseUnitList } from './areas.mjs';
+import {
+  openArea,
+  newCatalogItem,
+  chooseUnitList,
+  openAccount,
+} from './areas.mjs';
 import { readFile } from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
@@ -48,7 +53,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
     await expect(
       page
-        .getByRole('region', { name: 'Fornecedores' })
+        .getByRole('region', { name: 'Fornecedores', exact: true })
         .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
     await openArea(page, 'Receber');
@@ -165,7 +170,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(page.getByText('Nenhum fornecedor cadastrado.')).toBeVisible();
     await expect(
       page
-        .getByRole('region', { name: 'Fornecedores' })
+        .getByRole('region', { name: 'Fornecedores', exact: true })
         .getByText('Horta de teste', { exact: true }),
     ).toHaveCount(0);
     await page.reload();
@@ -185,7 +190,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await openArea(page, 'Fornecedores');
     await expect(
       page
-        .getByRole('region', { name: 'Fornecedores' })
+        .getByRole('region', { name: 'Fornecedores', exact: true })
         .getByText('Horta de teste', { exact: true }),
     ).toBeVisible();
     await openArea(page, 'Validade');
@@ -267,6 +272,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
         .update({ revoked_at: new Date().toISOString() })
         .eq('user_id', users[0].id),
     );
+    await openAccount(page);
     await page.getByRole('button', { name: 'Atualizar acesso' }).click();
     await expect(page.getByRole('alert')).toHaveText(
       'Nenhum vínculo ativo. Solicite acesso ao responsável.',

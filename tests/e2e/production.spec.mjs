@@ -32,7 +32,10 @@ const has = (bytes, text) => bytes.includes(Buffer.from(text, 'latin1'));
 async function produce(page) {
   await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
   await openArea(page, 'Preparações próprias');
-  const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+  const catalog = page.getByRole('region', {
+    name: 'Preparações próprias',
+    exact: true,
+  });
   await catalog.getByRole('button', { name: 'Nova preparação' }).click();
   await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
   await catalog.getByLabel('Unidade de medida').selectOption('l');
@@ -83,7 +86,10 @@ test('registrar e anular produção da cozinha pela tela', async ({
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await openArea(page, 'Preparações próprias');
 
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
     await catalog.getByLabel('Unidade de medida').selectOption('l');
@@ -300,7 +306,10 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
 
     // O proprietário cadastra a preparação e define o nome de exibição do colaborador.
     await openArea(page, 'Preparações próprias');
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
     await catalog.getByLabel('Unidade de medida').selectOption('l');
@@ -373,7 +382,10 @@ test('janela de registro própria da preparação vale na tela de produção', a
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await openArea(page, 'Preparações próprias');
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Caldo de teste');
     await catalog.getByLabel('Unidade de medida').selectOption('l');

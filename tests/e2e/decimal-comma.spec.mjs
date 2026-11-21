@@ -159,7 +159,10 @@ test('produção aceita vírgula e recusa entrada ambígua', async ({ page }) =>
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await openArea(page, 'Preparações próprias');
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill('Molho de teste');
     await catalog.getByLabel('Unidade de medida').selectOption('l');

@@ -241,6 +241,9 @@ function CatalogSection({
   const [formOpen, setFormOpen] = useState(
     !standalone && kind !== 'preparations',
   );
+  // Mesa (D-070): o painel só ganha formulário quando é aberto e o mantém fechado, com o
+  // rascunho, até um cadastro concluído. Painéis nunca abertos não deixam campos no documento.
+  const [drafting, setDrafting] = useState(false);
   const [search, setSearch] = useState('');
   const [condition, setCondition] = useState('');
   const [pageNumber, setPageNumber] = useState(0);
@@ -361,8 +364,10 @@ function CatalogSection({
         );
       else {
         setNotice(text.created);
-        if (standalone) closeDrawer();
-        else if (kind === 'preparations') setFormOpen(false);
+        if (standalone) {
+          closeDrawer();
+          setDrafting(false);
+        } else if (kind === 'preparations') setFormOpen(false);
       }
     } catch (cause) {
       setError(message(cause, 'Falha no cadastro.'));
@@ -441,7 +446,10 @@ function CatalogSection({
             <button
               ref={trigger}
               type="button"
-              onClick={() => setFormOpen(true)}
+              onClick={() => {
+                setDrafting(true);
+                setFormOpen(true);
+              }}
             >
               {actionLabel}
             </button>
@@ -642,7 +650,7 @@ function CatalogSection({
               if (!saving) closeDrawer();
             }}
           >
-            {form}
+            {(formOpen || drafting) && form}
           </dialog>
         ) : (
           list.status === 'ready' && formOpen && form

@@ -154,7 +154,10 @@ test('produção decimal: lista e etiqueta PDF da preparação com vírgula e no
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await openArea(page, 'Preparações próprias');
-    const catalog = page.getByRole('region', { name: 'Preparações próprias' });
+    const catalog = page.getByRole('region', {
+      name: 'Preparações próprias',
+      exact: true,
+    });
     await catalog.getByRole('button', { name: 'Nova preparação' }).click();
     await catalog.getByLabel('Nome da preparação').fill(name);
     await catalog.getByLabel('Unidade de medida').selectOption('l');
