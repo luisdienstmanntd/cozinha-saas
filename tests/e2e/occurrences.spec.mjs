@@ -140,6 +140,7 @@ test('recebimento sem medição: bloqueio, recusa de baixa, membro sem decisão,
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Validade');
     await blocks.getByRole('button', { name: 'Registrar decisão' }).click();
     const decision = page.getByRole('form', {
       name: 'Decisão da ocorrência de Frango de teste',

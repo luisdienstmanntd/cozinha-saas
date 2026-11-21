@@ -27,7 +27,7 @@ Na CI do PR #54 (run 44536069292), 24 de 35 testes E2E falharam; lint, tipos, Vi
 ## Verificação
 
 - Local: lint, TypeScript, Vitest (596), testes de scripts de CI (29) e build passaram nas duas rodadas.
-- CI, primeira rodada: E2E de 24 para 10 falhas.
+- CI: E2E de 24 falhas (PR #54) para 10 na primeira rodada e 1 na segunda (segundo login do teste de ocorrências, mesma causa da Visão geral).
 - E2E, pgTAP e integração não rodaram aqui: o proxy deste ambiente bloqueia o download das imagens Docker do Supabase. A validação deles é a CI do PR.
 
 ## Próximo passo
