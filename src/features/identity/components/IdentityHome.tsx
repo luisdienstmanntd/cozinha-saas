@@ -9,6 +9,7 @@ import type { SignOutReason } from '../application/identityGateway';
 import type { ActivityStore } from '../application/sessionActivity';
 import { defaultActivityStore } from '../application/sessionActivity';
 import { useSessionGuard } from '../application/useSessionGuard';
+import { useUnitDrafts } from '../application/useUnitDrafts';
 import { parsePlace, placeSearch } from '../../navigation/domain/areas';
 import { EXPIRED_MESSAGE, SIGNED_OUT_MESSAGE, isIdle } from '../domain/session';
 
@@ -104,6 +105,7 @@ export function IdentityHome({
   renderDestination?: (userId: string, access: Access) => ReactNode;
   renderOrganizationTools?: RenderOrganizationTools;
 }) {
+  const hasUnitDraft = useUnitDrafts();
   const [userId, setUserId] = useState<string | null>(null);
   const [access, setAccess] = useState<Access>([]);
   // Empresas que o servidor devolveu com dado inesperado e que não foram carregadas (P7).
@@ -362,7 +364,16 @@ export function IdentityHome({
       type="button"
       className="secondary"
       disabled={busy}
-      onClick={() => void run(() => refresh(generation.current))}
+      onClick={() => {
+        if (
+          hasUnitDraft() &&
+          !window.confirm(
+            'Há alterações não salvas na unidade. Atualizar o acesso descartará essas alterações. Deseja continuar?',
+          )
+        )
+          return;
+        void run(() => refresh(generation.current));
+      }}
     >
       Atualizar acesso
     </button>
@@ -562,6 +573,7 @@ export function IdentityHome({
             <section
               aria-label={`Unidade ${openTarget.unit.name}`}
               className="unit-shell"
+              data-unit-draft-scope
             >
               {!showShell && (
                 <header className="unit-header">
@@ -693,6 +705,7 @@ export function IdentityHome({
                 const active = target.unit.id === catalogUnit;
                 return (
                   <div
+                    data-unit-draft-scope
                     key={`${userId}:${target.organization.id}:${target.unit.id}`}
                     hidden={!active}
                   >
