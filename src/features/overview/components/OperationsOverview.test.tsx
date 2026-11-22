@@ -1,16 +1,14 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { OperationsOverview } from './OperationsOverview';
 
 it('usa o resumo do servidor e distingue a lista de alertas vazia dos totais', async () => {
-  const summary = vi
-    .fn()
-    .mockResolvedValue({
-      overdue: 125,
-      due_today: 32,
-      due_tomorrow: 4,
-      later: 920,
-    });
+  const summary = vi.fn().mockResolvedValue({
+    overdue: 125,
+    due_today: 32,
+    due_tomorrow: 4,
+    later: 920,
+  });
   const list = vi.fn().mockResolvedValue({ rows: [], next: null });
   const scope = { organizationId: 'org', establishmentId: 'unidade' };
   render(
@@ -39,4 +37,48 @@ it('usa o resumo do servidor e distingue a lista de alertas vazia dos totais', a
   expect(
     screen.queryByRole('button', { name: '+ Recebimento' }),
   ).not.toBeInTheDocument();
+});
+
+it('V6: cada contador leva a Validades filtrada, sem impedir abrir em outra aba', async () => {
+  const summary = vi.fn().mockResolvedValue({
+    overdue: 3,
+    due_today: 2,
+    due_tomorrow: 1,
+    later: 9,
+  });
+  const list = vi.fn().mockResolvedValue({ rows: [], next: null });
+  const selectExpiry = vi.fn();
+  render(
+    <OperationsOverview
+      scope={{ organizationId: 'org', establishmentId: 'unidade' }}
+      timezone="America/Sao_Paulo"
+      containers={{ summary, list, get: vi.fn() }}
+      occurrences={{ list: vi.fn().mockResolvedValue([]), decide: vi.fn() }}
+      revision={0}
+      areas={[{ id: 'validade', label: 'Validades' }]}
+      select={vi.fn()}
+      expiryHref={(filter) => `/?area=validade&validade=${filter}`}
+      selectExpiry={selectExpiry}
+    />,
+  );
+  const overdue = await screen.findByRole('link', { name: /Vencidos\s*3/ });
+  expect(overdue).toHaveAttribute('href', '/?area=validade&validade=vencidos');
+  expect(screen.getByRole('link', { name: /Vencem hoje\s*2/ })).toHaveAttribute(
+    'href',
+    '/?area=validade&validade=hoje',
+  );
+  expect(
+    screen.getByRole('link', { name: /Vencem amanhã\s*1/ }),
+  ).toHaveAttribute('href', '/?area=validade&validade=amanha');
+  expect(screen.getByRole('link', { name: /Após amanhã\s*9/ })).toHaveAttribute(
+    'href',
+    '/?area=validade&validade=posteriores',
+  );
+  fireEvent.click(overdue);
+  expect(selectExpiry).toHaveBeenCalledWith('vencidos');
+  // Ctrl+clique segue o link normal (nova aba), sem trocar a área aqui.
+  fireEvent.click(screen.getByRole('link', { name: /Vencem hoje/ }), {
+    ctrlKey: true,
+  });
+  expect(selectExpiry).toHaveBeenCalledTimes(1);
 });

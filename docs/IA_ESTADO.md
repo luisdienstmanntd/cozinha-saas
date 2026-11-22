@@ -92,3 +92,8 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## UX compras e cozinha — 21/11/2026
 
 - Codex, aguardando aceite no PR #56, em `codex/ux-compras-cozinha`, base `820f77d`. Revisão e melhorias de navegação, pré-requisitos e formulários, sem backend. [Registro](ia-tarefas/ux-compras-cozinha.md).
+
+## V6 — filtrar Validades pelos contadores (implementação) — 22/11/2026
+
+- Claude Code. Proposta aprovada por luis (PR #57). Só interface, sem migração. CONCLUÍDA: integrada na `main` em 22/11/2026 (PR #59, `2f4f9bd`), com merge e publicação autorizados por luis. [Registro](ia-tarefas/v6-filtro-validades.md).
+
