@@ -88,3 +88,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Correção do E2E da Mesa operacional — 21/11/2026
 
 - Claude Code, branch `claude/correcao-e2e-mesa-operacional` sobre o PR #54. Corrige as 24 falhas de E2E da CI sem mudar o escopo da D-070; aguarda CI e aceite. [Registro](ia-tarefas/correcao-e2e-mesa-operacional.md).
+
+## V6 — filtrar Validades pelos contadores (proposta) — 22/11/2026
+
+- Claude Code, branch `claude/v6-proposta`, só documentação. Aguarda aprovação de luis. [Proposta](V6_PROPOSTA.md), [registro](ia-tarefas/v6-proposta.md).
