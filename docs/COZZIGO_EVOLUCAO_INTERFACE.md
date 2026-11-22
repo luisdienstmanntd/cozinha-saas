@@ -1,7 +1,8 @@
 # CozziGo — auditoria e evolução da interface
 
-**Atualizado em:** 21/11/2026 21:00 BRT  
-**Base auditada:** `main` / branch de trabalho `codex/cozzigo-interface-etapa-1`, commit `820f77d` (PR #54 mesclado).  
+**Atualizado em:** 21/11/2026 21:00 BRT
+
+**Base auditada:** `main` / branch de trabalho `codex/cozzigo-interface-etapa-1`, commit `820f77d` (PR #54 mesclado).
 **Objetivo:** organizar a evolução da interface com base nas regras e serviços já existentes. A matriz descreve o que o código oferece; não aprova novas regras de negócio.
 
 ## Situação da auditoria
