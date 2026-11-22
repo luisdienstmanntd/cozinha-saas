@@ -1,6 +1,6 @@
 # CozziGo — auditoria e evolução da interface
 
-**Atualizado em:** 21/11/2026 21:00 BRT
+**Atualizado em:** 21/11/2026 21:27 BRT
 
 **Base auditada:** `main` / branch de trabalho `codex/cozzigo-interface-etapa-1`, commit `820f77d` (PR #54 mesclado).
 **Objetivo:** organizar a evolução da interface com base nas regras e serviços já existentes. A matriz descreve o que o código oferece; não aprova novas regras de negócio.
@@ -51,7 +51,7 @@ O roadmap de direção visual permanece em [`../COZZIGO_UI_UX_ROADMAP.md`](../CO
 | Etapa                    | Situação na base `820f77d`                                                                                                  | Status desta iniciativa                               |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | 1. Estrutura e navegação | Shell responsivo, grupos, seleção de unidade, URLs diretas e permissões existentes; refinamento de Escape sobrepõe o PR #56 | Aguardando resolução do PR #56                        |
-| 2. Dashboard             | Visão geral real com resumo, alertas e atalhos; mensagem de lista vazia ajustada quando os totais indicam urgência          | Em revisão local                                      |
+| 2. Dashboard             | Visão geral real com resumo, alertas e atalhos; mensagem de lista vazia ajustada quando os totais indicam urgência          | PR #58 em rascunho; CI aprovada                       |
 | 3. Cadastros             | Produtos, fornecedores, preparações, unidade e organização já possuem telas e gateways                                      | Planejada para auditoria de fluxo                     |
 | 4. Recebimentos          | Formulário e operação existentes, com campos de conservação/temperatura/ocorrência                                          | Planejada para revisão de clareza                     |
 | 5. Produção              | Registro, listagem, configurações e anulação já implementados                                                               | Planejada para revisão de fluxo                       |
@@ -83,8 +83,8 @@ O roadmap de direção visual permanece em [`../COZZIGO_UI_UX_ROADMAP.md`](../CO
 5. **Arquivos alterados:** `src/features/overview/components/OperationsOverview.tsx`, `src/features/overview/components/OperationsOverview.test.tsx`, este relatório e o registro da tarefa.
 6. **Funcionalidades preservadas:** consulta dos totais no servidor, página/cursor, limite do recorte, filtro de saldo, regras de validade e permissão da área.
 7. **Implementação:** condicional de apresentação usa somente os totais autorizados já retornados.
-8. **Validação:** teste reproduziu a mensagem contraditória e falhou antes da alteração; os dois cenários focados passaram depois. Lint, TypeScript, suíte completa (597 testes em 54 arquivos), build e `git diff --check` passaram. Chromium headless real com gateway fictício confirmou o estado antes/depois em 1440 px e 390 px; não foi usado banco nem dado real.
+8. **Validação:** teste reproduziu a mensagem contraditória e falhou antes da alteração; os dois cenários focados passaram depois. Lint, TypeScript, suíte completa (597 testes em 54 arquivos), build, Prettier e `git diff --check` passaram. CI #44966263380 aprovada: qualidade, pgTAP, advisors de segurança, integração e E2E passaram. Chromium headless real com gateway fictício confirmou o estado antes/depois em 1440 px e 390 px; não foi usado banco nem dado real localmente.
 9. **Capturas antes/depois:** desktop: [antes](capturas/cozzigo-evolucao-interface/before-desktop.png), [depois](capturas/cozzigo-evolucao-interface/after-desktop.png); celular: [antes](capturas/cozzigo-evolucao-interface/before-mobile.png), [depois](capturas/cozzigo-evolucao-interface/after-mobile.png). O cenário é idêntico e usa a versão de `820f77d` como antes.
-10. **Pendências:** E2E autenticado/integração com Supabase local não executados; `docker` não existe neste computador. Atualizar `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md` depois de resolver a sobreposição com PR #56. Captura compara componente real e gateway fictício; não representa aparelho físico nem conta hospedada.
-11. **Commit/PR:** commit local `83ef619` (implementação e capturas); registro final segue nesta branch. Publicação/PR pendentes para não disparar o preview automático antes de autorização.
-12. **Status:** aguardando aceite desta etapa; não mesclada nem publicada.
+10. **Pendências:** E2E autenticado/integração não foram executados localmente porque `docker` não existe neste computador; os gates correspondentes passaram na CI. Atualizar `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md` depois de resolver a sobreposição com PR #56. Captura compara componente real e gateway fictício; não representa aparelho físico nem conta hospedada.
+11. **Commit/PR:** commits `83ef619`, `bb09fa9`, `40c4420`; [PR #58](https://github.com/luisdienstmanntd/cozinha-saas/pull/58) em rascunho. Prévia autorizada e publicada: [Cloudflare Pages](https://cc83ba51.cozinha-saas.pages.dev).
+12. **Status:** aguardando aceite do PR #58; sem merge na `main`.

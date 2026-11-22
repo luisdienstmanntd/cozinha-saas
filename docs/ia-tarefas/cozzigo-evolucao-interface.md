@@ -5,8 +5,8 @@
 - **Objetivo e aceite:** auditar funcionalidades existentes e rastrear regra, serviço, componente, tela, ação e teste; atualizar o roadmap atual depois de liberar os arquivos reservados; concluir incrementos independentes com testes, validação por teclado e evidência visual desktop/mobile. Preservar autenticação, sessão, permissões, rotas e regras de domínio.
 - **Branch / worktree / base:** `codex/cozzigo-interface-etapa-1`, checkout principal; base `origin/main` em `820f77d` (merge do PR #54).
 - **Arquivos e recursos em uso:** `src/features/overview/components/OperationsOverview.tsx` e teste, `docs/COZZIGO_EVOLUCAO_INTERFACE.md` e este registro. `COZZIGO_UI_UX_ROADMAP.md`, `docs/IA_ESTADO.md`, `OperationsNav.tsx` e `OperationsNav.test.tsx` aparecem no PR #56 e ficam reservados até resolver a sobreposição. Sem banco hospedado, migrações ou dados reais.
-- **Dependências e riscos:** PR #54 e correção #55 já integrados em 21/11/2026. PR #56 está aberto sobre `main` e altera os arquivos listados; não misturar nem sobrescrever. A correção local de Escape foi reproduzida em teste, mas retirada do checkout para evitar conflito e deve ser combinada após o PR #56. Preservar a pasta local não rastreada `Nova pasta/`. Não fazer merge nem deploy.
-- **Próximo passo:** solicitar aceite desta etapa; depois resolver a publicação/preview e coordenar a atualização do roadmap e índice quando o PR #56 liberar os arquivos sobrepostos.
+- **Dependências e riscos:** PR #54 e correção #55 já integrados em 21/11/2026. PR #56 está aberto sobre `main` e altera os arquivos listados; não misturar nem sobrescrever. A correção local de Escape foi reproduzida em teste, mas retirada do checkout para evitar conflito e deve ser combinada após o PR #56. Preservar a pasta local não rastreada `Nova pasta/`. Sem merge ou deploy de produção; a prévia foi autorizada.
+- **Próximo passo:** aguardar revisão do PR #58; coordenar atualização do roadmap e índice e integração da correção de Escape depois que o PR #56 liberar os arquivos sobrepostos.
 
 ## Checkpoints
 
@@ -36,3 +36,12 @@
 - **Estado do ambiente:** Chromium real capturou antes/depois em 1440 × 960 e 390 × 960. Docker não reconhecido (`docker --version`); por isso E2E autenticado/integração não executados. Nenhuma migração ou escrita em serviço hospedado.
 - **Pendências / riscos:** atualização do roadmap (`COZZIGO_UI_UX_ROADMAP.md`) e índice (`docs/IA_ESTADO.md`) permanece suspensa porque ambos estão no diff aberto do PR #56. A abertura de PR/publicação de branch pode iniciar preview automático da Cloudflare; nenhum envio remoto foi feito sem confirmação.
 - **Próximo passo:** revisar esta entrega. Depois do aceite, autorizar ou não publicação com preview; após resolver o PR #56, atualizar o roadmap e índice e integrar a correção de Escape junto da navegação.
+
+### 21/11/2026 21:27 BRT — Codex
+
+- **Planejado / feito:** após autorização de luis, branch publicada e PR #58 aberto em rascunho para revisão. Prévia Cloudflare `cc83ba51` criada com sucesso.
+- **Alterações e commits:** PR [#58](https://github.com/luisdienstmanntd/cozinha-saas/pull/58), commits `83ef619`, `bb09fa9`, `40c4420`; base `main` `820f77d`. Sem merge.
+- **Testes:** CI run `44966263380` passou integralmente: qualidade (lint, tipos, 597 testes, scripts e build) e banco/API/E2E (pgTAP, security advisors, integração e Playwright E2E). E2E/integração local seguem indisponíveis por falta de Docker.
+- **Estado do ambiente:** branch remota acompanha os três commits; PR #58 está aberto, draft e mergeable; preview Cloudflare ativo. Nenhuma alteração no banco hospedado.
+- **Pendências / riscos:** PR #56 segue aberto e reserva os arquivos de navegação, roadmap e índice. Atualizar `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md` e combinar a correção de Escape depois da resolução desse PR. PR #58 aguarda revisão/aceite humano.
+- **Próximo passo:** revisão de luis no PR #58; não mesclar sem autorização.
