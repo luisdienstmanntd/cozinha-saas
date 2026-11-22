@@ -90,3 +90,11 @@ O proprietário pode expandir Cadastros e ir diretamente para Produtos, Forneced
 A direção aprovada usa indicadores e tabela no desktop e coloca os alertas antes dos indicadores no celular. A navegação passa a agrupar Principal, Operação e Administração. Os cadastros usam páginas independentes, consulta com busca e filtros quando aplicáveis, e criação em painel lateral. Links antigos de Cadastros, Validades e QR continuam resolvíveis.
 
 A Visão geral consulta o resumo completo de validade e mostra um recorte de até seis recipientes com saldo. Etiquetas consulta a listagem paginada de recipientes e leva à ficha existente para download autorizado. Cadastros pagina os registros retornados pelo gateway, cujo limite continua explícito na interface. Rascunhos ficam em memória por usuário e unidade enquanto a sessão e os acessos permanecem válidos.
+
+## Revisão de compras e cozinha — 21/11/2026
+
+- Operação permanece visível; Cadastros e Configurações iniciam recolhidos e abrem ao entrar em uma página do grupo. No celular, o menu limita a altura e fecha ao escolher um destino.
+- Recebimento segue identificação da entrega → validade → temperatura, sem adicionar etapas de confirmação. Pré-requisitos ausentes exibem ações diretas para Produtos e Fornecedores, evitando campos sem opções.
+- Produção usa duas colunas no desktop e uma no celular. Sem preparações, o proprietário recebe acesso ao cadastro; colaboradores recebem orientação ao proprietário.
+- A página de locais passa a se chamar Locais de armazenamento, refletindo a função disponível. Consulta de recipientes e saldos continua em Validades.
+- Alertas, justificativas, responsável, revisão final, permissões e regras de validade permanecem. Não inclui pedidos de compra ou um novo perfil de comprador.

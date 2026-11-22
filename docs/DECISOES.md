@@ -545,6 +545,13 @@
 - **Motivo:** concentrar a consulta no conteúdo da página e tirar os formulários de criação da listagem, mantendo o contexto da unidade.
 - **Dados:** os totais vêm do resumo autorizado por unidade. Alertas são um recorte explícito; rótulos de validade não classificam segurança. Etiquetas reutilizam a ficha e o acesso de leitura existente.
 
+## D-071 — Orientação operacional para compras e cozinha
+
+- **Decisão:** reduzir a administração inicialmente exposta, nomear Locais pela função real, ordenar recebimento por identificação/validade/temperatura e orientar pré-requisitos de cadastro conforme o perfil existente. Produção usa formulário responsivo, sem alterar seu processo de revisão.
+- **Motivo:** reduzir campos sem caminho de conclusão e a troca de contexto nas entregas e no preparo.
+- **Consequência:** somente frontend. Nenhuma permissão, migração, regra de alimento ou movimentação muda. O trabalho em compras continua limitado aos cadastros e recebimentos já existentes.
+- **Validação:** testes de navegação, estados sem cadastros, rascunhos e responsividade; aceite humano pendente.
+
 ## D-072 — Contadores de validade como filtros da lista (V6, 22/11/2026)
 
 - **Status:** aceita por luis e integrada na `main` em 22/11/2026 (PR #59, `2f4f9bd`). Proposta no PR #57. A D-071 está reservada ao PR #56.

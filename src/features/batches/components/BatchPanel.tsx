@@ -50,7 +50,7 @@ import {
   toDotQuantity,
 } from '../../../shared/format/quantity';
 import { toDotTemperature } from '../../../shared/format/temperature';
-import { FirstSteps } from './FirstSteps';
+import { AreaLink, FirstSteps } from './FirstSteps';
 import type { AreaLinks } from './FirstSteps';
 
 type Props = {
@@ -1155,182 +1155,226 @@ function BatchContents({
             )}
           </div>
           <div hidden={!showReceber}>
-            {canCreate && (
-              <form
-                className="receipt-form"
-                onSubmit={(event) => void submit(event)}
-              >
-                <fieldset disabled={busy}>
+            {canCreate &&
+              (!catalogData.products.length ||
+                !catalogData.suppliers.length) && (
+                <section className="first-steps" aria-label="Antes de receber">
+                  <h4>Prepare o recebimento</h4>
                   <p>
-                    <label>
-                      Produto{' '}
-                      <select
-                        name="productId"
-                        required
-                        value={productId}
-                        onChange={(event) => {
-                          setProductId(event.target.value);
-                          setTemperatureStatus('');
-                        }}
-                      >
-                        <option value="" disabled>
-                          Selecione
-                        </option>
-                        {catalogData.products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} ({p.unit})
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    Cadastre os itens abaixo. Depois, volte a Recebimentos para
+                    registrar a entrega.
                   </p>
-                  {selectedProduct && !storage && (
-                    <p role="alert">
-                      Defina a conservação deste produto no catálogo antes de
-                      receber.
-                    </p>
-                  )}
-                  {storage && (
-                    <p>
-                      Conservação: {storageLabels[storage]} (definida no
-                      produto)
-                    </p>
-                  )}
-                  {storage === 'ambient' && (
+                  <ul>
+                    {!catalogData.products.length && (
+                      <li>
+                        <AreaLink area="produtos" links={areaLinks}>
+                          Cadastrar produto
+                        </AreaLink>
+                      </li>
+                    )}
+                    {!catalogData.suppliers.length && (
+                      <li>
+                        <AreaLink area="fornecedores" links={areaLinks}>
+                          Cadastrar fornecedor
+                        </AreaLink>
+                      </li>
+                    )}
+                  </ul>
+                </section>
+              )}
+            {canCreate &&
+              catalogData.products.length > 0 &&
+              catalogData.suppliers.length > 0 && (
+                <form
+                  className="receipt-form"
+                  onSubmit={(event) => void submit(event)}
+                >
+                  <fieldset disabled={busy}>
+                    <legend>Dados do recebimento</legend>
+                    <h4 className="process-section">
+                      1. Identificação da entrega
+                    </h4>
                     <p>
                       <label>
-                        Temperatura medida no recebimento, em °C (opcional){' '}
-                        <input
-                          name="temperature"
-                          inputMode="decimal"
-                          maxLength={5}
-                        />
+                        Produto{' '}
+                        <select
+                          name="productId"
+                          required
+                          value={productId}
+                          onChange={(event) => {
+                            setProductId(event.target.value);
+                            setTemperatureStatus('');
+                          }}
+                        >
+                          <option value="" disabled>
+                            Selecione
+                          </option>
+                          {catalogData.products.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name} ({p.unit})
+                            </option>
+                          ))}
+                        </select>
                       </label>
                     </p>
-                  )}
-                  {(storage === 'refrigerated' || storage === 'frozen') && (
-                    <fieldset>
-                      <legend>Temperatura no recebimento</legend>
+                    {selectedProduct && !storage && (
+                      <p role="alert">
+                        Defina a conservação deste produto no catálogo antes de
+                        receber.{' '}
+                        <AreaLink area="produtos" links={areaLinks}>
+                          Ir para Produtos
+                        </AreaLink>
+                      </p>
+                    )}
+                    {storage && (
+                      <p>
+                        Conservação: {storageLabels[storage]} (definida no
+                        produto)
+                      </p>
+                    )}
+                    <p>
                       <label>
-                        <input
-                          type="radio"
-                          name="temperatureStatus"
-                          value="measured"
-                          checked={temperatureStatus === 'measured'}
-                          onChange={() => setTemperatureStatus('measured')}
-                        />{' '}
-                        Temperatura medida
-                      </label>{' '}
-                      <label>
-                        <input
-                          type="radio"
-                          name="temperatureStatus"
-                          value="not_measured"
-                          checked={temperatureStatus === 'not_measured'}
-                          onChange={() => setTemperatureStatus('not_measured')}
-                        />{' '}
-                        Não foi possível medir
+                        Fornecedor{' '}
+                        <select name="supplierId" required defaultValue="">
+                          <option value="" disabled>
+                            Selecione
+                          </option>
+                          {catalogData.suppliers.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
                       </label>
-                      {temperatureStatus === 'measured' && (
-                        <p>
-                          <label>
-                            Temperatura medida, em °C{' '}
-                            <input
-                              name="temperature"
-                              required
-                              inputMode="decimal"
-                              maxLength={5}
-                            />
-                          </label>{' '}
-                          Use vírgula ou ponto para decimais, por exemplo -18,5.
-                          O sistema registra o valor e não o avalia.
-                        </p>
-                      )}
-                      {temperatureStatus === 'not_measured' && (
-                        <>
+                    </p>
+                    <p>
+                      <label>
+                        Lote de origem{' '}
+                        <input name="sourceCode" required maxLength={120} />
+                      </label>
+                    </p>
+                    <p>
+                      <label>
+                        Quantidade recebida{' '}
+                        <input name="quantity" required inputMode="decimal" />
+                      </label>
+                    </p>
+                    <h4 className="process-section">2. Validade</h4>
+                    <p>
+                      <label>
+                        Origem da validade{' '}
+                        <select
+                          value={origin}
+                          onChange={(e) => setOrigin(e.target.value)}
+                        >
+                          <option value="original">Original</option>
+                          <option value="responsible">
+                            Definida pelo responsável
+                          </option>
+                        </select>
+                      </label>
+                    </p>
+                    <p>
+                      <label>
+                        Data de validade{' '}
+                        <input name="expiryDate" type="date" required />
+                      </label>
+                    </p>
+                    {origin === 'responsible' && (
+                      <p>
+                        <label>
+                          Validade original, se conhecida{' '}
+                          <input name="originalExpiryDate" type="date" />
+                        </label>
+                      </p>
+                    )}
+                    <p>
+                      A validade deve ser informada ou confirmada pelo
+                      profissional responsável.
+                    </p>
+                    {storage && (
+                      <h4 className="process-section">
+                        3. Conferência da temperatura
+                      </h4>
+                    )}
+                    {storage === 'ambient' && (
+                      <p>
+                        <label>
+                          Temperatura medida no recebimento, em °C (opcional){' '}
+                          <input
+                            name="temperature"
+                            inputMode="decimal"
+                            maxLength={5}
+                          />
+                        </label>
+                      </p>
+                    )}
+                    {(storage === 'refrigerated' || storage === 'frozen') && (
+                      <fieldset>
+                        <legend>Temperatura no recebimento</legend>
+                        <label>
+                          <input
+                            type="radio"
+                            name="temperatureStatus"
+                            value="measured"
+                            checked={temperatureStatus === 'measured'}
+                            onChange={() => setTemperatureStatus('measured')}
+                          />{' '}
+                          Temperatura medida
+                        </label>{' '}
+                        <label>
+                          <input
+                            type="radio"
+                            name="temperatureStatus"
+                            value="not_measured"
+                            checked={temperatureStatus === 'not_measured'}
+                            onChange={() =>
+                              setTemperatureStatus('not_measured')
+                            }
+                          />{' '}
+                          Não foi possível medir
+                        </label>
+                        {temperatureStatus === 'measured' && (
                           <p>
                             <label>
-                              Justificativa (por que não foi possível medir){' '}
-                              <textarea
-                                name="temperatureReason"
+                              Temperatura medida, em °C{' '}
+                              <input
+                                name="temperature"
                                 required
-                                maxLength={300}
+                                inputMode="decimal"
+                                maxLength={5}
                               />
-                            </label>
+                            </label>{' '}
+                            Use vírgula ou ponto para decimais, por exemplo
+                            -18,5. O sistema registra o valor e não o avalia.
                           </p>
-                          <p role="note">
-                            O recebimento ficará bloqueado para uso até a
-                            decisão do responsável.
-                          </p>
-                        </>
-                      )}
-                    </fieldset>
-                  )}
-                  <p>
-                    <label>
-                      Fornecedor{' '}
-                      <select name="supplierId" required defaultValue="">
-                        <option value="" disabled>
-                          Selecione
-                        </option>
-                        {catalogData.suppliers.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </p>
-                  <p>
-                    <label>
-                      Lote de origem{' '}
-                      <input name="sourceCode" required maxLength={120} />
-                    </label>
-                  </p>
-                  <p>
-                    <label>
-                      Quantidade recebida{' '}
-                      <input name="quantity" required inputMode="decimal" />
-                    </label>
-                  </p>
-                  <p>
-                    <label>
-                      Origem da validade{' '}
-                      <select
-                        value={origin}
-                        onChange={(e) => setOrigin(e.target.value)}
-                      >
-                        <option value="original">Original</option>
-                        <option value="responsible">
-                          Definida pelo responsável
-                        </option>
-                      </select>
-                    </label>
-                  </p>
-                  <p>
-                    <label>
-                      Data de validade{' '}
-                      <input name="expiryDate" type="date" required />
-                    </label>
-                  </p>
-                  {origin === 'responsible' && (
-                    <p>
-                      <label>
-                        Validade original, se conhecida{' '}
-                        <input name="originalExpiryDate" type="date" />
-                      </label>
-                    </p>
-                  )}
-                  <p>
-                    A validade deve ser informada ou confirmada pelo
-                    profissional responsável.
-                  </p>
-                  <button disabled={busy || (!!selectedProduct && !storage)}>
-                    Registrar recebimento
-                  </button>
-                </fieldset>
-              </form>
-            )}
+                        )}
+                        {temperatureStatus === 'not_measured' && (
+                          <>
+                            <p>
+                              <label>
+                                Justificativa (por que não foi possível medir){' '}
+                                <textarea
+                                  name="temperatureReason"
+                                  required
+                                  maxLength={300}
+                                />
+                              </label>
+                            </p>
+                            <p role="note">
+                              O recebimento ficará bloqueado para uso até a
+                              decisão do responsável.
+                            </p>
+                          </>
+                        )}
+                      </fieldset>
+                    )}
+                    <button disabled={busy || (!!selectedProduct && !storage)}>
+                      Registrar recebimento
+                    </button>
+                  </fieldset>
+                </form>
+              )}
           </div>
         </>
       )}
