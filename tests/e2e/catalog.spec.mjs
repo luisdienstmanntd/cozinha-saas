@@ -82,12 +82,10 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(page.getByText(/lote 0001/)).toBeVisible();
     await page.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
-    await expect(label.getByText(/Identificação:/)).toBeVisible();
-    const id = (await label.getByText(/Identificação:/).innerText()).replace(
-      'Identificação: ',
-      '',
-    );
+    await expect(label).toHaveAttribute('data-container-id', /^[0-9a-f-]{36}$/);
+    const id = await label.getAttribute('data-container-id');
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    await expect(label).not.toContainText(id);
     // V3: a ficha ocupa a área de Validade; a busca fica na lista.
     await page.getByRole('button', { name: '← Voltar para a lista' }).click();
     const search = page.getByRole('searchbox', {
@@ -103,7 +101,7 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(results.getByRole('listitem')).toHaveCount(1);
     await expect(results).not.toContainText(id);
     await results.getByRole('button', { name: 'Ver ficha' }).click();
-    await expect(label.getByText(`Identificação: ${id}`)).toBeVisible();
+    await expect(label).toHaveAttribute('data-container-id', id);
     const waitDownload = page.waitForEvent('download');
     await label.getByRole('button', { name: 'Gerar etiqueta PDF' }).click();
     const pdf = await waitDownload;
@@ -243,10 +241,10 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       name: 'Recipiente',
       exact: true,
     });
-    await expect(resolved.getByText(`Identificação: ${id}`)).toBeVisible();
+    await expect(resolved).toHaveAttribute('data-container-id', id);
     // Fatia 6.2: a rota do QR mostra o saldo atual (1.25 − 0.5 − 0.75 + 0.5 anulado) e o código curto.
     await expect(resolved.getByText('Saldo atual: 0,5 kg')).toBeVisible();
-    await expect(resolved.getByText(/^Código: C-\d{6,}$/)).toBeVisible();
+    await expect(resolved.locator('.card-code')).toHaveText(/^C-\d{6,}$/);
     const secondDownload = page.waitForEvent('download');
     await resolved.getByRole('button', { name: 'Gerar etiqueta PDF' }).click();
     expect((await secondDownload).suggestedFilename()).toBe(

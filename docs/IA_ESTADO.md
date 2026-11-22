@@ -18,6 +18,7 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 
 | Tarefa | Responsável / estado | Referência | Próximo passo |
 |---|---|---|---|
+| Acabamento profissional da interface (sem avisos de teste ou detalhes internos) | Codex; aceite visual de luis em 22/11/2026; #64 e #56 integrados na `main`; PR #66 em sincronização documental sobre `main` | `ia-tarefas/cozzigo-interface-final.md`, D-074 | Conferir CI final do #66 e concluir a sequência autorizada. |
 | Anulação auditável de movimentações | Codex; aguardando aceite | `ia-tarefas/fase-05-anulacao.md` | Confirmar aceite humano antes da próxima fase. |
 | Revisão de interface e unidades | Claude Code e Codex; integrada na `main` em 13/11/2026 (PR #1) | `ia-tarefas/revisao-interface-unidades.md` | Nenhum. |
 | Desenho da Fase 6 | Claude Code; aprovado para planejamento e integrado na `main` em 13/11/2026 (PR #3) | `ia-tarefas/fase-06-desenho.md` | Seguir a ordem da seção 10; cada fatia exige aceite próprio. |
@@ -92,7 +93,11 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## UX compras e cozinha — 21/11/2026
 
-- Codex, aguardando aceite no PR #56, em `codex/ux-compras-cozinha`, base `820f77d`. Revisão e melhorias de navegação, pré-requisitos e formulários, sem backend. [Registro](ia-tarefas/ux-compras-cozinha.md).
+- Codex; concluída, visualmente aceita e integrada na `main` pelo PR #56 (`745f07c`) em 22/11/2026, depois do PR #64. Revisão e melhorias de navegação, pré-requisitos e formulários, sem backend. [Registro](ia-tarefas/ux-compras-cozinha.md).
+
+## Etapa 4 — recebimentos — 22/11/2026
+
+- PR #64 foi integrado na `main` (`9305376`) antes do #56; qualidade, pgTAP, advisors, integração e E2E passaram na CI da `main`. [Registro](ia-tarefas/cozzigo-ui-etapa-4.md).
 
 ## V6 — filtrar Validades pelos contadores (implementação) — 22/11/2026
 

@@ -6,7 +6,6 @@ import { OperationsOverview } from '../features/overview/components/OperationsOv
 import { LabelDirectory } from '../features/labels/components/LabelDirectory';
 import { OperationsNav } from '../features/navigation/components/OperationsNav';
 import type { configureApp } from './configureApp';
-import { EnvironmentBanner } from './EnvironmentBanner';
 import { DemoHome } from '../features/demo/components/DemoHome';
 import { IdentityHome } from '../features/identity/components/IdentityHome';
 import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
@@ -349,10 +348,8 @@ export function App({
       <main className="page configuration-error">
         <h1>Não foi possível iniciar o aplicativo</h1>
         <p role="alert">
-          Configuração inválida. Use demo, Supabase local ou o ambiente
-          hospedado completo (modo, endereço, chave publicável e nome do
-          ambiente). Por segurança, esta tela não mostra os valores
-          configurados.
+          Não foi possível carregar o aplicativo. Atualize a página. Se o
+          problema continuar, entre em contato com o suporte.
         </p>
       </main>
     );
@@ -360,13 +357,7 @@ export function App({
   if (configuration.mode !== 'demo')
     return (
       <>
-        <EnvironmentBanner environmentName={configuration.environmentName} />
         <IdentityHome
-          environmentNotice={
-            configuration.mode === 'hosted'
-              ? 'Contas e vínculos são preparados pelo responsável pelo ambiente.'
-              : undefined
-          }
           gateway={configuration.identity}
           operationalShell
           renderOrganizationTools={(organization, owner, onChanged, busy) => (

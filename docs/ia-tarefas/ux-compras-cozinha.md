@@ -2,12 +2,12 @@
 
 - **ID:** ux-compras-cozinha
 - **Responsável / sessão:** Codex /root
-- **Estado:** aguardando_aceite
+- **Estado:** concluída; visualmente aceita e integrada na `main` pelo PR #56 em 22/11/2026 (`745f07c`), após o merge do incremento independente #64.
 - **Objetivo e aceite:** reduzir navegação administrativa, orientar cadastros ausentes conforme permissão e ordenar processos de recebimento/produção; preservar validações, rascunhos e regras de autorização.
 - **Branch / worktree / base:** codex/ux-compras-cozinha, /workspace/work/cozinha-saas, main 820f77d.
 - **Arquivos e recursos em uso:** navegação, BatchPanel, ProductionPanel, estilos e testes relacionados. Nenhum banco hospedado.
 - **Dependências e riscos:** três revisões independentes e crítica cruzada concluídas; grupos recolhidos exigem adaptar helper E2E. Sem mudança de permissões, migrações ou prazos.
-- **Próximo passo:** testes de comportamento, implementação e gates.
+- **Próximo passo:** nenhum nesta fatia; futuras alterações de recebimento/produção exigem escopo e aceite próprios.
 
 ## Checkpoint — 21/11/2026
 - Site publicado observado no navegador, mas sessão não autenticada impede inspecionar processos hospedados. Sem credenciais solicitadas ou dados reais alterados.
@@ -33,3 +33,9 @@
 - Três falhas por correspondência parcial entre região da página e região interna de Locais; matcher agora usa nome exato. Duas falhas dos percursos novos por matcher de label contendo o texto das opções de preparação; seleção agora usa o papel combobox e nome acessível.
 - Gate de navegador segue obrigatório; nova execução pendente. A prévia da Cloudflare foi publicada e respondeu HTTP 200. Sem merge/produção; melhoria entregue para avaliação após CI.
 - 16 testes focados após o último ajuste visual passaram. Checklist final e resultados da CI ficam no PR #56.
+
+## Integração — 22/11/2026
+
+- luis autorizou a sequência recomendada. PR #64 foi integrado antes; o PR #56 entrou na `main` pelo merge commit `745f07c`.
+- A CI da ponta do PR #56 passou nos jobs `quality` e `banco-api-e2e`; a CI da `main` após o merge passou em qualidade, pgTAP, advisors, integração e E2E (run `45083374493`).
+- A apresentação visual foi aceita por luis no contexto do preview do PR #66, que incluía esta base. Sem merge adicional ou publicação manual.

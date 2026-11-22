@@ -351,10 +351,8 @@ test('QR e links diretos seguem funcionando com a sessão persistente', async ({
     await openArea(page, 'Validade');
     await page.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
-    const id = (await label.getByText(/Identificação:/).innerText()).replace(
-      'Identificação: ',
-      '',
-    );
+    await expect(label).toHaveAttribute('data-container-id', /^[0-9a-f-]{36}$/);
+    const id = await label.getAttribute('data-container-id');
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
 
     // Sem sessão: o endereço do QR mostra a entrada e nenhum dado.
@@ -370,7 +368,8 @@ test('QR e links diretos seguem funcionando com a sessão persistente', async ({
     // Com sessão no mesmo navegador: abrir o QR (nova carga) não pede login.
     await page.goto(`/recipiente/${id}`);
     const again = page.getByRole('region', { name: 'Recipiente', exact: true });
-    await expect(again.getByText(`Identificação: ${id}`)).toBeVisible();
+    await expect(again).toHaveAttribute('data-container-id', id);
+    await expect(again.locator('.card-code')).toHaveText(/^C-\d{6,}$/);
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),
     ).toHaveCount(0);

@@ -16,7 +16,7 @@ import { VoidHandling } from '../../handling/components/VoidHandling';
 import { formatDate, kindLabels } from '../../handling/domain/handling';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import { DownloadLabels } from './DownloadLabels';
-import { isHostedLabels, labelOrigin } from '../application/labelOrigin';
+import { labelOrigin } from '../application/labelOrigin';
 import {
   EXPIRED_NOTE,
   EXPIRED_TEXT,
@@ -175,14 +175,16 @@ export function LabelView({
     }
   }
   return (
-    <section aria-label="Recipiente">
+    <section aria-label="Recipiente" data-container-id={data?.id}>
       <h2>Recipiente</h2>
       {data && (
         <p className="ficha-title">
           <strong className="card-product">
             {data.batch_receipts.products.name}
           </strong>{' '}
-          <span className="card-code">{data.short_code}</span>
+          <span className="card-code" aria-label={`Código ${data.short_code}`}>
+            {data.short_code}
+          </span>
           {badge && (
             <>
               {' '}
@@ -266,21 +268,7 @@ export function LabelView({
                   : ': o proprietário rejeitou o uso. Só o descarte é permitido; a etiqueta sai com a faixa.'}
               </p>
             )}
-          <p>Código: {data.short_code}</p>
-          <p>Identificação: {data.id}</p>
-          <p>
-            {isHostedLabels() ? 'Modelo PDF' : 'Modelo PDF de demonstração'}:
-            100 × 100 mm. A impressão e a leitura física ainda não foram
-            validadas.
-          </p>
-          {['localhost', '127.0.0.1', '[::1]'].includes(
-            window.location.hostname,
-          ) && (
-            <p>
-              O QR usa endereço local e não abre este computador em outro
-              dispositivo.
-            </p>
-          )}
+          <p>Etiqueta em PDF · 100 × 100 mm</p>
           {data.voided ? (
             <p role="alert">
               Manipulação anulada: este recipiente não vale mais e a etiqueta

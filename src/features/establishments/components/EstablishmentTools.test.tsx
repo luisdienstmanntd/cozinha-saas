@@ -114,6 +114,9 @@ describe('gestão de unidades', () => {
     expect(
       screen.getByText(/Vínculos ativos: 1 proprietário e 2 colaboradores\./),
     ).toBeVisible();
+    expect(
+      screen.queryByText(/responsável pelos testes|convites e revogações/i),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/10000000-/)).not.toBeInTheDocument();
     expect(screen.getByText(/Fuso: Brasília/)).toBeVisible();
     expect(

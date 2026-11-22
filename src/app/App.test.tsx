@@ -18,7 +18,10 @@ describe('inicialização', () => {
       <App configuration={configureApp({ VITE_APP_MODE: 'production' })} />,
     );
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Configuração inválida.',
+      'Não foi possível carregar o aplicativo.',
+    );
+    expect(screen.getByRole('alert')).not.toHaveTextContent(
+      /demo|Supabase|ambiente hospedado|chave publicável/i,
     );
     expect(
       screen.queryByRole('button', {
@@ -41,7 +44,7 @@ describe('hospedagem (fatia 8.4a)', () => {
     expect(configuration).toBeNull();
     render(<App configuration={configuration} />);
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Configuração inválida.',
+      'Não foi possível carregar o aplicativo.',
     );
     expect(
       screen.queryByText('Ambiente de demonstração'),
@@ -74,9 +77,9 @@ describe('hospedagem (fatia 8.4a)', () => {
     expect(document.body.textContent).not.toContain('abcdefghij0123456789');
     expect(document.body.textContent).not.toContain('sb_publishable_');
   });
-  it('configuração hospedada completa abre o acesso com aviso de ambiente de testes', async () => {
+  it('configuração hospedada completa abre o acesso sem texto de ambiente interno', async () => {
     render(<App configuration={configureApp(hosted, 'cozinha.pages.dev')} />);
-    expect(screen.getByText('Ambiente de testes.')).toBeVisible();
+    expect(screen.queryByText(/Ambiente de testes|dados fictícios/)).toBeNull();
     expect(await screen.findByLabelText(/E-mail/)).toBeVisible();
   });
 });
