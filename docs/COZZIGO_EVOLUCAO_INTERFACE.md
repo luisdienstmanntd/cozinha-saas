@@ -78,12 +78,12 @@ O roadmap de direção visual permanece em [`../COZZIGO_UI_UX_ROADMAP.md`](../CO
 1. **Objetivo:** comunicar a divergência entre os totais do servidor e a lista amostrada, mantendo o acesso às Validades.
 2. **Situação anterior:** contagens positivas podiam aparecer ao lado de “Nenhum recipiente com saldo vencido ou a vencer até amanhã” quando a consulta da página atual não retornava linhas.
 3. **Problema identificado:** a mensagem de vazio podia contradizer os indicadores.
-4. **Melhoria proposta:** se houver vencidos, vencimentos hoje ou amanhã nos totais e nenhuma linha de alerta, explicar que eles não apareceram na lista e orientar a consulta de Validades; conservar a mensagem de ausência quando os totais urgentes forem zero.
+4. **Melhoria proposta:** se houver vencidos, vencimentos hoje ou amanhã nos totais e nenhuma linha de alerta, explicar que os totais indicam urgência e que o painel está vazio, orientando a consulta de Validades; conservar a mensagem de ausência quando os totais urgentes forem zero.
 5. **Arquivos alterados:** `src/features/overview/components/OperationsOverview.tsx`, `src/features/overview/components/OperationsOverview.test.tsx`, este relatório e o registro da tarefa.
 6. **Funcionalidades preservadas:** consulta dos totais no servidor, página/cursor, limite do recorte, filtro de saldo, regras de validade e permissão da área.
 7. **Implementação:** condicional de apresentação usa somente os totais autorizados já retornados.
 8. **Validação:** teste reproduziu a mensagem contraditória e falhou antes da alteração; os dois cenários focados passaram depois. Lint, TypeScript, suíte completa (597 testes em 54 arquivos), build e `git diff --check` passaram. Chromium headless real com gateway fictício confirmou o estado antes/depois em 1440 px e 390 px; não foi usado banco nem dado real.
 9. **Capturas antes/depois:** desktop: [antes](capturas/cozzigo-evolucao-interface/before-desktop.png), [depois](capturas/cozzigo-evolucao-interface/after-desktop.png); celular: [antes](capturas/cozzigo-evolucao-interface/before-mobile.png), [depois](capturas/cozzigo-evolucao-interface/after-mobile.png). O cenário é idêntico e usa a versão de `820f77d` como antes.
 10. **Pendências:** E2E autenticado/integração com Supabase local não executados; `docker` não existe neste computador. Atualizar `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md` depois de resolver a sobreposição com PR #56. Captura compara componente real e gateway fictício; não representa aparelho físico nem conta hospedada.
-11. **Commit/PR:** branch `codex/cozzigo-interface-etapa-1`; alterações locais revisadas, publicação/PR pendentes para não disparar o preview automático antes de autorização.
+11. **Commit/PR:** commit local `83ef619` (implementação e capturas); registro final segue nesta branch. Publicação/PR pendentes para não disparar o preview automático antes de autorização.
 12. **Status:** aguardando aceite desta etapa; não mesclada nem publicada.
