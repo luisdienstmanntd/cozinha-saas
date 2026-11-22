@@ -228,7 +228,11 @@ export function OperationsOverview({
               </>
             ) : (
               <p className="mesa-panel-message">
-                Nenhum recipiente com saldo vencido ou a vencer até amanhã.
+                {data.summary.overdue > 0 ||
+                data.summary.due_today > 0 ||
+                data.summary.due_tomorrow > 0
+                  ? 'Os totais mostram recipientes vencidos ou com validade próxima. A lista deste painel está vazia; consulte Validades para ver os registros.'
+                  : 'Nenhum recipiente com saldo vencido ou a vencer até amanhã.'}
               </p>
             )}
           </section>
