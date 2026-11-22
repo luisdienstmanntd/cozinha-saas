@@ -547,7 +547,7 @@
 
 ## D-072 — Contadores de validade como filtros da lista (V6, 22/11/2026)
 
-- **Status:** proposta aprovada por luis em 22/11/2026 (PR #57); implementação em revisão, aguardando aceite. A D-071 está reservada ao PR #56.
+- **Status:** aceita por luis e integrada na `main` em 22/11/2026 (PR #59, `2f4f9bd`). Proposta no PR #57. A D-071 está reservada ao PR #56.
 - **Decisão:** os quatro contadores de Validades (Vencidos, Vence hoje, Vence amanhã, Posteriores) filtram a lista; tocar de novo ou "Limpar filtro" volta à lista completa. Os contadores da Visão geral levam a Validades já filtrada. O filtro fica no endereço (`validade=vencidos|hoje|amanha|posteriores`) só na área Validades.
 - **Como:** cada categoria é um trecho contínuo da ordem do servidor (validade, recipiente). O começo vai como cursor (`dia anterior`, maior UUID) para `list_containers`, com a mesma data de referência no fuso da unidade usada por `container_expiry_summary`; a interface corta o fim da página e encerra a paginação na fronteira. Sem migração, RLS ou função nova.
 - **Consequências:** a busca atua dentro da categoria; os contadores continuam sendo totais da unidade. Como eles não contam esgotados, escolher uma categoria desmarca "Mostrar esgotados" e marcar "Mostrar esgotados" limpa a categoria. A categoria não classifica a segurança do alimento; a validade continua sendo a informada pelo responsável. Substitui, no roadmap CozziGo, a linha "Os totais não são controles de filtro".

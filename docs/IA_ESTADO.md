@@ -91,5 +91,5 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## V6 — filtrar Validades pelos contadores (implementação) — 22/11/2026
 
-- Claude Code, branch `claude/v6-filtro-validades` a partir da `main` `820f77d`. Proposta aprovada por luis (PR #57). Só interface, sem migração. Aguarda CI e aceite. [Registro](ia-tarefas/v6-filtro-validades.md).
+- Claude Code. Proposta aprovada por luis (PR #57). Só interface, sem migração. CONCLUÍDA: integrada na `main` em 22/11/2026 (PR #59, `2f4f9bd`), com merge e publicação autorizados por luis. [Registro](ia-tarefas/v6-filtro-validades.md).
 
