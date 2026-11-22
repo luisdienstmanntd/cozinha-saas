@@ -18,7 +18,7 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 
 | Tarefa | Responsável / estado | Referência | Próximo passo |
 |---|---|---|---|
-| Acabamento profissional da interface (sem avisos de teste ou detalhes internos) | Codex; CI verde e aguardando avaliação visual de luis; PR #66 em rascunho sobre o PR #56 | `ia-tarefas/cozzigo-interface-final.md`, D-073 | Avaliação visual; sem merge/produção. |
+| Acabamento profissional da interface (sem avisos de teste ou detalhes internos) | Codex; aceite visual de luis em 22/11/2026; PR #66 pronto para revisão, empilhado sobre o PR #56 | `ia-tarefas/cozzigo-interface-final.md`, D-073 | Revisão do PR; sem merge/produção sem autorização específica. |
 | Anulação auditável de movimentações | Codex; aguardando aceite | `ia-tarefas/fase-05-anulacao.md` | Confirmar aceite humano antes da próxima fase. |
 | Revisão de interface e unidades | Claude Code e Codex; integrada na `main` em 13/11/2026 (PR #1) | `ia-tarefas/revisao-interface-unidades.md` | Nenhum. |
 | Desenho da Fase 6 | Claude Code; aprovado para planejamento e integrado na `main` em 13/11/2026 (PR #3) | `ia-tarefas/fase-06-desenho.md` | Seguir a ordem da seção 10; cada fatia exige aceite próprio. |
