@@ -98,3 +98,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Backlog — baixa manual de insumos — 22/11/2026
 
 - Claude Code, branch `claude/backlog-baixa-manual-insumos`. Só documentação: `BACKLOG_BAIXA_MANUAL_INSUMOS.md` e D-073 proposta. Nada implementado; aguarda aceite de luis. [Registro](ia-tarefas/backlog-baixa-manual-insumos.md).
+
+## D-073, etapa 2 — baixa manual em qualquer recipiente — 22/11/2026
+
+- Claude Code, branch `claude/baixa-manual-recipiente`. Só interface, sem migração: saída e histórico em porções/derivados, mensagem de saldo insuficiente, aviso de esgotado, E2E do peito de peru. Aguarda aceite de luis. [Registro](ia-tarefas/baixa-manual-etapa2.md).
