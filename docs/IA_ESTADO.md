@@ -98,3 +98,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Backlog — baixa manual de insumos — 22/11/2026
 
 - Claude Code, branch `claude/backlog-baixa-manual-insumos`. Só documentação: `BACKLOG_BAIXA_MANUAL_INSUMOS.md` e D-073 proposta. Nada implementado; aguarda aceite de luis. [Registro](ia-tarefas/backlog-baixa-manual-insumos.md).
+
+## Auditoria — baixa manual de insumos (D-073, etapa 1) — 22/11/2026
+
+- Claude Code, branch `claude/auditoria-baixa-manual`. Só documentação: `AUDITORIA_BAIXA_MANUAL.md`. Banco já cobre consumo e descarte; lacunas na interface (derivados sem "Registrar saída"). Aguarda aceite de luis. [Registro](ia-tarefas/auditoria-baixa-manual.md).
