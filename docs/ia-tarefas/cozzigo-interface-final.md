@@ -31,3 +31,10 @@
 
 - Após a apresentação do preview e a instrução de luis “prossiga”, o aceite visual do incremento foi registrado. O PR #66 foi marcado pronto para revisão, sem merge ou produção.
 - Atualizado o preview para o deploy do commit `d80c709`: https://647bfed1.cozinha-saas.pages.dev. CI desse commit aprovada integralmente (qualidade, pgTAP, advisors, integração e E2E 38/38).
+
+### 22/11/2026 — sincronização após integração de #64 e #56
+
+- luis autorizou a sequência de integração. PR #64 (`5bbf650`) e PR #56 (`a9d88ec`) foram integrados na `main` por merge commits `9305376` e `745f07c`; a CI da `main` passou após cada merge.
+- Ao mudar a base do PR #66 para `main`, o GitHub sinalizou conflito documental. A `main` também avançou com #65–#69 enquanto o #66 estava empilhado; agora a D-073 da `main` pertence à baixa manual de insumos. O branch deste PR ainda chama o acabamento visual de D-073.
+- **Plano antes de resolver:** preservar a D-073 existente e renumerar a decisão da interface para D-074 se confirmada livre; reconciliar `docs/FASE_08_4C_MIGRACAO_HOSPEDADA.md` preservando o domínio atual `cozzigo.pages.dev` e o procedimento sem faixa visual; manter todos os commits da `main` e verificar CI do PR #66 antes de merge.
+- **Estado:** #66 segue aberto e retargetado para `main`; mergeability `dirty`; sem resolução, merge ou deploy ainda.
