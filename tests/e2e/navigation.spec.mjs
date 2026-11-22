@@ -351,8 +351,8 @@ test('QR e links diretos seguem funcionando com a sessão persistente', async ({
     await openArea(page, 'Validade');
     await page.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
+    await expect(label).toHaveAttribute('data-container-id', /^[0-9a-f-]{36}$/);
     const id = await label.getAttribute('data-container-id');
-    expect(id).toMatch(/^[0-9a-f-]{36}$/);
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
 
     // Sem sessão: o endereço do QR mostra a entrada e nenhum dado.

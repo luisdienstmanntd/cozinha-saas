@@ -82,10 +82,10 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await expect(page.getByText(/lote 0001/)).toBeVisible();
     await page.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
+    await expect(label).toHaveAttribute('data-container-id', /^[0-9a-f-]{36}$/);
     const id = await label.getAttribute('data-container-id');
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
     await expect(label).not.toContainText(id);
-    expect(id).toMatch(/^[0-9a-f-]{36}$/);
     // V3: a ficha ocupa a área de Validade; a busca fica na lista.
     await page.getByRole('button', { name: '← Voltar para a lista' }).click();
     const search = page.getByRole('searchbox', {

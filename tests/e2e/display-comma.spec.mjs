@@ -103,8 +103,8 @@ test('quantidade e temperatura decimais: vírgula na lista, histórico, ficha, Q
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     await expect(label.getByText('Saldo atual: 12,25 kg')).toBeVisible();
     await expect(label.getByText(/Quantidade inicial: 12,5 kg/)).toBeVisible();
+    await expect(label).toHaveAttribute('data-container-id', /^[0-9a-f-]{36}$/);
     const id = await label.getAttribute('data-container-id');
-    expect(id).toMatch(/^[0-9a-f-]{36}$/);
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
 
     // Etiqueta PDF: vírgula, nome longo inteiro, uma página, mesmo identificador no QR/ID.

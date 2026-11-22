@@ -1,10 +1,10 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { BatchPanel } from './BatchPanel';
 import { containerRow, fakeContainers } from '../../../test/fakeContainers';
 
-// V3 (B3, B4, M3, M6): cartões compactos, selo com texto, datas dd/mm/aaaa, UUID só na ficha e
+// V3 (B3, B4, M3, M6): cartões compactos, selo com texto, datas dd/mm/aaaa, UUID técnico não visível e
 // ficha aberta direto pelo cartão, também para colaborador e recipiente derivado.
 const catalog = () => ({
   list: vi.fn().mockResolvedValue([]),
@@ -166,7 +166,9 @@ it('abre a ficha pelo cartão para colaborador e derivado, e volta ao mesmo cart
   expect(list).not.toBeVisible();
   // A ficha não expõe o UUID técnico como texto da interface.
   expect(ficha).not.toHaveTextContent(derived.container_id);
-  expect(ficha).toHaveAttribute('data-container-id', derived.container_id);
+  await waitFor(() =>
+    expect(ficha).toHaveAttribute('data-container-id', derived.container_id),
+  );
   await user.click(
     screen.getByRole('button', { name: '← Voltar para a lista' }),
   );
