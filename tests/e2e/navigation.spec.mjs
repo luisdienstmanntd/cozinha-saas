@@ -378,3 +378,33 @@ test('QR e links diretos seguem funcionando com a sessão persistente', async ({
     ).toBeVisible();
   });
 });
+
+test('protege rascunho real de recebimento ao atualizar acesso', async ({
+  page,
+}) => {
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await openUnit(page);
+    await prepareReceipt(page);
+    await openArea(page, 'Receber');
+    await page.getByLabel('Lote de origem').fill('LOTE-RASCUNHO');
+    await page.getByText('Minha conta', { exact: true }).click();
+    let warningMessage = '';
+    page.once('dialog', async (warning) => {
+      warningMessage = warning.message();
+      await warning.dismiss();
+    });
+    await page.getByRole('button', { name: 'Atualizar acesso' }).click();
+    expect(warningMessage).toContain('não salvas');
+    await expect(page.getByLabel('Lote de origem')).toHaveValue(
+      'LOTE-RASCUNHO',
+    );
+    // A navegação de saída nunca deve ser bloqueada pelo aviso de rascunho.
+    await page.getByRole('button', { name: 'Sair', exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: 'Entrar', exact: true }),
+    ).toBeVisible();
+  });
+});
+
