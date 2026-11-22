@@ -553,3 +553,11 @@
 - **Consequências:** a busca atua dentro da categoria; os contadores continuam sendo totais da unidade. Como eles não contam esgotados, escolher uma categoria desmarca "Mostrar esgotados" e marcar "Mostrar esgotados" limpa a categoria. A categoria não classifica a segurança do alimento; a validade continua sendo a informada pelo responsável. Substitui, no roadmap CozziGo, a linha "Os totais não são controles de filtro".
 - **Revisar quando:** houver filtros por local, produto ou fornecedor, ou se a lista deixar de ser ordenada por validade no servidor.
 
+
+## D-073 — Baixa manual de insumos por lote/recipiente (backlog, 22/11/2026)
+
+- **Status:** proposta, aguardando aceite de luis. Registro de requisito futuro, sem implementação ([backlog](BACKLOG_BAIXA_MANUAL_INSUMOS.md)). Chamada de "D-FUTURA" no pedido; recebeu o próximo número livre (D-071 reservada ao PR #56, D-072 da V6).
+- **Decisão:** a primeira implementação da baixa de insumos será **manual, por lote/recipiente**, com os tipos consumo, descarte e ajuste de estoque (este só com permissão própria). A baixa automática por produção, receitas ou fichas técnicas fica como evolução futura. Saldo zero tira o item só da lista operacional de validades ativas, mesmo antes do vencimento, e ele continua nas consultas históricas; saldo zero não é vencimento nem descarte. Saldo nunca negativo, baixa limitada ao disponível, proteção contra baixa simultânea e duplicada, histórico sem exclusão, validade original intacta, isolamento entre organizações e unidades, permissões respeitadas e sem contar duas vezes quantidades de abertura, porcionamento, transferência ou produção.
+- **Motivo:** pedido de luis em 22/11/2026: a lista de validades deve refletir o que a cozinha ainda tem (exemplo: 1 kg de peito de peru, consumos de 300, 500 e 200 g).
+- **Consequência:** antes de programar, uma auditoria técnica confere o que já existe (há indícios de que consumo e descarte por recipiente, saldo derivado e "Mostrar esgotados" já cobrem boa parte) e propõe um plano incremental sem duplicar funcionalidade nem presumir tabelas novas. A interface definitiva será revisada com o Codex.
+- **Revisar quando:** a funcionalidade for priorizada (etapa 1 do plano: auditoria) ou a baixa automática entrar em discussão.
