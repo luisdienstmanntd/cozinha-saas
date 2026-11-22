@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CatalogGateway } from '../application/catalogGateway';
+import type { CatalogScope } from '../domain/catalog';
 import {
   catalogRow,
   productRow,
@@ -11,6 +12,22 @@ import { z } from 'zod';
 
 const PRODUCT_COLUMNS =
   'id,name,unit,storage_condition,production_window_minutes';
+
+async function assertEstablishmentAccess(
+  client: SupabaseClient,
+  scope: CatalogScope,
+) {
+  const { data, error } = await client
+    .from('establishments')
+    .select('id')
+    .eq('organization_id', scope.organizationId)
+    .eq('id', scope.establishmentId)
+    .maybeSingle();
+  if (error || !data)
+    throw new Error(
+      'Acesso ao estabelecimento indisponível; a consulta não foi exibida.',
+    );
+}
 
 export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
   return {
@@ -32,7 +49,10 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
         throw new Error(
           'Não foi possível consultar o catálogo. Confira seu acesso e tente novamente.',
         );
-      return (product ? productRow : catalogRow).array().parse(data);
+      const items = (product ? productRow : catalogRow).array().parse(data);
+      // RLS também produz uma lista vazia quando o acesso à unidade não está ativo.
+      if (items.length === 0) await assertEstablishmentAccess(client, scope);
+      return items;
     },
     async create(kind, scope, input) {
       const product = kind !== 'suppliers';

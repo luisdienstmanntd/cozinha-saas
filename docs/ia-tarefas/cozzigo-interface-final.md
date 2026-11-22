@@ -1,14 +1,14 @@
 # CozziGo — acabamento profissional da interface
 
 - **ID:** cozzigo-interface-final
-- **Responsável / estado:** Codex; aceite visual de luis em 22/11/2026 após a solicitação “prossiga”; PR #66 pronto para revisão. Implementação autorizada em 21/11/2026.
+- **Responsável / estado:** Codex; aceite visual de luis em 22/11/2026; PRs #64 e #56 integrados; #66 retargetado para `main`, sincronizado com a ponta atual e aguardando CI final. Implementação autorizada em 21/11/2026.
 - **Objetivo:** apresentar a interface hospedada com linguagem de produto final, sem avisos de ambiente de teste, notas de demonstração, detalhes técnicos internos ou funções em construção.
 - **Aceite:** nenhuma mensagem de teste/demonstração nos fluxos comuns; PDF descrito pelo formato efetivamente gerado, sem alegar validação física; UUID técnico não visível; ambiente hosted continua validado e isolado internamente; fluxo existente de geração/manipulação permanece funcional.
-- **Branch/base:** `codex/cozzigo-final-interface`, sobre `codex/ux-compras-cozinha` (`a9d88ec`, PR #56).
+- **Branch/base:** `codex/cozzigo-final-interface`, branch de trabalho sobre `main` após os merges #64 (`9305376`) e #56 (`745f07c`).
 - **Arquivos previstos:** shell, autenticação, ficha do recipiente, testes de UI/E2E e documentação de decisão/tarefa.
 - **Riscos:** aviso de ambiente de testes era uma proteção contra uso de dados reais em banco descartável. Preservar essa restrição no modelo de implantação, separação de projetos e documentação; ocultar apenas a faixa da interface, sem alterar configuração, permissões ou travas de reset.
 - **Pendências mantidas fora da interface:** impressão física/QR e validação normativa continuam requisitos internos antes do piloto; o texto público não pode sugerir que essas validações já ocorreram.
-- **Próximo passo:** revisão do PR #66; sem merge ou publicação em produção sem autorização específica.
+- **Próximo passo:** CI completa do PR #66 no novo head; se passar, concluir o merge já autorizado. Não fazer deploy manual.
 
 ## Checkpoints
 
@@ -36,5 +36,5 @@
 
 - luis autorizou a sequência de integração. PR #64 (`5bbf650`) e PR #56 (`a9d88ec`) foram integrados na `main` por merge commits `9305376` e `745f07c`; a CI da `main` passou após cada merge.
 - Ao mudar a base do PR #66 para `main`, o GitHub sinalizou conflito documental. A `main` também avançou com #65–#69 enquanto o #66 estava empilhado; agora a D-073 da `main` pertence à baixa manual de insumos. O branch deste PR ainda chama o acabamento visual de D-073.
-- **Plano antes de resolver:** preservar a D-073 existente e renumerar a decisão da interface para D-074 se confirmada livre; reconciliar `docs/FASE_08_4C_MIGRACAO_HOSPEDADA.md` preservando o domínio atual `cozzigo.pages.dev` e o procedimento sem faixa visual; manter todos os commits da `main` e verificar CI do PR #66 antes de merge.
-- **Estado:** #66 segue aberto e retargetado para `main`; mergeability `dirty`; sem resolução, merge ou deploy ainda.
+- **Reconciliação aplicada:** D-073 continua pertencendo à baixa manual; a decisão de acabamento visual passou para D-074 (número livre confirmado em `main`). A revisão read-only do projeto Cloudflare confirmou o nome `cozinha-saas`, o subdomínio `cozinha-saas.pages.dev` e a branch de produção `main`; o documento 8.4C conserva esse endereço e a checagem do ambiente pela configuração/URL, sem faixa visual. Todas as alterações recebidas de `main` foram preservadas.
+- **Estado do retarget:** #66 segue aberto, com base `main`; os conflitos documentais foram resolvidos localmente e estão prontos para commit/push. CI final no novo head ainda pendente; sem merge final ou deploy manual.

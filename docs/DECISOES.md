@@ -521,7 +521,7 @@
 - **Status:** aceita definitivamente por luis em 18/11/2026, 02:46 UTC; integrada na `main` (PR #44, `d05a6e7`). Aprovada antes, com seis condições, tratadas em `FASE_08_4A.md` (seção 13) ([registro](FASE_08_4A.md)). Numeração: a D-066 pertence à fatia 8.1.
 - **Decisão:** antecipar parcialmente a 8.4: modo `hosted` (Cloudflare Pages + Supabase em projeto próprio de testes), que nunca cai na demonstração (falha no build e na execução), com cabeçalhos de segurança e CSP restritos ao projeto, cadastro público desligado, primeiro proprietário/empresa/unidade criados por função administrativa executável só em sessão de administração do banco, e reset do banco de testes protegido por marcador de ambiente (`testes`/`producao`, este irreversível).
 - **Motivo:** luis quer usar o sistema definitivo com dados fictícios enquanto o refina (18/11/2026); decisões 5 e 6 da revisão técnica (hospedagem, ambientes separados).
-- **Consequência:** nenhuma regra de negócio, RLS ou histórico muda; a produção continua dependendo de MFA obrigatório (preservado como condição de lançamento comercial; sua ausência vale só nos testes privados com dados fictícios), revisão de segurança independente, backup com teste de restauração e Q10. A apresentação sem aviso visual de ambiente foi decidida depois na D-073.
+- **Consequência:** nenhuma regra de negócio, RLS ou histórico muda; a produção continua dependendo de MFA obrigatório (preservado como condição de lançamento comercial; sua ausência vale só nos testes privados com dados fictícios), revisão de segurança independente, backup com teste de restauração e Q10. A apresentação sem aviso visual de ambiente foi decidida depois na D-074.
 - **Revisar quando:** a 8.4 completa (produção) for autorizada.
 
 ## D-068 — Consulta de produções recentes por dia (18/11/2026)
@@ -559,11 +559,19 @@
 - **Consequências:** a busca atua dentro da categoria; os contadores continuam sendo totais da unidade. Como eles não contam esgotados, escolher uma categoria desmarca "Mostrar esgotados" e marcar "Mostrar esgotados" limpa a categoria. A categoria não classifica a segurança do alimento; a validade continua sendo a informada pelo responsável. Substitui, no roadmap CozziGo, a linha "Os totais não são controles de filtro".
 - **Revisar quando:** houver filtros por local, produto ou fornecedor, ou se a lista deixar de ser ordenada por validade no servidor.
 
-## D-073 — Interface hospedada com apresentação de produto final (21/11/2026)
+## D-073 — Baixa manual de insumos por lote/recipiente (backlog, 22/11/2026)
 
-- **Status:** aceita por luis em 21/11/2026, com referência visual da ficha de recipiente na prévia do PR #56.
+- **Status:** aceita por luis em 22/11/2026 (auditoria no PR #67; etapa 2, baixa em qualquer recipiente, no PR #69). Registro original de requisito futuro ([backlog](BACKLOG_BAIXA_MANUAL_INSUMOS.md)). Chamada de "D-FUTURA" no pedido; recebeu o próximo número livre (D-071 reservada ao PR #56, D-072 da V6).
+- **Decisão:** a primeira implementação da baixa de insumos será **manual, por lote/recipiente**, com os tipos consumo, descarte e ajuste de estoque (este só com permissão própria). A baixa automática por produção, receitas ou fichas técnicas fica como evolução futura. Saldo zero tira o item só da lista operacional de validades ativas, mesmo antes do vencimento, e ele continua nas consultas históricas; saldo zero não é vencimento nem descarte. Saldo nunca negativo, baixa limitada ao disponível, proteção contra baixa simultânea e duplicada, histórico sem exclusão, validade original intacta, isolamento entre organizações e unidades, permissões respeitadas e sem contar duas vezes quantidades de abertura, porcionamento, transferência ou produção.
+- **Motivo:** pedido de luis em 22/11/2026: a lista de validades deve refletir o que a cozinha ainda tem (exemplo: 1 kg de peito de peru, consumos de 300, 500 e 200 g).
+- **Consequência:** antes de programar, uma auditoria técnica confere o que já existe (há indícios de que consumo e descarte por recipiente, saldo derivado e "Mostrar esgotados" já cobrem boa parte) e propõe um plano incremental sem duplicar funcionalidade nem presumir tabelas novas. A interface definitiva será revisada com o Codex.
+- **Revisar quando:** a funcionalidade for priorizada (etapa 1 do plano: auditoria) ou a baixa automática entrar em discussão.
+
+## D-074 — Interface hospedada com apresentação de produto final (21/11/2026)
+
+- **Status:** aceita por luis em 21/11/2026, com referência visual da ficha de recipiente na prévia do PR #56; aceite visual confirmado em 22/11/2026.
 - **Decisão:** fluxos comuns não exibem avisos de “ambiente de testes”, “demonstração” ou implementação em andamento; detalhes técnicos como UUID interno não são apresentados como conteúdo ao usuário. A UI descreve somente a saída real do recurso (por exemplo, formato do PDF), sem declarar ensaio físico ou conformidade não realizados. Recursos que não tenham fluxo funcional completo permanecem fora da navegação até estarem prontos.
 - **Segurança e operação:** o ambiente hospedado de testes continua separado internamente, com configuração estrita, projeto e banco próprios e reset protegido. A remoção da faixa não autoriza dados reais, publicação em produção nem flexibiliza MFA, segurança, backup, piloto ou validação normativa; essas condições seguem documentadas e devem estar atendidas antes do piloto.
 - **Motivo:** pedido explícito de luis para desenvolver aos poucos com experiência profissional de produto final, sem mensagens de teste ou funções inacabadas na interface.
-- **Consequência:** D-073 altera a apresentação da D-067, sem mudar seu isolamento técnico. Pendências de impressão física/QR e Q10 ficam na documentação e critérios internos de lançamento, não em avisos operacionais da ficha.
+- **Consequência:** D-074 altera a apresentação da D-067, sem mudar seu isolamento técnico. Pendências de impressão física/QR e Q10 ficam na documentação e critérios internos de lançamento, não em avisos operacionais da ficha.
 - **Revisar quando:** preparação do piloto ou inclusão de recurso cujo estado não possa ser representado sem expor uma função incompleta.

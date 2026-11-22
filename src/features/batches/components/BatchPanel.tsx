@@ -935,17 +935,17 @@ function BatchContents({
                               Ver ficha
                             </button>
                           ) : null;
-                          const history =
-                            movements && row.kind === 'integral' ? (
-                              <button
-                                key="history"
-                                type="button"
-                                className="secondary"
-                                onClick={() => setMovementId(row.container_id)}
-                              >
-                                Ver movimentações
-                              </button>
-                            ) : null;
+                          // D-073 (etapa 2): porções e derivados também têm histórico e saída.
+                          const history = movements ? (
+                            <button
+                              key="history"
+                              type="button"
+                              className="secondary"
+                              onClick={() => setMovementId(row.container_id)}
+                            >
+                              Ver movimentações
+                            </button>
+                          ) : null;
                           const main = canHandle ? (
                             <button
                               key="handle"
@@ -1028,38 +1028,41 @@ function BatchContents({
                               onClose={() => setMoveId(null)}
                             />
                           )}
-                        {movements &&
-                          row.kind === 'integral' &&
-                          movementId === row.container_id && (
-                            <MovementPanel
-                              key={row.container_id}
-                              scope={{ organizationId, establishmentId }}
-                              userId={userId}
-                              batch={{
-                                id: row.batch_id,
-                                productName: row.product_name,
-                                sourceCode: row.source_code,
-                                quantity: row.initial_quantity,
-                                unit: row.unit,
-                              }}
-                              canCreate={canCreate}
-                              gateway={movements}
-                              loadMembers={handling?.members}
-                              blocked={blocked.get(row.container_id)}
-                              expired={expired}
-                              onRecorded={() => {
-                                refreshRow(row.container_id);
-                                // O descarte pode tirar uma rejeitada da lista de bloqueios.
-                                if (isBlocked && occurrences)
-                                  void occurrences
-                                    .list(
-                                      { organizationId, establishmentId },
-                                      'open',
-                                    )
-                                    .then(setOccurrenceRows, () => fail());
-                              }}
-                            />
-                          )}
+                        {movements && movementId === row.container_id && (
+                          <MovementPanel
+                            key={row.container_id}
+                            scope={{ organizationId, establishmentId }}
+                            userId={userId}
+                            batch={{
+                              id: row.batch_id,
+                              productName: row.product_name,
+                              sourceCode: row.source_code,
+                              quantity: row.initial_quantity,
+                              unit: row.unit,
+                            }}
+                            canCreate={canCreate}
+                            gateway={movements}
+                            loadMembers={handling?.members}
+                            blocked={blocked.get(row.container_id)}
+                            expired={expired}
+                            containerId={
+                              row.kind === 'derived'
+                                ? row.container_id
+                                : undefined
+                            }
+                            onRecorded={() => {
+                              refreshRow(row.container_id);
+                              // O descarte pode tirar uma rejeitada da lista de bloqueios.
+                              if (isBlocked && occurrences)
+                                void occurrences
+                                  .list(
+                                    { organizationId, establishmentId },
+                                    'open',
+                                  )
+                                  .then(setOccurrenceRows, () => fail());
+                            }}
+                          />
+                        )}
                         {handling && handlingId === row.container_id && (
                           <HandlingForm
                             key={row.container_id}
