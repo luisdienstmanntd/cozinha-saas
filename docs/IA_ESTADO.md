@@ -101,4 +101,8 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## Auditoria — baixa manual de insumos (D-073, etapa 1) — 22/11/2026
 
-- Claude Code, branch `claude/auditoria-baixa-manual`. Só documentação: `AUDITORIA_BAIXA_MANUAL.md`. Banco já cobre consumo e descarte; lacunas na interface (derivados sem "Registrar saída"). Aguarda aceite de luis. [Registro](ia-tarefas/auditoria-baixa-manual.md).
+- Claude Code, branch `claude/auditoria-baixa-manual`. Só documentação: `AUDITORIA_BAIXA_MANUAL.md`. Banco já cobre consumo e descarte; lacunas na interface (derivados sem "Registrar saída"). CONCLUÍDA: aceita por luis e integrada na `main` em 22/11/2026 (PR #67). [Registro](ia-tarefas/auditoria-baixa-manual.md).
+
+## D-073, etapa 2 — baixa manual em qualquer recipiente — 22/11/2026
+
+- Claude Code, branch `claude/baixa-manual-recipiente`. Só interface, sem migração: saída e histórico em porções/derivados, mensagem de saldo insuficiente, aviso de esgotado, E2E do peito de peru. CONCLUÍDA: aceita por luis e integrada na `main` em 22/11/2026 (PR #69), com publicação do site autorizada. [Registro](ia-tarefas/baixa-manual-etapa2.md).

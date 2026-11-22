@@ -10,6 +10,7 @@ import type {
 } from '../application/movementGateway';
 import {
   MovementBlocked,
+  MovementOverBalance,
   MovementRejected,
 } from '../application/movementGateway';
 import { EXPIRED_NOTE, EXPIRED_TEXT } from '../../batches/domain/expiryStatus';
@@ -35,6 +36,7 @@ function authorName(names: Map<string, string> | null, id: string): string {
 const savedSchema = z
   .object({
     batchId: z.string(),
+    containerId: z.uuid().optional(),
     kind: z.enum(['consumption', 'discard', 'reversal']),
     quantity: z.string(),
     reason: z.string().nullable(),
@@ -52,6 +54,7 @@ export function MovementPanel({
   blocked,
   expired,
   loadMembers,
+  containerId,
 }: {
   scope: CatalogScope;
   userId: string;
@@ -73,6 +76,9 @@ export function MovementPanel({
   expired?: boolean;
   // V3: nomes de exibição; sem a função, o histórico não mostra nomes.
   loadMembers?: (scope: CatalogScope) => Promise<MemberName[]>;
+  // D-073 (etapa 2): recipiente que não é o integral (porção ou derivado). Sem ele, o painel opera
+  // no integral do recebimento, como antes; com ele, histórico, saldo e saídas são desse recipiente.
+  containerId?: string;
 }) {
   const [names, setNames] = useState<Map<string, string> | null>(null);
   useEffect(() => {
@@ -99,7 +105,11 @@ export function MovementPanel({
       current = false;
     };
   }, [loadMembers, scope.organizationId, scope.establishmentId]);
-  const key = `movement-intent:${userId}:${scope.organizationId}:${scope.establishmentId}:${batch.id}`;
+  const key = `movement-intent:${userId}:${scope.organizationId}:${scope.establishmentId}:${batch.id}${containerId ? `:${containerId}` : ''}`;
+  const listEvents = (target: CatalogScope) =>
+    containerId
+      ? gateway.list(target, batch.id, containerId)
+      : gateway.list(target, batch.id);
   const [events, setEvents] = useState<Movement[] | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -108,7 +118,11 @@ export function MovementPanel({
     try {
       const raw = sessionStorage.getItem(key);
       const value = raw ? savedSchema.parse(JSON.parse(raw)) : null;
-      if (value && value.batchId !== batch.id) throw new Error();
+      if (
+        value &&
+        (value.batchId !== batch.id || value.containerId !== containerId)
+      )
+        throw new Error();
       return { value, invalid: false };
     } catch {
       return { value: null, invalid: true };
@@ -120,6 +134,8 @@ export function MovementPanel({
   const [reviewedHistory, setReviewedHistory] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [reversing, setReversing] = useState<Movement | null>(null);
+  // D-073 (etapa 2): depois de uma saída confirmada, mostra o saldo relido do servidor.
+  const [afterExit, setAfterExit] = useState(false);
   const active = useRef(false);
   useEffect(() => {
     active.current = true;
@@ -130,38 +146,46 @@ export function MovementPanel({
   const [version, setVersion] = useState(0);
   useEffect(() => {
     let current = true;
-    void gateway
-      .list(
-        {
-          organizationId: scope.organizationId,
-          establishmentId: scope.establishmentId,
-        },
-        batch.id,
-      )
-      .then(
-        (rows) => {
-          if (current) setEvents(rows);
-        },
-        (cause: unknown) => {
-          if (current) {
-            setEvents(null);
-            setError(
-              cause instanceof Error &&
-                cause.message.startsWith('O histórico excede')
-                ? cause.message
-                : 'Não foi possível consultar o histórico.',
-            );
-          }
-        },
-      );
+    const target = {
+      organizationId: scope.organizationId,
+      establishmentId: scope.establishmentId,
+    };
+    void (
+      containerId
+        ? gateway.list(target, batch.id, containerId)
+        : gateway.list(target, batch.id)
+    ).then(
+      (rows) => {
+        if (current) setEvents(rows);
+      },
+      (cause: unknown) => {
+        if (current) {
+          setEvents(null);
+          setError(
+            cause instanceof Error &&
+              cause.message.startsWith('O histórico excede')
+              ? cause.message
+              : 'Não foi possível consultar o histórico.',
+          );
+        }
+      },
+    );
     return () => {
       current = false;
     };
-  }, [gateway, scope.organizationId, scope.establishmentId, batch.id, version]);
+  }, [
+    gateway,
+    scope.organizationId,
+    scope.establishmentId,
+    batch.id,
+    containerId,
+    version,
+  ]);
   async function send(input: MovementInput) {
     setBusy(true);
     setError('');
     setNotice('');
+    setAfterExit(false);
     try {
       await gateway.record(scope, input);
     } catch (cause) {
@@ -171,9 +195,11 @@ export function MovementPanel({
       setError(
         cause instanceof MovementBlocked
           ? `${cause.message} Atualize o histórico antes de iniciar outra tentativa.`
-          : cause instanceof MovementRejected
-            ? `${input.kind === 'reversal' ? 'Anulação' : 'Saída'} recusada. Atualize o histórico e confira o saldo antes de iniciar outra tentativa.`
-            : 'Não foi possível confirmar a saída. Repita a mesma tentativa; não crie outra sem conferir o histórico.',
+          : cause instanceof MovementOverBalance
+            ? 'Saída recusada: a quantidade é maior que o saldo registrado deste recipiente. Nada foi gravado. Atualize o histórico e confira o saldo antes de iniciar outra tentativa.'
+            : cause instanceof MovementRejected
+              ? `${input.kind === 'reversal' ? 'Anulação' : 'Saída'} recusada. Atualize o histórico e confira o saldo antes de iniciar outra tentativa.`
+              : 'Não foi possível confirmar a saída. Repita a mesma tentativa; não crie outra sem conferir o histórico.',
       );
       setBusy(false);
       return;
@@ -192,6 +218,7 @@ export function MovementPanel({
         setNotice(
           'Anulação registrada. Para substituir, registre uma nova saída.',
         );
+      else setAfterExit(true);
       setEvents(null);
       setVersion((v) => v + 1);
     } catch {
@@ -226,7 +253,7 @@ export function MovementPanel({
   async function refreshHistory() {
     setBusy(true);
     try {
-      const rows = await gateway.list(scope, batch.id);
+      const rows = await listEvents(scope);
       setEvents(rows);
       setReviewedHistory(true);
       setError('');
@@ -263,8 +290,10 @@ export function MovementPanel({
       );
       return;
     }
+    setAfterExit(false);
     const input: MovementInput = {
       batchId: batch.id,
+      ...(containerId ? { containerId } : {}),
       kind,
       quantity,
       reason: reason || null,
@@ -290,6 +319,7 @@ export function MovementPanel({
     }
     const input: MovementInput = {
       batchId: batch.id,
+      ...(containerId ? { containerId } : {}),
       kind: 'reversal',
       quantity: String(reversing.quantity),
       reason,
@@ -345,6 +375,14 @@ export function MovementPanel({
         </p>
       )}
       {notice && <p role="status">{notice}</p>}
+      {afterExit && events && remaining !== null && (
+        <p role="status">
+          Saída registrada. Saldo agora: {formatQuantity(remaining)}{' '}
+          {batch.unit}.
+          {remaining <= 0 &&
+            ' Recipiente esgotado: ele sai das validades ativas e continua em "Mostrar esgotados" e no histórico.'}
+        </p>
+      )}
       {/* V4 (M11): orientação geral recolhida. Saldo após a operação, avisos de anulação, bloqueio e
           vencido continuam sempre visíveis. */}
       <MoreInfo>

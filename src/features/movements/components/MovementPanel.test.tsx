@@ -4,6 +4,7 @@ import { expect, it, vi } from 'vitest';
 import { MovementPanel } from './MovementPanel';
 import {
   MovementBlocked,
+  MovementOverBalance,
   MovementRejected,
 } from '../application/movementGateway';
 
@@ -910,4 +911,196 @@ it('V5B: quantidade inicial, saldo, histórico e anulação mostram vírgula', a
   await user.click(screen.getByRole('button', { name: 'Anular registro' }));
   expect(screen.getByText(/Anular consumo de 0,25 kg\./)).toBeVisible();
   expect(document.body).not.toHaveTextContent(/\d\.\d+ kg/);
+});
+
+const CONTAINER = 'a2345678-1234-4234-8234-123456789abc';
+
+it('D-073: no derivado, lê o histórico e grava a saída no próprio recipiente', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  const list = vi.fn().mockResolvedValue([]);
+  const record = vi.fn().mockResolvedValue('evento');
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Peito de peru',
+        sourceCode: 'L1',
+        quantity: 250,
+        unit: 'g',
+      }}
+      containerId={CONTAINER}
+      canCreate
+      gateway={{ list, record }}
+    />,
+  );
+  expect(await screen.findByText('Saldo registrado: 250 g')).toBeVisible();
+  expect(list).toHaveBeenCalledWith(
+    { organizationId: 'org', establishmentId: 'unit' },
+    'batch',
+    CONTAINER,
+  );
+  await user.type(screen.getByLabelText('Quantidade da saída'), '100');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(record).toHaveBeenCalledTimes(1);
+  expect(record.mock.calls[0]?.[1]).toMatchObject({
+    batchId: 'batch',
+    containerId: CONTAINER,
+    kind: 'consumption',
+    quantity: '100',
+  });
+});
+
+it('D-073: no integral, nada muda (sem recipiente na leitura nem na saída)', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  const list = vi.fn().mockResolvedValue([]);
+  const record = vi.fn().mockResolvedValue('evento');
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Peito de peru',
+        sourceCode: 'L1',
+        quantity: 1000,
+        unit: 'g',
+      }}
+      canCreate
+      gateway={{ list, record }}
+    />,
+  );
+  await screen.findByText('Saldo registrado: 1000 g');
+  expect(list.mock.calls[0]).toHaveLength(2);
+  await user.type(screen.getByLabelText('Quantidade da saída'), '300');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(record.mock.calls[0]?.[1]).not.toHaveProperty('containerId');
+});
+
+it('D-073: a tentativa guardada de um recipiente não aparece no outro', async () => {
+  sessionStorage.clear();
+  sessionStorage.setItem(
+    `movement-intent:user:org:unit:batch:${CONTAINER}`,
+    JSON.stringify({
+      batchId: 'batch',
+      containerId: CONTAINER,
+      kind: 'consumption',
+      quantity: '1',
+      reason: null,
+      intentId: '12345678-1234-4234-8234-123456789abc',
+    }),
+  );
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Peito de peru',
+        sourceCode: 'L1',
+        quantity: 1000,
+        unit: 'g',
+      }}
+      canCreate
+      gateway={{ list: vi.fn().mockResolvedValue([]), record: vi.fn() }}
+    />,
+  );
+  await screen.findByText('Saldo registrado: 1000 g');
+  expect(screen.queryByText(/Tentativa pendente/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Registrar saída' })).toBeVisible();
+});
+
+it('D-073: saldo insuficiente tem mensagem própria e não grava', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Peito de peru',
+        sourceCode: 'L1',
+        quantity: 200,
+        unit: 'g',
+      }}
+      canCreate
+      gateway={{
+        list: vi.fn().mockResolvedValue([]),
+        record: vi
+          .fn()
+          .mockRejectedValue(
+            new MovementOverBalance('Quantidade excede saldo registrado.'),
+          ),
+      }}
+    />,
+  );
+  await screen.findByText('Saldo registrado: 200 g');
+  await user.type(screen.getByLabelText('Quantidade da saída'), '300');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'a quantidade é maior que o saldo registrado deste recipiente. Nada foi gravado.',
+  );
+  expect(
+    screen.getByRole('button', { name: 'Atualizar histórico' }),
+  ).toBeVisible();
+});
+
+it('D-073: depois da saída mostra o saldo relido e avisa quando esgota', async () => {
+  sessionStorage.clear();
+  const user = userEvent.setup();
+  const exit = (id: string, quantity: number) => ({
+    id,
+    kind: 'consumption' as const,
+    quantity,
+    reason: null,
+    created_by: 'autor',
+    created_at: '2026-01-01T12:00:00Z',
+    timezone: 'UTC',
+  });
+  const list = vi
+    .fn()
+    .mockResolvedValueOnce([exit('a', 300)])
+    .mockResolvedValueOnce([exit('a', 300), exit('b', 500)])
+    .mockResolvedValueOnce([exit('a', 300), exit('b', 500), exit('c', 200)]);
+  const record = vi.fn().mockResolvedValue('evento');
+  render(
+    <MovementPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      userId="user"
+      batch={{
+        id: 'batch',
+        productName: 'Peito de peru',
+        sourceCode: 'L1',
+        quantity: 1000,
+        unit: 'g',
+      }}
+      canCreate
+      gateway={{ list, record }}
+    />,
+  );
+  await screen.findByText('Saldo registrado: 700 g');
+  expect(screen.queryByText(/Saldo agora/)).not.toBeInTheDocument();
+  await user.type(screen.getByLabelText('Quantidade da saída'), '500');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(
+    await screen.findByText('Saída registrada. Saldo agora: 200 g.'),
+  ).toBeVisible();
+  expect(screen.queryByText(/Recipiente esgotado/)).not.toBeInTheDocument();
+  await user.type(screen.getByLabelText('Quantidade da saída'), '200');
+  await user.click(screen.getByRole('button', { name: 'Registrar saída' }));
+  expect(screen.queryByText(/Saldo agora/)).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Confirmar saída' }));
+  expect(
+    await screen.findByText(/Saída registrada\. Saldo agora: 0 g\./),
+  ).toHaveTextContent(
+    'Recipiente esgotado: ele sai das validades ativas e continua em "Mostrar esgotados" e no histórico.',
+  );
 });
