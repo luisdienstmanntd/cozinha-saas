@@ -544,3 +544,12 @@
 - **Decisão:** shell autenticado com Visão geral, páginas operacionais e subpáginas de administração. As URLs legadas de Cadastros resolvem para o destino compatível com o perfil. O estado de trabalho de unidades visitadas fica em memória enquanto a sessão e o vínculo continuam válidos.
 - **Motivo:** concentrar a consulta no conteúdo da página e tirar os formulários de criação da listagem, mantendo o contexto da unidade.
 - **Dados:** os totais vêm do resumo autorizado por unidade. Alertas são um recorte explícito; rótulos de validade não classificam segurança. Etiquetas reutilizam a ficha e o acesso de leitura existente.
+
+## D-072 — Contadores de validade como filtros da lista (V6, 22/11/2026)
+
+- **Status:** proposta aprovada por luis em 22/11/2026 (PR #57); implementação em revisão, aguardando aceite. A D-071 está reservada ao PR #56.
+- **Decisão:** os quatro contadores de Validades (Vencidos, Vence hoje, Vence amanhã, Posteriores) filtram a lista; tocar de novo ou "Limpar filtro" volta à lista completa. Os contadores da Visão geral levam a Validades já filtrada. O filtro fica no endereço (`validade=vencidos|hoje|amanha|posteriores`) só na área Validades.
+- **Como:** cada categoria é um trecho contínuo da ordem do servidor (validade, recipiente). O começo vai como cursor (`dia anterior`, maior UUID) para `list_containers`, com a mesma data de referência no fuso da unidade usada por `container_expiry_summary`; a interface corta o fim da página e encerra a paginação na fronteira. Sem migração, RLS ou função nova.
+- **Consequências:** a busca atua dentro da categoria; os contadores continuam sendo totais da unidade. Como eles não contam esgotados, escolher uma categoria desmarca "Mostrar esgotados" e marcar "Mostrar esgotados" limpa a categoria. A categoria não classifica a segurança do alimento; a validade continua sendo a informada pelo responsável. Substitui, no roadmap CozziGo, a linha "Os totais não são controles de filtro".
+- **Revisar quando:** houver filtros por local, produto ou fornecedor, ou se a lista deixar de ser ordenada por validade no servidor.
+

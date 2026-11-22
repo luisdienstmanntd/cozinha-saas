@@ -28,6 +28,10 @@ import { SettingsPanel } from '../features/settings/components/SettingsPanel';
 import { parsePlace, placeSearch } from '../features/navigation/domain/areas';
 import type { AreaId } from '../features/navigation/domain/areas';
 import type { UnitContext } from '../features/identity/components/IdentityHome';
+import {
+  parseExpiryFilter,
+  type ExpiryFilter,
+} from '../features/batches/domain/expiryFilter';
 
 function Workspace({
   configuration,
@@ -71,6 +75,11 @@ function Workspace({
     hash: window.location.hash,
   }));
   const area = workspacePage(requested.search, requested.hash, areas);
+  // V6 (D-072): filtro da lista de Validades guardado no endereço (`validade=`).
+  const expiryFilter =
+    area === 'validade'
+      ? parseExpiryFilter(new URLSearchParams(requested.search).get('validade'))
+      : null;
   const content = useRef<HTMLDivElement>(null);
   const previous = useRef(area);
   useEffect(() => {
@@ -91,9 +100,15 @@ function Workspace({
     }
     previous.current = area;
   }, [area, unit.active]);
-  function hrefFor(next: AreaId) {
+  function hrefFor(next: AreaId, filter: ExpiryFilter | null = null) {
     const destination = next === 'cadastros' ? 'produtos' : next;
-    return `${window.location.pathname}${placeSearch(window.location.search, establishmentId, destination)}`;
+    return `${window.location.pathname}${placeSearch(window.location.search, establishmentId, destination, filter)}`;
+  }
+  function selectExpiry(filter: ExpiryFilter | null) {
+    if (area === 'validade' && filter === expiryFilter && !window.location.hash)
+      return;
+    window.history.pushState(null, '', hrefFor('validade', filter));
+    setRequested({ search: window.location.search, hash: '' });
   }
   function select(next: AreaId) {
     if (next === area && !window.location.hash) return;
@@ -183,6 +198,8 @@ function Workspace({
             revision={pendingToken + stockToken}
             areas={areas}
             select={select}
+            expiryHref={(filter) => hrefFor('validade', filter)}
+            selectExpiry={selectExpiry}
           />
         )}
         {area === 'etiquetas' && unit.active !== false && (
@@ -209,7 +226,9 @@ function Workspace({
             occurrences={tracked.occurrences}
             handling={tracked.handling}
             locations={tracked.locations}
-            areaLinks={{ hrefFor, onSelect: select }}
+            areaLinks={{ hrefFor: (next) => hrefFor(next), onSelect: select }}
+            expiryFilter={expiryFilter}
+            onExpiryFilter={selectExpiry}
           />
         </div>
         {tracked.production && (

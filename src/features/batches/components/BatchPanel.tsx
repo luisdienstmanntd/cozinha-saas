@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CatalogGateway } from '../../catalog/application/catalogGateway';
 import type { CatalogItem, CatalogScope } from '../../catalog/domain/catalog';
@@ -6,6 +6,13 @@ import type { BatchGateway } from '../application/batchGateway';
 import { batchInputSchema } from '../domain/batch';
 import type { ContainerGateway } from '../application/containerGateway';
 import type { ContainerPage, ExpirySummary } from '../domain/container';
+import {
+  EXPIRY_FILTERS,
+  expiryFilterLabels,
+  expiryFilterStart,
+  trimToExpiryFilter,
+  type ExpiryFilter,
+} from '../domain/expiryFilter';
 import { lotText } from '../domain/lot';
 import type { LabelGateway } from '../../labels/application/labelGateway';
 import { LabelView } from '../../labels/components/LabelView';
@@ -68,6 +75,10 @@ type Props = {
   area?: 'validade' | 'receber';
   // V4 (D1): links para as áreas no passo a passo da unidade vazia.
   areaLinks?: AreaLinks;
+  // V6 (D-072): filtro da lista pelos contadores. Com `onExpiryFilter`, quem monta o painel guarda o
+  // filtro (no endereço); sem ele, o painel guarda sozinho.
+  expiryFilter?: ExpiryFilter | null;
+  onExpiryFilter?: (filter: ExpiryFilter | null) => void;
 };
 type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 // key: consulta a que a página pertence; página de outra consulta conta como carregando.
@@ -100,6 +111,8 @@ function BatchContents({
   locations,
   area,
   areaLinks,
+  expiryFilter,
+  onExpiryFilter,
 }: Props) {
   const compact = useCompactLayout();
   const showValidade = area === undefined || area === 'validade';
@@ -129,6 +142,9 @@ function BatchContents({
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [includeDepleted, setIncludeDepleted] = useState(false);
+  const [localFilter, setLocalFilter] = useState<ExpiryFilter | null>(null);
+  const filter = onExpiryFilter ? (expiryFilter ?? null) : localFilter;
+  const chooseFilter = onExpiryFilter ?? setLocalFilter;
   const [moreError, setMoreError] = useState('');
   const [loadingMore, setLoadingMore] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -146,6 +162,18 @@ function BatchContents({
     referenceDate = localCivilDate(now, timezone);
   } catch {
     /* Fuso inválido: exibir erro sem classificar. */
+  }
+  // V6: o filtro usa a mesma data de referência das contagens; sem data válida, não filtra.
+  const activeFilter = referenceDate ? filter : null;
+  const filterDate = activeFilter ? referenceDate : null;
+  // As contagens só contam recipientes com saldo; com filtro, os esgotados ficam fora.
+  const listDepleted = includeDepleted && !activeFilter;
+  const filterKey = activeFilter ? `${activeFilter}@${filterDate}` : '';
+  // Filtro novo (inclusive vindo do endereço) esconde os esgotados; ajuste durante a renderização.
+  const [seenFilter, setSeenFilter] = useState(filter);
+  if (filter !== seenFilter) {
+    setSeenFilter(filter);
+    if (filter) setIncludeDepleted(false);
   }
   useEffect(() => {
     const update = () => setNow(new Date());
@@ -195,16 +223,29 @@ function BatchContents({
   useEffect(() => {
     let current = true;
     const version = ++listVersion.current;
-    const key = `${attempt}|${includeDepleted}|${query}`;
+    const key = `${attempt}|${listDepleted}|${query}|${filterKey}`;
     void containers
       .list(
         { organizationId, establishmentId },
-        { includeDepleted, search: query, after: null },
+        {
+          includeDepleted: listDepleted,
+          search: query,
+          after:
+            activeFilter && filterDate
+              ? expiryFilterStart(activeFilter, filterDate)
+              : null,
+        },
       )
       .then(
         (page) => {
           if (current && version === listVersion.current)
-            setListing({ ...page, fetchedAt: new Date(), key });
+            setListing({
+              ...(activeFilter && filterDate
+                ? trimToExpiryFilter(activeFilter, filterDate, page)
+                : page),
+              fetchedAt: new Date(),
+              key,
+            });
         },
         () => {
           if (current) fail();
@@ -218,8 +259,11 @@ function BatchContents({
     containers,
     establishmentId,
     organizationId,
-    includeDepleted,
+    listDepleted,
     query,
+    activeFilter,
+    filterDate,
+    filterKey,
   ]);
   useEffect(() => {
     if (!referenceDate) return;
@@ -333,11 +377,15 @@ function BatchContents({
     void containers
       .list(
         { organizationId, establishmentId },
-        { includeDepleted, search: query, after: listing.next },
+        { includeDepleted: listDepleted, search: query, after: listing.next },
       )
       .then(
-        (page) => {
+        (received) => {
           if (version !== listVersion.current) return;
+          const page =
+            activeFilter && filterDate
+              ? trimToExpiryFilter(activeFilter, filterDate, received)
+              : received;
           setListing((previous) =>
             previous
               ? {
@@ -380,7 +428,24 @@ function BatchContents({
         .then(setSummary, () => fail());
   }
 
-  const listKey = `${attempt}|${includeDepleted}|${query}`;
+  const listKey = `${attempt}|${listDepleted}|${query}|${filterKey}`;
+  function toggleFilter(next: ExpiryFilter) {
+    setMoreError('');
+    if (next !== filter) setIncludeDepleted(false);
+    chooseFilter(next === filter ? null : next);
+  }
+  const filterCounts: Record<ExpiryFilter, keyof ExpirySummary> = {
+    vencidos: 'overdue',
+    hoje: 'due_today',
+    amanha: 'due_tomorrow',
+    posteriores: 'later',
+  };
+  const tileTones: Record<ExpiryFilter, string> = {
+    vencidos: 'tone-overdue',
+    hoje: 'tone-today',
+    amanha: 'tone-tomorrow',
+    posteriores: 'tone-upcoming',
+  };
   const shown = listing?.key === listKey ? listing : null;
   const ready =
     !loadFailed &&
@@ -546,13 +611,22 @@ function BatchContents({
               void containers
                 .list(
                   { organizationId, establishmentId },
-                  { includeDepleted, search: query, after: null },
+                  {
+                    includeDepleted: listDepleted,
+                    search: query,
+                    after:
+                      activeFilter && filterDate
+                        ? expiryFilterStart(activeFilter, filterDate)
+                        : null,
+                  },
                 )
                 .then(
                   (page) => {
                     if (version === listVersion.current)
                       setListing({
-                        ...page,
+                        ...(activeFilter && filterDate
+                          ? trimToExpiryFilter(activeFilter, filterDate, page)
+                          : page),
                         fetchedAt: new Date(),
                         key: listKey,
                       });
@@ -624,23 +698,45 @@ function BatchContents({
                 aria-label="Resumo de validade"
                 className="expiry-summary"
               >
-                <p className="tile tone-overdue">
-                  <span className="tile-label">Vencidos:</span>{' '}
-                  <strong className="tile-count">{summary.overdue}</strong>
-                </p>{' '}
-                <p className="tile tone-today">
-                  <span className="tile-label">Vence hoje:</span>{' '}
-                  <strong className="tile-count">{summary.due_today}</strong>
-                </p>{' '}
-                <p className="tile tone-tomorrow">
-                  <span className="tile-label">Vence amanhã:</span>{' '}
-                  <strong className="tile-count">{summary.due_tomorrow}</strong>
-                </p>{' '}
-                <p className="tile tone-upcoming">
-                  <span className="tile-label">Posteriores:</span>{' '}
-                  <strong className="tile-count">{summary.later}</strong>
-                </p>{' '}
+                {/* V6 (D-072): cada contador filtra a lista; tocar de novo volta à lista completa. */}
+                {EXPIRY_FILTERS.map((item) => (
+                  <Fragment key={item}>
+                    <button
+                      type="button"
+                      className={`tile tile-filter ${tileTones[item]}`}
+                      aria-pressed={activeFilter === item}
+                      onClick={() => toggleFilter(item)}
+                    >
+                      <span className="tile-label">
+                        {expiryFilterLabels[item]}:
+                      </span>{' '}
+                      <strong className="tile-count">
+                        {summary[filterCounts[item]]}
+                      </strong>
+                    </button>{' '}
+                  </Fragment>
+                ))}
               </div>
+              {activeFilter && (
+                <p className="expiry-filter-status" role="status">
+                  Mostrando: {expiryFilterLabels[activeFilter]} (
+                  {summary[filterCounts[activeFilter]]} com saldo na unidade)
+                  {query.trim()
+                    ? ', com a busca aplicada dentro do filtro'
+                    : ''}
+                  .{' '}
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      setMoreError('');
+                      chooseFilter(null);
+                    }}
+                  >
+                    Limpar filtro
+                  </button>
+                </p>
+              )}
               <div className="expiry-tools">
                 <label className="expiry-search">
                   Buscar por produto, lote, código ou ID do recipiente{' '}
@@ -658,9 +754,11 @@ function BatchContents({
                 <label>
                   <input
                     type="checkbox"
-                    checked={includeDepleted}
+                    checked={listDepleted}
                     onChange={(event) => {
                       setMoreError('');
+                      // V6: as contagens não incluem esgotados, então mostrá-los limpa o filtro.
+                      if (event.target.checked && filter) chooseFilter(null);
                       setIncludeDepleted(event.target.checked);
                     }}
                   />{' '}
@@ -676,13 +774,17 @@ function BatchContents({
             ) : shown.rows.length === 0 ? (
               <>
                 <p>
-                  {query.trim()
-                    ? 'Nenhum recipiente corresponde à busca.'
-                    : includeDepleted
-                      ? 'Nenhum recebimento registrado.'
-                      : 'Nenhum recipiente com saldo.'}
+                  {activeFilter
+                    ? query.trim()
+                      ? 'Nenhum recipiente desta categoria corresponde à busca.'
+                      : 'Nenhum recipiente com saldo nesta categoria.'
+                    : query.trim()
+                      ? 'Nenhum recipiente corresponde à busca.'
+                      : listDepleted
+                        ? 'Nenhum recebimento registrado.'
+                        : 'Nenhum recipiente com saldo.'}
                 </p>
-                {!query.trim() && (
+                {!query.trim() && !activeFilter && (
                   <FirstSteps
                     owner={canCreate}
                     hasProducts={catalogData.products.length > 0}
