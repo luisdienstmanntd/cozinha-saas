@@ -3,7 +3,7 @@
 Status: implementada em branch separada (`claude/etiquetas-origem-hospedada`), PR em rascunho. Sem merge, deploy nem migração. Autorizada por luis em 18/11/2026.
 
 ## 1. Problema
-O gerador de PDF só aceitava `http://127.0.0.1:5173` e `:5174`. No site hospedado (`https://cozzigo.pages.dev`) toda etiqueta com QR falharia com "Endereço de demonstração indisponível".
+O gerador de PDF só aceitava `http://127.0.0.1:5173` e `:5174`. No site hospedado (`https://cozinha-saas.pages.dev`) toda etiqueta com QR falharia com "Endereço de demonstração indisponível".
 
 ## 2. O que muda
 | Item | Como |
@@ -17,7 +17,7 @@ O gerador de PDF só aceitava `http://127.0.0.1:5173` e `:5174`. No site hospeda
 Não mudam: regras de negócio das etiquetas, recusas (anulado, tardio, produção bloqueada), IDs, rastreabilidade (QR leva só URL e ID opaco), banco e segurança (CSP inalterada).
 
 ## 3. Ação de luis (antes do próximo deploy)
-No Cloudflare Pages, adicionar `VITE_APP_URL = https://cozzigo.pages.dev` em Production (e em Preview, se Preview continuar ligado). Sem ela o build falha de propósito. Para um domínio próprio no futuro: trocar só esse valor e refazer o deploy (o QR de etiquetas antigas continua apontando para o endereço que estava impresso).
+No Cloudflare Pages, adicionar `VITE_APP_URL = https://cozinha-saas.pages.dev` em Production (e em Preview, se Preview continuar ligado). Sem ela o build falha de propósito. Para um domínio próprio no futuro: trocar só esse valor e refazer o deploy (o QR de etiquetas antigas continua apontando para o endereço que estava impresso).
 
 ## 4. Testes
 Vitest: validação do endereço (aceitos e recusados), `configureApp` guarda e limpa o endereço, os quatro modelos de etiqueta (recebimento, derivado, preparação, porção) e arquivo com várias páginas com o endereço oficial, hosts recusados (outro domínio, subdomínio, http, porta, prévia), recusas de negócio preservadas, texto da ficha local x hospedado. Fixtures hospedadas dos testes existentes ganharam `VITE_APP_URL`; nenhuma asserção foi enfraquecida (a mensagem de recusa foi renomeada de "Endereço de demonstração indisponível" para "Endereço não autorizado", e o teste continua exigindo a recusa).

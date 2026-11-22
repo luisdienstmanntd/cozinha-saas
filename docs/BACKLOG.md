@@ -15,6 +15,7 @@
 
 ## Melhorias futuras registradas
 
+- **Baixa manual de insumos por lote/recipiente** (pedido de luis em 22/11/2026, D-073): consumo, descarte e ajuste com permissão, saldo zero fora das validades ativas e histórico preservado. Baixa automática por produção/receitas fica para depois. Começa por auditoria técnica do que já existe. Detalhes em [BACKLOG_BAIXA_MANUAL_INSUMOS.md](BACKLOG_BAIXA_MANUAL_INSUMOS.md). Exige aprovação própria.
 - **Pesquisa histórica de produções** por data, preparação e lote (pedido de luis em 14/11/2026, no aceite da 7.3). Hoje a tela mostra as 50 produções mais recentes; todos os registros anteriores continuam preservados no banco (append-only). Exige aprovação própria.
 - **Acompanhar downloads de etiqueta por diferentes telas e usuários autorizados** (pedido de luis em 14/11/2026, no aceite da 7.8), sem enfraquecer os controles de acesso. Hoje só o download feito na tela de Produção é registrado; o da página do QR não é, e o aviso aparece só na tela de Produção. Avaliar no piloto. Exige aprovação própria.
 - **Invalidar uma medição de temperatura da produção, com motivo obrigatório**, sem excluir nem alterar o registro original (pedido de luis em 14/11/2026, no aceite da 7.9). Hoje a medição errada fica no histórico e se registra outra. A invalidação seria um novo registro append-only ligado à medição, e as telas passariam a mostrar a medição como invalidada. Exige aprovação própria.

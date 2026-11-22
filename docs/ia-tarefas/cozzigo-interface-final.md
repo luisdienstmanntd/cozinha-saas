@@ -31,3 +31,8 @@
 
 - Após a apresentação do preview e a instrução de luis “prossiga”, o aceite visual do incremento foi registrado. O PR #66 foi marcado pronto para revisão, sem merge ou produção.
 - Atualizado o preview para o deploy do commit `d80c709`: https://647bfed1.cozinha-saas.pages.dev. CI desse commit aprovada integralmente (qualidade, pgTAP, advisors, integração e E2E 38/38).
+
+### 22/11/2026 — renumeração e sincronização com a `main` (Claude Code)
+
+- A pedido de luis, a decisão deste PR passou de D-073 para **D-074**: na `main`, a D-073 já é a baixa manual de insumos (PRs #65, #67 e #69). Nenhuma regra mudou, só o número.
+- A `main` (com #56 e #64 já mesclados) foi incorporada por merge. Conflitos só em documentação: `DECISOES.md` (as duas decisões mantidas, D-073 e D-074) e `FASE_08_4C_MIGRACAO_HOSPEDADA.md` (mantido o endereço `cozinha-saas.pages.dev` da `main` e o texto deste PR).

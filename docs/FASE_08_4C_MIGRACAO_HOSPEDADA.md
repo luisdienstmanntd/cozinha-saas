@@ -39,9 +39,9 @@ Seguir `FASE_08_4A.md` §6: criar a conta em Authentication > Users (Auto Confir
 
 ## 5. Ordem com o deploy (decisões separadas de luis)
 1. Migração (esta seção) e conferências da §3.
-2. Cloudflare Pages: variáveis `VITE_APP_MODE=hosted`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_APP_ENV=testes`, `VITE_APP_URL=https://cozzigo.pages.dev` e `NODE_VERSION=24`. Faltando qualquer uma, o build falha de propósito.
+2. Cloudflare Pages: variáveis `VITE_APP_MODE=hosted`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_APP_ENV=testes`, `VITE_APP_URL=https://cozinha-saas.pages.dev` e `NODE_VERSION=24`. Faltando qualquer uma, o build falha de propósito.
 3. Só então "Save and Deploy" (autorização própria). Antes, desligar deploys automáticos de branches e de Preview.
-4. Depois do deploy: entrar com o proprietário sem indicador visual de ambiente, gerar uma etiqueta PDF e conferir que o QR abre `https://cozzigo.pages.dev/...`; sem erros de CSP no console; testar sessão (30 min de inatividade) e saída. O ambiente de teste e o projeto do Supabase devem ser confirmados por configuração e URL, conforme D-067/D-073.
+4. Depois do deploy: entrar com o proprietário sem indicador visual de ambiente, gerar uma etiqueta PDF e conferir que o QR abre `https://cozinha-saas.pages.dev/...`; sem erros de CSP no console; testar sessão (30 min de inatividade) e saída. O ambiente de teste e o projeto do Supabase devem ser confirmados por configuração e URL, conforme D-067/D-074.
 
 ## 6. Se algo der errado
 - **Push parou no meio:** não repita às cegas. `npx supabase migration list` mostra até onde foi. Reverter com os arquivos de `supabase/rollback/` só na ordem inversa e só com instrução; como o banco está vazio, o caminho mais simples e seguro é **apagar e recriar o projeto** (muda URL e chaves: atualizar Cloudflare, `.env` e rodar de novo desde o §1).

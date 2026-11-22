@@ -2,8 +2,13 @@ import type { CatalogScope } from '../../catalog/domain/catalog';
 export class MovementRejected extends Error {}
 // Fatia 6.5b: recusa por bloqueio (ocorrência sem decisão ou rejeitada); a mensagem vem do banco.
 export class MovementBlocked extends MovementRejected {}
+// D-073 (etapa 2): recusa porque a quantidade passa do saldo registrado do recipiente.
+export class MovementOverBalance extends MovementRejected {}
 export type MovementInput = {
   batchId: string;
+  // D-073 (etapa 2): sem containerId, a saída vai para o integral do recebimento (record_movement);
+  // com ele, para esse recipiente, inclusive porção ou derivado (record_container_movement).
+  containerId?: string;
   kind: 'consumption' | 'discard' | 'reversal';
   quantity: string;
   reason: string | null;
@@ -35,6 +40,11 @@ export type Movement = {
   handlingId?: string | null;
 };
 export interface MovementGateway {
-  list(scope: CatalogScope, batchId: string): Promise<Movement[]>;
+  // Sem containerId, o histórico do integral do recebimento; com ele, o desse recipiente.
+  list(
+    scope: CatalogScope,
+    batchId: string,
+    containerId?: string,
+  ): Promise<Movement[]>;
   record(scope: CatalogScope, input: MovementInput): Promise<string>;
 }
