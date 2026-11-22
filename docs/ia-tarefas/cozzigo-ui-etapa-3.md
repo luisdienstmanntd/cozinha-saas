@@ -1,13 +1,13 @@
 # CozziGo interface — Etapa 3: Cadastros
 
-- **Estado:** em revisão; implementação e validações locais concluídas, CI ainda sem resultado e aceite visual pendente.
+- **Estado:** aguardando aceite visual humano; CI e validações locais aprovadas.
 - **Objetivo:** revisar Produtos, Fornecedores, Preparações próprias e Configurações da unidade; corrigir falhas reais de contexto/uso sem alterar regras de negócio, banco ou autorização.
 - **Aceite:** fluxos de conservação permanente e recuperação de falha parcial claros, sem duplicar cadastro; testes de regressão cobrem cancelamento, confirmação e recuperação; lint, typecheck, testes e build passam; capturas reais em desktop e celular; sem dados reais.
 - **Branch/base:** `codex/cozzigo-ui-etapa-3`, `origin/main` (`820f77df`).
 - **Arquivos previstos:** componentes e testes de `src/features/catalog` e `src/features/settings`; este registro. `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md` estão reservados pelo PR #56; não editar nesta branch.
 - **Riscos:** catálogo/configurações exibirem estado anterior após troca de unidade; manter proteção de sessão e escopo do gateway, sem mudanças de banco/RLS.
 - **Dependências:** nenhuma mudança do PR #56 necessária; CI remota pode executar E2E autenticado, indisponível localmente sem Docker.
-- **Próximo passo:** aguardar CI do PR #61 e revisão visual humana; não fazer merge nem publicar em produção.
+- **Próximo passo:** avaliação visual do PR #61; depois do aceite, considerar a Etapa 3 fechada. Não fazer merge nem publicar em produção sem pedido explícito.
 
 ## Checkpoints
 
@@ -26,4 +26,6 @@
 - **Capturas:** antes, [cadastros do proprietário](../capturas/revisao-visual-v1/d-dono-05-cadastros.png); depois, [confirmação desktop](../capturas/cozzigo-etapa-3/desktop.png) e [confirmação celular](../capturas/cozzigo-etapa-3/mobile.png). As capturas depois foram tiradas em Chrome headless com o componente real, CSS do projeto e gateway/dados fictícios. Harness temporário removido.
 - **Testes finais:** `npm run test -- src/features/catalog/components/CatalogPanel.test.tsx` — 11 passaram; `npm run test` — 597 testes em 54 arquivos passaram. Uma rodada concorrente anterior teve 3 timeouts em testes fora dos arquivos alterados; repetida isoladamente, passou. `npm run lint`, `npm run typecheck`, `npm run build` e `git diff --check` passaram. Build emite avisos existentes da configuração nativa do Vite e do bundle maior que 500 kB; build concluiu com sucesso.
 - **Limitações:** sem Docker neste computador, sem E2E autenticado, teste de integração ou banco. Nenhuma migração ou dado real utilizado. A validação visual cobriu desktop 1440 × 960 e celular 390 × 844; tablet e teste manual de teclado não realizados nesta sessão.
-- **Branch/PR:** `codex/cozzigo-ui-etapa-3`, commit `d714362`; PR [#61](https://github.com/luisdienstmanntd/cozinha-saas/pull/61) em rascunho, mergeable. A base avançou no GitHub para `2f4f9bd`; o PR não conflita e a lista de arquivos mudou contém apenas os cinco arquivos desta etapa. No primeiro check, ainda não havia status de CI associado ao commit.
+- **Branch/PR:** `codex/cozzigo-ui-etapa-3`, commit atual `6da1bef`; PR [#61](https://github.com/luisdienstmanntd/cozinha-saas/pull/61) em rascunho. `git merge-tree origin/main HEAD` confirmou integração limpa com a `main` em `2f4f9bd`; a lista de arquivos do PR contém apenas os cinco arquivos desta etapa.
+- **CI:** execução `44969765415` aprovada nos jobs `quality` e `banco-api-e2e`, incluindo scripts, build, pgTAP, security advisors, integração e Playwright E2E.
+- **Prévia autorizada:** [Cloudflare Pages](https://1b55f096.cozinha-saas.pages.dev); branch preview [codex-cozzigo-ui-etapa-3](https://codex-cozzigo-ui-etapa-3.cozinha-saas.pages.dev), deploy bem-sucedido para `6da1bef`.
