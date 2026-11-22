@@ -801,6 +801,34 @@ footer {
 .tile.tone-upcoming {
   border-color: currentColor;
 }
+/* V6 (D-072): os contadores filtram a lista. O estado escolhido aparece por borda, sombra e pelo
+   texto "Mostrando:" abaixo; a cor não é o único sinal. */
+.tile.tile-filter {
+  margin: 0;
+  width: 100%;
+  min-height: 2.75rem;
+  font: inherit;
+  font-weight: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tile.tile-filter span {
+  margin-left: 0;
+}
+.tile.tile-filter[aria-pressed='true'] {
+  border-width: 2px;
+  box-shadow: inset 0 0 0 2px currentColor;
+  font-weight: 700;
+}
+.expiry-filter-status {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+.expiry-filter-status button {
+  margin: 0 0 0 0.25rem;
+  padding: 0.35rem 0.75rem;
+  min-height: 2.75rem;
+}
 .container-ficha > button {
   margin-bottom: 0.5rem;
 }
@@ -1512,6 +1540,17 @@ footer {
 .mesa-stats strong {
   font-size: 1.65rem;
   font-variant-numeric: tabular-nums;
+}
+.mesa-stat-link {
+  display: grid;
+  gap: var(--space-1);
+  color: inherit;
+  text-decoration: none;
+  min-height: 2.75rem;
+}
+.mesa-stat-link:hover span,
+.mesa-stat-link:focus-visible span {
+  text-decoration: underline;
 }
 .mesa-danger,
 .mesa-status.overdue {
