@@ -1,14 +1,14 @@
 # CozziGo — acabamento profissional da interface
 
 - **ID:** cozzigo-interface-final
-- **Responsável / estado:** Codex; implementação publicada no PR #66; revisão E2E corrigida em novo commit, CI/aceite visual pendentes; autorizado por luis em 21/11/2026.
+- **Responsável / estado:** Codex; CI e prévia aprovadas no commit de código `40b20cf`; PR #66 aguarda avaliação visual de luis; autorizado por luis em 21/11/2026.
 - **Objetivo:** apresentar a interface hospedada com linguagem de produto final, sem avisos de ambiente de teste, notas de demonstração, detalhes técnicos internos ou funções em construção.
 - **Aceite:** nenhuma mensagem de teste/demonstração nos fluxos comuns; PDF descrito pelo formato efetivamente gerado, sem alegar validação física; UUID técnico não visível; ambiente hosted continua validado e isolado internamente; fluxo existente de geração/manipulação permanece funcional.
 - **Branch/base:** `codex/cozzigo-final-interface`, sobre `codex/ux-compras-cozinha` (`a9d88ec`, PR #56).
 - **Arquivos previstos:** shell, autenticação, ficha do recipiente, testes de UI/E2E e documentação de decisão/tarefa.
 - **Riscos:** aviso de ambiente de testes era uma proteção contra uso de dados reais em banco descartável. Preservar essa restrição no modelo de implantação, separação de projetos e documentação; ocultar apenas a faixa da interface, sem alterar configuração, permissões ou travas de reset.
 - **Pendências mantidas fora da interface:** impressão física/QR e validação normativa continuam requisitos internos antes do piloto; o texto público não pode sugerir que essas validações já ocorreram.
-- **Próximo passo:** publicar branch e prévia; conferir CI e apresentar para avaliação; sem merge ou produção.
+- **Próximo passo:** avaliação visual do PR #66; sem merge ou produção.
 
 ## Checkpoints
 
@@ -25,4 +25,4 @@
 - **E2E:** os specs `catalog`, `display-comma`, `expiry-cards` e `navigation` passaram a obter o UUID por atributo técnico não visual, mantendo as verificações de QR, URL e arquivo PDF.
 - **Validação:** 57 testes focados passaram; suíte completa `npm run test -- --maxWorkers=1` passou (617 testes em 57 arquivos); lint, build (inclui TypeScript), Prettier nos arquivos tocados, sintaxe E2E e `git diff --check` passaram. O build manteve os avisos de configuração nativa futura do Vite e chunk acima de 500 kB.
 - **Limites locais:** `npm run test:ci-scripts` falhou em 5 cenários de inicialização de banco com ENOENT ao criar/ler arquivos temporários no Windows; o restante dos scripts passou. E2E autenticado, integração e pgTAP não rodaram localmente porque esta máquina não tem Docker; aguardam CI Linux.
-- **Publicação:** PR #66 em rascunho, branch `codex/cozzigo-final-interface` sobre o PR #56; commit inicial `7dd0c5b`; prévia https://5a5c771f.cozinha-saas.pages.dev. Cloudflare e job de qualidade passaram. A primeira CI E2E teve 36/38 aprovados; dois specs liam `data-container-id` antes do carregamento assíncrono da ficha. A causa foi corrigida fazendo o E2E aguardar o atributo (sem remover asserções); aguardando nova CI.
+- **Publicação:** PR #66 em rascunho, branch `codex/cozzigo-final-interface` sobre o PR #56. A primeira CI E2E teve 36/38 aprovados; dois specs liam `data-container-id` antes do carregamento assíncrono da ficha. A causa foi corrigida no commit `40b20cf` fazendo o E2E aguardar o atributo, sem remover asserções. A CI do commit `40b20cf` passou integralmente: qualidade, pgTAP, advisors, integração e E2E (38/38); Cloudflare publicou a prévia https://f42fa6ba.cozinha-saas.pages.dev. PR #66 está mergeável e aguarda avaliação visual.
