@@ -8,8 +8,8 @@ Registro do que luis informou em 18/11/2026 (~23:06 UTC). Sem segredos, e-mails 
 | Projeto oficial no Cloudflare Pages | **`cozinha-saas`** (não `cozzigo`; o projeto `cozzigo` do plano original não é o oficial) |
 | Endereço atual | https://cozinha-saas.pages.dev |
 | `VITE_APP_URL` | corrigida por luis para o endereço acima (o QR das etiquetas usa esse endereço; ver `FASE_08_4B.md`) |
-| Deploys automáticos e Preview | **desativados** por luis depois de a CI do PR #50 ter gerado duas pré-visualizações públicas do projeto `cozinha-saas` |
-| Deploy | **manual**, feito por luis; "Deploy" novo exige autorização própria dele |
+| Deploys automáticos e Preview | **ativos**: cada merge na `main` publica o site automaticamente (deploy de produção do Cloudflare) e cada push de branch gera uma prévia pública. Em 18/11/2026 luis chegou a desativá-los depois das prévias geradas pela CI do PR #50, mas eles voltaram a funcionar |
+| Deploy | o primeiro foi manual, feito por luis. Hoje **cada merge na `main` é uma publicação** e exige autorização explícita de luis citando a publicação |
 | Ambiente | `VITE_APP_ENV=testes` (faixa "Ambiente de testes"); nunca declarar `producao` neste projeto |
 | Login | proprietário B (conta fictícia) entrou com sucesso no site hospedado |
 | Supabase | projeto `cozinha-saas-testes` (`wtscafnacsmyfmqcaffy`, Free, sa-east-1): 30 migrações aplicadas, `rls_auto_enable` ajustada, ambiente declarado `testes`, empresas fictícias A e B, colaborador de A (`FASE_08_4C_MIGRACAO_HOSPEDADA.md`, `FASE_08_4D_VALIDACAO_ISOLAMENTO.md`) |
