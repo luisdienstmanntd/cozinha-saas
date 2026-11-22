@@ -3,7 +3,7 @@ import { expect, it, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { LabelView } from './LabelView';
 import { makeLabelPdf } from '../application/pdf';
-import { setOfficialOrigin } from '../application/labelOrigin';
+import { labelOrigin, setOfficialOrigin } from '../application/labelOrigin';
 
 vi.mock('../application/pdf', () => ({
   makeLabelPdf: vi.fn().mockRejectedValue(new Error('Falha ao gerar PDF.')),
@@ -40,7 +40,7 @@ it('não inicia download se a tela for fechada durante a geração do PDF', asyn
   await user.click(
     await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
   );
-  expect(screen.getByText(/O QR usa endereço local/)).toBeVisible();
+  expect(screen.queryByText(/O QR usa endereço local/)).toBeNull();
   view.unmount();
   await act(async () => {
     resolve(new Blob());
@@ -188,7 +188,9 @@ it('mostra o saldo do servidor e o código curto, e avisa quando esgotado (fatia
     />,
   );
   expect(await screen.findByText('Saldo atual: 3,5 kg')).toBeVisible();
-  expect(screen.getByText('Código: C-000042')).toBeVisible();
+  expect(screen.getByRole('region', { name: 'Recipiente' })).toHaveTextContent(
+    'C-000042',
+  );
   expect(screen.queryByText(/esgotado/)).not.toBeInTheDocument();
   unmount();
   render(
@@ -565,7 +567,7 @@ const hostedData = {
     products: { name: 'Arroz' },
   },
 };
-it('local e demonstração mantêm o aviso de modelo de demonstração', async () => {
+it('local e hospedado apresentam o formato da etiqueta com texto de produto', async () => {
   setOfficialOrigin(null);
   render(
     <LabelView
@@ -576,11 +578,16 @@ it('local e demonstração mantêm o aviso de modelo de demonstração', async (
       }}
     />,
   );
-  expect(await screen.findByText(/Modelo PDF de demonstração/)).toBeVisible();
+  expect(
+    await screen.findByText('Etiqueta em PDF · 100 × 100 mm'),
+  ).toBeVisible();
+  expect(screen.queryByText(/demonstração|validadas/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Identificação:/)).not.toBeInTheDocument();
 });
 it('ambiente hospedado não chama o modelo de demonstração e usa o endereço oficial no QR', async () => {
   const user = userEvent.setup();
   setOfficialOrigin('https://cozzigo.pages.dev');
+  expect(labelOrigin()).toBe('https://cozzigo.pages.dev');
   vi.mocked(makeLabelPdf).mockResolvedValueOnce(new Blob());
   vi.stubGlobal('URL', { ...URL, createObjectURL: vi.fn(() => 'blob:x') });
   try {
@@ -593,9 +600,12 @@ it('ambiente hospedado não chama o modelo de demonstração e usa o endereço o
         }}
       />,
     );
-    expect(await screen.findByText(/Modelo PDF: 100/)).toBeVisible();
-    expect(screen.queryByText(/de demonstração/)).not.toBeInTheDocument();
-    expect(screen.getByText(/ainda não foram validadas/)).toBeVisible();
+    expect(
+      await screen.findByText('Etiqueta em PDF · 100 × 100 mm'),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/demonstração|validadas|Identificação:/),
+    ).toBeNull();
     await user.click(
       await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
     );

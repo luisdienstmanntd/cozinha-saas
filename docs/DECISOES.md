@@ -421,6 +421,7 @@
   - **Limites de 15 minutos a 24 horas:** servem só para recusar valor absurdo; **não são aprovação sanitária**, e os valores operacionais devem ser avaliados pela nutricionista RT.
 
   A mudança vale para os registros novos e nunca reescreve os antigos.
+
 - **Motivo:** decisões A e B de luis (14/11/2026), R-1 do desenho da Fase 7, D-036.
 - **Consequência:** a 7.7 acrescenta a janela por preparação; a 7.8 usa o tempo sem etiqueta.
 - **Revisar quando:** a observação do piloto ou a nutricionista RT indicarem outra necessidade.
@@ -457,7 +458,6 @@
 - **Motivo:** B2 da revisão visual (sessão caía a cada recarga; cada leitura de etiqueta exigiria e-mail e senha) e D-025.
 - **Consequência:** nova migração (`20261116000000_session_inactivity.sql`) que muda `has_membership` e `member_organizations`; reversão em `supabase/rollback/session_inactivity.sql`. Aparelho compartilhado: cada pessoa usa a própria conta; não há PIN nem troca rápida.
 - **Revisar quando:** a observação do piloto mostrar se 30 minutos atrapalham a cozinha, ou houver MFA e autenticação hospedada.
-
 
 ## D-060 — Navegação por áreas da unidade (16/11/2026)
 
@@ -521,9 +521,8 @@
 - **Status:** aceita definitivamente por luis em 18/11/2026, 02:46 UTC; integrada na `main` (PR #44, `d05a6e7`). Aprovada antes, com seis condições, tratadas em `FASE_08_4A.md` (seção 13) ([registro](FASE_08_4A.md)). Numeração: a D-066 pertence à fatia 8.1.
 - **Decisão:** antecipar parcialmente a 8.4: modo `hosted` (Cloudflare Pages + Supabase em projeto próprio de testes), que nunca cai na demonstração (falha no build e na execução), com cabeçalhos de segurança e CSP restritos ao projeto, cadastro público desligado, primeiro proprietário/empresa/unidade criados por função administrativa executável só em sessão de administração do banco, e reset do banco de testes protegido por marcador de ambiente (`testes`/`producao`, este irreversível).
 - **Motivo:** luis quer usar o sistema definitivo com dados fictícios enquanto o refina (18/11/2026); decisões 5 e 6 da revisão técnica (hospedagem, ambientes separados).
-- **Consequência:** nenhuma regra de negócio, RLS ou histórico muda; a produção continua dependendo de MFA obrigatório (preservado como condição de lançamento comercial; sua ausência vale só nos testes privados com dados fictícios), revisão de segurança independente, backup com teste de restauração e Q10.
+- **Consequência:** nenhuma regra de negócio, RLS ou histórico muda; a produção continua dependendo de MFA obrigatório (preservado como condição de lançamento comercial; sua ausência vale só nos testes privados com dados fictícios), revisão de segurança independente, backup com teste de restauração e Q10. A apresentação sem aviso visual de ambiente foi decidida depois na D-073.
 - **Revisar quando:** a 8.4 completa (produção) for autorizada.
-
 
 ## D-068 — Consulta de produções recentes por dia (18/11/2026)
 
@@ -560,3 +559,11 @@
 - **Consequências:** a busca atua dentro da categoria; os contadores continuam sendo totais da unidade. Como eles não contam esgotados, escolher uma categoria desmarca "Mostrar esgotados" e marcar "Mostrar esgotados" limpa a categoria. A categoria não classifica a segurança do alimento; a validade continua sendo a informada pelo responsável. Substitui, no roadmap CozziGo, a linha "Os totais não são controles de filtro".
 - **Revisar quando:** houver filtros por local, produto ou fornecedor, ou se a lista deixar de ser ordenada por validade no servidor.
 
+## D-073 — Interface hospedada com apresentação de produto final (21/11/2026)
+
+- **Status:** aceita por luis em 21/11/2026, com referência visual da ficha de recipiente na prévia do PR #56.
+- **Decisão:** fluxos comuns não exibem avisos de “ambiente de testes”, “demonstração” ou implementação em andamento; detalhes técnicos como UUID interno não são apresentados como conteúdo ao usuário. A UI descreve somente a saída real do recurso (por exemplo, formato do PDF), sem declarar ensaio físico ou conformidade não realizados. Recursos que não tenham fluxo funcional completo permanecem fora da navegação até estarem prontos.
+- **Segurança e operação:** o ambiente hospedado de testes continua separado internamente, com configuração estrita, projeto e banco próprios e reset protegido. A remoção da faixa não autoriza dados reais, publicação em produção nem flexibiliza MFA, segurança, backup, piloto ou validação normativa; essas condições seguem documentadas e devem estar atendidas antes do piloto.
+- **Motivo:** pedido explícito de luis para desenvolver aos poucos com experiência profissional de produto final, sem mensagens de teste ou funções inacabadas na interface.
+- **Consequência:** D-073 altera a apresentação da D-067, sem mudar seu isolamento técnico. Pendências de impressão física/QR e Q10 ficam na documentação e critérios internos de lançamento, não em avisos operacionais da ficha.
+- **Revisar quando:** preparação do piloto ou inclusão de recurso cujo estado não possa ser representado sem expor uma função incompleta.

@@ -50,6 +50,11 @@ describe('acesso multiempresa', () => {
       'autocomplete',
       'current-password',
     );
+    expect(
+      screen.queryByText(
+        /Ambiente local de demonstração|dados descartáveis|testes/,
+      ),
+    ).not.toBeInTheDocument();
   });
   it('entra, consulta unidades, edita nome e limpa dados ao sair', async () => {
     const service = gateway();

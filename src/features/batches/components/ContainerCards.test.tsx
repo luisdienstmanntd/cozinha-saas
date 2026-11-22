@@ -164,10 +164,9 @@ it('abre a ficha pelo cartão para colaborador e derivado, e volta ao mesmo cart
   expect(ensure).not.toHaveBeenCalled();
   // A lista fica oculta (sem perder a busca) enquanto a ficha está aberta.
   expect(list).not.toBeVisible();
-  // O UUID aparece só na ficha.
-  expect(
-    await within(ficha).findByText(`Identificação: ${derived.container_id}`),
-  ).toBeVisible();
+  // A ficha não expõe o UUID técnico como texto da interface.
+  expect(ficha).not.toHaveTextContent(derived.container_id);
+  expect(ficha).toHaveAttribute('data-container-id', derived.container_id);
   await user.click(
     screen.getByRole('button', { name: '← Voltar para a lista' }),
   );

@@ -87,14 +87,11 @@ export function IdentityHome({
   renderDestination,
   renderOrganizationTools,
   activity,
-  environmentNotice,
   operationalShell = false,
 }: {
   gateway: IdentityGateway;
   /** V2: última atividade no navegador; os testes passam uma em memória. */
   activity?: ActivityStore;
-  // Texto do ambiente (hospedado); sem ele vale o texto do ambiente local de demonstração.
-  environmentNotice?: string;
   operationalShell?: boolean;
   renderCatalog?: (
     organizationId: string,
@@ -360,12 +357,6 @@ export function IdentityHome({
       if (current === generation.current) setNotice('Nome atualizado.');
     });
   }
-  const environmentNote = (
-    <p className="environment-note">
-      {environmentNotice ??
-        'Ambiente local de demonstração, com dados descartáveis. Contas e vínculos são preparados pelo responsável pelos testes.'}
-    </p>
-  );
   const refreshButton = (
     <button
       type="button"
@@ -419,7 +410,6 @@ export function IdentityHome({
       <h1 className={userId ? undefined : 'visually-hidden'}>
         CozziGo — unidades, recebimentos e validade
       </h1>
-      {!openTarget && environmentNote}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {skipped > 0 && (
@@ -515,12 +505,11 @@ export function IdentityHome({
             Sair
           </button>
           <details className="session-note">
-            <summary>Sobre a sessão e o ambiente</summary>
+            <summary>Sobre a sessão</summary>
             <p>
               Sem uso por 30 minutos, a sessão é encerrada. Aparelho
               compartilhado: cada pessoa entra com a própria conta.
             </p>
-            {openTarget && environmentNote}
           </details>
         </section>
       )}
