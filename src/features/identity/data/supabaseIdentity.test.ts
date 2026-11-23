@@ -42,3 +42,36 @@ it('todas válidas: nenhuma ignorada; erro de consulta continua sendo erro', asy
     'Não foi possível consultar o acesso',
   );
 });
+
+it('recusa atrasada do token de quem já saiu não encerra a sessão atual', async () => {
+  let expired: (token: string | null) => void = () => {};
+  const signOut = vi.fn().mockResolvedValue({ error: null });
+  const getSession = vi
+    .fn()
+    .mockResolvedValue({ data: { session: { access_token: 'token-atual' } } });
+  createIdentityGateway(
+    { auth: { signOut, getSession } } as unknown as SupabaseClient,
+    {
+      events: {
+        fetch: vi.fn(),
+        onExpired: (listener: (token: string | null) => void) => {
+          expired = listener;
+          return () => {};
+        },
+      },
+      storage: null,
+    },
+  );
+  expired('token-de-quem-saiu');
+  await vi.waitFor(() => expect(getSession).toHaveBeenCalledTimes(1));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(signOut).not.toHaveBeenCalled();
+  expired('token-atual');
+  await vi.waitFor(() =>
+    expect(signOut).toHaveBeenCalledWith({ scope: 'local' }),
+  );
+  signOut.mockClear();
+  // Sem token na requisição, vale o comportamento anterior: encerra.
+  expired(null);
+  await vi.waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
+});
