@@ -115,9 +115,8 @@ test('cartões de validade legíveis no celular e ficha aberta pelo colaborador'
     const open = card('C-DEZ').getByRole('button', { name: 'Ver ficha' });
     await open.click();
     const ficha = page.getByRole('region', { name: 'Recipiente', exact: true });
-    await expect(
-      ficha.getByText(/^Identificação: [0-9a-f-]{36}$/),
-    ).toBeVisible();
+    await expect(ficha).toHaveAttribute('data-container-id', /^[0-9a-f-]{36}$/);
+    await expect(ficha).not.toContainText(/Identificação: [0-9a-f-]{36}/);
     await expect(ficha.getByText('Vence em 10 dias')).toBeVisible();
     await expect(ficha).toContainText(`validade ${br(localDate(10))}`);
     await expect(

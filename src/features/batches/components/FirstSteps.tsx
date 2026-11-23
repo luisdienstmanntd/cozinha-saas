@@ -7,7 +7,7 @@ export type AreaLinks = {
   onSelect: (area: AreaId) => void;
 };
 
-function AreaLink({
+export function AreaLink({
   area,
   links,
   children,

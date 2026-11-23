@@ -1,3 +1,4 @@
+import { AreaLink, type AreaLinks } from '../../batches/components/FirstSteps';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CatalogGateway } from '../../catalog/application/catalogGateway';
@@ -61,6 +62,7 @@ function when(iso: string, zone: string) {
 }
 
 type Props = {
+  areaLinks?: AreaLinks;
   scope: CatalogScope;
   timezone: string;
   userId: string;
@@ -89,6 +91,7 @@ type Props = {
 // resultado) e lista das produções recentes com "Anular produção". Só o proprietário escreve (D-019),
 // exceto no modo da 7.6 em que cada colaborador registra a própria produção; anular segue do proprietário.
 function ProductionContents({
+  areaLinks,
   scope,
   timezone,
   userId,
@@ -420,12 +423,31 @@ function ProductionContents({
             responsável.
           </p>
         </div>
-        {canRegister && stage === 'closed' && (
+        {canRegister && preparations.length > 0 && stage === 'closed' && (
           <button type="button" onClick={startForm}>
             Registrar produção
           </button>
         )}
       </header>
+      {preparations.length === 0 && (
+        <section className="first-steps" aria-label="Antes de produzir">
+          <h4>Nenhuma preparação cadastrada</h4>
+          {canCreate ? (
+            <p>
+              <AreaLink area="preparacoes" links={areaLinks}>
+                Cadastrar preparação própria
+              </AreaLink>
+              . Depois, volte a Produção para registrar o preparo.
+            </p>
+          ) : (
+            <p>
+              Peça ao proprietário para cadastrar a preparação. Depois, ela
+              aparecerá aqui para consulta e registro, se sua permissão
+              permitir.
+            </p>
+          )}
+        </section>
+      )}
       {notice && <p role="status">{notice}</p>}
       {unlabeled.length > 0 && (
         <p role="status">
@@ -536,7 +558,11 @@ function ProductionContents({
         </section>
       )}
       {canRegister && stage === 'form' && (
-        <form aria-label="Registrar produção" onSubmit={review}>
+        <form
+          className="production-form"
+          aria-label="Registrar produção"
+          onSubmit={review}
+        >
           <h4 ref={formTitle} tabIndex={-1}>
             Registrar produção
           </h4>
@@ -565,7 +591,12 @@ function ProductionContents({
             {selectedPreparation && !storage && (
               <p role="alert">
                 Defina a conservação da preparação no catálogo antes de
-                registrar a produção.
+                registrar a produção.{' '}
+                {canCreate && (
+                  <AreaLink area="preparacoes" links={areaLinks}>
+                    Ir para Preparações próprias
+                  </AreaLink>
+                )}
               </p>
             )}
             {storage && (

@@ -18,6 +18,25 @@ const openUnit = (page) =>
 const nav = (page) =>
   page.getByRole('navigation', { name: 'Áreas da unidade' });
 
+async function prepareReceipt(page) {
+  await newCatalogItem(page, 'Produtos');
+  await page.getByLabel('Nome do produto').fill('Arroz operacional');
+  await page.getByLabel('Unidade de medida').selectOption('kg');
+  await page
+    .getByRole('combobox', { name: 'Conservação', exact: true })
+    .selectOption('ambient');
+  await page
+    .getByRole('button', { name: 'Cadastrar produto', exact: true })
+    .click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await newCatalogItem(page, 'Fornecedores');
+  await page.getByLabel('Nome do fornecedor').fill('Fornecedor operacional');
+  await page
+    .getByRole('button', { name: 'Cadastrar fornecedor', exact: true })
+    .click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+}
+
 test('proprietário: Mesa operacional, páginas próprias e links de Cadastros antigos', async ({
   page,
 }) => {
@@ -48,7 +67,9 @@ test('proprietário: Mesa operacional, páginas próprias e links de Cadastros a
     ).toBeVisible();
     await expect(page.getByLabel('Lote de origem')).toBeHidden();
     await openArea(page, 'Receber');
-    await expect(page.getByLabel('Lote de origem')).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Antes de receber' }),
+    ).toBeVisible();
     await expect(
       page.getByRole('region', { name: 'Painel de validade' }),
     ).toBeHidden();
@@ -96,7 +117,6 @@ test('colaborador: só as áreas do perfil; Receber pedido pelo endereço cai na
       'Produção',
       'Etiquetas',
       'Locais',
-      'Unidade',
     ])
       await expect(areaLink(page, name)).toBeVisible();
     await expect(areaLink(page, 'Receber')).toHaveCount(0);
@@ -130,6 +150,7 @@ test('o que foi digitado não se perde ao trocar de área; endereço e voltar fu
     await page.goto('/');
     await signIn(page, users[0]);
     await openUnit(page);
+    await prepareReceipt(page);
     await openArea(page, 'Receber');
     await page.getByLabel('Lote de origem').fill('L-123');
     await page.getByLabel('Quantidade recebida').fill('7.5');
@@ -169,7 +190,10 @@ test('o que foi digitado não se perde ao trocar de área; endereço e voltar fu
       'page',
     );
     await expect(
-      page.getByRole('region', { name: 'Locais de armazenamento' }),
+      page.getByRole('region', {
+        name: 'Locais de armazenamento',
+        exact: true,
+      }),
     ).toBeVisible();
     // Unidade que a pessoa não tem: não abre nada.
     await page.goto('/?unidade=00000000-0000-4000-8000-000000000001');
@@ -180,42 +204,115 @@ test('o que foi digitado não se perde ao trocar de área; endereço e voltar fu
   });
 });
 
-test('celular: alertas antes dos indicadores e navegação acessível', async ({
-  page,
-}) => {
-  page.setDefaultTimeout(5000);
-  await page.setViewportSize({ width: 390, height: 844 });
-  await withCatalogFixture(async ({ users }) => {
-    await page.goto('/');
-    await signIn(page, users[0]);
-    await openUnit(page);
-    const alerts = page.getByRole('region', { name: 'Atenção às validades' });
-    const totals = page.getByRole('region', {
-      name: 'Recipientes com saldo por validade',
+for (const width of [390, 320]) {
+  test(`celular ${width}px: alertas antes dos indicadores e navegação acessível`, async ({
+    page,
+  }) => {
+    page.setDefaultTimeout(5000);
+    await page.setViewportSize({ width, height: 844 });
+    await withCatalogFixture(async ({ users }) => {
+      await page.goto('/');
+      await signIn(page, users[0]);
+      await openUnit(page);
+      const alerts = page.getByRole('region', { name: 'Atenção às validades' });
+      const totals = page.getByRole('region', {
+        name: 'Recipientes com saldo por validade',
+      });
+      await expect(alerts).toBeVisible();
+      expect((await alerts.boundingBox()).y).toBeLessThan(
+        (await totals.boundingBox()).y,
+      );
+      const menu = page.getByRole('button', { name: 'Menu', exact: true });
+      await menu.click();
+      await expect(
+        page.getByRole('button', { name: 'Cadastros', exact: true }),
+      ).toHaveAttribute('aria-expanded', 'false');
+      await expect(areaLink(page, 'Produtos')).toBeHidden();
+      for (const link of await nav(page)
+        .getByRole('link')
+        .filter({ visible: true })
+        .all()) {
+        const rect = await link.boundingBox();
+        expect(rect.height).toBeGreaterThanOrEqual(44);
+        expect(rect.width).toBeGreaterThanOrEqual(44);
+      }
+      await openArea(page, 'Produtos');
+      await expect(nav(page)).toBeHidden();
+      await expect(
+        page.getByRole('heading', { name: 'Produtos' }),
+      ).toBeVisible();
+      await prepareReceipt(page);
+      await openArea(page, 'Receber');
+      const product = page.getByRole('combobox', {
+        name: 'Produto',
+        exact: true,
+      });
+      const supplier = page.getByRole('combobox', {
+        name: 'Fornecedor',
+        exact: true,
+      });
+      const expiry = page.getByLabel('Data de validade');
+      await expect(product).toBeVisible();
+      expect((await product.boundingBox()).y).toBeLessThan(
+        (await supplier.boundingBox()).y,
+      );
+      expect((await supplier.boundingBox()).y).toBeLessThan(
+        (await expiry.boundingBox()).y,
+      );
+      await page.getByLabel('Lote de origem').fill('MOBILE-RASCUNHO');
+      await openArea(page, 'Fornecedores');
+      await openArea(page, 'Receber');
+      await expect(page.getByLabel('Lote de origem')).toHaveValue(
+        'MOBILE-RASCUNHO',
+      );
+      await openArea(page, 'Produção');
+      await expect(
+        page.getByRole('region', { name: 'Antes de produzir' }),
+      ).toBeVisible();
+
+      await page
+        .getByRole('link', {
+          name: 'Cadastrar preparação própria',
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole('button', { name: 'Nova preparação', exact: true })
+        .click();
+      const drawer = page.getByRole('dialog');
+      await drawer.getByLabel('Nome da preparação').fill('Molho operacional');
+      await drawer.getByLabel('Unidade de medida').selectOption('kg');
+      await drawer
+        .getByRole('combobox', { name: 'Conservação', exact: true })
+        .selectOption('refrigerated');
+      await drawer
+        .getByRole('button', { name: 'Cadastrar preparação', exact: true })
+        .click();
+      await expect(drawer).toBeHidden();
+      await openArea(page, 'Produção');
+      await page
+        .getByRole('button', { name: 'Registrar produção', exact: true })
+        .click();
+      const form = page.getByRole('form', { name: 'Registrar produção' });
+      await form
+        .getByRole('combobox', { name: 'Preparação', exact: true })
+        .selectOption({ label: 'Molho operacional (kg)' });
+      const quantity = form.getByLabel('Quantidade produzida (kg)');
+      await quantity.fill('2,5');
+      expect((await quantity.boundingBox()).width).toBeLessThanOrEqual(width);
+      await openArea(page, 'Validade');
+      await openArea(page, 'Produção');
+      await expect(quantity).toHaveValue('2,5');
+      const bar = page.getByRole('region', { name: 'Sessão' });
+      await expect(bar.getByRole('button', { name: 'Sair' })).toBeInViewport();
+      expect(
+        await page.evaluate(
+          () => globalThis.document.documentElement.scrollWidth,
+        ),
+      ).toBeLessThanOrEqual(width);
     });
-    await expect(alerts).toBeVisible();
-    expect((await alerts.boundingBox()).y).toBeLessThan(
-      (await totals.boundingBox()).y,
-    );
-    const menu = page.getByRole('button', { name: 'Menu', exact: true });
-    await menu.click();
-    for (const link of await nav(page).getByRole('link').all()) {
-      const rect = await link.boundingBox();
-      expect(rect.height).toBeGreaterThanOrEqual(44);
-      expect(rect.width).toBeGreaterThanOrEqual(44);
-    }
-    await openArea(page, 'Produtos');
-    await expect(nav(page)).toBeHidden();
-    await expect(page.getByRole('heading', { name: 'Produtos' })).toBeVisible();
-    const bar = page.getByRole('region', { name: 'Sessão' });
-    await expect(bar.getByRole('button', { name: 'Sair' })).toBeInViewport();
-    expect(
-      await page.evaluate(
-        () => globalThis.document.documentElement.scrollWidth,
-      ),
-    ).toBeLessThanOrEqual(390);
   });
-});
+}
 
 test('QR e links diretos seguem funcionando com a sessão persistente', async ({
   browser,
@@ -254,10 +351,8 @@ test('QR e links diretos seguem funcionando com a sessão persistente', async ({
     await openArea(page, 'Validade');
     await page.getByRole('button', { name: 'Ver ficha' }).click();
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
-    const id = (await label.getByText(/Identificação:/).innerText()).replace(
-      'Identificação: ',
-      '',
-    );
+    await expect(label).toHaveAttribute('data-container-id', /^[0-9a-f-]{36}$/);
+    const id = await label.getAttribute('data-container-id');
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
 
     // Sem sessão: o endereço do QR mostra a entrada e nenhum dado.
@@ -273,7 +368,8 @@ test('QR e links diretos seguem funcionando com a sessão persistente', async ({
     // Com sessão no mesmo navegador: abrir o QR (nova carga) não pede login.
     await page.goto(`/recipiente/${id}`);
     const again = page.getByRole('region', { name: 'Recipiente', exact: true });
-    await expect(again.getByText(`Identificação: ${id}`)).toBeVisible();
+    await expect(again).toHaveAttribute('data-container-id', id);
+    await expect(again.locator('.card-code')).toHaveText(/^C-\d{6,}$/);
     await expect(
       page.getByRole('button', { name: 'Entrar', exact: true }),
     ).toHaveCount(0);

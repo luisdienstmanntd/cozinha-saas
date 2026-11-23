@@ -3,10 +3,20 @@
 
 export const SESSION_EXPIRED_CODE = 'SESSION_EXPIRED';
 
+// O token da requisição recusada vai junto: uma resposta atrasada de quem já saiu não pode encerrar a
+// sessão de quem entrou depois no mesmo aparelho.
+function bearer(input: RequestInfo | URL, init?: RequestInit): string | null {
+  const headers = new Headers(
+    init?.headers ?? (input instanceof Request ? input.headers : undefined),
+  );
+  const value = headers.get('Authorization');
+  return value?.startsWith('Bearer ') ? value.slice('Bearer '.length) : null;
+}
+
 export function createSessionFetch(
   base: typeof fetch = (...args) => fetch(...args),
 ) {
-  const listeners = new Set<() => void>();
+  const listeners = new Set<(token: string | null) => void>();
   const sessionFetch: typeof fetch = async (input, init) => {
     const response = await base(input, init);
     if (response.status === 401 && listeners.size > 0) {
@@ -17,7 +27,7 @@ export function createSessionFetch(
           body !== null &&
           (body as { code?: unknown }).code === SESSION_EXPIRED_CODE
         )
-          for (const listener of [...listeners]) listener();
+          for (const listener of [...listeners]) listener(bearer(input, init));
       } catch {
         // Corpo que não é JSON: não é a recusa de sessão.
       }
@@ -26,7 +36,7 @@ export function createSessionFetch(
   };
   return {
     fetch: sessionFetch,
-    onExpired(listener: () => void) {
+    onExpired(listener: (token: string | null) => void) {
       listeners.add(listener);
       return () => {
         listeners.delete(listener);

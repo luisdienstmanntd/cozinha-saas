@@ -164,6 +164,27 @@ select results_eq(
   $$values ((select id from containers where batch_id='d6000000-0000-4000-8000-000000000003'), 0::numeric)$$,
   'filtro container (rota do QR): devolve o recipiente mesmo sem saldo, com saldo 0');
 
+-- V6 (D-072): a interface filtra pelos contadores começando a lista em (dia anterior, maior UUID).
+-- O cursor com o maior UUID deixa de fora todos os recipientes daquele dia, e só eles.
+select results_eq(
+  $$select container_id from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','with_balance',null,null,'2026-11-09','ffffffff-ffff-ffff-ffff-ffffffffffff')$$,
+  $$values ((select id from containers where batch_id='d6000000-0000-4000-8000-000000000001' and kind='integral')),
+           ((select id from containers where batch_id='d6000000-0000-4000-8000-000000000002')),
+           ((select id from containers where batch_id='d6000000-0000-4000-8000-000000000004'))$$,
+  'cursor (dia, maior UUID) pula todos os recipientes do dia e começa no seguinte');
+select results_eq(
+  $$select container_id from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','with_balance',null,null,'2026-11-12','ffffffff-ffff-ffff-ffff-ffffffffffff')$$,
+  $$values ((select id from containers where batch_id='d6000000-0000-4000-8000-000000000002')),
+           ((select id from containers where batch_id='d6000000-0000-4000-8000-000000000004'))$$,
+  'filtro Vence hoje (13/11): a lista começa no primeiro recipiente do dia');
+select results_eq(
+  $$select container_id from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','with_balance',null,'LF-78','2026-11-13','ffffffff-ffff-ffff-ffff-ffffffffffff')$$,
+  $$values ((select id from containers where batch_id='d6000000-0000-4000-8000-000000000004'))$$,
+  'cursor do filtro combina com a busca: só o que casa, a partir do início da categoria');
+select is_empty(
+  $$select 1 from list_containers('d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','with_balance',null,'F-77','2026-11-13','ffffffff-ffff-ffff-ffff-ffffffffffff')$$,
+  'recipiente de um dia anterior ao início da categoria não aparece, mesmo casando com a busca');
+
 select throws_ok($$update container_balances set balance = 99$$, '42501', null, 'proprietário não altera saldo pela API');
 select throws_ok($$insert into container_balances(container_id,organization_id,establishment_id,batch_id,expiry_date,balance) values (gen_random_uuid(),'d2000000-0000-4000-8000-00000000000a','d3000000-0000-4000-8000-00000000000a','d6000000-0000-4000-8000-000000000001','2026-11-09',1)$$, '42501', null, 'proprietário não insere saldo pela API');
 select is((select count(*)::int from container_balances), 7, 'proprietário de A lê os saldos das duas unidades de A, e só eles');

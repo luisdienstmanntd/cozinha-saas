@@ -1,7 +1,7 @@
 const labels = {
   Validade: 'Validades',
   Receber: 'Recebimentos',
-  Locais: 'Estoque e locais',
+  Locais: 'Locais de armazenamento',
 };
 
 export function areaLink(page, name) {
@@ -13,7 +13,21 @@ export function areaLink(page, name) {
 export async function openArea(page, name) {
   const menu = page.getByRole('button', { name: 'Menu', exact: true });
   const link = areaLink(page, name);
-  if (!(await link.isVisible()) && (await menu.isVisible())) await menu.click();
+  if (
+    !(await link.isVisible()) &&
+    (await menu.isVisible()) &&
+    (await menu.getAttribute('aria-expanded')) === 'false'
+  )
+    await menu.click();
+  const group = ['Produtos', 'Fornecedores', 'Preparações próprias'].includes(
+    name,
+  )
+    ? 'Cadastros'
+    : ['Unidade', 'Organização'].includes(name)
+      ? 'Configurações'
+      : null;
+  if (group && !(await link.isVisible()))
+    await page.getByRole('button', { name: group, exact: true }).click();
   await link.click();
 }
 

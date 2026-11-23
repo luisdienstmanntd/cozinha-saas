@@ -37,3 +37,23 @@ describe('recusa de sessão pela API', () => {
     expect(expired).not.toHaveBeenCalled();
   });
 });
+
+describe('token da requisição recusada', () => {
+  it('informa o token Bearer da requisição, em objeto ou Headers', async () => {
+    const events = createSessionFetch(reply(401, '{"code":"SESSION_EXPIRED"}'));
+    const expired = vi.fn();
+    events.onExpired(expired);
+    await events.fetch('http://x', {
+      headers: { Authorization: 'Bearer token-antigo' },
+    });
+    await events.fetch('http://x', {
+      headers: new Headers({ Authorization: 'Bearer token-novo' }),
+    });
+    await events.fetch('http://x');
+    expect(expired.mock.calls).toEqual([
+      ['token-antigo'],
+      ['token-novo'],
+      [null],
+    ]);
+  });
+});

@@ -18,7 +18,7 @@ export function workspaceAreas(
   if (owner) areas.push({ id: 'receber', label: 'Recebimentos' });
   if (production) areas.push({ id: 'producao', label: 'Produção' });
   areas.push({ id: 'etiquetas', label: 'Etiquetas' });
-  if (locations) areas.push({ id: 'locais', label: 'Estoque e locais' });
+  if (locations) areas.push({ id: 'locais', label: 'Locais de armazenamento' });
   if (owner) {
     areas.push(
       { id: 'produtos', label: catalogPages.produtos },
