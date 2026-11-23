@@ -1,3 +1,4 @@
+/* global URL, console */
 import { expect, test } from '@playwright/test';
 import { openArea, newCatalogItem } from './areas.mjs';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
@@ -8,9 +9,32 @@ async function signIn(page, user) {
   await page.getByLabel('E-mail').fill(user.email);
   await page.getByLabel('Senha').fill(user.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(
-    page.getByRole('button', { name: 'Abrir Cozinha principal' }),
-  ).toBeVisible();
+  try {
+    await expect(
+      page.getByRole('button', { name: 'Abrir Cozinha principal' }),
+    ).toBeVisible();
+  } catch (error) {
+    // Diagnóstico da falha intermitente (docs/TESTES_QUALIDADE.md): registra o que a tela mostra,
+    // sem dados de conta, e falha do mesmo jeito.
+    const url = new URL(page.url());
+    const texts = async (role) =>
+      (await page.getByRole(role).allInnerTexts()).map((t) => t.trim());
+    console.log(
+      'DIAGNOSTICO signIn',
+      JSON.stringify({
+        path: url.pathname,
+        search: url.search,
+        alerts: await texts('alert'),
+        statuses: await texts('status'),
+        headings: await texts('heading'),
+        buttons: (await texts('button')).slice(0, 15),
+        entrarVisible: await page
+          .getByRole('button', { name: 'Entrar', exact: true })
+          .isVisible(),
+      }),
+    );
+    throw error;
+  }
 }
 
 async function receive(page, quantity) {
