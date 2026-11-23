@@ -1,7 +1,7 @@
 import { AreaLink, type AreaLinks } from '../../batches/components/FirstSteps';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { markUnitDraftClean } from '../../identity/application/unitDrafts';
+import { markUnitDraftKeyClean } from '../../identity/application/unitDrafts';
 import type { CatalogGateway } from '../../catalog/application/catalogGateway';
 import type { CatalogItem, CatalogScope } from '../../catalog/domain/catalog';
 import { storageLabels } from '../../catalog/domain/catalog';
@@ -118,7 +118,7 @@ function ProductionContents({
   const [attempt, setAttempt] = useState(0);
   const [stage, setStage] = useState<Stage>('closed');
   const formTitle = useRef<HTMLHeadingElement>(null);
-  const draftForm = useRef<HTMLFormElement | null>(null);
+  const draftScope = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (stage === 'form') formTitle.current?.focus();
   }, [stage]);
@@ -311,6 +311,7 @@ function ProductionContents({
   }
   function review(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    draftScope.current = event.currentTarget.closest('[data-unit-draft-scope]');
     setError('');
     setNotice('');
     if (!selectedPreparation) return setError('Selecione a preparação.');
@@ -366,7 +367,7 @@ function ProductionContents({
         parsed.data,
       );
       resetIntent();
-      markUnitDraftClean(draftForm.current);
+      markUnitDraftKeyClean('production', draftScope.current);
       setResult({ batchId, late });
       setStage('done');
       reloadList();
@@ -562,7 +563,6 @@ function ProductionContents({
       )}
       {canRegister && stage === 'form' && (
         <form
-          ref={draftForm}
           data-unit-draft-key="production"
           className="production-form"
           aria-label="Registrar produção"

@@ -41,6 +41,13 @@ export function markUnitDraftClean(form: HTMLFormElement | null | undefined) {
     );
 }
 
+/** Clears a review-stage draft after its originating form has unmounted. */
+export function markUnitDraftKeyClean(key: string, scope: HTMLElement | null) {
+  document.dispatchEvent(
+    new CustomEvent(DRAFT_CLEAN_EVENT, { detail: { key, scope } }),
+  );
+}
+
 export function unitDraftCleanEvent() {
   return DRAFT_CLEAN_EVENT;
 }

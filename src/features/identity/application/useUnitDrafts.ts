@@ -51,6 +51,29 @@ export function useUnitDrafts() {
     return false;
   }, [scan]);
 
+  const hasDraftForScopes = useCallback(
+    (scopeIds: Set<string>) => {
+      scan();
+      for (const draft of drafts.current.values()) {
+        if (
+          !draft.scope.isConnected ||
+          !scopeIds.has(draft.scope.dataset.unitDraftScope ?? '')
+        )
+          continue;
+        for (const [control, initialValue] of draft.fields)
+          if (controlValue(control) !== initialValue) return true;
+      }
+      return false;
+    },
+    [scan],
+  );
+
+  const clearScopes = useCallback((scopeIds: Set<string>) => {
+    for (const [form, draft] of drafts.current)
+      if (scopeIds.has(draft.scope.dataset.unitDraftScope ?? ''))
+        drafts.current.delete(form);
+  }, []);
+
   const discardDraft = useCallback((scope: HTMLElement, key: string) => {
     for (const [form, draft] of drafts.current)
       if (draft.scope === scope && draft.key === key)
@@ -69,7 +92,15 @@ export function useUnitDrafts() {
       event.returnValue = '';
     }
     function markClean(event: Event) {
-      const form = (event as CustomEvent<HTMLFormElement>).detail;
+      const detail = (event as CustomEvent).detail as
+        HTMLFormElement | { key: string; scope: HTMLElement | null } | null;
+      if (detail && !(detail instanceof HTMLFormElement) && 'key' in detail) {
+        for (const [candidate, draft] of drafts.current)
+          if (draft.key === detail.key && draft.scope === detail.scope)
+            drafts.current.delete(candidate);
+        return;
+      }
+      const form = detail;
       if (!(form instanceof HTMLFormElement)) return;
       const scope =
         (form.closest('[data-unit-draft-scope]') as HTMLElement | null) ??
@@ -148,5 +179,5 @@ export function useUnitDrafts() {
     };
   }, [discardDraft, hasDraft, scan]);
 
-  return { hasDraft, clearDrafts };
+  return { hasDraft, hasDraftForScopes, clearDrafts, clearScopes };
 }

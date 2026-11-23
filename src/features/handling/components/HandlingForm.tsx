@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { markUnitDraftClean } from '../../identity/application/unitDrafts';
+import { markUnitDraftKeyClean } from '../../identity/application/unitDrafts';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import { storageLabels, storageConditions } from '../../catalog/domain/catalog';
 import type { StorageCondition } from '../../catalog/domain/catalog';
@@ -83,7 +83,7 @@ export function HandlingForm({
   const [members, setMembers] = useState<Member[]>([]);
   const [loadError, setLoadError] = useState('');
   const [stage, setStage] = useState<Stage>('form');
-  const draftForm = useRef<HTMLFormElement | null>(null);
+  const draftScope = useRef<HTMLElement | null>(null);
   const [kind, setKind] = useState<'opening' | 'portioning'>('opening');
   const [count, setCount] = useState(2);
   const [quantities, setQuantities] = useState<string[]>(['']);
@@ -285,6 +285,7 @@ export function HandlingForm({
   }
   function review(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    draftScope.current = event.currentTarget.closest('[data-unit-draft-scope]');
     setError('');
     if (!allValid || portionQuantities.length === 0)
       return setError(
@@ -331,7 +332,7 @@ export function HandlingForm({
     try {
       const id = await gateway.handle(scope, parsed.data);
       resetIntent();
-      markUnitDraftClean(draftForm.current);
+      markUnitDraftKeyClean(`handling-${containerId}`, draftScope.current);
       onChanged?.();
       setResult(await gateway.created(scope, id));
       setStage('done');
@@ -551,11 +552,7 @@ export function HandlingForm({
             ? 'embalagem fechada (integral)'
             : 'recipiente já aberto (derivado)'}
       </p>
-      <form
-        ref={draftForm}
-        data-unit-draft-key={`handling-${containerId}`}
-        onSubmit={review}
-      >
+      <form data-unit-draft-key={`handling-${containerId}`} onSubmit={review}>
         <fieldset disabled={busy}>
           <legend>Tipo e quantidade</legend>
           {preparation && (

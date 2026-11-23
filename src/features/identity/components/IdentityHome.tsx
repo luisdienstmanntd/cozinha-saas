@@ -115,7 +115,12 @@ export function IdentityHome({
   renderDestination?: (userId: string, access: Access) => ReactNode;
   renderOrganizationTools?: RenderOrganizationTools;
 }) {
-  const { hasDraft: hasUnitDraft, clearDrafts } = useUnitDrafts();
+  const {
+    hasDraft: hasUnitDraft,
+    hasDraftForScopes,
+    clearDrafts,
+    clearScopes,
+  } = useUnitDrafts();
   const [userId, setUserId] = useState<string | null>(null);
   const [access, setAccess] = useState<Access>([]);
   const [accessEpoch, setAccessEpoch] = useState(0);
@@ -321,15 +326,20 @@ export function IdentityHome({
       : { access: await gateway.load(), skipped: 0 };
     if (current !== generation.current) return false;
     const rows = report.access;
+    const previousUnitIds = new Set(
+      access.flatMap((organization) =>
+        organization.establishments.map((unit) => unit.id),
+      ),
+    );
+    const nextUnitIds = new Set(
+      rows.flatMap((organization) =>
+        organization.establishments.map((unit) => unit.id),
+      ),
+    );
+    const revokedUnitIds = new Set(
+      Array.from(previousUnitIds).filter((id) => !nextUnitIds.has(id)),
+    );
     if (rows.length === 0) {
-      const discardDrafts = hasUnitDraft();
-      if (
-        discardDrafts &&
-        !window.confirm(
-          'Seu acesso não está mais disponível. Fechar esta unidade descartará as alterações não salvas. Deseja continuar?',
-        )
-      )
-        return false;
       clearDrafts();
       setAccess([]);
       setSkipped(report.skipped);
@@ -339,6 +349,24 @@ export function IdentityHome({
           ? 'Não foi possível carregar sua empresa. Atualize o acesso ou avise o responsável.'
           : 'Nenhum vínculo ativo. Solicite acesso ao responsável.',
       );
+    }
+    if (revokedUnitIds.size > 0) {
+      const retainedDrafts = hasDraftForScopes(nextUnitIds);
+      const discardRetained = retainedDrafts
+        ? window.confirm(
+            'Seu acesso a uma unidade mudou. Atualizar a lista descartará os rascunhos das unidades ainda disponíveis. Deseja continuar?',
+          )
+        : false;
+      if (current !== generation.current) return false;
+      clearScopes(revokedUnitIds);
+      setAccess(rows);
+      setSkipped(report.skipped);
+      if (discardRetained) {
+        clearDrafts();
+        setAccessEpoch((epoch) => epoch + 1);
+        return true;
+      }
+      return true;
     }
     const discardDrafts = hasUnitDraft();
     if (
@@ -648,7 +676,7 @@ export function IdentityHome({
               key={accessEpoch}
               aria-label={`Unidade ${openTarget.unit.name}`}
               className="unit-shell"
-              data-unit-draft-scope
+              data-unit-draft-scope={openTarget.unit.id}
             >
               {!showShell && (
                 <header className="unit-header">
@@ -780,7 +808,7 @@ export function IdentityHome({
                 const active = target.unit.id === catalogUnit;
                 return (
                   <div
-                    data-unit-draft-scope
+                    data-unit-draft-scope={target.unit.id}
                     key={`${accessEpoch}:${userId}:${target.organization.id}:${target.unit.id}`}
                     hidden={!active}
                   >

@@ -6,7 +6,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { IdentityHome } from './IdentityHome';
 import type { IdentityGateway } from '../application/identityGateway';
 import type { Access } from '../domain/identity';
-import { markUnitDraftClean } from '../application/unitDrafts';
+import {
+  markUnitDraftClean,
+  markUnitDraftKeyClean,
+} from '../application/unitDrafts';
 import type { UnitContext } from './IdentityHome';
 
 const userId = '10000000-0000-0000-0000-000000000001';
@@ -42,14 +45,9 @@ const service = (units: Access = access): IdentityGateway => ({
 function RevisableDraft() {
   const [stage, setStage] = useState<'form' | 'review'>('form');
   const [value, setValue] = useState('');
-  const currentForm = useRef<HTMLFormElement | null>(null);
-  const savedForm = useRef<HTMLFormElement | null>(null);
+  const savedScope = useRef<HTMLElement | null>(null);
   return stage === 'form' ? (
-    <form
-      ref={currentForm}
-      aria-label="Rascunho de revisão"
-      data-unit-draft-key="reviewable"
-    >
+    <form aria-label="Rascunho de revisão" data-unit-draft-key="reviewable">
       <label>
         Observação{' '}
         <input value={value} onChange={(e) => setValue(e.target.value)} />
@@ -57,7 +55,9 @@ function RevisableDraft() {
       <button
         type="button"
         onClick={(event) => {
-          savedForm.current = event.currentTarget.form;
+          savedScope.current =
+            event.currentTarget.form?.closest('[data-unit-draft-scope]') ??
+            null;
           setStage('review');
         }}
       >
@@ -70,7 +70,7 @@ function RevisableDraft() {
       <button
         type="button"
         onClick={() => {
-          markUnitDraftClean(savedForm.current);
+          markUnitDraftKeyClean('reviewable', savedScope.current);
           setStage('form');
         }}
       >
@@ -316,6 +316,29 @@ describe('rascunhos da unidade', () => {
     await user.selectOptions(screen.getByLabelText('Unidade'), unitId);
     expect(screen.getByLabelText('Lote Cozinha')).toHaveValue('LOTE-A');
     expect(confirm).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+
+  it('remove imediatamente a unidade revogada e preserva rascunho autorizado se a confirmação for cancelada', async () => {
+    const { user, gateway } = await openUnit(
+      (unit) => (
+        <form aria-label={`Recebimento ${unit.unitName}`}>
+          <label>
+            {`Lote ${unit.unitName}`} <input name="lot" />
+          </label>
+        </form>
+      ),
+      twoUnits,
+    );
+    vi.mocked(gateway.load).mockResolvedValueOnce(access);
+    await user.type(screen.getByLabelText('Lote Cozinha'), 'LOTE-A');
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await user.click(screen.getByText('Minha conta'));
+    await user.click(screen.getByRole('button', { name: 'Atualizar acesso' }));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Unidade')).not.toHaveTextContent('Cozinha 2');
+    await user.selectOptions(screen.getByLabelText('Unidade'), unitId);
+    expect(screen.getByLabelText('Lote Cozinha')).toHaveValue('LOTE-A');
     confirm.mockRestore();
   });
 
