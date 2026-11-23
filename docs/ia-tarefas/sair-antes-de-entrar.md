@@ -2,7 +2,7 @@
 
 - **ID:** sair-antes-de-entrar
 - **Responsável / sessão:** Claude Code (thread "Revisar projeto e propor próximos passos")
-- **Estado:** aguardando_aceite
+- **Estado:** em_andamento (segunda correção em PR próprio)
 - **Objetivo e aceite:** depois de tocar em Sair, o botão Entrar fica desativado até o servidor confirmar a saída, para que a resposta atrasada do Sair não encerre a sessão de quem entra em seguida no mesmo aparelho. Aceite: teste novo falha sem a correção e passa com ela; bateria inteira verde na CI, sem enfraquecer testes; E2E `locations.spec.mjs:152` verde.
 - **Branch / worktree / base:** `claude/sair-antes-de-entrar`, base `main` `209f93f`.
 - **Arquivos e recursos em uso:** `src/features/identity/components/IdentityHome.tsx` (só o botão Sair e o Entrar), `IdentityHome.test.tsx`, `docs/TESTES_QUALIDADE.md`, este registro.
@@ -18,3 +18,9 @@
 - **Estado do ambiente:** nada alterado no Supabase hospedado.
 - **Pendências / riscos:** a causa não foi reproduzida em navegador local; a CI do PR é a prova.
 - **Próximo passo:** acompanhar a CI do PR.
+
+### 23/11/2026, 01:00 UTC — Claude Code
+- **Feito:** #71 mesclado com aval de luis (`6255a8a`), mas o E2E continuou falhando na `main`. Com um diagnóstico temporário (branch `claude/diagnostico-e2e-locais`, não mesclada), 3 de 3 execuções mostraram o colaborador sendo tirado com "Sessão encerrada por inatividade". Causa real: resposta 401 `SESSION_EXPIRED` atrasada, de uma requisição feita com o token do proprietário que já saiu, encerrava a sessão nova.
+- **Correção:** branch `claude/expiracao-token-antigo`: `sessionFetch.ts` passa o token Bearer da requisição recusada; `supabaseIdentity.ts` ignora a recusa quando o token não é o da sessão atual (sem token, mantém o comportamento anterior).
+- **Testes:** teste novo de `supabaseIdentity` falhou sem a correção e passou com ela; lint, typecheck, `format:check`, Vitest 637/637. E2E pela CI.
+- **Próximo passo:** CI do PR repetida; merge só com aval de luis.
