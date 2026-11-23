@@ -1,13 +1,13 @@
 # CozziGo interface — Etapa 3: Cadastros
 
-- **Estado:** aguardando aceite visual humano; CI e validações locais aprovadas.
+- **Estado:** PR #61 sincronizado com a `main` atual; validação local em andamento após o merge da base.
 - **Objetivo:** revisar Produtos, Fornecedores, Preparações próprias e Configurações da unidade; corrigir falhas reais de contexto/uso sem alterar regras de negócio, banco ou autorização.
 - **Aceite:** fluxos de conservação permanente e recuperação de falha parcial claros, sem duplicar cadastro; testes de regressão cobrem cancelamento, confirmação e recuperação; lint, typecheck, testes e build passam; capturas reais em desktop e celular; sem dados reais.
-- **Branch/base:** `codex/cozzigo-ui-etapa-3`, `origin/main` (`820f77df`).
-- **Arquivos previstos:** componentes e testes de `src/features/catalog` e `src/features/settings`; este registro. `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md` estão reservados pelo PR #56; não editar nesta branch.
+- **Branch/base:** `codex/cozzigo-ui-etapa-3`, worktree isolado; sincronizado com `origin/main` (`6dd4251`, inclui #72 e #58).
+- **Arquivos previstos:** componentes e testes de `src/features/catalog` e este registro. PR #56 já integrado; atualizar a linha da tarefa no `docs/IA_ESTADO.md` para registrar o estado desta branch.
 - **Riscos:** catálogo/configurações exibirem estado anterior após troca de unidade; manter proteção de sessão e escopo do gateway, sem mudanças de banco/RLS.
 - **Dependências:** nenhuma mudança do PR #56 necessária; CI remota pode executar E2E autenticado, indisponível localmente sem Docker.
-- **Próximo passo:** avaliação visual do PR #61; depois do aceite, considerar a Etapa 3 fechada. Não fazer merge nem publicar em produção sem pedido explícito.
+- **Próximo passo:** executar a CI completa no novo head; após sucesso, concluir a integração autorizada.
 
 ## Checkpoints
 
@@ -29,3 +29,9 @@
 - **Branch/PR:** `codex/cozzigo-ui-etapa-3`, commit atual `6da1bef`; PR [#61](https://github.com/luisdienstmanntd/cozinha-saas/pull/61) em rascunho. `git merge-tree origin/main HEAD` confirmou integração limpa com a `main` em `2f4f9bd`; a lista de arquivos do PR contém apenas os cinco arquivos desta etapa.
 - **CI:** execuções `44969765415` (commit do código `6da1bef`) e `44970218343` (checkpoint documental `8b3f5e1`) aprovadas nos jobs `quality` e `banco-api-e2e`, incluindo scripts, build, pgTAP, security advisors, integração e Playwright E2E.
 - **Prévia autorizada:** [Cloudflare Pages](https://1b0a7971.cozinha-saas.pages.dev); branch preview [codex-cozzigo-ui-etapa-3](https://codex-cozzigo-ui-etapa-3.cozinha-saas.pages.dev), deploy bem-sucedido para `8b3f5e1`.
+
+### 2026-11-22 — sincronização para conclusão
+
+- PR #61 incorporou a `main` atual (`6dd4251`) por merge, sem conflito. A mudança permanece restrita à confirmação de conservação e recuperação de falha parcial no Catálogo; nenhum arquivo de Configurações, navegação, banco, RLS ou migração foi incluído.
+- Capturas desktop e mobile existentes foram revisadas; mostram escolha explícita da conservação imutável e ações de confirmação/cancelamento.
+- Executar novamente os checks locais e CI remota no head sincronizado; E2E, integração e banco local dependem de Docker, ausente nesta máquina.

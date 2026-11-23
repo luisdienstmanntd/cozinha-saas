@@ -49,8 +49,16 @@ export function createIdentityGateway(
     });
     return ending;
   }
-  session?.events.onExpired(() => {
-    void end('expired').catch(() => {});
+  session?.events.onExpired((token) => {
+    void (async () => {
+      // Recusa de um token que não é mais o da sessão atual (de quem já saiu): não encerra a
+      // sessão de quem entrou depois.
+      if (token) {
+        const { data } = await client.auth.getSession();
+        if (data.session?.access_token !== token) return;
+      }
+      await end('expired');
+    })().catch(() => {});
   });
   async function loadReport() {
     const { data, error } = await client

@@ -18,6 +18,7 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 
 | Tarefa | Responsável / estado | Referência | Próximo passo |
 |---|---|---|---|
+| Acabamento profissional da interface (sem avisos de teste ou detalhes internos) | Codex; #64, #56 e #66 integrados na `main` em 22/11/2026; #66 CI verde no head `f64fcdd`, merge `209f93f` | `ia-tarefas/cozzigo-interface-final.md`, D-074 | Concluída. |
 | Anulação auditável de movimentações | Codex; aguardando aceite | `ia-tarefas/fase-05-anulacao.md` | Confirmar aceite humano antes da próxima fase. |
 | Revisão de interface e unidades | Claude Code e Codex; integrada na `main` em 13/11/2026 (PR #1) | `ia-tarefas/revisao-interface-unidades.md` | Nenhum. |
 | Desenho da Fase 6 | Claude Code; aprovado para planejamento e integrado na `main` em 13/11/2026 (PR #3) | `ia-tarefas/fase-06-desenho.md` | Seguir a ordem da seção 10; cada fatia exige aceite próprio. |
@@ -65,7 +66,8 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 | Fatia 8.1 — estabilização da CI e do E2E (D-066) | Claude Code; ACEITA por luis em 17/11/2026, 15:16 UTC; #42 integrado (`0685ffc`), #43 aguarda o #39; #28 integrado (`1acf671`) | `FASE_08_1.md`, `PROTECAO_MAIN_PROPOSTA.md`, `ia-tarefas/plano-integracao.md` |
 | Fase 8, fatia 8.4a — modo hospedado e ambiente de testes (D-067 aceita) | Claude Code; aceita definitivamente por luis em 18/11/2026, 02:46 UTC; PR #44 integrado na `main` (`d05a6e7`, CI verde). Nada aplicado no Supabase hospedado; sem deploy | `ia-tarefas/fase-08-4a-hospedagem-testes.md`, `FASE_08_4A.md` | Configuração do Supabase passo a passo com luis; migrações e primeiro deploy só com autorização específica. |
 | Fase 8, fatias 8.4b e 8.4c — identidade CozziGo, etiquetas no hospedado e procedimento de migração | Claude Code; #46 (identidade) e #47 (`VITE_APP_URL`, etiquetas) integrados na `main` em 18/11/2026 (`f525cc8`) com autorização de luis; procedimento de migração apenas documentado. Nada aplicado no Supabase hospedado; sem deploy | `FASE_08_4B.md`, `FASE_08_4C_MIGRACAO_HOSPEDADA.md` | luis autoriza a migração e, em separado, o primeiro deploy; antes, adicionar `VITE_APP_URL` no Cloudflare. |
-| Fase 8, fatia 8.4d — validação de isolamento e sessões no hospedado | Claude Code; PR em rascunho; script revisado após os 9 pontos de luis (conteúdo por linha, parada imediata, papéis/unidades, payloads válidos, 21 tabelas anônimas, JWT com bytes alterados, finally + logout local) e aguardando nova revisão; script ainda NÃO executado no hospedado. Migrações aplicadas e `rls_auto_enable` ajustada em 18/11/2026 | `FASE_08_4D_VALIDACAO_ISOLAMENTO.md`, `FASE_08_4C_MIGRACAO_HOSPEDADA.md` | luis cria 3 contas fictícias, executa o SQL do passo 2 e, depois de revisar o PR, roda o script na máquina dele. |
+| Fase 8, fatia 8.4d — validação de isolamento e sessões no hospedado | Claude Code; PR #50 mesclado (7d664d5); script revisado após os 9 pontos de luis (conteúdo por linha, parada imediata, papéis/unidades, payloads válidos, 21 tabelas anônimas, JWT com bytes alterados, finally + logout local) e aguardando nova revisão; script ainda NÃO executado no hospedado. Migrações aplicadas e `rls_auto_enable` ajustada em 18/11/2026 | `FASE_08_4D_VALIDACAO_ISOLAMENTO.md`, `FASE_08_4C_MIGRACAO_HOSPEDADA.md` | luis cria 3 contas fictícias, executa o SQL do passo 2 e, depois de revisar o PR, roda o script na máquina dele. |
+| Fase 8, fatia 8.4e — hospedagem de testes no ar | Claude Code; PR de documentação; luis fez o deploy manual em 18/11/2026 | `FASE_08_4E_HOSPEDAGEM_ONLINE.md` | Projeto Cloudflare oficial `cozinha-saas`, https://cozinha-saas.pages.dev; cada merge na `main` publica o site automaticamente e os previews de branch estão ativos, então cada merge exige autorização de luis. Próximo: luis roda `validate-isolation.mjs --wait-inactivity` (ver "Onde paramos" no relatório); luis passou a trabalhar na interface/visual. |
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
 
@@ -88,3 +90,44 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Correção do E2E da Mesa operacional — 21/11/2026
 
 - Claude Code, branch `claude/correcao-e2e-mesa-operacional` sobre o PR #54. Corrige as 24 falhas de E2E da CI sem mudar o escopo da D-070; aguarda CI e aceite. [Registro](ia-tarefas/correcao-e2e-mesa-operacional.md).
+
+## UX compras e cozinha — 21/11/2026
+
+- Codex; concluída, visualmente aceita e integrada na `main` pelo PR #56 (`745f07c`) em 22/11/2026, depois do PR #64. Revisão e melhorias de navegação, pré-requisitos e formulários, sem backend. [Registro](ia-tarefas/ux-compras-cozinha.md).
+
+## Evolução da interface — Etapa 2, dashboard — 22/11/2026
+
+- Codex, PR #58: mensagem do painel passa a distinguir totais de urgência do recorte paginado de alertas. Sincronizado com `main` (`2c0da92`) por merge commit `9629390`; validação local 638/638 testes, lint, typecheck e build aprovados. CI remota do novo head pendente. A melhoria de Escape no menu mobile permanece tarefa separada. [Registro](ia-tarefas/cozzigo-evolucao-interface.md).
+
+## Etapa 4 — recebimentos — 22/11/2026
+
+- PR #64 foi integrado na `main` (`9305376`) antes do #56; qualidade, pgTAP, advisors, integração e E2E passaram na CI da `main`. [Registro](ia-tarefas/cozzigo-ui-etapa-4.md).
+
+## Etapa 3 — Cadastros — 22/11/2026
+
+- Codex, PR #61: confirmação da conservação imutável e recuperação de falha parcial sem repetir o cadastro. Sincronizado com `main` (`6dd4251`) em worktree isolado; validação e CI do novo head pendentes. [Registro](ia-tarefas/cozzigo-ui-etapa-3.md).
+
+## V6 — filtrar Validades pelos contadores (proposta) — 22/11/2026
+
+- Claude Code, branch `claude/v6-proposta`, só documentação. Aprovada por luis e implementada no PR #59 (D-072); este registro só traz o documento da proposta para a `main`, onde ele já era citado. [Proposta](V6_PROPOSTA.md), [registro](ia-tarefas/v6-proposta.md).
+
+## V6 — filtrar Validades pelos contadores (implementação) — 22/11/2026
+
+- Claude Code. Proposta aprovada por luis (PR #57). Só interface, sem migração. CONCLUÍDA: integrada na `main` em 22/11/2026 (PR #59, `2f4f9bd`), com merge e publicação autorizados por luis. [Registro](ia-tarefas/v6-filtro-validades.md).
+
+
+## Entrar só depois que o Sair termina — 23/11/2026
+
+- Claude Code, branch `claude/sair-antes-de-entrar`. Corrige a corrida que derrubava o E2E `locations.spec.mjs:152` na `main`; só interface. [Registro](ia-tarefas/sair-antes-de-entrar.md).
+
+## Backlog — baixa manual de insumos — 22/11/2026
+
+- Claude Code, branch `claude/backlog-baixa-manual-insumos`. Só documentação: `BACKLOG_BAIXA_MANUAL_INSUMOS.md` e D-073 proposta. Nada implementado; aguarda aceite de luis. [Registro](ia-tarefas/backlog-baixa-manual-insumos.md).
+
+## Auditoria — baixa manual de insumos (D-073, etapa 1) — 22/11/2026
+
+- Claude Code, branch `claude/auditoria-baixa-manual`. Só documentação: `AUDITORIA_BAIXA_MANUAL.md`. Banco já cobre consumo e descarte; lacunas na interface (derivados sem "Registrar saída"). CONCLUÍDA: aceita por luis e integrada na `main` em 22/11/2026 (PR #67). [Registro](ia-tarefas/auditoria-baixa-manual.md).
+
+## D-073, etapa 2 — baixa manual em qualquer recipiente — 22/11/2026
+
+- Claude Code, branch `claude/baixa-manual-recipiente`. Só interface, sem migração: saída e histórico em porções/derivados, mensagem de saldo insuficiente, aviso de esgotado, E2E do peito de peru. CONCLUÍDA: aceita por luis e integrada na `main` em 22/11/2026 (PR #69), com publicação do site autorizada. [Registro](ia-tarefas/baixa-manual-etapa2.md).

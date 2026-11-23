@@ -63,4 +63,20 @@ describe('áreas da unidade (V1)', () => {
     expect(placeSearch(`?unidade=${unit}&area=locais`, null, null)).toBe('');
     expect(placeSearch('?a=1', null, 'locais')).toBe('?a=1');
   });
+  it('V6: o filtro de validade só acompanha a área Validades', () => {
+    expect(placeSearch('?a=1', unit, 'validade', 'vencidos')).toBe(
+      `?a=1&unidade=${unit}&area=validade&validade=vencidos`,
+    );
+    const filtered = `?unidade=${unit}&area=validade&validade=hoje`;
+    expect(placeSearch(filtered, unit, 'producao')).toBe(
+      `?unidade=${unit}&area=producao`,
+    );
+    expect(placeSearch(filtered, unit, 'validade')).toBe(
+      `?unidade=${unit}&area=validade`,
+    );
+    expect(placeSearch(filtered, null, null, 'hoje')).toBe('');
+    expect(placeSearch('', unit, 'producao', 'hoje')).toBe(
+      `?unidade=${unit}&area=producao`,
+    );
+  });
 });

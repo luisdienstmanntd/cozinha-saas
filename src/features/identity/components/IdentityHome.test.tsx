@@ -37,6 +37,28 @@ async function login() {
   return user;
 }
 describe('acesso multiempresa', () => {
+  it('mantém Entrar desativado até o servidor confirmar a saída', async () => {
+    const service = gateway();
+    let finish: () => void = () => {};
+    vi.mocked(service.signOut).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    render(<IdentityHome gateway={service} />);
+    const user = await login();
+    await screen.findByText('Unidade A — America/Sao_Paulo');
+    await user.click(screen.getByRole('button', { name: 'Sair' }));
+    // A resposta atrasada do Sair não pode encerrar a sessão de quem entrar em seguida.
+    expect(
+      await screen.findByRole('button', { name: 'Entrar' }),
+    ).toBeDisabled();
+    finish();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Entrar' })).toBeEnabled(),
+    );
+    expect(service.signIn).toHaveBeenCalledTimes(1);
+  });
   it('apresenta o formulário de login identificado com campos para gerenciadores de senhas', async () => {
     render(<IdentityHome gateway={gateway()} />);
     expect(
@@ -50,6 +72,11 @@ describe('acesso multiempresa', () => {
       'autocomplete',
       'current-password',
     );
+    expect(
+      screen.queryByText(
+        /Ambiente local de demonstração|dados descartáveis|testes/,
+      ),
+    ).not.toBeInTheDocument();
   });
   it('entra, consulta unidades, edita nome e limpa dados ao sair', async () => {
     const service = gateway();

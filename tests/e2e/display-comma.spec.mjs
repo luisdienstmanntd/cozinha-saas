@@ -103,10 +103,8 @@ test('quantidade e temperatura decimais: vírgula na lista, histórico, ficha, Q
     const label = page.getByRole('region', { name: 'Recipiente', exact: true });
     await expect(label.getByText('Saldo atual: 12,25 kg')).toBeVisible();
     await expect(label.getByText(/Quantidade inicial: 12,5 kg/)).toBeVisible();
-    const id = (await label.getByText(/Identificação:/).innerText()).replace(
-      'Identificação: ',
-      '',
-    );
+    await expect(label).toHaveAttribute('data-container-id', /^[0-9a-f-]{36}$/);
+    const id = await label.getAttribute('data-container-id');
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
 
     // Etiqueta PDF: vírgula, nome longo inteiro, uma página, mesmo identificador no QR/ID.
@@ -130,7 +128,8 @@ test('quantidade e temperatura decimais: vírgula na lista, histórico, ficha, Q
       name: 'Recipiente',
       exact: true,
     });
-    await expect(resolved.getByText(`Identificação: ${id}`)).toBeVisible();
+    await expect(resolved).toHaveAttribute('data-container-id', id);
+    await expect(resolved.locator('.card-code')).toHaveText(/^C-\d{6,}$/);
     await expect(resolved.getByText('Saldo atual: 12,25 kg')).toBeVisible();
     // Nada gravado mudou: o saldo guardado continua o mesmo número.
     expect(

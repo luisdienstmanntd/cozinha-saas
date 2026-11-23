@@ -56,7 +56,10 @@ test('criar locais e mudar o recipiente de local, sem alterar saldo nem validade
     await receive(page, '10');
     await openArea(page, 'Locais');
 
-    const panel = page.getByRole('region', { name: 'Locais de armazenamento' });
+    const panel = page.getByRole('region', {
+      name: 'Locais de armazenamento',
+      exact: true,
+    });
     await panel.getByRole('button', { name: 'Novo local' }).click();
     await panel.getByLabel('Nome do local').fill('Despensa');
     await panel.getByLabel('Condição do local').selectOption('ambient');
@@ -155,7 +158,10 @@ test('membro vê os locais, mas não cria nem muda de local', async ({
     await signIn(page, users[0]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await openArea(page, 'Locais');
-    const panel = page.getByRole('region', { name: 'Locais de armazenamento' });
+    const panel = page.getByRole('region', {
+      name: 'Locais de armazenamento',
+      exact: true,
+    });
     await panel.getByRole('button', { name: 'Novo local' }).click();
     await panel.getByLabel('Nome do local').fill('Despensa');
     await panel.getByRole('button', { name: 'Criar local' }).click();
@@ -166,7 +172,10 @@ test('membro vê os locais, mas não cria nem muda de local', async ({
     await signIn(page, users[2]);
     await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
     await openArea(page, 'Locais');
-    const view = page.getByRole('region', { name: 'Locais de armazenamento' });
+    const view = page.getByRole('region', {
+      name: 'Locais de armazenamento',
+      exact: true,
+    });
     await expect(view).toContainText('Despensa — Refrigerado');
     await expect(view.getByLabel('Nome do local')).toHaveCount(0);
     await expect(view.getByRole('button')).toHaveCount(0);

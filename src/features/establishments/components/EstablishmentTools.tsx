@@ -158,8 +158,7 @@ export function EstablishmentTools({
         <p>
           Vínculos ativos:{' '}
           {plural(summary.owners, 'proprietário', 'proprietários')} e{' '}
-          {plural(summary.members, 'colaborador', 'colaboradores')}. Convites e
-          revogações ainda são feitos pelo responsável pelos testes.
+          {plural(summary.members, 'colaborador', 'colaboradores')}.
         </p>
         <p className="hint">
           O fuso de uma unidade é escolhido na criação e não é alterado por esta

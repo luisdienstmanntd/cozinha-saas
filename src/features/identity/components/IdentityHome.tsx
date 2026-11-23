@@ -87,14 +87,11 @@ export function IdentityHome({
   renderDestination,
   renderOrganizationTools,
   activity,
-  environmentNotice,
   operationalShell = false,
 }: {
   gateway: IdentityGateway;
   /** V2: última atividade no navegador; os testes passam uma em memória. */
   activity?: ActivityStore;
-  // Texto do ambiente (hospedado); sem ele vale o texto do ambiente local de demonstração.
-  environmentNotice?: string;
   operationalShell?: boolean;
   renderCatalog?: (
     organizationId: string,
@@ -114,6 +111,9 @@ export function IdentityHome({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  // Sair só termina quando o servidor responde; até lá, Entrar fica desativado para que a resposta
+  // atrasada do Sair não encerre a sessão de quem entrar logo em seguida no mesmo aparelho.
+  const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   // V1: a unidade aberta vem do endereço (?unidade=…), então recarregar e links diretos a mantêm.
@@ -331,6 +331,7 @@ export function IdentityHome({
   }
   function signIn(event: FormEvent) {
     event.preventDefault();
+    if (signingOut) return;
     void run(async () => {
       const input = credentials.safeParse({ email, password });
       if (!input.success) throw new Error('Informe e-mail válido e senha.');
@@ -360,12 +361,6 @@ export function IdentityHome({
       if (current === generation.current) setNotice('Nome atualizado.');
     });
   }
-  const environmentNote = (
-    <p className="environment-note">
-      {environmentNotice ??
-        'Ambiente local de demonstração, com dados descartáveis. Contas e vínculos são preparados pelo responsável pelos testes.'}
-    </p>
-  );
   const refreshButton = (
     <button
       type="button"
@@ -419,7 +414,6 @@ export function IdentityHome({
       <h1 className={userId ? undefined : 'visually-hidden'}>
         CozziGo — unidades, recebimentos e validade
       </h1>
-      {!openTarget && environmentNote}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {skipped > 0 && (
@@ -496,6 +490,7 @@ export function IdentityHome({
             type="button"
             onClick={() =>
               void (async () => {
+                setSigningOut(true);
                 clearSession('');
                 try {
                   await gateway.signOut();
@@ -508,6 +503,8 @@ export function IdentityHome({
                       ? cause.message
                       : 'Não foi possível encerrar a sessão no servidor.',
                   );
+                } finally {
+                  setSigningOut(false);
                 }
               })()
             }
@@ -515,12 +512,11 @@ export function IdentityHome({
             Sair
           </button>
           <details className="session-note">
-            <summary>Sobre a sessão e o ambiente</summary>
+            <summary>Sobre a sessão</summary>
             <p>
               Sem uso por 30 minutos, a sessão é encerrada. Aparelho
               compartilhado: cada pessoa entra com a própria conta.
             </p>
-            {openTarget && environmentNote}
           </details>
         </section>
       )}
@@ -557,7 +553,7 @@ export function IdentityHome({
               />
             </label>
           </p>
-          <button disabled={busy}>Entrar</button>
+          <button disabled={busy || signingOut}>Entrar</button>
         </form>
       ) : (
         <>

@@ -53,7 +53,7 @@ O branco e o grafite de marca sobre o laranja principal ficam em 3,14:1 e 4,33:1
 | --- | --- | --- |
 | Login | Acesso em formulário com acentos verdes. Captura histórica da Fase 7. | Marca oficial no topo, fundo claro, rótulos de e-mail e senha e uma ação principal. A consistência começa antes do login. Validar autocomplete, colagem, gerenciador de senhas, erro associado e redirecionamento à rota de origem. |
 | Visão geral | A seleção de unidade é o ponto inicial autenticado. A unidade abre em Validade. | Visão operacional dentro da unidade com contagens de validade, ocorrências abertas e atalhos autorizados. É uma tela nova. Usar somente dados reais disponíveis, cobrir carregamento/erro/vazio e manter Validade como entrada padrão até aceite da nova navegação. |
-| Validades | Indicadores e cartões em tema verde. Busca e lista paginada. | Contagens de leitura rápida e estados textuais nos cartões. Separar urgência operacional de destaque de marca. Preservar consulta do servidor, paginação, fuso e bloqueios. Os totais não são controles de filtro. |
+| Validades | Indicadores e cartões em tema verde. Busca e lista paginada. | Contagens de leitura rápida e estados textuais nos cartões. Separar urgência operacional de destaque de marca. Preservar consulta do servidor, paginação, fuso e bloqueios. Desde a V6 (D-072), os totais filtram a lista pela mesma consulta do servidor. |
 | Recebimentos | Formulário responsivo em duas ou uma coluna. | Grupos de produto e conservação, dados do lote e validade, no mesmo fluxo. Uma ação principal. Manter evidência de temperatura, motivo de ausência de medição, origem da validade e rascunho ao alternar área. |
 | Produção | Registro no topo, filtro Hoje e cartões recentes. | Cabeçalho branco, registro em laranja, cartões com precedência de produto e quantidade, data e autoria em segunda linha. Ações destrutivas com menor ênfase e confirmação. Preservar escopo dos 50 recentes, Hoje pelo fuso, etiquetas e foco no formulário. |
 | Navegação mobile | Barra inferior com ícones e destinos de acordo com perfil. | Marca compacta no topo e barra grafite com seleção laranja. Com Visão geral, considerar Mais para Locais e Cadastros/Configurações. Validar alvos, submenus, área segura inferior, textos longos e a variante de colaborador, com entrada somente em áreas permitidas. |
@@ -90,3 +90,11 @@ O proprietário pode expandir Cadastros e ir diretamente para Produtos, Forneced
 A direção aprovada usa indicadores e tabela no desktop e coloca os alertas antes dos indicadores no celular. A navegação passa a agrupar Principal, Operação e Administração. Os cadastros usam páginas independentes, consulta com busca e filtros quando aplicáveis, e criação em painel lateral. Links antigos de Cadastros, Validades e QR continuam resolvíveis.
 
 A Visão geral consulta o resumo completo de validade e mostra um recorte de até seis recipientes com saldo. Etiquetas consulta a listagem paginada de recipientes e leva à ficha existente para download autorizado. Cadastros pagina os registros retornados pelo gateway, cujo limite continua explícito na interface. Rascunhos ficam em memória por usuário e unidade enquanto a sessão e os acessos permanecem válidos.
+
+## Revisão de compras e cozinha — 21/11/2026
+
+- Operação permanece visível; Cadastros e Configurações iniciam recolhidos e abrem ao entrar em uma página do grupo. No celular, o menu limita a altura e fecha ao escolher um destino.
+- Recebimento segue identificação da entrega → validade → temperatura, sem adicionar etapas de confirmação. Pré-requisitos ausentes exibem ações diretas para Produtos e Fornecedores, evitando campos sem opções.
+- Produção usa duas colunas no desktop e uma no celular. Sem preparações, o proprietário recebe acesso ao cadastro; colaboradores recebem orientação ao proprietário.
+- A página de locais passa a se chamar Locais de armazenamento, refletindo a função disponível. Consulta de recipientes e saldos continua em Validades.
+- Alertas, justificativas, responsável, revisão final, permissões e regras de validade permanecem. Não inclui pedidos de compra ou um novo perfil de comprador.

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { ContainerGateway } from '../../batches/application/containerGateway';
 import type {
@@ -16,6 +17,7 @@ import type { OccurrenceGateway } from '../../occurrences/application/occurrence
 import { blockedContainers } from '../../occurrences/domain/occurrence';
 import { containerPath } from '../../labels/domain/label';
 import type { Area, AreaId } from '../../navigation/domain/areas';
+import type { ExpiryFilter } from '../../batches/domain/expiryFilter';
 
 type Results = {
   summary: ExpirySummary;
@@ -34,6 +36,8 @@ export function OperationsOverview({
   revision,
   areas,
   select,
+  expiryHref,
+  selectExpiry,
 }: {
   scope: CatalogScope;
   timezone: string;
@@ -43,6 +47,9 @@ export function OperationsOverview({
   revision: number;
   areas: Area[];
   select: (area: AreaId) => void;
+  // V6 (D-072): cada contador abre Validades já filtrada por aquela categoria.
+  expiryHref?: (filter: ExpiryFilter) => string;
+  selectExpiry?: (filter: ExpiryFilter) => void;
 }) {
   const [data, setData] = useState<Results | null>(null);
   const [error, setError] = useState(false);
@@ -96,6 +103,31 @@ export function OperationsOverview({
     retry,
   ]);
 
+  function counter(filter: ExpiryFilter, children: ReactNode) {
+    if (!expiryHref || !selectExpiry) return children;
+    return (
+      <a
+        className="mesa-stat-link"
+        href={expiryHref(filter)}
+        onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+          if (
+            event.defaultPrevented ||
+            event.button !== 0 ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.metaKey ||
+            event.altKey
+          )
+            return;
+          event.preventDefault();
+          selectExpiry(filter);
+        }}
+      >
+        {children}
+      </a>
+    );
+  }
+
   function available(id: AreaId) {
     return areas.some((area) => area.id === id);
   }
@@ -131,22 +163,46 @@ export function OperationsOverview({
             className="mesa-stats"
           >
             <div className="mesa-panel">
-              <span>Vencidos</span>
-              <strong className="mesa-danger">{data.summary.overdue}</strong>
+              {counter(
+                'vencidos',
+                <>
+                  <span>Vencidos</span>
+                  <strong className="mesa-danger">
+                    {data.summary.overdue}
+                  </strong>
+                </>,
+              )}
             </div>
             <div className="mesa-panel">
-              <span>Vencem hoje</span>
-              <strong className="mesa-warning">{data.summary.due_today}</strong>
+              {counter(
+                'hoje',
+                <>
+                  <span>Vencem hoje</span>
+                  <strong className="mesa-warning">
+                    {data.summary.due_today}
+                  </strong>
+                </>,
+              )}
             </div>
             <div className="mesa-panel">
-              <span>Vencem amanhã</span>
-              <strong className="mesa-warning">
-                {data.summary.due_tomorrow}
-              </strong>
+              {counter(
+                'amanha',
+                <>
+                  <span>Vencem amanhã</span>
+                  <strong className="mesa-warning">
+                    {data.summary.due_tomorrow}
+                  </strong>
+                </>,
+              )}
             </div>
             <div className="mesa-panel">
-              <span>Após amanhã</span>
-              <strong>{data.summary.later}</strong>
+              {counter(
+                'posteriores',
+                <>
+                  <span>Após amanhã</span>
+                  <strong>{data.summary.later}</strong>
+                </>,
+              )}
             </div>
           </section>
           <section
@@ -228,7 +284,11 @@ export function OperationsOverview({
               </>
             ) : (
               <p className="mesa-panel-message">
-                Nenhum recipiente com saldo vencido ou a vencer até amanhã.
+                {data.summary.overdue > 0 ||
+                data.summary.due_today > 0 ||
+                data.summary.due_tomorrow > 0
+                  ? 'Os totais mostram recipientes vencidos ou com validade próxima. A lista deste painel está vazia; consulte Validades para ver os registros.'
+                  : 'Nenhum recipiente com saldo vencido ou a vencer até amanhã.'}
               </p>
             )}
           </section>

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createMovementGateway } from './supabaseMovements';
 import {
   MovementBlocked,
+  MovementOverBalance,
   MovementRejected,
 } from '../application/movementGateway';
 
@@ -205,4 +206,91 @@ it('recusa por vencimento leva a mensagem do banco (fatia 6.11)', async () => {
     .catch((cause) => cause);
   expect(error).toBeInstanceOf(MovementBlocked);
   expect(error.message).toBe(message);
+});
+
+const CONTAINER = 'a2345678-1234-4234-8234-123456789abc';
+
+it('D-073: com recipiente, lê os movimentos dele e não só os do integral', async () => {
+  const query = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn().mockResolvedValue({ data: [], error: null, count: 0 }),
+    maybeSingle: vi
+      .fn()
+      .mockResolvedValue({ data: { id: 'unit' }, error: null }),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.order.mockReturnValue(query);
+  const client = {
+    from: vi.fn().mockReturnValue(query),
+  } as unknown as SupabaseClient;
+  await createMovementGateway(client).list(
+    { organizationId: 'org', establishmentId: 'unit' },
+    'batch',
+    CONTAINER,
+  );
+  expect(query.eq).toHaveBeenCalledWith('batch_id', 'batch');
+  expect(query.eq).toHaveBeenCalledWith('container_id', CONTAINER);
+  expect(query.eq).not.toHaveBeenCalledWith('containers.kind', 'integral');
+});
+
+it('D-073: com recipiente, a saída vai por record_container_movement', async () => {
+  const rpc = vi.fn().mockResolvedValue({
+    data: '12345678-1234-4234-8234-123456789abc',
+    error: null,
+  });
+  const client = { rpc } as unknown as SupabaseClient;
+  await createMovementGateway(client).record(
+    { organizationId: 'org', establishmentId: 'unit' },
+    {
+      batchId: 'batch',
+      containerId: CONTAINER,
+      kind: 'consumption',
+      quantity: '300',
+      reason: null,
+      intentId: '22345678-1234-4234-8234-123456789abc',
+    },
+  );
+  expect(rpc).toHaveBeenCalledWith('record_container_movement', {
+    p_organization_id: 'org',
+    p_establishment_id: 'unit',
+    p_container_id: CONTAINER,
+    p_kind: 'consumption',
+    p_quantity: '300',
+    p_reason: null,
+    p_intent_id: '22345678-1234-4234-8234-123456789abc',
+  });
+});
+
+it('D-073: saldo insuficiente vira recusa própria; outras recusas seguem genéricas', async () => {
+  const input = {
+    batchId: 'batch',
+    kind: 'consumption' as const,
+    quantity: '300',
+    reason: null,
+    intentId: '22345678-1234-4234-8234-123456789abc',
+  };
+  const over = createMovementGateway({
+    rpc: vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '22023', message: 'Quantidade excede saldo registrado.' },
+    }),
+  } as unknown as SupabaseClient);
+  await expect(
+    over.record({ organizationId: 'org', establishmentId: 'unit' }, input),
+  ).rejects.toBeInstanceOf(MovementOverBalance);
+  const other = createMovementGateway({
+    rpc: vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '22023', message: 'Dados inválidos.' },
+    }),
+  } as unknown as SupabaseClient);
+  const rejection = other.record(
+    { organizationId: 'org', establishmentId: 'unit' },
+    input,
+  );
+  await expect(rejection).rejects.toBeInstanceOf(MovementRejected);
+  await expect(rejection).rejects.not.toBeInstanceOf(MovementOverBalance);
 });

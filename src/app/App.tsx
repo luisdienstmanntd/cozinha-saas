@@ -6,7 +6,6 @@ import { OperationsOverview } from '../features/overview/components/OperationsOv
 import { LabelDirectory } from '../features/labels/components/LabelDirectory';
 import { OperationsNav } from '../features/navigation/components/OperationsNav';
 import type { configureApp } from './configureApp';
-import { EnvironmentBanner } from './EnvironmentBanner';
 import { DemoHome } from '../features/demo/components/DemoHome';
 import { IdentityHome } from '../features/identity/components/IdentityHome';
 import { CatalogPanel } from '../features/catalog/components/CatalogPanel';
@@ -28,6 +27,10 @@ import { SettingsPanel } from '../features/settings/components/SettingsPanel';
 import { parsePlace, placeSearch } from '../features/navigation/domain/areas';
 import type { AreaId } from '../features/navigation/domain/areas';
 import type { UnitContext } from '../features/identity/components/IdentityHome';
+import {
+  parseExpiryFilter,
+  type ExpiryFilter,
+} from '../features/batches/domain/expiryFilter';
 
 function Workspace({
   configuration,
@@ -71,6 +74,11 @@ function Workspace({
     hash: window.location.hash,
   }));
   const area = workspacePage(requested.search, requested.hash, areas);
+  // V6 (D-072): filtro da lista de Validades guardado no endereço (`validade=`).
+  const expiryFilter =
+    area === 'validade'
+      ? parseExpiryFilter(new URLSearchParams(requested.search).get('validade'))
+      : null;
   const content = useRef<HTMLDivElement>(null);
   const previous = useRef(area);
   useEffect(() => {
@@ -91,9 +99,15 @@ function Workspace({
     }
     previous.current = area;
   }, [area, unit.active]);
-  function hrefFor(next: AreaId) {
+  function hrefFor(next: AreaId, filter: ExpiryFilter | null = null) {
     const destination = next === 'cadastros' ? 'produtos' : next;
-    return `${window.location.pathname}${placeSearch(window.location.search, establishmentId, destination)}`;
+    return `${window.location.pathname}${placeSearch(window.location.search, establishmentId, destination, filter)}`;
+  }
+  function selectExpiry(filter: ExpiryFilter | null) {
+    if (area === 'validade' && filter === expiryFilter && !window.location.hash)
+      return;
+    window.history.pushState(null, '', hrefFor('validade', filter));
+    setRequested({ search: window.location.search, hash: '' });
   }
   function select(next: AreaId) {
     if (next === area && !window.location.hash) return;
@@ -183,6 +197,8 @@ function Workspace({
             revision={pendingToken + stockToken}
             areas={areas}
             select={select}
+            expiryHref={(filter) => hrefFor('validade', filter)}
+            selectExpiry={selectExpiry}
           />
         )}
         {area === 'etiquetas' && unit.active !== false && (
@@ -209,12 +225,15 @@ function Workspace({
             occurrences={tracked.occurrences}
             handling={tracked.handling}
             locations={tracked.locations}
-            areaLinks={{ hrefFor, onSelect: select }}
+            areaLinks={{ hrefFor: (next) => hrefFor(next), onSelect: select }}
+            expiryFilter={expiryFilter}
+            onExpiryFilter={selectExpiry}
           />
         </div>
         {tracked.production && (
           <div hidden={area !== 'producao'}>
             <ProductionPanel
+              areaLinks={{ hrefFor, onSelect: select }}
               scope={scope}
               timezone={timezone}
               userId={userId}
@@ -329,10 +348,8 @@ export function App({
       <main className="page configuration-error">
         <h1>Não foi possível iniciar o aplicativo</h1>
         <p role="alert">
-          Configuração inválida. Use demo, Supabase local ou o ambiente
-          hospedado completo (modo, endereço, chave publicável e nome do
-          ambiente). Por segurança, esta tela não mostra os valores
-          configurados.
+          Não foi possível carregar o aplicativo. Atualize a página. Se o
+          problema continuar, entre em contato com o suporte.
         </p>
       </main>
     );
@@ -340,13 +357,7 @@ export function App({
   if (configuration.mode !== 'demo')
     return (
       <>
-        <EnvironmentBanner environmentName={configuration.environmentName} />
         <IdentityHome
-          environmentNotice={
-            configuration.mode === 'hosted'
-              ? 'Contas e vínculos são preparados pelo responsável pelo ambiente.'
-              : undefined
-          }
           gateway={configuration.identity}
           operationalShell
           renderOrganizationTools={(organization, owner, onChanged, busy) => (
