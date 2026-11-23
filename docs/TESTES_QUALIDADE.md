@@ -72,3 +72,9 @@ luis aprovou, em 16/11/2026, corrigir em tarefa separada o teste 69 de `containe
 Além de `npx supabase test db`, a falha pode ser reproduzida a qualquer hora trocando, numa cópia do arquivo, `America/Sao_Paulo` por um fuso real cuja hora local esteja entre 00:01 e 00:08 e executando a cópia com `psql` no contêiner do banco. A versão anterior falha no teste 69; a corrigida passa nos 148.
 
 Verificação feita em 16/11/2026, 13:01 UTC, com `Pacific/Noumea` (00:01 local): a versão anterior falhou no teste 69; a corrigida passou nos 148 (registro em `V3_LISTA_VALIDADE.md`).
+
+### `locations.spec.mjs:152` ("membro vê os locais, mas não cria nem muda de local")
+
+- **Sintoma:** falhou na CI do #64 (primeira execução) e duas vezes seguidas na CI da `main` em `209f93f` (23/11/2026): depois de Sair e entrar com o colaborador, o botão "Abrir Cozinha principal" não aparece em 5 s.
+- **Causa provável:** corrida no aplicativo, não no teste. O Sair liberava o formulário antes de o servidor confirmar a saída; o colaborador entrava antes, e a resposta atrasada do Sair (evento `SIGNED_OUT`) limpava a sessão nova.
+- **Solução:** Entrar fica desativado até o Sair terminar (`IdentityHome.tsx`), com teste de componente que falha sem a correção. O E2E não foi alterado.
