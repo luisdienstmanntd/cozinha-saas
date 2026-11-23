@@ -86,47 +86,77 @@ function DefineStorage({
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  async function confirm() {
+    setBusy(true);
+    setError('');
+    try {
+      await onDefine(parseStorageCondition(value));
+    } catch (cause) {
+      setError(message(cause, 'Não foi possível definir.'));
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
-    <span>
-      {' '}
-      <label>
-        Conservação de {item.name}{' '}
-        <select value={value} onChange={(e) => setValue(e.target.value)}>
-          <option value="" disabled>
-            Selecione
-          </option>
-          {storageConditions.map((condition) => (
-            <option key={condition} value={condition}>
-              {storageLabels[condition]}
+    <div className="mesa-panel-message">
+      <p>
+        <label>
+          Conservação de {item.name}{' '}
+          <select
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              setConfirming(false);
+            }}
+          >
+            <option value="" disabled>
+              Selecione
             </option>
-          ))}
-        </select>
-      </label>{' '}
-      <button
-        type="button"
-        disabled={busy || !value}
-        onClick={() => {
-          setBusy(true);
-          setError('');
-          let condition: StorageCondition;
-          try {
-            condition = parseStorageCondition(value);
-          } catch (cause) {
-            setError(message(cause, 'Selecione a conservação do produto.'));
-            setBusy(false);
-            return;
-          }
-          void onDefine(condition)
-            .catch((cause: unknown) =>
-              setError(message(cause, 'Não foi possível definir.')),
-            )
-            .finally(() => setBusy(false));
-        }}
-      >
-        Definir conservação
-      </button>
-      {error && <span role="alert"> {error}</span>}
-    </span>
+            {storageConditions.map((condition) => (
+              <option key={condition} value={condition}>
+                {storageLabels[condition]}
+              </option>
+            ))}
+          </select>
+        </label>{' '}
+      </p>
+      {!confirming ? (
+        <button
+          type="button"
+          disabled={busy || !value}
+          onClick={() => setConfirming(true)}
+        >
+          Revisar conservação
+        </button>
+      ) : (
+        <>
+          <p role="status">
+            {storageLabels[parseStorageCondition(value)]} para {item.name}. Esta
+            definição vale para todos os recebimentos e não poderá ser alterada
+            depois.
+          </p>
+          <div className="mesa-action-row">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void confirm()}
+            >
+              Confirmar conservação de {item.name}
+            </button>
+            <button
+              className="secondary"
+              type="button"
+              disabled={busy}
+              onClick={() => setConfirming(false)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </>
+      )}
+      {error && <p role="alert">{error}</p>}
+    </div>
   );
 }
 
@@ -356,13 +386,19 @@ function CatalogSection({
       );
       form.reset();
       onCreated?.();
-      if (storageError)
+      if (storageError) {
         setError(
           kind === 'preparations'
-            ? `Preparação cadastrada, mas a conservação não foi definida: ${storageError} Defina na lista antes de registrar a produção.`
-            : `Produto cadastrado, mas a conservação não foi definida: ${storageError} Defina na lista antes de receber.`,
+            ? `Preparação cadastrada, mas não foi possível confirmar a conservação: ${storageError} Confira o estado na lista antes de tentar novamente.`
+            : `Produto cadastrado, mas não foi possível confirmar a conservação: ${storageError} Confira o estado na lista antes de tentar novamente.`,
         );
-      else {
+        if (standalone) {
+          closeDrawer();
+          setDrafting(false);
+          setList({ status: 'loading' });
+          setAttempt((value) => value + 1);
+        }
+      } else {
         setNotice(text.created);
         if (standalone) {
           closeDrawer();
@@ -420,7 +456,7 @@ function CatalogSection({
         </p>
       )}
       <button disabled={saving}>{text.submit}</button>
-      {error && <p role="alert">{error}</p>}
+      {error && (!standalone || formOpen) && <p role="alert">{error}</p>}
       {standalone && (
         <button
           className="secondary"
@@ -459,6 +495,7 @@ function CatalogSection({
         <h3>{title}</h3>
       )}
       {standalone && notice && <p role="status">{notice}</p>}
+      {standalone && error && !formOpen && <p role="alert">{error}</p>}
       {standalone && list.status === 'ready' && (
         <div className="mesa-panel mesa-panel-heading">
           <label>

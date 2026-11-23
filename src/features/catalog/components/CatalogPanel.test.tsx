@@ -62,13 +62,14 @@ it('não cadastra produto sem conservação escolhida', async () => {
 });
 
 it('produto cadastrado cuja conservação falhou fica marcado e pode ser definido depois', async () => {
+  const setStorageCondition = vi
+    .fn()
+    .mockRejectedValueOnce(new Error('Sem conexão.'))
+    .mockResolvedValueOnce('ambient');
   const gateway: CatalogGateway = {
     list: vi.fn().mockResolvedValue([]),
     create: vi.fn().mockResolvedValue(product),
-    setStorageCondition: vi
-      .fn()
-      .mockRejectedValueOnce(new Error('Sem conexão.'))
-      .mockResolvedValueOnce('ambient'),
+    setStorageCondition,
   };
   const user = userEvent.setup();
   render(<CatalogPanel scope={scope} gateway={gateway} canCreate />);
@@ -79,24 +80,108 @@ it('produto cadastrado cuja conservação falhou fica marcado e pode ser definid
   await user.selectOptions(products.getByLabelText('Conservação'), 'ambient');
   await user.click(products.getByRole('button', { name: 'Cadastrar produto' }));
   expect(await products.findByRole('alert')).toHaveTextContent(
-    'Produto cadastrado, mas a conservação não foi definida: Sem conexão.',
+    'Produto cadastrado, mas não foi possível confirmar a conservação: Sem conexão.',
   );
   expect(
     products.getByText(/Arroz — kg — conservação não definida/),
   ).toBeVisible();
+  expect(gateway.setStorageCondition).toHaveBeenCalledTimes(1);
+  setStorageCondition.mockClear();
   await user.selectOptions(
     products.getByLabelText('Conservação de Arroz'),
     'ambient',
   );
   await user.click(
-    products.getByRole('button', { name: 'Definir conservação' }),
+    products.getByRole('button', { name: 'Revisar conservação' }),
+  );
+  expect(setStorageCondition).not.toHaveBeenCalled();
+  expect(
+    products.getByText(/não poderá ser alterada depois/, { exact: false }),
+  ).toBeVisible();
+  await user.click(products.getByRole('button', { name: 'Cancelar' }));
+  expect(setStorageCondition).not.toHaveBeenCalled();
+  await user.click(
+    products.getByRole('button', { name: 'Revisar conservação' }),
+  );
+  await user.click(
+    products.getByRole('button', { name: 'Confirmar conservação de Arroz' }),
   );
   expect(await products.findByText('Arroz — kg — Ambiente')).toBeVisible();
-  expect(gateway.setStorageCondition).toHaveBeenLastCalledWith(
-    scope,
-    'p1',
-    'ambient',
-  );
+  expect(setStorageCondition).toHaveBeenLastCalledWith(scope, 'p1', 'ambient');
+});
+
+it('recupera falha parcial no painel lateral sem deixar formulário de cadastro vazio', async () => {
+  const proto = HTMLDialogElement.prototype as Partial<HTMLDialogElement>;
+  proto.showModal = function (this: HTMLDialogElement) {
+    this.setAttribute('open', '');
+  };
+  proto.close = function (this: HTMLDialogElement) {
+    this.removeAttribute('open');
+  };
+  try {
+    let gatewayListCalls = 0;
+    const gateway: CatalogGateway = {
+      list: vi.fn((kind: string) =>
+        kind === 'products'
+          ? Promise.resolve(
+              gatewayListCalls++ === 0
+                ? []
+                : [{ ...product, storage_condition: null }],
+            )
+          : Promise.resolve([]),
+      ),
+      create: vi.fn().mockResolvedValue(product),
+      setStorageCondition: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('Sem conexão.'))
+        .mockResolvedValueOnce('ambient'),
+    };
+    const user = userEvent.setup();
+    render(
+      <CatalogPanel
+        scope={scope}
+        gateway={gateway}
+        canCreate
+        page="products"
+      />,
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Novo produto' }),
+    );
+    await user.type(screen.getByLabelText('Nome do produto'), 'Arroz');
+    await user.selectOptions(screen.getByLabelText('Unidade de medida'), 'kg');
+    await user.selectOptions(screen.getByLabelText('Conservação'), 'ambient');
+    await user.click(screen.getByRole('button', { name: 'Cadastrar produto' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(
+      'Produto cadastrado, mas não foi possível confirmar a conservação: Sem conexão.',
+    );
+    expect(
+      screen.getByText('Arroz — kg — conservação não definida'),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Revisar conservação' }),
+    ).toBeVisible();
+    expect(document.querySelector('dialog')).not.toHaveAttribute('open');
+    expect(gateway.create).toHaveBeenCalledTimes(1);
+
+    await user.selectOptions(
+      screen.getByLabelText('Conservação de Arroz'),
+      'ambient',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Revisar conservação' }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Confirmar conservação de Arroz' }),
+    );
+    expect(await screen.findByText('Arroz — kg — Ambiente')).toBeVisible();
+    expect(gateway.create).toHaveBeenCalledTimes(1);
+  } finally {
+    delete proto.showModal;
+    delete proto.close;
+  }
 });
 
 it('colaborador vê produto sem conservação, mas não define', async () => {
