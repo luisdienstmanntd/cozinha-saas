@@ -66,18 +66,25 @@ export function parsePlace(search: string): Place {
   };
 }
 
-/** Endereço com unidade e área, mantendo os demais parâmetros. */
+/**
+ * Endereço com unidade e área, mantendo os demais parâmetros. V6 (D-072): `validade` (filtro da lista
+ * de Validades) só acompanha a área Validades; trocar de área ou sair da unidade o remove.
+ */
 export function placeSearch(
   current: string,
   unit: string | null,
   area: AreaId | null,
+  expiryFilter: string | null = null,
 ): string {
   const params = new URLSearchParams(current);
   params.delete('unidade');
   params.delete('area');
+  params.delete('validade');
   if (unit) {
     params.set('unidade', unit);
     if (area) params.set('area', area);
+    if (area === 'validade' && expiryFilter)
+      params.set('validade', expiryFilter);
   }
   const text = params.toString();
   return text ? `?${text}` : '';

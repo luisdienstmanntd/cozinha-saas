@@ -1,6 +1,6 @@
 # V6 — Filtrar Validades pelos contadores (proposta, sem implementação)
 
-- **Estado:** proposta aguardando aprovação de luis. Nenhum código de aplicação alterado.
+- **Estado:** aprovada por luis em 22/11/2026 e implementada no PR #59 (D-072). Este documento registra a proposta como foi aprovada.
 - **Base revisada:** `main` em `820f77d` (Mesa operacional, D-070; fundações CozziGo #52; submenu #53). PR #56 do Codex (D-071, recebimento e produção) aberto e considerado.
 - **Origem:** pedido de luis em 16/11/2026, no aceite da V3 (D-061), registrado em `BACKLOG.md` como "Filtros de validade por categoria acionados pelos contadores".
 - **Decisão proposta:** D-072 (a D-071 já é usada pelo PR #56).

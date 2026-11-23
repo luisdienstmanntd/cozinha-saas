@@ -755,3 +755,23 @@ describe('lista de produções (V5B)', () => {
     expect(list).not.toHaveTextContent(/\d\.\d/);
   });
 });
+
+it('orienta o proprietário a cadastrar preparação antes de abrir um formulário vazio', async () => {
+  panel(production(), { items: catalog([]) });
+  expect(
+    await screen.findByRole('region', { name: 'Antes de produzir' }),
+  ).toHaveTextContent('Cadastrar preparação própria');
+  expect(
+    screen.queryByRole('button', { name: 'Registrar produção' }),
+  ).not.toBeInTheDocument();
+});
+
+it('orienta o colaborador sem preparações sem oferecer cadastro inacessível', async () => {
+  panel(production(), { items: catalog([]), canCreate: false });
+  expect(
+    await screen.findByRole('region', { name: 'Antes de produzir' }),
+  ).toHaveTextContent('Peça ao proprietário');
+  expect(
+    screen.queryByText('Cadastrar preparação própria'),
+  ).not.toBeInTheDocument();
+});
