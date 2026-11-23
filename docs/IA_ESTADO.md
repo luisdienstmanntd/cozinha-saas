@@ -138,6 +138,6 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## Proteção de formulários não salvos — sucessor do WIP #68 — 22/11/2026
 
-- Codex, branch isolada `codex/proteger-rascunhos-completo`, worktree `work-pr68-complete`, baseada na `main` `896c03c`. O PR #68 original continua intacto e em rascunho; sua branch é de outro trabalho.
+- Codex, branch isolada `codex/proteger-rascunhos-completo`, worktree `work-pr68-complete`, baseada na `main` atual `4b68219` (#74). O PR #68 original continua intacto e em rascunho; esta é uma branch sucessora separada.
 - Critérios: avisar antes de atualização/desmontagem que descartaria formulário alterado; detectar mudanças sem exigir foco; reset/save bem-sucedido não pode deixar alerta falso; reset cancelado, falha de salvamento, remoção de campo e encerramento/sessão devem ter comportamento testado; troca de unidade que preserva estado não deve descartar nem alertar indevidamente; saída voluntária mantém fluxo atual.
-- [Registro da tarefa](ia-tarefas/proteger-rascunhos-completo.md). Testes de regressão reproduziram 2 falhas antes da implementação; a suíte completa local passou 649/649. `main` avançou ao commit `4b68219` (#74), fetch atualizado, integração pendente nesta branch. Ambiente sem Docker; CI remota deve validar DB/integração/E2E.
+- [Registro da tarefa](ia-tarefas/proteger-rascunhos-completo.md). Testes de regressão reproduziram 2 falhas antes da implementação; sobre a `main` atual, suíte completa local passou 643/643, lint/tipos/build passaram e o E2E autenticado aguarda CI. Ambiente sem Docker.
