@@ -1,13 +1,13 @@
 # CozziGo interface — Etapa 3: Cadastros
 
-- **Estado:** PR #61 sincronizado com a `main` atual; validação local em andamento após o merge da base.
+- **Estado:** concluída; PR #61 integrado na `main` pelo merge commit `a3b039b`; CI completa aprovada.
 - **Objetivo:** revisar Produtos, Fornecedores, Preparações próprias e Configurações da unidade; corrigir falhas reais de contexto/uso sem alterar regras de negócio, banco ou autorização.
 - **Aceite:** fluxos de conservação permanente e recuperação de falha parcial claros, sem duplicar cadastro; testes de regressão cobrem cancelamento, confirmação e recuperação; lint, typecheck, testes e build passam; capturas reais em desktop e celular; sem dados reais.
 - **Branch/base:** `codex/cozzigo-ui-etapa-3`, worktree isolado; sincronizado com `origin/main` (`6dd4251`, inclui #72 e #58).
 - **Arquivos previstos:** componentes e testes de `src/features/catalog` e este registro. PR #56 já integrado; atualizar a linha da tarefa no `docs/IA_ESTADO.md` para registrar o estado desta branch.
 - **Riscos:** catálogo/configurações exibirem estado anterior após troca de unidade; manter proteção de sessão e escopo do gateway, sem mudanças de banco/RLS.
 - **Dependências:** nenhuma mudança do PR #56 necessária; CI remota pode executar E2E autenticado, indisponível localmente sem Docker.
-- **Próximo passo:** executar a CI completa no novo head; após sucesso, concluir a integração autorizada.
+- **Próximo passo:** nenhum; Etapa 3 concluída.
 
 ## Checkpoints
 
@@ -34,4 +34,6 @@
 
 - PR #61 incorporou a `main` atual (`6dd4251`) por merge, sem conflito. A mudança permanece restrita à confirmação de conservação e recuperação de falha parcial no Catálogo; nenhum arquivo de Configurações, navegação, banco, RLS ou migração foi incluído.
 - Capturas desktop e mobile existentes foram revisadas; mostram escolha explícita da conservação imutável e ações de confirmação/cancelamento.
-- Executar novamente os checks locais e CI remota no head sincronizado; E2E, integração e banco local dependem de Docker, ausente nesta máquina.
+- Validação no head sincronizado `1ed2cbd`: teste focal 11/11; suíte completa 639/639 (`--maxWorkers=1`); lint, typecheck, Prettier nos arquivos tocados e build aprovados. Avisos existentes de configuração do Vite e bundle grande.
+- CI completa `45093506837` aprovada (qualidade, pgTAP, advisors, integração e Playwright E2E); prévia `e1e2ce76.cozinha-saas.pages.dev` publicada.
+- **Conclusão:** PR #61 integrado na `main` pelo merge commit `a3b039b` em 22/11/2026; nenhum dado real, banco hospedado, RLS ou migração foi alterado.

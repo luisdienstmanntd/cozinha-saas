@@ -97,7 +97,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## Evolução da interface — Etapa 2, dashboard — 22/11/2026
 
-- Codex, PR #58: mensagem do painel passa a distinguir totais de urgência do recorte paginado de alertas. Sincronizado com `main` (`2c0da92`) por merge commit `9629390`; validação local 638/638 testes, lint, typecheck e build aprovados. CI remota do novo head pendente. A melhoria de Escape no menu mobile permanece tarefa separada. [Registro](ia-tarefas/cozzigo-evolucao-interface.md).
+- Codex, concluída e integrada na `main` pelo PR #58, merge `6dd4251` (22/11/2026). Head `aea849c`: suíte local 638/638, lint, typecheck e build aprovados; CI completa `45092125744` aprovada; prévia `4f23d8e5.cozinha-saas.pages.dev`. A melhoria de Escape no menu mobile permanece tarefa separada. [Registro](ia-tarefas/cozzigo-evolucao-interface.md).
 
 ## Etapa 4 — recebimentos — 22/11/2026
 
@@ -105,7 +105,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## Etapa 3 — Cadastros — 22/11/2026
 
-- Codex, PR #61: confirmação da conservação imutável e recuperação de falha parcial sem repetir o cadastro. Sincronizado com `main` (`6dd4251`) em worktree isolado; validação e CI do novo head pendentes. [Registro](ia-tarefas/cozzigo-ui-etapa-3.md).
+- Codex, concluída e integrada na `main` pelo PR #61, merge `a3b039b` (22/11/2026). Head `1ed2cbd`: suíte local 639/639, lint, typecheck e build aprovados; CI completa `45093506837` aprovada; prévia `e1e2ce76.cozinha-saas.pages.dev`. [Registro](ia-tarefas/cozzigo-ui-etapa-3.md).
 
 ## V6 — filtrar Validades pelos contadores (proposta) — 22/11/2026
 
