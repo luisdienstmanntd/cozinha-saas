@@ -122,6 +122,9 @@ export function useUnitDrafts() {
     function changed(event: Event) {
       if (isDraftControl(event.target)) scan();
     }
+    function focused(event: FocusEvent) {
+      if (isDraftControl(event.target)) scan();
+    }
     function discard(event: MouseEvent) {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -162,6 +165,7 @@ export function useUnitDrafts() {
     });
     document.addEventListener('input', changed, true);
     document.addEventListener('change', changed, true);
+    document.addEventListener('focusin', focused, true);
     document.addEventListener('reset', changed, true);
     document.addEventListener(unitDraftCleanEvent(), markClean, true);
     document.addEventListener('click', discard, true);
@@ -171,6 +175,7 @@ export function useUnitDrafts() {
       observer.disconnect();
       document.removeEventListener('input', changed, true);
       document.removeEventListener('change', changed, true);
+      document.removeEventListener('focusin', focused, true);
       document.removeEventListener('reset', changed, true);
       document.removeEventListener(unitDraftCleanEvent(), markClean, true);
       document.removeEventListener('click', discard, true);
