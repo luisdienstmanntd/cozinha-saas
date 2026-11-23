@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { withCatalogFixture } from '../../scripts/catalog-fixture.mjs';
-import { areaLink, openArea, newCatalogItem } from './areas.mjs';
+import { areaLink, openArea, newCatalogItem, openAccount } from './areas.mjs';
 
 // V1: a unidade aberta se divide em cinco áreas, com menu lateral (desktop) e barra inferior
 // (celular). Permissão continua no banco; aqui só se confere o que cada perfil vê e que nada
@@ -376,5 +376,51 @@ test('QR e links diretos seguem funcionando com a sessão persistente', async ({
     await expect(
       page.getByRole('button', { name: 'Sair', exact: true }),
     ).toBeVisible();
+  });
+});
+
+test('mantém revisão de configurações ao cancelar e descarta após confirmar atualização', async ({
+  page,
+}) => {
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await openUnit(page);
+    await openArea(page, 'Unidade');
+    const settings = page.getByRole('region', {
+      name: 'Configurações da unidade',
+    });
+    await settings
+      .getByRole('button', { name: 'Alterar configurações' })
+      .click();
+    await settings
+      .getByLabel('Janela de registro da produção (minutos)')
+      .fill('90');
+    await settings
+      .getByRole('button', { name: 'Revisar configurações' })
+      .click();
+    const review = settings.getByRole('region', {
+      name: 'Revisão das configurações',
+    });
+    await expect(review).toContainText('2 horas → 1 hora e 30 minutos');
+
+    await openAccount(page);
+    let warning = '';
+    page.once('dialog', async (dialog) => {
+      warning = dialog.message();
+      await dialog.dismiss();
+    });
+    await page.getByRole('button', { name: 'Atualizar acesso' }).click();
+    expect(warning).toContain('não salvas');
+    await expect(review).toContainText('2 horas → 1 hora e 30 minutos');
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Atualizar acesso' }).click();
+    await expect(
+      settings.getByRole('button', { name: 'Alterar configurações' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Revisão das configurações' }),
+    ).toHaveCount(0);
   });
 });

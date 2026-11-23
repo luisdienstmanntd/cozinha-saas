@@ -138,7 +138,11 @@ describe('gestão de unidades', () => {
       name: 'Cozinha 2',
       timezone: 'America/Manaus',
     });
-    expect(onChanged).toHaveBeenCalledWith('Unidade Cozinha 2 criada.');
+    expect(onChanged).toHaveBeenCalledWith(
+      'Unidade Cozinha 2 criada.',
+      'notice',
+      expect.any(HTMLFormElement),
+    );
   });
   it('voltar mantém os dados digitados para correção', async () => {
     const { user } = await setup();
@@ -235,7 +239,11 @@ describe('gestão de unidades', () => {
       organization.establishments[0]!.id,
       'Cozinha central',
     );
-    expect(onChanged).toHaveBeenCalledWith('Nome da unidade atualizado.');
+    expect(onChanged).toHaveBeenCalledWith(
+      'Nome da unidade atualizado.',
+      'notice',
+      expect.any(HTMLFormElement),
+    );
   });
   it('falha ao renomear aparece no formulário', async () => {
     const { gateway, onChanged, user } = await setup();

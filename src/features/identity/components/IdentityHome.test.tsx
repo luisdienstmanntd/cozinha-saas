@@ -129,6 +129,9 @@ describe('acesso multiempresa', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Falha de conexão.',
     );
+    expect(
+      screen.queryByText('Unidade A — America/Sao_Paulo'),
+    ).not.toBeInTheDocument();
   });
   it('colaborador consulta sem formulário de edição', async () => {
     const service = gateway();
@@ -156,7 +159,7 @@ describe('acesso multiempresa', () => {
     );
     expect(
       screen.queryByText('Unidade A — America/Sao_Paulo'),
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
     vi.mocked(service.signOut).mockRejectedValue(new Error('Falha ao sair.'));
     await user.click(screen.getByRole('button', { name: 'Sair' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(

@@ -18,7 +18,11 @@ type Props = {
   gateway: EstablishmentGateway;
   organization: Access[number];
   owner: boolean;
-  onChanged: (message: string, kind?: 'notice' | 'error') => Promise<void>;
+  onChanged: (
+    message: string,
+    kind?: 'notice' | 'error',
+    savedForm?: HTMLFormElement | null,
+  ) => Promise<void>;
   /** Another access action is running; block writes to avoid racing it. */
   busy?: boolean;
 };
@@ -48,6 +52,7 @@ export function EstablishmentTools({
   const [error, setError] = useState('');
   const confirmation = useRef<HTMLDivElement>(null);
   const nameInput = useRef<HTMLInputElement>(null);
+  const reviewForm = useRef<HTMLFormElement | null>(null);
   const returning = useRef(false);
   const mounted = useRef(true);
   const inFlight = useRef(false);
@@ -107,6 +112,7 @@ export function EstablishmentTools({
 
   function startReview(event: FormEvent) {
     event.preventDefault();
+    reviewForm.current = event.currentTarget as HTMLFormElement;
     setError('');
     try {
       setReview(parseNewEstablishment(name, timezone));
@@ -120,7 +126,12 @@ export function EstablishmentTools({
     const input = review;
     void save(async () => {
       await gateway.create(organization.id, input);
-      if (mounted.current) await onChanged(`Unidade ${input.name} criada.`);
+      if (mounted.current)
+        await onChanged(
+          `Unidade ${input.name} criada.`,
+          'notice',
+          reviewForm.current,
+        );
     });
   }
 
@@ -130,6 +141,7 @@ export function EstablishmentTools({
     unitName: string,
   ) {
     event.preventDefault();
+    const form = event.currentTarget;
     setError('');
     let value: string;
     try {
@@ -142,7 +154,8 @@ export function EstablishmentTools({
     }
     void save(async () => {
       await gateway.rename(organization.id, unitId, value);
-      if (mounted.current) await onChanged('Nome da unidade atualizado.');
+      if (mounted.current)
+        await onChanged('Nome da unidade atualizado.', 'notice', form);
     });
   }
 

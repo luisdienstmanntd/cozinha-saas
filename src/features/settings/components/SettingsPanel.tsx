@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { SettingsGateway } from '../application/settingsGateway';
 import { SettingsRejected } from '../application/settingsGateway';
+import { markUnitDraftKeyClean } from '../../identity/application/unitDrafts';
 import type {
   EstablishmentSettings,
   PortionRule,
@@ -85,6 +86,7 @@ function minutesOf(value: string): number | null {
 // Fatia 7.6: configurações por unidade. Todos leem; só o proprietário muda, em passos (formulário,
 // revisão, confirmação). Cada troca fica auditada no banco e vale para os registros novos.
 function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
+  const draftScope = useRef<HTMLElement | null>(null);
   const [current, setCurrent] = useState<EstablishmentSettings | null>(null);
   const [loadError, setLoadError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -164,6 +166,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
   }
   function review(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    draftScope.current = event.currentTarget.closest('[data-unit-draft-scope]');
     setError('');
     if (window === null)
       return setError(
@@ -186,6 +189,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
         { organizationId, establishmentId },
         next,
       );
+      markUnitDraftKeyClean('settings', draftScope.current);
       setCurrent(saved);
       setStage('view');
       setNotice(
@@ -237,7 +241,11 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
         </button>
       )}
       {canEdit && stage === 'form' && (
-        <form aria-label="Alterar configurações" onSubmit={review}>
+        <form
+          data-unit-draft-key="settings"
+          aria-label="Alterar configurações"
+          onSubmit={review}
+        >
           <fieldset disabled={busy}>
             <legend>Quem registra produção</legend>
             {registrars.map((value) => (
@@ -302,7 +310,9 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
           <button
             className="secondary"
             type="button"
+            data-draft-discard="settings"
             onClick={() => {
+              markUnitDraftKeyClean('settings', draftScope.current);
               setStage('view');
               setError('');
             }}

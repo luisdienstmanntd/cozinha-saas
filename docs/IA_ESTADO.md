@@ -135,3 +135,9 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## D-073, etapa 2 — baixa manual em qualquer recipiente — 22/11/2026
 
 - Claude Code, branch `claude/baixa-manual-recipiente`. Só interface, sem migração: saída e histórico em porções/derivados, mensagem de saldo insuficiente, aviso de esgotado, E2E do peito de peru. CONCLUÍDA: aceita por luis e integrada na `main` em 22/11/2026 (PR #69), com publicação do site autorizada. [Registro](ia-tarefas/baixa-manual-etapa2.md).
+
+## Proteção de formulários não salvos — sucessor do WIP #68 — 22/11/2026
+
+- Codex, branch isolada `codex/proteger-rascunhos-completo`, worktree `work-pr68-complete`, baseada na `main` atual `4b68219` (#74). O PR #68 original continua intacto e em rascunho; esta é uma branch sucessora separada.
+- Critérios: avisar antes de atualização/desmontagem que descartaria formulário alterado; detectar mudanças sem exigir foco; reset/save bem-sucedido não pode deixar alerta falso; reset cancelado, falha de salvamento, remoção de campo e encerramento/sessão devem ter comportamento testado; troca de unidade que preserva estado não deve descartar nem alertar indevidamente; saída voluntária mantém fluxo atual.
+- [Registro da tarefa](ia-tarefas/proteger-rascunhos-completo.md). PR sucessor #75 publicado; revisão independente gerou correções para revogação parcial e limpeza de formulários em etapas. CI inicial: qualidade passou; E2E do banco encontrou 2 falhas em fluxos catalog/handling existentes (39/41 aprovados). Novo head precisa repetir CI e QA antes da integração. Ambiente sem Docker.

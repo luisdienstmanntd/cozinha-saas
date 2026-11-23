@@ -4,6 +4,7 @@ import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { ProductionGateway } from '../application/productionGateway';
 import { ProductionRejected } from '../application/productionGateway';
 import { productionVoidInputSchema } from '../domain/production';
+import { markUnitDraftClean } from '../../identity/application/unitDrafts';
 
 export const VOID_PRODUCTION_TEXT =
   'A anulação zera o saldo do lote e é definitiva: não se desfaz. Só é possível antes de qualquer consumo, descarte, porcionamento ou mudança de local, mesmo que tenham sido desfeitos depois. Depois disso, use o descarte com motivo. Se a anulação for por engano, registre a produção de novo.';
@@ -29,6 +30,7 @@ export function VoidProduction({
   const [error, setError] = useState('');
   const [conflict, setConflict] = useState(false);
   const intent = useRef(crypto.randomUUID());
+  const form = useRef<HTMLFormElement | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -45,6 +47,7 @@ export function VoidProduction({
     setError('');
     try {
       await gateway.void(scope, input.data);
+      markUnitDraftClean(form.current);
       setOpen(false);
       onVoided();
     } catch (cause) {
@@ -69,6 +72,8 @@ export function VoidProduction({
     );
   return (
     <form
+      ref={form}
+      data-unit-draft-key={`void-production-${batchId}`}
       aria-label={`Anular produção ${label}`}
       onSubmit={(event) => void submit(event)}
     >
@@ -89,6 +94,7 @@ export function VoidProduction({
         <button
           className="secondary"
           type="button"
+          data-draft-discard={`void-production-${batchId}`}
           onClick={() => setOpen(false)}
         >
           Cancelar

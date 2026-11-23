@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { markUnitDraftClean } from '../../identity/application/unitDrafts';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { OccurrenceGateway } from '../application/occurrenceGateway';
 import { DecisionRejected } from '../application/occurrenceGateway';
@@ -40,6 +41,7 @@ function DecisionForm({
   const [error, setError] = useState('');
   // Mesma tentativa enquanto o formulário estiver aberto: repetir após falha de rede não duplica.
   const intent = useRef<string>(crypto.randomUUID());
+  const form = useRef<HTMLFormElement | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -59,6 +61,7 @@ function DecisionForm({
     setError('');
     try {
       await gateway.decide(scope, input.data);
+      markUnitDraftClean(form.current);
       onDecided(input.data.decision);
     } catch (cause) {
       setError(
@@ -71,6 +74,8 @@ function DecisionForm({
   }
   return (
     <form
+      ref={form}
+      data-unit-draft-key={`occurrence-${row.occurrence_id}`}
       aria-label={`Decisão da ocorrência de ${row.product_name}`}
       onSubmit={(event) => void submit(event)}
     >
@@ -114,7 +119,12 @@ function DecisionForm({
         >
           Confirmar decisão
         </button>{' '}
-        <button className="secondary" type="button" onClick={onCancel}>
+        <button
+          className="secondary"
+          type="button"
+          data-draft-discard={`occurrence-${row.occurrence_id}`}
+          onClick={onCancel}
+        >
           Cancelar
         </button>
         {error && <p role="alert">{error}</p>}

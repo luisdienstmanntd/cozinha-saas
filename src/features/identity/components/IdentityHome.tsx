@@ -1,6 +1,6 @@
 import brandLogo from '../../../shared/ui/brand/cozzigo.webp';
 import brandMark from '../../../shared/ui/brand/cozzigo-mark.webp';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import type { IdentityGateway } from '../application/identityGateway';
 import type { Access } from '../domain/identity';
@@ -9,6 +9,8 @@ import type { SignOutReason } from '../application/identityGateway';
 import type { ActivityStore } from '../application/sessionActivity';
 import { defaultActivityStore } from '../application/sessionActivity';
 import { useSessionGuard } from '../application/useSessionGuard';
+import { markUnitDraftClean } from '../application/unitDrafts';
+import { useUnitDrafts } from '../application/useUnitDrafts';
 import { parsePlace, placeSearch } from '../../navigation/domain/areas';
 import { EXPIRED_MESSAGE, SIGNED_OUT_MESSAGE, isIdle } from '../domain/session';
 
@@ -16,6 +18,7 @@ type Organization = Access[number];
 type OrganizationChanged = (
   message: string,
   kind?: 'notice' | 'error',
+  savedForm?: HTMLFormElement | null,
 ) => Promise<void>;
 type RenderOrganizationTools = (
   organization: Organization,
@@ -58,13 +61,21 @@ function OrganizationForm({
 }: {
   organization: Organization;
   busy: boolean;
-  onRename: (organization: Organization, value: unknown) => void;
+  onRename: (
+    organization: Organization,
+    value: unknown,
+    form: HTMLFormElement,
+  ) => void;
 }) {
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        onRename(organization, new FormData(event.currentTarget).get('name'));
+        onRename(
+          organization,
+          new FormData(event.currentTarget).get('name'),
+          event.currentTarget,
+        );
       }}
     >
       <label>
@@ -104,8 +115,15 @@ export function IdentityHome({
   renderDestination?: (userId: string, access: Access) => ReactNode;
   renderOrganizationTools?: RenderOrganizationTools;
 }) {
+  const {
+    hasDraft: hasUnitDraft,
+    hasDraftForScopes,
+    clearDrafts,
+    clearScopes,
+  } = useUnitDrafts();
   const [userId, setUserId] = useState<string | null>(null);
   const [access, setAccess] = useState<Access>([]);
+  const [accessEpoch, setAccessEpoch] = useState(0);
   // Empresas que o servidor devolveu com dado inesperado e que não foram carregadas (P7).
   const [skipped, setSkipped] = useState(0);
   const [email, setEmail] = useState('');
@@ -133,6 +151,8 @@ export function IdentityHome({
   // Troca de usuário no mesmo aparelho: tudo o que era da pessoa anterior sai da tela.
   function clearSession(message: string) {
     generation.current++;
+    // Logout and expiration deliberately discard this session's in-memory drafts.
+    clearDrafts();
     store.clear();
     setUserId(null);
     setSessionEmail(null);
@@ -192,6 +212,15 @@ export function IdentityHome({
     if (operationalShell) window.dispatchEvent(new PopStateEvent('popstate'));
   }
   function closeUnit() {
+    if (!operationalShell && hasUnitDraft()) {
+      if (
+        !window.confirm(
+          'Há alterações não salvas. Trocar de unidade descartará esses dados. Deseja continuar?',
+        )
+      )
+        return;
+      clearDrafts();
+    }
     window.history.pushState(
       null,
       '',
@@ -281,7 +310,6 @@ export function IdentityHome({
       await action();
     } catch (cause) {
       if (current === generation.current) {
-        setAccess([]);
         setError(
           cause instanceof Error
             ? cause.message
@@ -292,28 +320,88 @@ export function IdentityHome({
       if (current === generation.current) setBusy(false);
     }
   }
-  async function refresh(current: number) {
-    setAccess([]);
-    setSkipped(0);
+  async function refresh(current: number): Promise<boolean> {
     const report = gateway.loadReport
       ? await gateway.loadReport()
       : { access: await gateway.load(), skipped: 0 };
-    if (current !== generation.current) return;
+    if (current !== generation.current) return false;
     const rows = report.access;
-    if (rows.length === 0)
+    const previousUnitIds = new Set(
+      access.flatMap((organization) =>
+        organization.establishments.map((unit) => unit.id),
+      ),
+    );
+    const nextUnitIds = new Set(
+      rows.flatMap((organization) =>
+        organization.establishments.map((unit) => unit.id),
+      ),
+    );
+    const revokedUnitIds = new Set(
+      Array.from(previousUnitIds).filter((id) => !nextUnitIds.has(id)),
+    );
+    if (rows.length === 0) {
+      clearDrafts();
+      setAccess([]);
+      setSkipped(report.skipped);
+      setAccessEpoch((epoch) => epoch + 1);
       throw new Error(
         report.skipped > 0
           ? 'Não foi possível carregar sua empresa. Atualize o acesso ou avise o responsável.'
           : 'Nenhum vínculo ativo. Solicite acesso ao responsável.',
       );
+    }
+    if (revokedUnitIds.size > 0) {
+      const retainedDrafts = hasDraftForScopes(nextUnitIds);
+      const discardRetained = retainedDrafts
+        ? window.confirm(
+            'Seu acesso a uma unidade mudou. Atualizar a lista descartará os rascunhos das unidades ainda disponíveis. Deseja continuar?',
+          )
+        : false;
+      if (current !== generation.current) return false;
+      clearScopes(revokedUnitIds);
+      setAccess(rows);
+      setSkipped(report.skipped);
+      if (discardRetained) {
+        clearDrafts();
+        setAccessEpoch((epoch) => epoch + 1);
+        return true;
+      }
+      return true;
+    }
+    const discardDrafts = hasUnitDraft();
+    if (
+      discardDrafts &&
+      !window.confirm(
+        'Há alterações não salvas. Atualizar o acesso descartará esses dados. Deseja continuar?',
+      )
+    )
+      return false;
+    if (current !== generation.current) return false;
+    if (discardDrafts) clearDrafts();
+    setAccessEpoch((epoch) => epoch + 1);
     setAccess(rows);
     setSkipped(report.skipped);
+    return true;
   }
-  function changed(message: string, kind: 'notice' | 'error' = 'notice') {
+  function changed(
+    message: string,
+    kind: 'notice' | 'error' = 'notice',
+    savedForm?: HTMLFormElement | null,
+  ) {
     return run(async () => {
       const current = generation.current;
+      if (kind === 'notice') markUnitDraftClean(savedForm);
       try {
-        await refresh(current);
+        const refreshed = await refresh(current);
+        if (current !== generation.current) return;
+        if (!refreshed) {
+          if (kind === 'error') setError(message);
+          else
+            setNotice(
+              `${message} A lista não foi atualizada porque há alterações em outros formulários. Atualize o acesso depois de salvá-las ou revisá-las.`,
+            );
+          return;
+        }
       } catch (cause) {
         // Keep the outcome of the write visible even if reloading fails,
         // so a confirmed creation is not mistaken for a failure and retried.
@@ -346,7 +434,11 @@ export function IdentityHome({
     });
   }
 
-  function renameOrganization(organization: Organization, value: unknown) {
+  function renameOrganization(
+    organization: Organization,
+    value: unknown,
+    form: HTMLFormElement,
+  ) {
     const parsed = organizationName.safeParse(value);
     if (!parsed.success) {
       // Local validation never reached the server: keep access visible.
@@ -357,8 +449,14 @@ export function IdentityHome({
     void run(async () => {
       const current = generation.current;
       await gateway.rename(organization.id, parsed.data);
-      await refresh(current);
-      if (current === generation.current) setNotice('Nome atualizado.');
+      markUnitDraftClean(form);
+      const refreshed = await refresh(current);
+      if (current === generation.current)
+        setNotice(
+          refreshed
+            ? 'Nome atualizado.'
+            : 'Nome atualizado. A lista não foi atualizada porque há alterações em outros formulários. Atualize o acesso depois de salvá-las ou revisá-las.',
+        );
     });
   }
   const refreshButton = (
@@ -366,7 +464,11 @@ export function IdentityHome({
       type="button"
       className="secondary"
       disabled={busy}
-      onClick={() => void run(() => refresh(generation.current))}
+      onClick={() =>
+        void run(async () => {
+          await refresh(generation.current);
+        })
+      }
     >
       Atualizar acesso
     </button>
@@ -557,7 +659,11 @@ export function IdentityHome({
         </form>
       ) : (
         <>
-          {!busy && access.length > 0 && renderDestination?.(userId, access)}
+          {!busy && access.length > 0 && (
+            <Fragment key={accessEpoch}>
+              {renderDestination?.(userId, access)}
+            </Fragment>
+          )}
           {!openTarget && !showShell && refreshButton}
           {showShell && !openTarget && targets.length > 0 && (
             <header className="mesa-page-heading mesa-selection-heading">
@@ -567,8 +673,10 @@ export function IdentityHome({
           )}
           {openTarget && renderCatalog ? (
             <section
+              key={accessEpoch}
               aria-label={`Unidade ${openTarget.unit.name}`}
               className="unit-shell"
+              data-unit-draft-scope={openTarget.unit.id}
             >
               {!showShell && (
                 <header className="unit-header">
@@ -700,7 +808,8 @@ export function IdentityHome({
                 const active = target.unit.id === catalogUnit;
                 return (
                   <div
-                    key={`${userId}:${target.organization.id}:${target.unit.id}`}
+                    data-unit-draft-scope={target.unit.id}
+                    key={`${accessEpoch}:${userId}:${target.organization.id}:${target.unit.id}`}
                     hidden={!active}
                   >
                     {renderCatalog(

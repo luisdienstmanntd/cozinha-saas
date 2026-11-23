@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { markUnitDraftClean } from '../../identity/application/unitDrafts';
 import { z } from 'zod';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import { lotText } from '../../batches/domain/lot';
@@ -301,6 +302,7 @@ export function MovementPanel({
     };
     try {
       sessionStorage.setItem(key, JSON.stringify(input));
+      markUnitDraftClean(e.currentTarget);
       setPending(input);
       setReviewing(true);
     } catch {
@@ -328,6 +330,7 @@ export function MovementPanel({
     };
     try {
       sessionStorage.setItem(key, JSON.stringify(input));
+      markUnitDraftClean(e.currentTarget);
       setPending(input);
       setReviewing(true);
       setReversing(null);
@@ -587,7 +590,10 @@ export function MovementPanel({
           )}
         </>
       ) : reversing && canCreate ? (
-        <form onSubmit={reviewReversal}>
+        <form
+          data-unit-draft-key={`movement-reversal-${batch.id}`}
+          onSubmit={reviewReversal}
+        >
           <p>
             Anular {reversing.kind === 'discard' ? 'descarte' : 'consumo'} de{' '}
             {formatQuantity(reversing.quantity)} {batch.unit}.
@@ -608,7 +614,10 @@ export function MovementPanel({
         canCreate &&
         events &&
         !stored.invalid && (
-          <form onSubmit={submit}>
+          <form
+            data-unit-draft-key={`movement-${containerId ?? batch.id}`}
+            onSubmit={submit}
+          >
             <label>
               Tipo de saída{' '}
               <select name="kind">
