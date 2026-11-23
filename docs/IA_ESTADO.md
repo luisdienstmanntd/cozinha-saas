@@ -108,6 +108,10 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 - Claude Code. Proposta aprovada por luis (PR #57). Só interface, sem migração. CONCLUÍDA: integrada na `main` em 22/11/2026 (PR #59, `2f4f9bd`), com merge e publicação autorizados por luis. [Registro](ia-tarefas/v6-filtro-validades.md).
 
 
+## Entrar só depois que o Sair termina — 23/11/2026
+
+- Claude Code, branch `claude/sair-antes-de-entrar`. Corrige a corrida que derrubava o E2E `locations.spec.mjs:152` na `main`; só interface. [Registro](ia-tarefas/sair-antes-de-entrar.md).
+
 ## Backlog — baixa manual de insumos — 22/11/2026
 
 - Claude Code, branch `claude/backlog-baixa-manual-insumos`. Só documentação: `BACKLOG_BAIXA_MANUAL_INSUMOS.md` e D-073 proposta. Nada implementado; aguarda aceite de luis. [Registro](ia-tarefas/backlog-baixa-manual-insumos.md).
