@@ -1,12 +1,12 @@
 # CozziGo — evolução da interface
 
 - **ID:** cozzigo-evolucao-interface
-- **Responsável / estado:** Codex; em_andamento.
+- **Responsável / estado:** Codex; PR #58 sincronizado com a `main` atual em merge commit `9629390`; CI final remota pendente.
 - **Objetivo e aceite:** auditar funcionalidades existentes e rastrear regra, serviço, componente, tela, ação e teste; atualizar o roadmap atual depois de liberar os arquivos reservados; concluir incrementos independentes com testes, validação por teclado e evidência visual desktop/mobile. Preservar autenticação, sessão, permissões, rotas e regras de domínio.
-- **Branch / worktree / base:** `codex/cozzigo-interface-etapa-1`, checkout principal; base `origin/main` em `820f77d` (merge do PR #54).
+- **Branch / worktree / base:** `codex/cozzigo-interface-etapa-1`, worktree isolado; sincronizado com `origin/main` `2c0da92` (merge do PR #72).
 - **Arquivos e recursos em uso:** `src/features/overview/components/OperationsOverview.tsx` e teste, `docs/COZZIGO_EVOLUCAO_INTERFACE.md` e este registro. `COZZIGO_UI_UX_ROADMAP.md`, `docs/IA_ESTADO.md`, `OperationsNav.tsx` e `OperationsNav.test.tsx` aparecem no PR #56 e ficam reservados até resolver a sobreposição. Sem banco hospedado, migrações ou dados reais.
-- **Dependências e riscos:** PR #54 e correção #55 já integrados em 21/11/2026. PR #56 está aberto sobre `main` e altera os arquivos listados; não misturar nem sobrescrever. A correção local de Escape foi reproduzida em teste, mas retirada do checkout para evitar conflito e deve ser combinada após o PR #56. Preservar a pasta local não rastreada `Nova pasta/`. Sem merge ou deploy de produção; a prévia foi autorizada.
-- **Próximo passo:** aguardar revisão do PR #58; coordenar atualização do roadmap e índice e integração da correção de Escape depois que o PR #56 liberar os arquivos sobrepostos.
+- **Dependências e riscos:** PR #54 e correção #55 integrados; PR #56 também integrado. A correção de Escape foi reproduzida em teste, retirada para evitar conflito e continua fora do escopo deste PR. Preservar a pasta local não rastreada `Nova pasta/`. Sem alteração de banco/RLS.
+- **Próximo passo:** aguardar CI completa no head sincronizado do PR #58; após sucesso, concluir a integração autorizada. A correção de Escape permanece como tarefa separada.
 
 ## Checkpoints
 
@@ -45,3 +45,10 @@
 - **Estado do ambiente:** branch remota acompanha os três commits; PR #58 está aberto, draft e mergeable; preview Cloudflare ativo. Nenhuma alteração no banco hospedado.
 - **Pendências / riscos:** PR #56 segue aberto e reserva os arquivos de navegação, roadmap e índice. Atualizar `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md` e combinar a correção de Escape depois da resolução desse PR. PR #58 aguarda revisão/aceite humano.
 - **Próximo passo:** revisão de luis no PR #58; não mesclar sem autorização.
+
+### 22/11/2026 — sincronização para conclusão
+
+- PR #56 já está integrado; os arquivos de navegação/roadmap não estão mais reservados. Mantive a correção de Escape como item separado para não misturar o escopo do dashboard.
+- O PR #58 recebeu a `main` atual (`2c0da92`) em merge commit `9629390`. O conflito único em `OperationsOverview.test.tsx` foi resolvido preservando o teste da mensagem contraditória e os testes dos filtros V6 existentes na `main`.
+- Verificações locais: teste focal `OperationsOverview.test.tsx` 3/3; lint PASS; typecheck PASS; suíte completa com `--maxWorkers=1` 638/638; build PASS (avisos preexistentes de Vite e tamanho do bundle). A execução paralela da suíte teve um timeout isolado em `ExpiryDashboard.test.tsx` (637/638); o arquivo passou isoladamente 9/9, e a suíte de worker único passou completa.
+- Sem Docker neste computador; pgTAP, advisors, integração e E2E exigem a CI remota, que será executada no head atualizado.

@@ -7,9 +7,9 @@
 
 ## Situação da auditoria
 
-A aplicação já tem um shell autenticado chamado Mesa operacional. A navegação separa Principal, Operação e Administração, e exibe destinos conforme o acesso e as integrações disponíveis para a unidade. O PR #54 foi mesclado em 21/11/2026; a correção E2E do Claude (PR #55) entrou na branch da Mesa antes do merge. A branch desta tarefa parte do merge atualizado. A revisão no GitHub encontrou o PR #56 aberto sobre o mesmo commit; ele altera `OperationsNav.tsx`, `OperationsNav.test.tsx`, `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md`. A melhoria de Escape foi ensaiada em teste e retirada da branch para evitar conflito; esses arquivos ficam reservados até a decisão do PR #56.
+A aplicação já tem um shell autenticado chamado Mesa operacional. A navegação separa Principal, Operação e Administração, e exibe destinos conforme o acesso e as integrações disponíveis para a unidade. O PR #54 foi mesclado em 21/11/2026; a correção E2E do Claude (PR #55) entrou na branch da Mesa antes do merge. O PR #56 foi integrado na `main` em 22/11/2026. A correção de Escape foi ensaiada em teste e retirada desta branch para evitar sobreposição; permanece como melhoria independente, sem implementação neste PR.
 
-O principal defeito de Etapa 1 confirmado nesta auditoria era de teclado: ao expandir o menu mobile, o foco continuava no acionador e `Escape` só era tratado dentro do `<aside>`. O evento não alcançava o menu e deixava a navegação aberta. O teste de regressão confirmou a falha e passou com uma correção temporária. A alteração foi retirada ao confirmar a sobreposição com o PR #56 e será combinada depois.
+O principal defeito de Etapa 1 confirmado nesta auditoria era de teclado: ao expandir o menu mobile, o foco continuava no acionador e `Escape` só era tratado dentro do `<aside>`. O evento não alcançava o menu e deixava a navegação aberta. O teste de regressão confirmou a falha e passou com uma correção temporária. A alteração foi retirada ao confirmar a sobreposição com o PR #56; esse ajuste não faz parte do PR #58 e pode ser priorizado em uma tarefa própria.
 
 ## Matriz de rastreabilidade — funcionalidades existentes
 
@@ -39,7 +39,7 @@ O principal defeito de Etapa 1 confirmado nesta auditoria era de teclado: ao exp
 
 ### Lacunas e melhorias para priorização
 
-1. **Etapa 1 — teclado no menu mobile (adiado por conflito):** Escape não fecha o menu quando o foco fica no acionador. A solução foi reproduzida em teste, mas aguarda combinação com as mudanças de navegação do PR #56.
+1. **Etapa 1 — teclado no menu mobile (pendência independente):** Escape não fecha o menu quando o foco fica no acionador. A solução foi reproduzida em teste, mas não faz parte do PR #58; o PR #56 já foi integrado.
 2. **Etapa 2 — mensagem da Visão geral (corrigida neste incremento):** resumo de contagens e página de alertas são consultas distintas. Um resumo positivo com uma página vazia podia coexistir com a mensagem de “nenhum recipiente”. A mensagem agora explica que os totais mostram urgência, a lista do painel está vazia e orienta consultar Validades, sem inferir contagens da amostra ou alterar o backend. Revisão cruzada de arquitetura, produto e operação concordou com esta prioridade; a ambiguidade do seletor de unidade fica para revisão própria.
 3. **Seletor de unidade:** validar nomes de unidades repetidos entre organizações e avaliar se o texto de retorno à seleção comunica que não há um painel agregado. A alteração deve ser guiada por teste e uso observado.
 4. **Etapas operacionais 3–8:** continuar a revisão de campos, erros, estados vazios/carregamento, acessibilidade e layout por fluxo. A interface não expõe editor de validade, compras nem outras funcionalidades fora do escopo simplesmente por existirem no mercado.
@@ -50,8 +50,8 @@ O roadmap de direção visual permanece em [`../COZZIGO_UI_UX_ROADMAP.md`](../CO
 
 | Etapa                    | Situação na base `820f77d`                                                                                                  | Status desta iniciativa                               |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| 1. Estrutura e navegação | Shell responsivo, grupos, seleção de unidade, URLs diretas e permissões existentes; refinamento de Escape sobrepõe o PR #56 | Aguardando resolução do PR #56                        |
-| 2. Dashboard             | Visão geral real com resumo, alertas e atalhos; mensagem de lista vazia ajustada quando os totais indicam urgência          | PR #58 em rascunho; CI aprovada                       |
+| 1. Estrutura e navegação | Shell responsivo, grupos, seleção de unidade, URLs diretas e permissões existentes; ajuste de Escape permanece independente | Navegação integrada pelo PR #56; ajuste de teclado pendente |
+| 2. Dashboard             | Visão geral real com resumo, alertas e atalhos; mensagem de lista vazia ajustada quando os totais indicam urgência          | PR #58 sincronizado com main; CI final em execução    |
 | 3. Cadastros             | Produtos, fornecedores, preparações, unidade e organização já possuem telas e gateways                                      | Planejada para auditoria de fluxo                     |
 | 4. Recebimentos          | Formulário e operação existentes, com campos de conservação/temperatura/ocorrência                                          | Planejada para revisão de clareza                     |
 | 5. Produção              | Registro, listagem, configurações e anulação já implementados                                                               | Planejada para revisão de fluxo                       |
@@ -85,6 +85,6 @@ O roadmap de direção visual permanece em [`../COZZIGO_UI_UX_ROADMAP.md`](../CO
 7. **Implementação:** condicional de apresentação usa somente os totais autorizados já retornados.
 8. **Validação:** teste reproduziu a mensagem contraditória e falhou antes da alteração; os dois cenários focados passaram depois. Lint, TypeScript, suíte completa (597 testes em 54 arquivos), build, Prettier e `git diff --check` passaram. CI #44966263380 aprovada: qualidade, pgTAP, advisors de segurança, integração e E2E passaram. Chromium headless real com gateway fictício confirmou o estado antes/depois em 1440 px e 390 px; não foi usado banco nem dado real localmente.
 9. **Capturas antes/depois:** desktop: [antes](capturas/cozzigo-evolucao-interface/before-desktop.png), [depois](capturas/cozzigo-evolucao-interface/after-desktop.png); celular: [antes](capturas/cozzigo-evolucao-interface/before-mobile.png), [depois](capturas/cozzigo-evolucao-interface/after-mobile.png). O cenário é idêntico e usa a versão de `820f77d` como antes.
-10. **Pendências:** E2E autenticado/integração não foram executados localmente porque `docker` não existe neste computador; os gates correspondentes passaram na CI. Atualizar `COZZIGO_UI_UX_ROADMAP.md` e `docs/IA_ESTADO.md` depois de resolver a sobreposição com PR #56. Captura compara componente real e gateway fictício; não representa aparelho físico nem conta hospedada.
-11. **Commit/PR:** commits `83ef619`, `bb09fa9`, `40c4420`; [PR #58](https://github.com/luisdienstmanntd/cozinha-saas/pull/58) em rascunho. Prévia autorizada e publicada: [Cloudflare Pages](https://cc83ba51.cozinha-saas.pages.dev).
-12. **Status:** aguardando aceite do PR #58; sem merge na `main`.
+10. **Pendências:** E2E autenticado/integração não foram executados localmente porque `docker` não existe neste computador; executar os gates correspondentes na CI do novo head. A correção de Escape é uma pendência independente. Captura compara componente real e gateway fictício; não representa aparelho físico nem conta hospedada.
+11. **Commit/PR:** commits originais `83ef619`, `bb09fa9`, `40c4420`; sincronização da `main` atual (`2c0da92`) resolvida em merge commit `9629390`. [PR #58](https://github.com/luisdienstmanntd/cozinha-saas/pull/58) atualizado; prévia do head antigo: [Cloudflare Pages](https://e57e5725.cozinha-saas.pages.dev).
+12. **Status:** mudança sincronizada; verificações locais passaram (638/638 testes com um worker, lint, typecheck e build); CI remota do novo head pendente.
