@@ -2,12 +2,12 @@
 
 - **ID:** proteger-rascunhos-completo
 - **Responsável / sessão:** Codex (branch isolada desta sessão)
-- **Estado:** em_revisao
+- **Estado:** concluida
 - **Objetivo e aceite:** concluir a proteção contra perda de formulários alterados em atualização de acesso, renovação de dados que desmonta a unidade e navegação que descarta conteúdo. Detectar alterações feitas sem foco; tratar salvamento, reset (inclusive cancelado), formulários que aparecem/desaparecem e fim de sessão sem alertas falsos nem perda silenciosa. Troca de unidade que mantém os painéis montados preserva o rascunho sem confirmação; Sair mantém o comportamento voluntário atual. Interface usa mensagens curtas de produto, sem notas internas ou mensagens de teste.
 - **Branch / worktree / base:** `codex/proteger-rascunhos-completo` / `work-pr68-complete` / `origin/main` atual `4b6821915daa6cb4e8388776964bff6f6d3c9a7a` (incluído por merge commit `c21511e`).
 - **Arquivos e recursos em uso:** `IdentityHome.tsx`, testes de identidade, hook compartilhado de rascunhos, cobertura E2E existente de recebimento; este registro e `IA_ESTADO.md`. Sem banco/migração.
 - **Dependências e riscos:** #68 é WIP de outro branch e não será alterado; esta implementação é sucessora isolada. Requisições `changed`/renomeação renovam acesso; formulários que salvam com sucesso precisam sair do estado sujo antes da renovação, falhas devem manter dados. Controles customizados sem estado DOM requerem delimitar o suporte e testar os formulários reais. Sem Docker nesta máquina, banco/integração/E2E autenticado dependem da CI remota.
-- **Próximo passo:** validar o novo head do PR #75 na CI remota, inclusive banco e E2E, antes de marcar pronto.
+- **Próximo passo:** nenhum. PR #75 integrado em `main` após CI completa e revisão independente.
 
 ## Checkpoints
 
@@ -36,4 +36,13 @@
 - **Testes:** suíte focada de identidade/configuração/produção/manipulação: 12/12 passou após ajuste; typecheck passou antes das correções finais de tipagem/formatação. Um novo typecheck/lint e a suíte completa estão em execução. CI inicial: `quality` passou; `banco-api-e2e` executou testes de banco, mas 2 de 41 E2E falharam em `catalog.spec.mjs` e `handling.spec.mjs`, enquanto 39 passaram. Falhas ainda sem causa confirmada; executar novamente no novo head.
 - **Estado do ambiente:** sem Docker local. Preview Pages do PR #75 foi publicado com sucesso.
 - **Pendências / riscos:** aguardar a CI do novo head e repetir a revisão independente. Não marcar pronto ou mesclar enquanto os checks estiverem vermelhos.
-- **Próximo passo:** concluir verificações locais, enviar correção e acompanhar checks/QA remoto.
+- **Próximo passo:** correções enviadas em `fb6dfbb`; revisão independente sem novos achados no escopo. A CI desse head encontrou um E2E do recurso sem aviso esperado; o tracker foi reforçado para capturar baseline no foco antes da edição (`54a223a`).
+
+### 23/11/2026 — conclusão e integração
+
+- **Planejado / feito:** correção de baseline validada; PR sucessor #75 integrado na `main` após autorização do usuário. O #68 original continua intacto.
+- **Alterações e commits:** PR #75, head `54a223acbd5c163a24d802dde2410776955ca9c3`, merge commit `5f0ca120847495cd68e790faf17c7b62280da64e`.
+- **Testes:** suíte completa local 644/644; typecheck, lint e build aprovados. Na CI remota, `quality` e `banco-api-e2e` passaram no head final; os 41 E2E e testes de banco passaram. Preview Cloudflare publicado com sucesso. Revisão independente do head `fb6dfbb` aprovou as correções de acesso revogado e limpeza de rascunho.
+- **Estado do ambiente:** desenvolvimento local sem Docker; a CI executou banco e E2E usando o ambiente remoto.
+- **Pendências / riscos:** nenhuma identificada para esta tarefa. O `format:check` global do repositório ainda acusa arquivos preexistentes; os arquivos tocados passaram na checagem direcionada.
+- **Próximo passo:** tarefa concluída.
