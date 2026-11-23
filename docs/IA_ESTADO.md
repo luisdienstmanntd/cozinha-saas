@@ -116,6 +116,10 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 - Claude Code. Proposta aprovada por luis (PR #57). Só interface, sem migração. CONCLUÍDA: integrada na `main` em 22/11/2026 (PR #59, `2f4f9bd`), com merge e publicação autorizados por luis. [Registro](ia-tarefas/v6-filtro-validades.md).
 
 
+## Limpeza de código sem uso — 23/11/2026
+
+- Claude Code, branch `claude/limpeza-codigo`. Remove o menu antigo da V1 (`UnitNav`), `catalogSections`, `areasFor`/`resolveArea` e o CSS `.unit-nav*`, todos sem uso em produção. Só interface, sem migração. Aguarda aceite de luis. [Registro](ia-tarefas/limpeza-codigo-morto.md).
+
 ## Entrar só depois que o Sair termina — 23/11/2026
 
 - Claude Code, branch `claude/sair-antes-de-entrar`. Corrige a corrida que derrubava o E2E `locations.spec.mjs:152` na `main`; só interface. [Registro](ia-tarefas/sair-antes-de-entrar.md).
