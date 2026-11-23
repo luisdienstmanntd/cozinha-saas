@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { markUnitDraftClean } from '../../identity/application/unitDrafts';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import { storageLabels, storageConditions } from '../../catalog/domain/catalog';
 import type { StorageCondition } from '../../catalog/domain/catalog';
@@ -82,6 +83,7 @@ export function HandlingForm({
   const [members, setMembers] = useState<Member[]>([]);
   const [loadError, setLoadError] = useState('');
   const [stage, setStage] = useState<Stage>('form');
+  const draftForm = useRef<HTMLFormElement | null>(null);
   const [kind, setKind] = useState<'opening' | 'portioning'>('opening');
   const [count, setCount] = useState(2);
   const [quantities, setQuantities] = useState<string[]>(['']);
@@ -163,7 +165,12 @@ export function HandlingForm({
           <strong>{BLOCK_TEXT[context.block]}</strong>: este recipiente não pode
           ser manipulado. Só o descarte é permitido.
         </p>
-        <button className="secondary" type="button" onClick={onClose}>
+        <button
+          className="secondary"
+          type="button"
+          data-draft-discard={`handling-${containerId}`}
+          onClick={onClose}
+        >
           Fechar
         </button>
       </section>
@@ -175,7 +182,12 @@ export function HandlingForm({
           {title} {context.short_code}
         </h4>
         <p role="status">Recipiente sem saldo registrado.</p>
-        <button className="secondary" type="button" onClick={onClose}>
+        <button
+          className="secondary"
+          type="button"
+          data-draft-discard={`handling-${containerId}`}
+          onClick={onClose}
+        >
           Fechar
         </button>
       </section>
@@ -319,6 +331,7 @@ export function HandlingForm({
     try {
       const id = await gateway.handle(scope, parsed.data);
       resetIntent();
+      markUnitDraftClean(draftForm.current);
       onChanged?.();
       setResult(await gateway.created(scope, id));
       setStage('done');
@@ -442,7 +455,12 @@ export function HandlingForm({
             }}
           />
         )}{' '}
-        <button className="secondary" type="button" onClick={onClose}>
+        <button
+          className="secondary"
+          type="button"
+          data-draft-discard={`handling-${containerId}`}
+          onClick={onClose}
+        >
           Fechar
         </button>
       </section>
@@ -533,7 +551,11 @@ export function HandlingForm({
             ? 'embalagem fechada (integral)'
             : 'recipiente já aberto (derivado)'}
       </p>
-      <form onSubmit={review}>
+      <form
+        ref={draftForm}
+        data-unit-draft-key={`handling-${containerId}`}
+        onSubmit={review}
+      >
         <fieldset disabled={busy}>
           <legend>Tipo e quantidade</legend>
           {preparation && (
@@ -870,6 +892,7 @@ export function HandlingForm({
           className="secondary"
           type="button"
           disabled={busy}
+          data-draft-discard={`handling-${containerId}`}
           onClick={onClose}
         >
           Cancelar

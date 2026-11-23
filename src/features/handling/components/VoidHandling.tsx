@@ -4,6 +4,7 @@ import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { HandlingGateway } from '../application/handlingGateway';
 import { HandlingRejected } from '../application/handlingGateway';
 import { voidInputSchema } from '../domain/handling';
+import { markUnitDraftClean } from '../../identity/application/unitDrafts';
 
 // Anulação da manipulação inteira (D-032, D-040): motivo obrigatório, sem anulação parcial. O banco
 // decide se ainda pode anular (nenhum derivado com movimento); a tela só mostra a recusa dele.
@@ -24,6 +25,7 @@ export function VoidHandling({
   const [error, setError] = useState('');
   const [conflict, setConflict] = useState(false);
   const intent = useRef(crypto.randomUUID());
+  const form = useRef<HTMLFormElement | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -40,6 +42,7 @@ export function VoidHandling({
     setError('');
     try {
       await gateway.void(scope, input.data);
+      markUnitDraftClean(form.current);
       onVoided();
     } catch (cause) {
       if (cause instanceof HandlingRejected) {
@@ -61,7 +64,12 @@ export function VoidHandling({
       </button>
     );
   return (
-    <form aria-label="Anular manipulação" onSubmit={(e) => void submit(e)}>
+    <form
+      ref={form}
+      data-unit-draft-key={`void-handling-${handlingId}`}
+      aria-label="Anular manipulação"
+      onSubmit={(e) => void submit(e)}
+    >
       <fieldset disabled={busy}>
         <legend>Anular manipulação</legend>
         <p>
@@ -84,6 +92,7 @@ export function VoidHandling({
         <button
           className="secondary"
           type="button"
+          data-draft-discard={`void-handling-${handlingId}`}
           onClick={() => setOpen(false)}
         >
           Cancelar

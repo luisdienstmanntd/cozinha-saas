@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { markUnitDraftClean } from '../../identity/application/unitDrafts';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import { instantToZoned, zonedToInstant } from '../../handling/domain/handling';
 import { toDotTemperature } from '../../../shared/format/temperature';
@@ -39,6 +40,7 @@ export function RecordTemperature({
   const [measuredAt, setMeasuredAt] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const form = useRef<HTMLFormElement | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || !gateway.recordTemperature) return;
@@ -59,6 +61,7 @@ export function RecordTemperature({
     setError('');
     try {
       await gateway.recordTemperature(scope, input.data);
+      markUnitDraftClean(form.current);
       setOpen(false);
       setValue('');
       onRecorded();
@@ -87,6 +90,8 @@ export function RecordTemperature({
     );
   return (
     <form
+      ref={form}
+      data-unit-draft-key={`temperature-${batchId}`}
       aria-label={`Registrar temperatura ${label}`}
       onSubmit={(event) => void submit(event)}
     >
@@ -130,6 +135,7 @@ export function RecordTemperature({
         <button
           className="secondary"
           type="button"
+          data-draft-discard={`temperature-${batchId}`}
           onClick={() => setOpen(false)}
         >
           Cancelar

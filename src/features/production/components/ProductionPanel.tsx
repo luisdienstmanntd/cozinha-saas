@@ -1,6 +1,7 @@
 import { AreaLink, type AreaLinks } from '../../batches/components/FirstSteps';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { markUnitDraftClean } from '../../identity/application/unitDrafts';
 import type { CatalogGateway } from '../../catalog/application/catalogGateway';
 import type { CatalogItem, CatalogScope } from '../../catalog/domain/catalog';
 import { storageLabels } from '../../catalog/domain/catalog';
@@ -117,6 +118,7 @@ function ProductionContents({
   const [attempt, setAttempt] = useState(0);
   const [stage, setStage] = useState<Stage>('closed');
   const formTitle = useRef<HTMLHeadingElement>(null);
+  const draftForm = useRef<HTMLFormElement | null>(null);
   useEffect(() => {
     if (stage === 'form') formTitle.current?.focus();
   }, [stage]);
@@ -364,6 +366,7 @@ function ProductionContents({
         parsed.data,
       );
       resetIntent();
+      markUnitDraftClean(draftForm.current);
       setResult({ batchId, late });
       setStage('done');
       reloadList();
@@ -559,6 +562,8 @@ function ProductionContents({
       )}
       {canRegister && stage === 'form' && (
         <form
+          ref={draftForm}
+          data-unit-draft-key="production"
           className="production-form"
           aria-label="Registrar produção"
           onSubmit={review}
