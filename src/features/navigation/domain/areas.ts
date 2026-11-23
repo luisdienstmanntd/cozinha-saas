@@ -1,5 +1,6 @@
-// V1: a unidade aberta se divide em cinco áreas. Só controla o que aparece; permissão continua no
-// banco (RLS e funções de escrita). Nenhuma regra de negócio mora aqui.
+// Áreas da unidade e o endereço `?unidade=…&area=…`. Só controla o que aparece; permissão continua no
+// banco (RLS e funções de escrita). Nenhuma regra de negócio mora aqui. As áreas mostradas a cada
+// perfil ficam em `workspaceAreas.ts`.
 
 export const AREA_IDS = [
   'validade',
@@ -17,39 +18,10 @@ export const AREA_IDS = [
 ] as const;
 export type AreaId = (typeof AREA_IDS)[number];
 
-export const DEFAULT_AREA: AreaId = 'validade';
-
 export type Area = { id: AreaId; label: string };
-
-type Context = {
-  owner: boolean;
-  /** A unidade tem produção/locais disponíveis neste cliente. */
-  production: boolean;
-  locations: boolean;
-};
-
-/**
- * Áreas mostradas a cada perfil. O colaborador não vê Receber (só o proprietário registra
- * recebimento) nem o cadastro de produtos e fornecedores; vê Configurações para saber as regras da
- * unidade (somente leitura).
- */
-export function areasFor({ owner, production, locations }: Context): Area[] {
-  const areas: Area[] = [{ id: 'validade', label: 'Validade' }];
-  if (owner) areas.push({ id: 'receber', label: 'Receber' });
-  if (production) areas.push({ id: 'producao', label: 'Produção' });
-  if (locations) areas.push({ id: 'locais', label: 'Locais' });
-  // Quem só consulta vê as regras da unidade; o proprietário, o cadastro e as configurações.
-  areas.push({ id: 'cadastros', label: owner ? 'Cadastros' : 'Configurações' });
-  return areas;
-}
 
 export function parseArea(value: string | null): AreaId | null {
   return AREA_IDS.find((id) => id === value) ?? null;
-}
-
-/** Área pedida, se o perfil a vê; senão a inicial. */
-export function resolveArea(requested: AreaId | null, areas: Area[]): AreaId {
-  return areas.find((area) => area.id === requested)?.id ?? DEFAULT_AREA;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
