@@ -99,6 +99,10 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 - PR #64 foi integrado na `main` (`9305376`) antes do #56; qualidade, pgTAP, advisors, integração e E2E passaram na CI da `main`. [Registro](ia-tarefas/cozzigo-ui-etapa-4.md).
 
+## V6 — filtrar Validades pelos contadores (proposta) — 22/11/2026
+
+- Claude Code, branch `claude/v6-proposta`, só documentação. Aprovada por luis e implementada no PR #59 (D-072); este registro só traz o documento da proposta para a `main`, onde ele já era citado. [Proposta](V6_PROPOSTA.md), [registro](ia-tarefas/v6-proposta.md).
+
 ## V6 — filtrar Validades pelos contadores (implementação) — 22/11/2026
 
 - Claude Code. Proposta aprovada por luis (PR #57). Só interface, sem migração. CONCLUÍDA: integrada na `main` em 22/11/2026 (PR #59, `2f4f9bd`), com merge e publicação autorizados por luis. [Registro](ia-tarefas/v6-filtro-validades.md).
