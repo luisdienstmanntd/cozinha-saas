@@ -1,12 +1,12 @@
 # CozziGo — evolução da interface
 
 - **ID:** cozzigo-evolucao-interface
-- **Responsável / estado:** Codex; PR #58 sincronizado com a `main` atual em merge commit `9629390`; CI final remota pendente.
+- **Responsável / estado:** Codex; PR #58 concluído e integrado na `main` por merge commit `6dd4251`; CI completa aprovada.
 - **Objetivo e aceite:** auditar funcionalidades existentes e rastrear regra, serviço, componente, tela, ação e teste; atualizar o roadmap atual depois de liberar os arquivos reservados; concluir incrementos independentes com testes, validação por teclado e evidência visual desktop/mobile. Preservar autenticação, sessão, permissões, rotas e regras de domínio.
 - **Branch / worktree / base:** `codex/cozzigo-interface-etapa-1`, worktree isolado; sincronizado com `origin/main` `2c0da92` (merge do PR #72).
 - **Arquivos e recursos em uso:** `src/features/overview/components/OperationsOverview.tsx` e teste, `docs/COZZIGO_EVOLUCAO_INTERFACE.md` e este registro. `COZZIGO_UI_UX_ROADMAP.md`, `docs/IA_ESTADO.md`, `OperationsNav.tsx` e `OperationsNav.test.tsx` aparecem no PR #56 e ficam reservados até resolver a sobreposição. Sem banco hospedado, migrações ou dados reais.
 - **Dependências e riscos:** PR #54 e correção #55 integrados; PR #56 também integrado. A correção de Escape foi reproduzida em teste, retirada para evitar conflito e continua fora do escopo deste PR. Preservar a pasta local não rastreada `Nova pasta/`. Sem alteração de banco/RLS.
-- **Próximo passo:** aguardar CI completa no head sincronizado do PR #58; após sucesso, concluir a integração autorizada. A correção de Escape permanece como tarefa separada.
+- **Próximo passo:** nenhum para a Etapa 2. A correção de Escape permanece como tarefa independente, sem implementação neste PR.
 
 ## Checkpoints
 
@@ -52,3 +52,4 @@
 - O PR #58 recebeu a `main` atual (`2c0da92`) em merge commit `9629390`. O conflito único em `OperationsOverview.test.tsx` foi resolvido preservando o teste da mensagem contraditória e os testes dos filtros V6 existentes na `main`.
 - Verificações locais: teste focal `OperationsOverview.test.tsx` 3/3; lint PASS; typecheck PASS; suíte completa com `--maxWorkers=1` 638/638; build PASS (avisos preexistentes de Vite e tamanho do bundle). A execução paralela da suíte teve um timeout isolado em `ExpiryDashboard.test.tsx` (637/638); o arquivo passou isoladamente 9/9, e a suíte de worker único passou completa.
 - Sem Docker neste computador; pgTAP, advisors, integração e E2E exigem a CI remota, que será executada no head atualizado.
+- **Conclusão:** CI completa do head `aea849c` aprovada (run `45092125744`) e PR #58 integrado em `main` pelo merge `6dd4251`; prévia `4f23d8e5.cozinha-saas.pages.dev`. Os gates de banco, integração e E2E passaram remotamente.
