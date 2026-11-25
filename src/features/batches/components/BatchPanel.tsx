@@ -572,7 +572,13 @@ function BatchContents({
     <section aria-label="Recebimentos de lote">
       {showReceber && (
         <header className="operation-heading">
-          <h3>Recebimentos de lote</h3>
+          <div>
+            <h3>Recebimentos</h3>
+            <p>
+              Registre cada entrega com lote, quantidade e a validade informada
+              pelo responsável.
+            </p>
+          </div>
         </header>
       )}
       <div hidden={!showValidade}>
@@ -681,7 +687,12 @@ function BatchContents({
         <>
           <div hidden={!showValidade || (!!labelId && !!labels)}>
             <section aria-label="Painel de validade" className="expiry-panel">
-              <h4>Validade</h4>
+              <header className="operation-heading expiry-heading">
+                <div>
+                  <h3>Validades</h3>
+                  <p>Recipientes com saldo, ordenados pela validade.</p>
+                </div>
+              </header>
               {occurrenceRows && occurrenceRows.length > 0 && (
                 <p className="blocked-band blocks-notice">
                   <strong>
@@ -765,7 +776,7 @@ function BatchContents({
                   Mostrar esgotados
                 </label>
                 <button type="button" className="secondary" onClick={reload}>
-                  Atualizar recebimentos
+                  Atualizar lista
                 </button>
               </div>
             </section>

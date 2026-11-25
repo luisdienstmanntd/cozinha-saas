@@ -575,3 +575,11 @@
 - **Motivo:** pedido explícito de luis para desenvolver aos poucos com experiência profissional de produto final, sem mensagens de teste ou funções inacabadas na interface.
 - **Consequência:** D-074 altera a apresentação da D-067, sem mudar seu isolamento técnico. Pendências de impressão física/QR e Q10 ficam na documentação e critérios internos de lançamento, não em avisos operacionais da ficha.
 - **Revisar quando:** preparação do piloto ou inclusão de recurso cujo estado não possa ser representado sem expor uma função incompleta.
+
+## D-075 — Revisão de apresentação: início, cabeçalhos e organização (25/11/2026)
+
+- **Status:** proposta, aguardando aceite de luis (PR em rascunho, branch `claude/revisao-interface-profissional`).
+- **Decisão:** a tela inicial da Mesa só serve para escolher a unidade (um cartão por organização, uma linha por unidade com fuso legível e "Abrir"); nome da organização e gestão de unidades ficam somente em Configurações > Organização, salvo quando a organização ainda não tem unidade. Todas as áreas usam o mesmo cabeçalho de página. O logo vai embutido no pacote, com o nome escrito como reserva. "Atualizar recebimentos" passa a "Atualizar lista" em Validades.
+- **Motivo:** pedido de luis em 25/11/2026: opções de uma aba apareciam em outra, início desalinhado, logo quebrado no site publicado e aparência de produto real.
+- **Consequência:** só interface; nenhum dado, permissão ou regra muda. Nomes de empresa e unidade com "Teste" no hospedado são dados: a renomeação está proposta em [REVISAO_INTERFACE_PROFISSIONAL.md](REVISAO_INTERFACE_PROFISSIONAL.md) e depende de autorização específica.
+- **Revisar quando:** houver mais de uma organização por pessoa em uso real, ou se a gestão de unidades precisar de área própria.

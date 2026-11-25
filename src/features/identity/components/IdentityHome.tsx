@@ -1,5 +1,5 @@
-import brandLogo from '../../../shared/ui/brand/cozzigo.webp';
-import brandMark from '../../../shared/ui/brand/cozzigo-mark.webp';
+import { BrandLogo } from '../../../shared/ui/brand/BrandLogo';
+import { timezoneName } from '../../../shared/format/dates';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import type { IdentityGateway } from '../application/identityGateway';
@@ -502,14 +502,14 @@ export function IdentityHome({
           Pular para o conteúdo
         </a>
       )}
-      {!userId && <img className="sign-in-brand" src={brandLogo} alt="" />}
+      {!userId && <BrandLogo className="sign-in-brand" alt="" />}
       {showShell && !openTarget && (
         <aside
           className="mesa-sidebar mesa-selection-side"
           aria-label="CozziGo"
         >
           <div className="mesa-nav-brand">
-            <img src={brandLogo} alt="CozziGo" />
+            <BrandLogo />
           </div>
         </aside>
       )}
@@ -532,12 +532,11 @@ export function IdentityHome({
         >
           {showShell && (
             <div className="mesa-unit-select">
-              <img
+              <BrandLogo
+                variant="mark"
                 className="unit-brand-mark"
-                src={brandMark}
                 alt=""
-                width="32"
-                height="32"
+                size={32}
               />
               <label>
                 <span className="visually-hidden">Unidade</span>
@@ -686,12 +685,11 @@ export function IdentityHome({
                       {openTarget.owner ? 'Proprietário' : 'Colaborador'}
                     </p>
                     <h2>
-                      <img
+                      <BrandLogo
+                        variant="mark"
                         className="unit-brand-mark"
-                        src={brandMark}
                         alt=""
-                        width="32"
-                        height="32"
+                        size={32}
                       />
                       {openTarget.unit.name}
                     </h2>
@@ -746,6 +744,63 @@ export function IdentityHome({
               const owner = organization.memberships.some(
                 (m) => m.user_id === userId && m.role === 'owner',
               );
+              // D-075: no início da Mesa só aparecem as unidades. Nome da organização e gestão de
+              // unidades ficam em Configurações > Organização (ou aqui, enquanto não houver unidade).
+              if (operationalShell)
+                return (
+                  <section
+                    key={organization.id}
+                    className="mesa-panel mesa-organization-card"
+                    aria-labelledby={`organizacao-${organization.id}`}
+                  >
+                    <header className="mesa-organization-head">
+                      <h2 id={`organizacao-${organization.id}`}>
+                        {organization.name}
+                      </h2>
+                      <p className="mesa-role">
+                        Papel: {owner ? 'Proprietário' : 'Colaborador'}
+                      </p>
+                    </header>
+                    {organization.establishments.length > 0 ? (
+                      <ul
+                        className="mesa-unit-cards"
+                        aria-label={`Unidades de ${organization.name}`}
+                      >
+                        {organization.establishments.map((unit) => (
+                          <li key={unit.id}>
+                            <div>
+                              <strong>{unit.name}</strong>
+                              <span>{timezoneName(unit.timezone)}</span>
+                            </div>
+                            {renderCatalog && (
+                              <button
+                                type="button"
+                                className="secondary"
+                                aria-label={`Abrir ${unit.name}`}
+                                onClick={() => openUnit(unit.id)}
+                              >
+                                Abrir
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <>
+                        <p>Nenhuma unidade cadastrada.</p>
+                        {renderOrganizationTools && (
+                          <OrganizationToolsSlot
+                            render={renderOrganizationTools}
+                            organization={organization}
+                            owner={owner}
+                            onChanged={changed}
+                            busy={busy}
+                          />
+                        )}
+                      </>
+                    )}
+                  </section>
+                );
               return (
                 <section
                   key={organization.id}
@@ -823,22 +878,41 @@ export function IdentityHome({
                         unitName: target.unit.name,
                         organizationName: target.organization.name,
                         organizationTools: target.owner && (
-                          <>
-                            {renderOrganizationTools && (
-                              <OrganizationToolsSlot
-                                render={renderOrganizationTools}
+                          <section
+                            className="mesa-organization-settings"
+                            aria-label="Organização"
+                          >
+                            <header className="mesa-page-heading">
+                              <h2>Organização</h2>
+                              <p>
+                                Nome da organização e unidades de{' '}
+                                {target.organization.name}.
+                              </p>
+                            </header>
+                            <section className="mesa-panel mesa-settings-block">
+                              <h3>Dados da organização</h3>
+                              <OrganizationForm
                                 organization={target.organization}
-                                owner
                                 busy={busy}
-                                onChanged={changed}
+                                onRename={renameOrganization}
                               />
+                            </section>
+                            {renderOrganizationTools && (
+                              <section className="mesa-panel mesa-settings-block">
+                                <h3>Unidades</h3>
+                                <p className="hint">
+                                  Renomeie as unidades ou cadastre uma nova.
+                                </p>
+                                <OrganizationToolsSlot
+                                  render={renderOrganizationTools}
+                                  organization={target.organization}
+                                  owner
+                                  busy={busy}
+                                  onChanged={changed}
+                                />
+                              </section>
                             )}
-                            <OrganizationForm
-                              organization={target.organization}
-                              busy={busy}
-                              onRename={renameOrganization}
-                            />
-                          </>
+                          </section>
                         ),
                       },
                     )}

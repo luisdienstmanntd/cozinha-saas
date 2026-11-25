@@ -19,6 +19,14 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
   await withCatalogFixture(async ({ users, admin, scopeA, scopeA2 }) => {
     await page.goto('/');
     await signIn(page, users[0]);
+    // D-075: a tela inicial só lista as unidades; nome da organização e gestão de unidades
+    // ficam em Configurações > Organização.
+    await expect(page.getByLabel('Nome da organização')).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: /Gerenciar unidades/ }),
+    ).toHaveCount(0);
+    await page.getByRole('button', { name: 'Abrir Cozinha principal' }).click();
+    await openArea(page, 'Organização');
     const openTools = () =>
       page
         .getByRole('button', {
@@ -40,9 +48,7 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
     await expect(page.getByRole('alert')).toHaveText(
       'Informe nome entre 1 e 120 caracteres.',
     );
-    await expect(
-      page.getByRole('button', { name: 'Abrir Cozinha principal' }),
-    ).toBeVisible();
+    await expect(page.getByLabel('Nome da organização')).toBeVisible();
 
     await tools.getByLabel('Nome da nova unidade').fill('Cozinha de eventos');
     await tools
@@ -56,11 +62,14 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
     await expect(page.getByRole('status')).toHaveText(
       'Unidade Cozinha de eventos criada.',
     );
-    await expect(
-      page
-        .getByRole('listitem')
-        .filter({ hasText: 'Cozinha de eventos — America/Manaus' }),
-    ).toBeVisible();
+    await chooseUnitList(page);
+    // Início: nome da unidade e o nome legível do fuso, sem o identificador técnico.
+    const createdCard = page
+      .getByRole('list', { name: 'Unidades de Empresa de teste A' })
+      .getByRole('listitem')
+      .filter({ hasText: 'Cozinha de eventos' });
+    await expect(createdCard).toContainText('Amazonas');
+    await expect(createdCard).not.toContainText('America/');
     const created = checked(
       await admin
         .from('establishments')

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatCivilDate, formatDateTime, timezoneLabel } from './dates';
+import {
+  formatCivilDate,
+  formatDateTime,
+  timezoneLabel,
+  timezoneName,
+} from './dates';
 
 describe('datas no formato brasileiro (V3)', () => {
   it('converte data civil sem deslocar o dia', () => {
@@ -31,5 +36,11 @@ describe('datas no formato brasileiro (V3)', () => {
       /^Horário .+ \(America\/Sao_Paulo\)$/,
     );
     expect(timezoneLabel('Inválido/Fuso')).toBe('Inválido/Fuso');
+  });
+
+  it('dá só o nome legível do fuso para as telas de escolha (D-075)', () => {
+    expect(timezoneName('America/Sao_Paulo')).toMatch(/^Horário /);
+    expect(timezoneName('America/Sao_Paulo')).not.toContain('America/');
+    expect(timezoneName('Inválido/Fuso')).toBe('Inválido/Fuso');
   });
 });

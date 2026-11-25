@@ -34,12 +34,9 @@ export function formatDateTime(value: string | Date, timezone: string): string {
   }
 }
 
-// Nome legível do fuso ("Horário de Brasília"), com o identificador entre parênteses para suporte.
-// Se o navegador não souber o nome, mostra só o identificador.
-export function timezoneLabel(
-  timezone: string,
-  now: Date = new Date(),
-): string {
+// D-075: só o nome legível do fuso ("Horário de Brasília"), para telas de escolha. Se o navegador não
+// souber o nome, devolve o identificador.
+export function timezoneName(timezone: string, now: Date = new Date()): string {
   try {
     const name = new Intl.DateTimeFormat('pt-BR', {
       timeZone: timezone,
@@ -47,8 +44,18 @@ export function timezoneLabel(
     })
       .formatToParts(now)
       .find((part) => part.type === 'timeZoneName')?.value;
-    return name && name !== timezone ? `${name} (${timezone})` : timezone;
+    return name || timezone;
   } catch {
     return timezone;
   }
+}
+
+// Nome legível do fuso ("Horário de Brasília"), com o identificador entre parênteses para suporte.
+// Se o navegador não souber o nome, mostra só o identificador.
+export function timezoneLabel(
+  timezone: string,
+  now: Date = new Date(),
+): string {
+  const name = timezoneName(timezone, now);
+  return name !== timezone ? `${name} (${timezone})` : timezone;
 }
