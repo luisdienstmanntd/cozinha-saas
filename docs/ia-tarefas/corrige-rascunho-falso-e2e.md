@@ -2,7 +2,7 @@
 
 - **ID:** corrige-rascunho-falso-e2e
 - **Responsável / sessão:** Claude Code (nuvem), a pedido de luis em 25/11/2026
-- **Estado:** aguardando_aceite
+- **Estado:** concluida (PR #77 integrado na `main` em 25/11/2026 com aval de luis, merge `74a0863`)
 - **Branch / base:** `claude/rascunho-falso-e2e` / `main` `5f0ca12` (merge do #75)
 - **Arquivos:** `src/features/identity/application/useUnitDrafts.ts`, `src/features/identity/components/IdentityDrafts.test.tsx`, `tests/e2e/catalog.spec.mjs`, `tests/e2e/navigation.spec.mjs`, este registro e `IA_ESTADO.md`. Sem banco nem migração.
 - **Relação com o Codex:** o Codex investigou o mesmo teste em `D:/codex-e2e-main-20261125` (sem push) e parou por falta de créditos. A proposta dele era aceitar o diálogo no teste; aqui a correção foi feita na causa, sem enfraquecer o teste.
