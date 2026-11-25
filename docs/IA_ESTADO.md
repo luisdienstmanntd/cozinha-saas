@@ -71,6 +71,10 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 
 Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `ia-tarefas/MODELO.md`. Se duas branches tiverem atualizado este índice, concilie as duas entradas; não escolha uma versão descartando a outra.
 
+## Investigação do E2E da main — 25/11/2026
+
+- Codex, `codex/investigar-e2e-20261125`, worktree `D:/codex-e2e-main-20261125`, base `5f0ca12`; investigação em andamento após falha da CI da main. O PR #76 também altera este índice e deve ser conciliado sem descartar entradas. [Checkpoint](ia-tarefas/investigar-e2e-main-20261125.md).
+
 ## Interface operacional — 18/11/2026
 
 - Codex, implementação local verificada em `codex/interface-operacional`, na base `7d664d5`. E2E autenticado bloqueado pelo ambiente. [Registro](ia-tarefas/interface-operacional.md).
