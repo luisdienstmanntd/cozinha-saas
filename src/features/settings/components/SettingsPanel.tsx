@@ -118,7 +118,12 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
   if (loadError)
     return (
       <section aria-label="Configurações da unidade">
-        <h3>Configurações da unidade</h3>
+        <header className="operation-heading">
+          <div>
+            <h3>Configurações da unidade</h3>
+            <p>Regras de produção e de etiquetas desta unidade.</p>
+          </div>
+        </header>
         <p role="alert">{loadError}</p>
         <button
           className="secondary"
@@ -135,7 +140,12 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
   if (!current)
     return (
       <section aria-label="Configurações da unidade">
-        <h3>Configurações da unidade</h3>
+        <header className="operation-heading">
+          <div>
+            <h3>Configurações da unidade</h3>
+            <p>Regras de produção e de etiquetas desta unidade.</p>
+          </div>
+        </header>
         <p>Carregando configurações…</p>
       </section>
     );
@@ -216,8 +226,13 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
 
   return (
     <section aria-label="Configurações da unidade">
-      <h3>Configurações da unidade</h3>
-      <ul aria-label="Configurações em vigor">
+      <header className="operation-heading">
+        <div>
+          <h3>Configurações da unidade</h3>
+          <p>Regras de produção e de etiquetas desta unidade.</p>
+        </div>
+      </header>
+      <ul aria-label="Configurações em vigor" className="settings-summary">
         <li>Quem registra produção: {shown.registrar}</li>
         <li>
           Janela de registro da produção: {shown.window}. Acima dela, o registro

@@ -1685,3 +1685,182 @@ footer {
     overflow-y: auto;
   }
 }
+
+/* D-075: revisão de apresentação da Mesa (logo, início, cabeçalhos e organização). */
+.brand-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--surface-panel);
+  color: var(--brand-accent);
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+}
+.brand-fallback.is-mark {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.1rem;
+}
+.sign-in-brand.brand-fallback {
+  display: flex;
+  width: fit-content;
+  font-size: 2rem;
+}
+.mesa-nav-brand .brand-fallback {
+  min-width: 8rem;
+}
+.mesa-sidebar.is-compact .mesa-nav-brand .brand-fallback {
+  min-width: 0;
+  width: 2.5rem;
+}
+.mesa-nav-brand img {
+  display: block;
+  height: auto;
+}
+
+/* Início: uma linha por unidade, nome e fuso à esquerda, "Abrir" alinhado à direita. */
+.workspace .mesa-organization-card {
+  padding: var(--space-4);
+}
+.mesa-organization-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.workspace .mesa-organization-head h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+.mesa-role {
+  margin: 0;
+  padding: 0.15rem var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+.workspace .mesa-organization-card > .mesa-unit-cards {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mesa-unit-cards > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.mesa-unit-cards > li > div {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.mesa-unit-cards > li > div > span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.workspace .mesa-unit-cards button {
+  flex: none;
+  margin: 0;
+  min-width: 6.5rem;
+}
+
+/* Cabeçalho de página igual em todas as áreas: título, subtítulo e ação principal à direita. */
+.mesa-workspace .operation-heading {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  margin: 0 0 var(--space-4);
+}
+.workspace.mesa-workspace .operation-heading h3 {
+  font-size: 1.65rem;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+.mesa-workspace .operation-heading p {
+  font-size: 1rem;
+  margin-top: var(--space-1);
+}
+.mesa-workspace .expiry-heading {
+  margin-bottom: var(--space-3);
+}
+
+/* Configurações da unidade: resumo em cartão, uma regra por linha. */
+.settings-summary {
+  margin: 0 0 var(--space-4);
+  padding: 0 var(--space-4);
+  list-style: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  background: var(--surface-panel);
+}
+.settings-summary > li {
+  padding: var(--space-3) 0;
+}
+.settings-summary > li + li {
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Organização: blocos com título; rótulo acima do campo e botão alinhado à base. */
+.mesa-settings-block {
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.workspace .mesa-settings-block > h3 {
+  margin: 0 0 var(--space-3);
+}
+.workspace .mesa-settings-block > .hint {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.mesa-settings-block form,
+.mesa-workspace .establishment-list form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+.mesa-settings-block form label,
+.mesa-workspace .establishment-list form label {
+  display: grid;
+  gap: var(--space-1);
+  flex: 1 1 16rem;
+  max-width: 28rem;
+}
+.workspace .mesa-settings-block form button {
+  margin: 0;
+}
+.mesa-workspace .establishment-tools {
+  margin-top: var(--space-3);
+  border-radius: var(--radius-panel);
+}
+.workspace.mesa-workspace .establishment-tools h3 {
+  margin-top: 0;
+}
+.mesa-workspace .establishment-tools form p label {
+  display: grid;
+  gap: var(--space-1);
+  max-width: 28rem;
+}
+.mesa-workspace .establishment-tools select {
+  width: 100%;
+}
+@media (max-width: 560px) {
+  /* V3: no celular, o primeiro cartão de validade continua na primeira tela. */
+  .mesa-workspace .expiry-heading p {
+    display: none;
+  }
+}

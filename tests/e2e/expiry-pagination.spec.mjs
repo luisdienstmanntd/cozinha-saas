@@ -133,9 +133,7 @@ test('consulta mais de mil recebimentos e busca produto fora do catálogo carreg
         .getByRole('list', { name: 'Recipientes e validade' })
         .getByText(/lote concorrente/),
     ).toHaveCount(0);
-    await dashboard
-      .getByRole('button', { name: 'Atualizar recebimentos' })
-      .click();
+    await dashboard.getByRole('button', { name: 'Atualizar lista' }).click();
     await expect(dashboard.getByText(/Vencidos: 1002/)).toBeVisible({
       timeout: 30000,
     });

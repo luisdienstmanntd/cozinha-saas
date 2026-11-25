@@ -6,8 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useCompactLayout } from '../../../shared/ui/useCompactLayout';
-import logo from '../../../shared/ui/brand/cozzigo.webp';
-import mark from '../../../shared/ui/brand/cozzigo-mark.webp';
+import { BrandLogo } from '../../../shared/ui/brand/BrandLogo';
 import type { Area, AreaId } from '../domain/areas';
 import { catalogPages } from '../domain/workspaceAreas';
 
@@ -168,7 +167,7 @@ export function OperationsNav({
         }}
       >
         <div className="mesa-nav-brand">
-          <img src={compactSidebar ? mark : logo} alt="CozziGo" />
+          <BrandLogo variant={compactSidebar ? 'mark' : 'full'} />
           <button
             type="button"
             className="mesa-collapse"

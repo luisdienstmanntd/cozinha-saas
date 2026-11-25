@@ -145,3 +145,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Correção do E2E vermelho na `main` após o #75 — 25/11/2026
 
 - Claude Code, branch `claude/rascunho-falso-e2e`, base `main` `5f0ca12`. Causa: um formulário sem etapa de revisão (o recebimento) que já tinha saído da página continuava contando como "alteração não salva"; renomear a unidade pedia confirmação falsa e o `catalog.spec` falhava conforme o tempo. O `navigation.spec:382` conferia o diálogo antes de ele abrir. Só interface e testes, sem banco. Integrada na `main` em 25/11/2026 com aval de luis (PR #77). [Registro](ia-tarefas/corrige-rascunho-falso-e2e.md).
+
+## Revisão da interface para apresentação de produto (D-075) — 25/11/2026
+
+- Claude Code, branch `claude/revisao-interface-profissional`, base `main` `0bbeec0`. Logo embutido com reserva em texto, início só com escolha de unidade, Organização com título e blocos, cabeçalho igual em todas as áreas, "Atualizar lista". Só interface; renomeação dos dados do hospedado apenas proposta. Aguarda aceite de luis. [Registro](ia-tarefas/revisao-interface-profissional.md), [relatório](REVISAO_INTERFACE_PROFISSIONAL.md).
