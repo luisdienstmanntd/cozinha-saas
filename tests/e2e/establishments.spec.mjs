@@ -49,6 +49,9 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
       'Informe nome entre 1 e 120 caracteres.',
     );
     await expect(page.getByLabel('Nome da organização')).toBeVisible();
+    // Agora o nome fica na mesma unidade aberta: desfazer o rascunho, senão a criação abaixo
+    // (corretamente) adia a atualização da lista para não descartar o campo alterado (#75).
+    await page.getByLabel('Nome da organização').fill('Empresa de teste A');
 
     await tools.getByLabel('Nome da nova unidade').fill('Cozinha de eventos');
     await tools
@@ -84,7 +87,11 @@ test('proprietário cria e renomeia unidade; colaborador não vê a gestão', as
       .click();
     // V1: as ferramentas da organização ficam em Cadastros da unidade aberta.
     await openArea(page, 'Produtos');
-    await expect(page.getByText('Nenhum produto cadastrado.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Cozinha de eventos: Produtos' })
+        .getByText('Nenhum produto cadastrado.'),
+    ).toBeVisible();
 
     await openArea(page, 'Organização');
     await openTools();
