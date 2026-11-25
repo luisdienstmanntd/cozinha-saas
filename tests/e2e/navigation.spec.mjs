@@ -405,13 +405,17 @@ test('mantém revisão de configurações ao cancelar e descarta após confirmar
     await expect(review).toContainText('2 horas → 1 hora e 30 minutos');
 
     await openAccount(page);
-    let warning = '';
-    page.once('dialog', async (dialog) => {
-      warning = dialog.message();
-      await dialog.dismiss();
+    // O aviso só aparece depois que o acesso novo chega: responde o diálogo assim
+    // que ele abre (sem travar o clique) e só então confere a mensagem.
+    const warning = new Promise((resolve) => {
+      page.once('dialog', async (dialog) => {
+        const message = dialog.message();
+        await dialog.dismiss();
+        resolve(message);
+      });
     });
     await page.getByRole('button', { name: 'Atualizar acesso' }).click();
-    expect(warning).toContain('não salvas');
+    expect(await warning).toContain('não salvas');
     await expect(review).toContainText('2 horas → 1 hora e 30 minutos');
 
     page.once('dialog', (dialog) => dialog.accept());

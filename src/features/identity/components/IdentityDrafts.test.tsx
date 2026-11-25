@@ -105,6 +105,31 @@ function DiscardableDraft() {
   );
 }
 
+// Como o recebimento: depois de gravar, a tela relê o catálogo e troca o formulário
+// por um novo; o antigo sai da página com o produto ainda escolhido.
+function ReplacedAfterSave() {
+  const [round, setRound] = useState(0);
+  return (
+    <form
+      key={round}
+      aria-label="Recebimento"
+      onSubmit={(event) => {
+        event.preventDefault();
+        setRound((value) => value + 1);
+      }}
+    >
+      <label>
+        Produto{' '}
+        <select name="productId" defaultValue="">
+          <option value="">Selecione</option>
+          <option value="arroz">Arroz</option>
+        </select>
+      </label>
+      <button>Registrar recebimento</button>
+    </form>
+  );
+}
+
 async function openUnit(
   renderCatalog: (unit: UnitContext) => ReactNode,
   units: Access = access,
@@ -167,6 +192,21 @@ describe('rascunhos da unidade', () => {
     await user.click(screen.getByText('Minha conta'));
     await user.click(screen.getByRole('button', { name: 'Atualizar acesso' }));
     expect(confirm).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+
+  it('não avisa por formulário sem revisão que já saiu da página', async () => {
+    const { user, gateway } = await openUnit(() => <ReplacedAfterSave />);
+    await user.selectOptions(screen.getByLabelText('Produto'), 'arroz');
+    await user.click(
+      screen.getByRole('button', { name: 'Registrar recebimento' }),
+    );
+    expect(screen.getByLabelText('Produto')).toHaveValue('');
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await user.click(screen.getByText('Minha conta'));
+    await user.click(screen.getByRole('button', { name: 'Atualizar acesso' }));
+    expect(confirm).not.toHaveBeenCalled();
+    expect(gateway.load).toHaveBeenCalledTimes(2);
     confirm.mockRestore();
   });
 
