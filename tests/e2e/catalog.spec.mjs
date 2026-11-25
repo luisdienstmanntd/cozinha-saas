@@ -128,6 +128,14 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     ).toBeVisible();
     await movements.getByLabel('Quantidade da saída').fill('0.5');
     await movements.getByRole('button', { name: 'Registrar saída' }).click();
+    // Nenhum formulário ficou com alteração: renomear não pode pedir confirmação
+    // de "alterações não salvas" (o recebimento já gravado não conta como rascunho).
+    const dialogs = [];
+    const recordDialog = (dialog) => {
+      dialogs.push(dialog.message());
+      void dialog.dismiss();
+    };
+    page.on('dialog', recordDialog);
     await openArea(page, 'Organização');
     await page
       .getByRole('button', { name: 'Gerenciar unidades de Empresa de teste A' })
@@ -135,7 +143,11 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     await page
       .getByRole('button', { name: 'Renomear Cozinha auxiliar' })
       .click();
-    await expect(page.getByText('Nome da unidade atualizado.')).toBeVisible();
+    await expect(
+      page.getByText('Nome da unidade atualizado.', { exact: true }),
+    ).toBeVisible();
+    page.off('dialog', recordDialog);
+    expect(dialogs).toEqual([]);
     await expect(
       page.getByRole('region', { name: 'Movimentações' }),
     ).toHaveCount(0);

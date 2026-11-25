@@ -41,19 +41,29 @@ export function useUnitDrafts() {
     }
   }, []);
 
+  // A form without a review key that left the page took its values with it: nothing
+  // is left to protect, so it must not raise an "unsaved changes" warning.
+  // Keyed forms are kept: their review step replaces the form DOM on purpose.
+  const pruneDetached = useCallback(() => {
+    for (const [form, draft] of drafts.current)
+      if (!draft.key && !form.isConnected) drafts.current.delete(form);
+  }, []);
+
   const hasDraft = useCallback(() => {
     scan();
+    pruneDetached();
     for (const draft of drafts.current.values()) {
       if (!draft.scope.isConnected) continue;
       for (const [control, initialValue] of draft.fields)
         if (controlValue(control) !== initialValue) return true;
     }
     return false;
-  }, [scan]);
+  }, [scan, pruneDetached]);
 
   const hasDraftForScopes = useCallback(
     (scopeIds: Set<string>) => {
       scan();
+      pruneDetached();
       for (const draft of drafts.current.values()) {
         if (
           !draft.scope.isConnected ||
@@ -65,7 +75,7 @@ export function useUnitDrafts() {
       }
       return false;
     },
-    [scan],
+    [scan, pruneDetached],
   );
 
   const clearScopes = useCallback((scopeIds: Set<string>) => {
