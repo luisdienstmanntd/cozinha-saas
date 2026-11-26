@@ -198,92 +198,103 @@ export function LabelView({
       {!data && !error && <p>Consultando recipiente…</p>}
       {data && (
         <>
-          {data.production && <p>Preparação própria</p>}
-          <p>
-            {data.kind === 'derived'
-              ? 'Recipiente derivado de uma manipulação (produto aberto ou fracionado).'
-              : data.production
-                ? 'Um recipiente integral corresponde a esta produção.'
-                : 'Um recipiente integral corresponde a este recebimento.'}
-          </p>
-          {data.production && (
-            <p>
-              Produzida em{' '}
-              {when(data.production.produced_at, data.production.timezone)} por{' '}
-              {data.production.handled_by_name}
-              {data.production.late &&
-                ' — registrada fora da janela de 2 horas'}
-            </p>
-          )}
-          {data.production?.voided && (
-            <p role="alert">
-              <strong>{PRODUCTION_VOIDED_TEXT}</strong>: produção anulada em{' '}
-              {when(
-                data.production.voided.created_at,
-                data.production.timezone,
-              )}{' '}
-              ({data.production.voided.reason}). {PRODUCTION_VOIDED_MESSAGE}
-            </p>
-          )}
-          <p>
-            {data.batch_receipts.products.name} —{' '}
-            {lotText(data.batch_receipts.source_code)}
-          </p>
-          <p>
-            Quantidade inicial:{' '}
-            {formatQuantity(
-              data.effective?.initial_quantity ?? data.batch_receipts.quantity,
-            )}{' '}
-            {data.batch_receipts.unit} — validade{' '}
-            {formatCivilDate(
-              data.effective?.expiry_date ?? data.batch_receipts.expiry_date,
-            )}{' '}
-            (
-            {data.effective?.expiry_origin === 'handling'
-              ? 'após manipulação'
-              : data.batch_receipts.expiry_origin === 'original'
-                ? 'original'
-                : 'definida pelo responsável'}
-            )
-          </p>
-          <p>
-            Saldo atual: {formatQuantity(data.balance)}{' '}
-            {data.batch_receipts.unit}
-            {data.balance <= 0 && ' — esgotado, sem saldo neste recipiente'}
-          </p>
-          {expired && (
-            <p role="status" className="expired-band">
-              <strong>{EXPIRED_TEXT}</strong>: {EXPIRED_NOTE}
-            </p>
-          )}
-          {data.hold &&
-            !data.voided &&
-            !data.late_hold &&
-            !data.production_hold && (
-              <p role="status">
-                <strong>{BLOCK_TEXT[data.hold]}</strong>
-                {data.hold === 'pending'
-                  ? ': ocorrência sem decisão do proprietário. Consumo e manipulação ficam recusados; a etiqueta sai com a faixa de bloqueio.'
-                  : ': o proprietário rejeitou o uso. Só o descarte é permitido; a etiqueta sai com a faixa.'}
+          <div className="ficha-alerts">
+            {data.production?.voided && (
+              <p role="alert">
+                <strong>{PRODUCTION_VOIDED_TEXT}</strong>: produção anulada em{' '}
+                {when(
+                  data.production.voided.created_at,
+                  data.production.timezone,
+                )}{' '}
+                ({data.production.voided.reason}). {PRODUCTION_VOIDED_MESSAGE}
               </p>
             )}
-          <p>Etiqueta em PDF · 100 × 100 mm</p>
-          {data.voided ? (
-            <p role="alert">
-              Manipulação anulada: este recipiente não vale mais e a etiqueta
-              não pode ser gerada.
+            {expired && (
+              <p role="status" className="expired-band">
+                <strong>{EXPIRED_TEXT}</strong>: {EXPIRED_NOTE}
+              </p>
+            )}
+            {data.hold &&
+              !data.voided &&
+              !data.late_hold &&
+              !data.production_hold && (
+                <p role="status">
+                  <strong>{BLOCK_TEXT[data.hold]}</strong>
+                  {data.hold === 'pending'
+                    ? ': ocorrência sem decisão do proprietário. Consumo e manipulação ficam recusados; a etiqueta sai com a faixa de bloqueio.'
+                    : ': o proprietário rejeitou o uso. Só o descarte é permitido; a etiqueta sai com a faixa.'}
+                </p>
+              )}
+            {data.voided ? (
+              <p role="alert">
+                Manipulação anulada: este recipiente não vale mais e a etiqueta
+                não pode ser gerada.
+              </p>
+            ) : data.late_hold ? (
+              <p role="alert">{LATE_HOLD_MESSAGE}</p>
+            ) : productionVoided ? null : data.production_hold ? (
+              <p role="alert">{PRODUCTION_HOLD_MESSAGE}</p>
+            ) : null}
+          </div>
+          <div className="ficha-facts">
+            {data.production && <p className="ficha-tag">Preparação própria</p>}
+            <p className="ficha-kind">
+              {data.kind === 'derived'
+                ? 'Recipiente derivado de uma manipulação (produto aberto ou fracionado).'
+                : data.production
+                  ? 'Um recipiente integral corresponde a esta produção.'
+                  : 'Um recipiente integral corresponde a este recebimento.'}
             </p>
-          ) : data.late_hold ? (
-            <p role="alert">{LATE_HOLD_MESSAGE}</p>
-          ) : productionVoided ? null : data.production_hold ? (
-            <p role="alert">{PRODUCTION_HOLD_MESSAGE}</p>
-          ) : (
-            <button disabled={busy} onClick={() => void download()}>
-              Gerar etiqueta PDF
-            </button>
-          )}
+            {data.production && (
+              <p>
+                Produzida em{' '}
+                {when(data.production.produced_at, data.production.timezone)}{' '}
+                por {data.production.handled_by_name}
+                {data.production.late &&
+                  ' — registrada fora da janela de 2 horas'}
+              </p>
+            )}
+            <p>
+              {data.batch_receipts.products.name} —{' '}
+              {lotText(data.batch_receipts.source_code)}
+            </p>
+            <p>
+              Quantidade inicial:{' '}
+              {formatQuantity(
+                data.effective?.initial_quantity ??
+                  data.batch_receipts.quantity,
+              )}{' '}
+              {data.batch_receipts.unit} — validade{' '}
+              {formatCivilDate(
+                data.effective?.expiry_date ?? data.batch_receipts.expiry_date,
+              )}{' '}
+              (
+              {data.effective?.expiry_origin === 'handling'
+                ? 'após manipulação'
+                : data.batch_receipts.expiry_origin === 'original'
+                  ? 'original'
+                  : 'definida pelo responsável'}
+              )
+            </p>
+            <p className="ficha-balance">
+              Saldo atual: {formatQuantity(data.balance)}{' '}
+              {data.batch_receipts.unit}
+              {data.balance <= 0 && ' — esgotado, sem saldo neste recipiente'}
+            </p>
+          </div>
+          <div className="ficha-label">
+            <p>Etiqueta em PDF · 100 × 100 mm</p>
+            {!data.voided &&
+              !data.late_hold &&
+              !productionVoided &&
+              !data.production_hold && (
+                <button disabled={busy} onClick={() => void download()}>
+                  Gerar etiqueta PDF
+                </button>
+              )}
+          </div>
           {handling && scopeIds && (
-            <section aria-label="Origem e derivados">
+            <section aria-label="Origem e derivados" className="ficha-origin">
               <h3>Origem e derivados</h3>
               {familyError && <p role="alert">{familyError}</p>}
               {family?.partial && (
@@ -327,7 +338,7 @@ export function LabelView({
                 userId &&
                 !data.voided &&
                 data.balance > 0 && (
-                  <>
+                  <div className="ficha-actions">
                     {expired && (
                       <p>
                         <em>Manipulação indisponível: validade passou.</em>
@@ -357,7 +368,7 @@ export function LabelView({
                         onOpenContainer={onOpenContainer}
                       />
                     )}
-                  </>
+                  </div>
                 )}
               {!canHandle?.(data.organization_id!) && (
                 <p>Somente o proprietário abre, porciona ou anula.</p>
