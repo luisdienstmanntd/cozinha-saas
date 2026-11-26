@@ -188,3 +188,4 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## PR-09 do roadmap de interface (filtro de produto no recebimento) — 26/11/2026
 
 - Claude Code, branch `claude/ui-pr09-filtro-produto`, base `main` `3550a5f` (PR-08 mesclado como #89). Campo "Filtrar produtos" no recebimento; só tela, sem mudar regras nem envio. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr09-filtro-produto.md).
+- Claude Code, branch `claude/ui-pr10-ficha`, base `main` `cefb0ae` (PR-09 mesclado como #90). Ficha do recipiente organizada em blocos (alertas, fatos, etiqueta, origem); só apresentação, mesmos textos e ações. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr10-ficha.md).

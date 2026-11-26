@@ -618,3 +618,76 @@ it('ambiente hospedado não chama o modelo de demonstração e usa o endereço o
     vi.unstubAllGlobals();
   }
 });
+
+// PR-10: ficha organizada. Alertas antes dos fatos, etiqueta em bloco próprio; textos e ações iguais.
+const fichaData = (over: Record<string, unknown> = {}) => ({
+  id: '12345678-1234-4234-8234-123456789abc',
+  short_code: 'C-000077',
+  balance: 2,
+  batch_receipts: {
+    source_code: '0001',
+    quantity: 5,
+    unit: 'kg',
+    expiry_date: '2026-11-10',
+    expiry_origin: 'original' as const,
+    timezone: 'America/Sao_Paulo',
+    products: { name: 'Arroz' },
+  },
+  ...over,
+});
+
+it('ficha vencida mostra a faixa de alerta antes dos fatos e mantém a etiqueta no bloco próprio (PR-10)', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-11-15T15:00:00Z'));
+    const { container } = render(
+      <LabelView
+        id="12345678-1234-4234-8234-123456789abc"
+        gateway={{
+          ensure: vi.fn(),
+          get: vi.fn().mockResolvedValue(fichaData()),
+        }}
+      />,
+    );
+    const button = await screen.findByRole('button', {
+      name: 'Gerar etiqueta PDF',
+    });
+    const alerts = container.querySelector('.ficha-alerts')!;
+    const facts = container.querySelector('.ficha-facts')!;
+    const label = container.querySelector('.ficha-label')!;
+    expect(alerts).toHaveTextContent('VENCIDO');
+    expect(
+      alerts.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(facts).toHaveTextContent('Saldo atual: 2 kg');
+    expect(facts).toHaveTextContent(/validade 10\/11\/2026 \(original\)/);
+    expect(label).toContainElement(button);
+    expect(label).toHaveTextContent('Etiqueta em PDF · 100 × 100 mm');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('ficha anulada mantém a mesma mensagem, sem botão de etiqueta e sem faixa de vencido (PR-10)', async () => {
+  const { container } = render(
+    <LabelView
+      id="12345678-1234-4234-8234-123456789abc"
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue(fichaData({ voided: true })),
+      }}
+    />,
+  );
+  expect(
+    await screen.findByText(
+      'Manipulação anulada: este recipiente não vale mais e a etiqueta não pode ser gerada.',
+    ),
+  ).toBeVisible();
+  expect(container.querySelector('.ficha-alerts')).toContainElement(
+    screen.getByRole('alert'),
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeNull();
+  expect(container.querySelector('.expired-band')).toBeNull();
+});
