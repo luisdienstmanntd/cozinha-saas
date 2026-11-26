@@ -77,6 +77,7 @@ describe('PR-12: destinos da barra inferior do celular', () => {
       'fornecedores',
       'preparacoes',
       'config-unidade',
+      'config-equipe',
       'config-organizacao',
     ]);
   });
