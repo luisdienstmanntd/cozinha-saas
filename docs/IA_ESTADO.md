@@ -149,3 +149,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Revisão da interface para apresentação de produto (D-075) — 25/11/2026
 
 - Claude Code, branch `claude/revisao-interface-profissional`, base `main` `0bbeec0`. Logo embutido com reserva em texto, início só com escolha de unidade, Organização com título e blocos, cabeçalho igual em todas as áreas, "Atualizar lista". Só interface; renomeação dos dados do hospedado apenas proposta. Aguarda aceite de luis. [Registro](ia-tarefas/revisao-interface-profissional.md), [relatório](REVISAO_INTERFACE_PROFISSIONAL.md).
+
+## Auditoria de funcionalidades sem tela — 26/11/2026
+
+- Claude Code, branch `claude/auditoria-funcionalidades-sem-tela`, base `main` `1baa836`. Só documentação (`AUDITORIA_FUNCIONALIDADES_SEM_TELA.md`, registro em `ia-tarefas/`). Aguarda aceite de luis; próximo D livre: D-076.
