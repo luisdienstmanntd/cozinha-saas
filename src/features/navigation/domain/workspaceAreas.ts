@@ -15,6 +15,8 @@ export function workspaceAreas(
     { id: 'visao-geral', label: 'Visão geral' },
     { id: 'validade', label: 'Validades' },
   ];
+  // D-076: indicadores da unidade, só para o proprietário (a leitura continua filtrada pela RLS).
+  if (owner) areas.splice(1, 0, { id: 'indicadores', label: 'Indicadores' });
   if (owner) areas.push({ id: 'receber', label: 'Recebimentos' });
   if (production) areas.push({ id: 'producao', label: 'Produção' });
   areas.push({ id: 'etiquetas', label: 'Etiquetas' });

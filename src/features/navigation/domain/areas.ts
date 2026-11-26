@@ -9,6 +9,7 @@ export const AREA_IDS = [
   'locais',
   'cadastros',
   'visao-geral',
+  'indicadores',
   'etiquetas',
   'produtos',
   'fornecedores',

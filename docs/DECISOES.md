@@ -583,3 +583,12 @@
 - **Motivo:** pedido de luis em 25/11/2026: opções de uma aba apareciam em outra, início desalinhado, logo quebrado no site publicado e aparência de produto real.
 - **Consequência:** só interface; nenhum dado, permissão ou regra muda. Nomes de empresa e unidade com "Teste" no hospedado são dados: a renomeação está proposta em [REVISAO_INTERFACE_PROFISSIONAL.md](REVISAO_INTERFACE_PROFISSIONAL.md) e depende de autorização específica.
 - **Revisar quando:** houver mais de uma organização por pessoa em uso real, ou se a gestão de unidades precisar de área própria.
+
+## D-076 — Indicadores da unidade a partir de `pilot_metrics` (26/11/2026)
+
+- **Status:** proposta, aguardando aceite de luis (PR em rascunho, branch `claude/painel-indicadores-piloto`). Fatia A da auditoria de funcionalidades sem tela (PR #79, `docs/AUDITORIA_FUNCIONALIDADES_SEM_TELA.md` naquela branch).
+- **Decisão:** nova área **Indicadores**, logo abaixo de Visão geral, só para o proprietário. Lê a função existente `pilot_metrics` (sem migração) para os últimos 7, 30 ou 90 dias até agora, e mostra em grupos: situação agora (recipientes vencidos com saldo, com atalho para Validades filtrada), abertura e porcionamento, produção da cozinha, ocorrências e decisões, armazenamento. Tempos em mediana e máximo; sem registro, mostra "—" e "Sem registros no período", nunca zero inventado. Participações só quando há base.
+- **Permissão:** a tela fica fora do menu e do endereço para o colaborador, como as demais áreas do proprietário. A função continua SECURITY INVOKER e só conta o que a RLS deixa a pessoa ler; ela **não** restringe a proprietário no banco (o colaborador já lê as mesmas linhas pela RLS). Esconder a área é apresentação, não barreira de segurança; nenhum dado novo fica exposto.
+- **Nome:** "Indicadores" em vez de "piloto" na interface, pela D-074 (produto final, sem termos de ensaio). No código e no banco o nome `pilot_metrics` permanece.
+- **Consequência:** só interface e testes; nenhum dado, regra, migração ou Supabase hospedado muda. Nada na tela avalia o alimento nem afirma conformidade (Q10 segue pendente).
+- **Revisar quando:** o piloto pedir período personalizado, comparação entre unidades ou exportação (fatia F), ou se a D-019 mudar e o colaborador passar a precisar dos números.

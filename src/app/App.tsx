@@ -24,6 +24,7 @@ import {
 import { ProductionPanel } from '../features/production/components/ProductionPanel';
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 import { SettingsPanel } from '../features/settings/components/SettingsPanel';
+import { UnitMetricsPanel } from '../features/metrics/components/UnitMetricsPanel';
 import { parsePlace, placeSearch } from '../features/navigation/domain/areas';
 import type { AreaId } from '../features/navigation/domain/areas';
 import type { UnitContext } from '../features/identity/components/IdentityHome';
@@ -197,6 +198,15 @@ function Workspace({
             revision={pendingToken + stockToken}
             areas={areas}
             select={select}
+            expiryHref={(filter) => hrefFor('validade', filter)}
+            selectExpiry={selectExpiry}
+          />
+        )}
+        {area === 'indicadores' && canCreate && unit.active !== false && (
+          <UnitMetricsPanel
+            scope={scope}
+            timezone={timezone}
+            gateway={configuration.metrics}
             expiryHref={(filter) => hrefFor('validade', filter)}
             selectExpiry={selectExpiry}
           />

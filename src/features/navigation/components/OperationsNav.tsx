@@ -12,6 +12,7 @@ import { catalogPages } from '../domain/workspaceAreas';
 
 const iconPaths: Partial<Record<AreaId, string>> = {
   'visao-geral': 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z',
+  indicadores: 'M4 20V10m6 10V4m6 16v-7m4 7H3',
   validade:
     'M7 3v4m10-4v4M4 10h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm4 10 2 2 4-4',
   receber:
@@ -138,7 +139,8 @@ export function OperationsNav({
     ({ id }) =>
       !Object.hasOwn(catalogPages, id) &&
       !id.startsWith('config-') &&
-      id !== 'visao-geral',
+      id !== 'visao-geral' &&
+      id !== 'indicadores',
   );
 
   return (
@@ -180,7 +182,11 @@ export function OperationsNav({
         <nav aria-label="Áreas da unidade">
           <div>
             <p className="mesa-nav-heading">Principal</p>
-            {links(areas.filter(({ id }) => id === 'visao-geral'))}
+            {links(
+              areas.filter(
+                ({ id }) => id === 'visao-geral' || id === 'indicadores',
+              ),
+            )}
           </div>
           <div>
             <p className="mesa-nav-heading">Operação</p>
