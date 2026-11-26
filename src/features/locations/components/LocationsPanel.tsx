@@ -118,7 +118,7 @@ export function LocationsPanel({
       )}
       {error && <p role="alert">{error}</p>}
       {locations === null ? (
-        <p>Carregando locais…</p>
+        <p role="status">Carregando locais…</p>
       ) : locations.length === 0 ? (
         <p>Nenhum local cadastrado nesta unidade.</p>
       ) : (

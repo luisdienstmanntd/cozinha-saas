@@ -146,7 +146,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
             <p>Regras de produção e de etiquetas desta unidade.</p>
           </div>
         </header>
-        <p>Carregando configurações…</p>
+        <p role="status">Carregando configurações…</p>
       </section>
     );
 
