@@ -159,6 +159,14 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
       movements.getByText('Saldo registrado: 0,75 kg'),
     ).toBeVisible();
     await expect(movements.getByText(/Consumo — 0,5 kg/)).toBeVisible();
+    const consumptions = checked(
+      await admin
+        .from('stock_movements')
+        .select('quantity')
+        .eq('organization_id', scopeA.organization_id)
+        .eq('kind', 'consumption'),
+    );
+    expect(consumptions).toEqual([{ quantity: 0.5 }]);
     // Fatia 6.2: a linha do painel mostra o saldo do servidor, não a quantidade recebida.
     await expect(results.getByText(/Saldo 0,75 kg de 1,25 kg/)).toBeVisible();
     await newCatalogItem(page, 'Fornecedores');

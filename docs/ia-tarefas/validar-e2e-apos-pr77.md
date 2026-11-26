@@ -12,3 +12,15 @@
 - O Claude corrigiu o aviso falso no PR #77 (commit `c07d9ec`, merge `74a0863`) e tornou o E2E mais estrito, exigindo ausência de diálogo. A `main` avançou a `a504672`, com PR #78 de interface e #80 de indicadores. Os checks da `main` e do #77 consultados estavam verdes. PRs #79 e #81 continuam em rascunho, sem alterações desta sessão.
 - A investigação anterior está preservada no commit WIP `2961558` em `codex/investigar-e2e-20261125`; seu ajuste de aceitar diálogo é explicitamente superado. Não reaplicar esse ajuste.
 - Na execução anterior, cinco testes de `test:ci-scripts` falharam no Windows por pressupor Bash/Linux; os cinco passaram no Ubuntu/WSL com Node 24.22.3 e arquivos de teste/script em LF. Os demais testes do comando tinham passado no Windows. Este fato não substitui nova validação do estado atual.
+
+## Checkpoint — verificação complementar
+
+- Adicionados somente testes: cancelamento de atualização após renomeação preserva revisão de outro formulário; no E2E de catálogo, a retomada é conferida no banco como um único consumo. O teste estrito do Claude, que reprova diálogo inesperado, foi mantido integralmente.
+- Teste focado de rascunhos: 14 passaram. E2E de catálogo repetido três vezes na `main` atual com a conferência adicional: 3 passaram; avisos de chaves React duplicadas continuam observados e não foram corrigidos nesta tarefa.
+- A checagem inicial de formatação dos dois testes falhou; aplicada formatação dirigida. Lint, typecheck, suíte, build e scripts de CI estão sendo executados. Banco local contém as migrações da main e não foi resetado; faltam pgTAP, integração e E2E completos.
+
+## Checkpoint — gates e isolamento do banco
+
+- `npm run lint`, `npm run typecheck`, `npm run test` (663 testes) e `npm run build` passaram; build manteve avisos preexistentes. Scripts de CI: cinco falhas no Windows por pressupostos de Bash/LF; no Ubuntu/WSL, checkout LF e Node 24, passaram 29/29.
+- `npm run test:db` falhou em 3 de 1500 verificações de `hosted_provisioning.test.sql`, que exigem contagens de banco vazio. Antes dos E2E a base local estava vazia; depois, verificação identificou 22 empresas de teste e 33 usuários `@example.test`, preservados por histórico. Não apagar dados nem resetar a instância existente.
+- Próximo passo: executar pgTAP em segunda instância local isolada, com portas e projeto próprios em D:, preservando a primeira; após aprovação, executar integração e E2E completos. Falhas continuam registradas até validação efetiva.

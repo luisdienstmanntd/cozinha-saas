@@ -270,6 +270,41 @@ describe('rascunhos da unidade', () => {
     confirm.mockRestore();
   });
 
+  it('preserva a revisão de outro formulário quando o usuário cancela a atualização após renomear', async () => {
+    const { user, gateway } = await openUnit(
+      (unit) => (
+        <>
+          {unit.organizationTools}
+          <RevisableDraft />
+        </>
+      ),
+      access,
+      (_organization, _owner, onChanged) => (
+        <button
+          type="button"
+          onClick={() => void onChanged('Nome da unidade atualizado.')}
+        >
+          Salvar unidade
+        </button>
+      ),
+    );
+    await user.type(screen.getByLabelText('Observação'), 'conferir lote');
+    await user.click(screen.getByRole('button', { name: 'Revisar' }));
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await user.click(screen.getByRole('button', { name: 'Salvar unidade' }));
+    expect(gateway.load).toHaveBeenCalledTimes(2);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('region', { name: 'Revisão' })).toHaveTextContent(
+      'conferir lote',
+    );
+    expect(
+      await screen.findByText(
+        /A lista não foi atualizada porque há alterações/,
+      ),
+    ).toBeVisible();
+    confirm.mockRestore();
+  });
+
   it('mantém o aviso depois que o formulário entra em etapa de revisão', async () => {
     const { user } = await openUnit(() => <RevisableDraft />);
     await user.type(screen.getByLabelText('Observação'), 'conferir lote');
