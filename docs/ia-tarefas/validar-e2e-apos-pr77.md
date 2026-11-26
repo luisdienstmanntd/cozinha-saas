@@ -48,3 +48,7 @@
 - E2E completo: `npm run test:e2e`, 43/43 aprovados com o adaptador local para o cliente PostgreSQL real; a tentativa anterior havia falhado 1/43 por ausência de `psql` no Windows. Teste de sessão focado também passou 3/3. O teste complementar de catálogo manteve a exigência de nenhum diálogo inesperado e verificou uma única baixa.
 - Gates realizados anteriormente sobre as mesmas alterações de teste: lint, typecheck, 663 testes unitários e build aprovados; CI scripts 29/29 em Ubuntu/WSL, pgTAP 1500/1500 em instância isolada. `prettier --check` dos dois testes e `git diff --check` aprovados. Build manteve avisos já existentes; E2E manteve avisos React de chaves duplicadas, relatados também no trabalho separado do PR #81, sem correção nesta branch.
 - Banco principal preservado sem reset; testes de integração/E2E criaram dados fictícios com histórico. Instância isolada parada e volumes preservados. A branch contém somente testes e documentação; não houve merge nem deploy. Encaminhar para aceite humano e coordenar revisão dos PRs independentes #79/#81 sem duplicar trabalho.
+
+## Aceite humano — 26/11/2026
+
+- O usuário aceitou a validação nesta conversa. A aceitação refere-se ao resultado documentado acima; não autoriza por si só merge ou publicação. Os PRs #79 e #81 continuam separados para revisão própria.

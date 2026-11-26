@@ -4,7 +4,7 @@ Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotogra
 
 ## Validação após PR #77 — 26/11/2026
 
-- Codex: validação concluída e aguardando aceite na branch `codex/validar-e2e-20261126`, base `a504672`: pgTAP 1500/1500, integração 66/66 e E2E 43/43 aprovados; detalhes e avisos no registro. O Claude corrigiu o aviso falso na `main`; seu teste estrito foi preservado. PR #81 permanece separado e não foi alterado. [Registro](ia-tarefas/validar-e2e-apos-pr77.md).
+- Codex: validação concluída e aceita pelo usuário em 26/11/2026 na branch `codex/validar-e2e-20261126`, base `a504672`: pgTAP 1500/1500, integração 66/66 e E2E 43/43 aprovados; detalhes e avisos no registro. O Claude corrigiu o aviso falso na `main`; seu teste estrito foi preservado. PR #81 permanece separado e não foi alterado. [Registro](ia-tarefas/validar-e2e-apos-pr77.md).
 
 ## Situação verificada em 13/11/2026
 
