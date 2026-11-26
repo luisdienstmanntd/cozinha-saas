@@ -15,3 +15,8 @@
 ### 26/11/2026 — Claude Code
 
 - **Feito:** barra, folha, testes Vitest e E2E, capturas antes/depois. Bateria inteira local em execução.
+
+### 26/11/2026 — Claude Code (CI do #93)
+
+- **Falhou:** no CI, `metrics.spec.mjs:36` (E2E, 1 de 50) — `openArea('Indicadores')` logo depois de `setViewportSize(390)` procurou o link antes de a tela trocar o menu lateral pela barra inferior (a troca é assíncrona) e não clicou em "Mais". Localmente passava por ser mais rápido.
+- **Causa:** corrida no helper de teste, não no app. **Correção:** `openArea` espera o layout certo para a largura atual (`.mesa-bottom-nav` até 899 px, `.mesa-sidebar` visível acima) antes de procurar o link. Sem enfraquecer nenhuma verificação. A primeira versão da correção quebrou 2 testes (duas unidades montadas = dois menus laterais); ajustada para `.first()` visível. E2E dos 5 arquivos afetados verde (20).

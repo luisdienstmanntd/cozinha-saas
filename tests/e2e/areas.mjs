@@ -18,6 +18,14 @@ export function areaLink(page, name) {
 }
 
 export async function openArea(page, name) {
+  // Depois de mudar o tamanho da janela, a tela troca menu lateral e barra inferior com um pequeno
+  // atraso: espera o layout certo para a largura atual antes de procurar o link.
+  const compact = (page.viewportSize()?.width ?? 1280) <= 899;
+  await page
+    .locator(compact ? '.mesa-bottom-nav' : '.mesa-sidebar')
+    .and(page.locator(':visible'))
+    .first()
+    .waitFor({ state: 'visible' });
   const more = page.getByRole('button', { name: 'Mais', exact: true });
   const link = areaLink(page, name);
   if (
