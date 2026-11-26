@@ -80,7 +80,7 @@ input {
   color: var(--text-secondary);
   margin: 0 0 1.2rem;
 }
-h1 {
+.page h1 {
   font-size: clamp(2.4rem, 5vw, 4rem);
   letter-spacing: -0.045em;
   line-height: 1.1;
@@ -116,7 +116,6 @@ input[type='checkbox'] {
   accent-color: var(--action-primary);
 }
 button {
-  margin-top: 1.3rem;
   border: 0;
   border-radius: 0.5rem;
   background: var(--action-primary);
@@ -128,7 +127,10 @@ button {
 button:hover {
   background: var(--action-primary-hover);
 }
-button span {
+.page button {
+  margin-top: 1.3rem;
+}
+.page button span {
   margin-left: 1.5rem;
 }
 .feedback {
@@ -693,9 +695,6 @@ footer {
   font-weight: inherit;
   text-align: left;
   cursor: pointer;
-}
-.tile.tile-filter span {
-  margin-left: 0;
 }
 .tile.tile-filter[aria-pressed='true'] {
   border-width: 2px;
