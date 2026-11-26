@@ -32,3 +32,8 @@
 - Identificados requisitos adicionais: teste de sessão invoca `psql` (não encontrado no Windows ou Ubuntu/WSL); teste de provisionamento verifica modo Unix 0600, não confiável em Windows. Próximo passo: prover ambiente Linux com psql e permissões Unix reais, apenas um banco local ativo, executar integração completa, investigar qualquer falha persistente e só então executar E2E completo. WSL disponível, mas ainda sem psql; testar previamente acesso à CLI Docker e permissões Unix. Não alterar nem resetar a base existente.
 - `test:e2e` completo não executado devido ao gate de integração reprovado. O teste E2E focado passou três vezes, mas não substitui a suíte. Não fazer merge/deploy; preservar registros e mudanças do Claude.
 - Diagnóstico adicional no Ubuntu/WSL: `psql` ausente, `sudo -n` indisponível e integração Docker Desktop com a distribuição não habilitada. Evitar execução incompleta ou apontada para outro banco; configurar ambiente Linux apropriado antes de repetir.
+
+## Retomada — 26/11/2026, execução Linux isolada
+
+- Codex retoma a validação na mesma branch; `origin/main` permanece `a504672`, uma única instância Supabase principal ativa. Prova de conectividade: contêiner `postgres:16-alpine` com rede host alcança a porta local 54322.
+- Plano: preparar checkout LF e ambiente Linux de testes em D:, com Node, psql, CLI Docker e acesso à instância local já existente; executar a integração uma única vez e capturar saída. O ambiente temporário de testes não alterará migrações ou código de produto. Prosseguir ao E2E somente após aprovação da integração. Preservar dados e containers existentes.
