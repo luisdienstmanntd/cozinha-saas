@@ -38,6 +38,25 @@ export function workspaceAreas(
   return areas;
 }
 
+/**
+ * PR-12 (D-078): destinos da barra inferior do celular. Quatro atalhos por perfil (Visão geral,
+ * Validades, Produção ou Recebimentos, Etiquetas) e o resto em "Mais". Só reparte as áreas que
+ * `workspaceAreas` já entregou ao perfil; não cria, esconde nem libera nenhuma área.
+ */
+export function bottomBarAreas(areas: Area[]): { bar: Area[]; more: Area[] } {
+  const has = (id: AreaId) => areas.some((area) => area.id === id);
+  const wanted: AreaId[] = ['visao-geral', 'validade'];
+  wanted.push(has('producao') ? 'producao' : 'receber');
+  wanted.push('etiquetas');
+  // Perfil sem Produção nem Recebimentos (colaborador): completa com Locais, se houver.
+  if (!wanted.slice(0, 3).every(has)) wanted.push('locais');
+  const barIds = wanted.filter(has).slice(0, 4);
+  return {
+    bar: barIds.map((id) => areas.find((area) => area.id === id)!),
+    more: areas.filter(({ id }) => !barIds.includes(id)),
+  };
+}
+
 const legacy: Record<string, AreaId> = {
   '#cadastro-produtos': 'produtos',
   '#cadastro-fornecedores': 'fornecedores',

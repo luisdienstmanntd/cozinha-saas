@@ -12,9 +12,12 @@ import {
   localCivilDate,
 } from '../../batches/domain/expiryStatus';
 import { formatCivilDate } from '../../../shared/format/dates';
+import { ActionLink } from '../../../shared/ui/ActionLink';
+import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import type { LocationGateway } from '../../locations/application/locationGateway';
 import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
 import { blockedContainers } from '../../occurrences/domain/occurrence';
+import { openInUnit } from '../../navigation/domain/openInUnit';
 import { containerPath } from '../../labels/domain/label';
 import type { Area, AreaId } from '../../navigation/domain/areas';
 import type { ExpiryFilter } from '../../batches/domain/expiryFilter';
@@ -38,6 +41,8 @@ export function OperationsOverview({
   select,
   expiryHref,
   selectExpiry,
+  fichaHref,
+  onOpenFicha,
 }: {
   scope: CatalogScope;
   timezone: string;
@@ -50,6 +55,9 @@ export function OperationsOverview({
   // V6 (D-072): cada contador abre Validades já filtrada por aquela categoria.
   expiryHref?: (filter: ExpiryFilter) => string;
   selectExpiry?: (filter: ExpiryFilter) => void;
+  // PR-11: abrir a ficha dentro da unidade; sem eles o link segue para a rota do QR.
+  fichaHref?: (containerId: string) => string;
+  onOpenFicha?: (containerId: string) => void;
 }) {
   const [data, setData] = useState<Results | null>(null);
   const [error, setError] = useState(false);
@@ -128,6 +136,10 @@ export function OperationsOverview({
     );
   }
 
+  // A categoria mais urgente com saldo: vencidos primeiro, senão os que vencem hoje.
+  const urgent: ExpiryFilter =
+    data && data.summary.overdue > 0 ? 'vencidos' : 'hoje';
+
   function available(id: AreaId) {
     return areas.some((area) => area.id === id);
   }
@@ -158,6 +170,53 @@ export function OperationsOverview({
       {!data && !error && <p role="status">Carregando visão geral…</p>}
       {data && !error && (
         <>
+          <section
+            aria-label="Prioridades de hoje"
+            className="mesa-priority mesa-panel"
+          >
+            <h3>Prioridades de hoje</h3>
+            {data.summary.overdue + data.summary.due_today > 0 ? (
+              <>
+                <p className="mesa-priority-items">
+                  {data.summary.overdue > 0 && (
+                    <StatusBadge status="overdue">
+                      {data.summary.overdue === 1
+                        ? '1 vencido'
+                        : `${data.summary.overdue} vencidos`}
+                    </StatusBadge>
+                  )}{' '}
+                  {data.summary.due_today > 0 && (
+                    <StatusBadge status="today">
+                      {data.summary.due_today === 1
+                        ? '1 vence hoje'
+                        : `${data.summary.due_today} vencem hoje`}
+                    </StatusBadge>
+                  )}
+                </p>
+                {expiryHref && selectExpiry ? (
+                  <ActionLink
+                    className="mesa-priority-link"
+                    href={expiryHref(urgent)}
+                    onNavigate={() => selectExpiry(urgent)}
+                  >
+                    Ver na lista
+                  </ActionLink>
+                ) : (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => select('validade')}
+                  >
+                    Ver na lista
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="mesa-panel-message">
+                Nada vencido nem vencendo hoje.
+              </p>
+            )}
+          </section>
           <section
             aria-label="Recipientes com saldo por validade"
             className="mesa-stats"
@@ -244,7 +303,16 @@ export function OperationsOverview({
                     {data.alerts.map((row) => (
                       <tr key={row.container_id}>
                         <td data-label="Produto">
-                          <a href={containerPath(row.container_id)}>
+                          <a
+                            href={
+                              fichaHref?.(row.container_id) ??
+                              containerPath(row.container_id)
+                            }
+                            data-ficha-for={row.container_id}
+                            onClick={(event) =>
+                              openInUnit(event, onOpenFicha, row.container_id)
+                            }
+                          >
                             {row.product_name}
                           </a>
                           <small>
@@ -260,15 +328,19 @@ export function OperationsOverview({
                           {formatCivilDate(row.expiry_date)}
                         </td>
                         <td data-label="Situação">
-                          <span
-                            className={`mesa-status ${getExpiryStatus(row.expiry_date, timezone, data.now)}`}
+                          <StatusBadge
+                            status={getExpiryStatus(
+                              row.expiry_date,
+                              timezone,
+                              data.now,
+                            )}
                           >
                             {expiryBadgeText(
                               row.expiry_date,
                               timezone,
                               data.now,
                             )}
-                          </span>
+                          </StatusBadge>
                           {data.blocked?.has(row.container_id) && (
                             <small>Bloqueado</small>
                           )}
@@ -295,7 +367,6 @@ export function OperationsOverview({
         </>
       )}
       <section className="mesa-shortcuts" aria-label="Ações rápidas">
-        <h3>Ações rápidas</h3>
         <div className="mesa-action-row">
           {available('receber') && (
             <button type="button" onClick={() => select('receber')}>

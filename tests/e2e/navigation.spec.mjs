@@ -222,22 +222,28 @@ for (const width of [390, 320]) {
       expect((await alerts.boundingBox()).y).toBeLessThan(
         (await totals.boundingBox()).y,
       );
-      const menu = page.getByRole('button', { name: 'Menu', exact: true });
-      await menu.click();
+      // PR-12 (D-078): barra inferior com 4 atalhos e "Mais"; as demais áreas ficam na folha.
       await expect(
-        page.getByRole('button', { name: 'Cadastros', exact: true }),
-      ).toHaveAttribute('aria-expanded', 'false');
+        page.getByRole('button', { name: 'Menu', exact: true }),
+      ).toHaveCount(0);
+      for (const link of await nav(page).getByRole('link').all()) {
+        const rect = await link.boundingBox();
+        expect(rect.height).toBeGreaterThanOrEqual(44);
+        expect(rect.width).toBeGreaterThanOrEqual(44);
+      }
+      const more = page.getByRole('button', { name: 'Mais', exact: true });
+      expect((await more.boundingBox()).height).toBeGreaterThanOrEqual(44);
       await expect(areaLink(page, 'Produtos')).toBeHidden();
-      for (const link of await nav(page)
-        .getByRole('link')
-        .filter({ visible: true })
-        .all()) {
+      await more.click();
+      const sheet = page.getByRole('dialog', { name: 'Mais áreas' });
+      await expect(sheet).toBeVisible();
+      for (const link of await sheet.getByRole('link').all()) {
         const rect = await link.boundingBox();
         expect(rect.height).toBeGreaterThanOrEqual(44);
         expect(rect.width).toBeGreaterThanOrEqual(44);
       }
       await openArea(page, 'Produtos');
-      await expect(nav(page)).toBeHidden();
+      await expect(sheet).toBeHidden();
       await expect(
         page.getByRole('heading', { name: 'Produtos' }),
       ).toBeVisible();
@@ -426,5 +432,107 @@ test('mantém revisão de configurações ao cancelar e descarta após confirmar
     await expect(
       page.getByRole('region', { name: 'Revisão das configurações' }),
     ).toHaveCount(0);
+  });
+});
+
+// PR-01 (diagnóstico de 26/11/2026): em notebook 1366×768 o menu lateral cabe inteiro, sem rolagem
+// própria, mesmo com Cadastros aberto; no celular o menu continua com alvos de toque de 44 px.
+test('menu lateral cabe em 1366×768 sem rolagem própria e mantém 44 px no celular', async ({
+  page,
+}) => {
+  page.setDefaultTimeout(5000);
+  await withCatalogFixture(async ({ users }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await openUnit(page);
+    await openArea(page, 'Preparações próprias');
+    await expect(
+      nav(page).getByRole('link', { name: 'Produtos', exact: true }),
+    ).toBeVisible();
+    const overflow = await page
+      .locator('.mesa-sidebar')
+      .evaluate((element) => element.scrollHeight - element.clientHeight);
+    expect(overflow).toBeLessThanOrEqual(0);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('button', { name: 'Mais', exact: true }).click();
+    const heights = await page
+      .getByRole('dialog', { name: 'Mais áreas' })
+      .getByRole('link')
+      .evaluateAll((links) =>
+        links
+          .filter((link) => link.getBoundingClientRect().height > 0)
+          .map((link) => link.getBoundingClientRect().height),
+      );
+    heights.push(
+      ...(await nav(page)
+        .getByRole('link')
+        .evaluateAll((links) =>
+          links.map((link) => link.getBoundingClientRect().height),
+        )),
+    );
+    expect(heights.length).toBeGreaterThan(3);
+    for (const height of heights) expect(height).toBeGreaterThanOrEqual(44);
+  });
+});
+
+// PR-05 (M2): cada área mostra um único título de página, sempre h2.
+test('cada área mostra um único título de página em h2', async ({ page }) => {
+  page.setDefaultTimeout(5000);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await openUnit(page);
+    for (const [area, title] of [
+      ['Visão geral', 'Visão geral'],
+      ['Indicadores', 'Indicadores'],
+      ['Validade', 'Validades'],
+      ['Receber', 'Recebimentos'],
+      ['Etiquetas', 'Etiquetas'],
+      ['Produtos', 'Produtos'],
+      ['Fornecedores', 'Fornecedores'],
+      ['Unidade', 'Configurações da unidade'],
+    ]) {
+      await openArea(page, area);
+      const titles = page.locator('.workspace h2:visible');
+      await expect(titles).toHaveCount(1);
+      await expect(titles.first()).toHaveText(title);
+    }
+  });
+});
+
+// PR-06 (M5): "Prioridades de hoje" abre a Visão geral, antes dos contadores; sem vencidos e sem
+// vencem hoje, o zero é real e a mensagem diz isso.
+test('Visão geral: Prioridades de hoje vem antes dos contadores e das ações no cabeçalho', async ({
+  page,
+}) => {
+  page.setDefaultTimeout(5000);
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await openUnit(page);
+    const priorities = page.getByRole('region', {
+      name: 'Prioridades de hoje',
+    });
+    await expect(priorities).toContainText('Nada vencido nem vencendo hoje.');
+    const counters = page.getByRole('region', {
+      name: 'Recipientes com saldo por validade',
+    });
+    const [p, c] = await Promise.all([
+      priorities.boundingBox(),
+      counters.boundingBox(),
+    ]);
+    expect(p.y).toBeLessThan(c.y);
+    const heading = await page
+      .getByRole('heading', { name: 'Visão geral', level: 2 })
+      .boundingBox();
+    const receive = await page
+      .getByRole('button', { name: '+ Recebimento' })
+      .boundingBox();
+    expect(receive.y).toBeLessThan(p.y);
+    expect(Math.abs(receive.y - heading.y)).toBeLessThan(80);
   });
 });

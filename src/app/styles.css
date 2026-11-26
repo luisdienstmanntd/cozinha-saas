@@ -1,4 +1,5 @@
 @import './tokens.css';
+@import '../shared/ui/ui.css';
 
 :root {
   font-family: var(--font-ui);
@@ -79,7 +80,7 @@ input {
   color: var(--text-secondary);
   margin: 0 0 1.2rem;
 }
-h1 {
+.page h1 {
   font-size: clamp(2.4rem, 5vw, 4rem);
   letter-spacing: -0.045em;
   line-height: 1.1;
@@ -115,7 +116,6 @@ input[type='checkbox'] {
   accent-color: var(--action-primary);
 }
 button {
-  margin-top: 1.3rem;
   border: 0;
   border-radius: 0.5rem;
   background: var(--action-primary);
@@ -127,7 +127,10 @@ button {
 button:hover {
   background: var(--action-primary-hover);
 }
-button span {
+.page button {
+  margin-top: 1.3rem;
+}
+.page button span {
   margin-left: 1.5rem;
 }
 .feedback {
@@ -598,15 +601,6 @@ footer {
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
-.expiry-badge {
-  display: inline-block;
-  white-space: nowrap;
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  border: 2px solid currentColor;
-}
 .card-facts {
   display: flex;
   flex-wrap: wrap;
@@ -653,44 +647,37 @@ footer {
 .workspace .card-actions button {
   margin: 0;
 }
-/* Tons: borda do cartão e selo. Contraste do texto ≥ 4,5:1 sobre o fundo do selo. */
+/* Tons: borda do cartão e contadores, com os tokens de estado do PR-02 (o selo é o StatusBadge de
+   shared/ui). Contraste do texto ≥ 4,5:1 sobre o fundo, medido em tokens.test.ts. */
 .tone-overdue.container-card {
-  border-left-color: var(--danger-text);
-  background: var(--danger-surface);
+  border-left-color: var(--status-overdue-edge);
+  background: var(--status-overdue-surface);
 }
 .tone-today.container-card {
-  border-left-color: var(--warning-edge);
+  border-left-color: var(--status-today-edge);
 }
 .tone-tomorrow.container-card {
-  border-left-color: var(--warning-edge);
+  border-left-color: var(--status-tomorrow-edge);
 }
 .tone-depleted.container-card {
   border-left-color: var(--border-subtle);
   color: var(--text-secondary);
 }
-.expiry-badge.tone-overdue,
 .tile.tone-overdue {
-  background: var(--danger-surface);
-  color: var(--danger-hover);
+  background: var(--status-overdue-surface);
+  color: var(--status-overdue-text);
 }
-.expiry-badge.tone-today,
 .tile.tone-today {
-  background: var(--warning-surface);
-  color: var(--warning-text);
+  background: var(--status-today-surface);
+  color: var(--status-today-text);
 }
-.expiry-badge.tone-tomorrow,
 .tile.tone-tomorrow {
-  background: var(--warning-surface);
-  color: var(--warning-text);
+  background: var(--status-tomorrow-surface);
+  color: var(--status-tomorrow-text);
 }
-.expiry-badge.tone-upcoming,
 .tile.tone-upcoming {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-.expiry-badge.tone-depleted {
-  background: var(--surface-hover);
-  color: var(--text-secondary);
+  background: var(--status-later-surface);
+  color: var(--status-later-text);
 }
 .tile.tone-overdue,
 .tile.tone-today,
@@ -708,9 +695,6 @@ footer {
   font-weight: inherit;
   text-align: left;
   cursor: pointer;
-}
-.tile.tile-filter span {
-  margin-left: 0;
 }
 .tile.tile-filter[aria-pressed='true'] {
   border-width: 2px;
@@ -1012,6 +996,7 @@ footer {
   background: var(--surface-panel);
 }
 
+.workspace .operation-heading h2,
 .workspace .operation-heading h3,
 .operation-heading p,
 .workspace .operation-heading button,
@@ -1391,27 +1376,11 @@ footer {
 .mesa-stat-link:focus-visible span {
   text-decoration: underline;
 }
-.mesa-danger,
-.mesa-status.overdue {
+.mesa-danger {
   color: var(--danger-text);
 }
-.mesa-warning,
-.mesa-status.today,
-.mesa-status.tomorrow {
+.mesa-warning {
   color: var(--warning-text);
-}
-.mesa-status {
-  background: var(--surface-hover);
-  padding: 0.2rem 0.45rem;
-  border-radius: 0.35rem;
-  display: inline-block;
-}
-.mesa-status.overdue {
-  background: var(--danger-surface);
-}
-.mesa-status.today,
-.mesa-status.tomorrow {
-  background: var(--warning-surface);
 }
 .mesa-panel-heading,
 .mesa-catalog-heading {
@@ -1448,6 +1417,55 @@ footer {
 }
 .mesa-shortcuts {
   order: 0;
+}
+/* PR-06: faixa "Prioridades de hoje" (só vencidos e vencem hoje, números do resumo já carregado). */
+.mesa-priority {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+.mesa-priority h3 {
+  font-size: var(--text-md);
+}
+.mesa-priority-items,
+.mesa-priority .mesa-panel-message {
+  margin: 0;
+}
+.mesa-priority-link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  color: var(--action-primary);
+  font-weight: 600;
+}
+.mesa-priority .secondary {
+  margin: 0 0 0 auto;
+}
+@media (min-width: 900px) {
+  .mesa-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--space-3) var(--space-4);
+  }
+  .mesa-overview > * {
+    grid-column: 1 / -1;
+  }
+  .mesa-overview > .mesa-page-heading {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .mesa-overview > .mesa-shortcuts {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+  .mesa-stats > div {
+    padding: var(--space-2) var(--space-3);
+  }
 }
 .mesa-alerts {
   order: 1;
@@ -1538,8 +1556,11 @@ footer {
   .mesa-alerts {
     order: -1;
   }
-  .mesa-overview .mesa-page-heading {
+  .mesa-priority {
     order: -2;
+  }
+  .mesa-overview .mesa-page-heading {
+    order: -3;
   }
   .mesa-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1784,6 +1805,7 @@ footer {
   background: transparent;
   margin: 0 0 var(--space-4);
 }
+.workspace.mesa-workspace .operation-heading h2,
 .workspace.mesa-workspace .operation-heading h3 {
   font-size: 1.65rem;
   line-height: 1.3;
@@ -1940,6 +1962,97 @@ footer {
   font-size: 0.8rem;
   font-weight: 400;
 }
+/* PR-08: "Situação agora" compacta; grupos lado a lado a partir de 1200 px; barra de participação
+   (o número e "N% do total" continuam em texto, a barra é só reforço visual). */
+.metrics-group-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.metrics-group-now .metrics-group-heading {
+  flex: 1 1 20rem;
+  border-bottom: 0;
+}
+.metrics-group-now .metrics-tile {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.metrics-group-now .metrics-tiles {
+  flex: 0 1 16rem;
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: var(--space-3);
+}
+.metrics-groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+.metrics-bar {
+  display: block;
+  width: 100%;
+  height: 0.375rem;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.metrics-bar::-webkit-progress-bar {
+  background: var(--border-subtle);
+}
+.metrics-bar::-webkit-progress-value {
+  background: var(--text-secondary);
+  border-radius: 999px;
+}
+.metrics-bar::-moz-progress-bar {
+  background: var(--text-secondary);
+  border-radius: 999px;
+}
+@media (min-width: 1200px) {
+  .metrics-heading {
+    flex-wrap: nowrap;
+    align-items: flex-end;
+  }
+  .metrics-heading > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .metrics-controls {
+    flex: 0 0 auto;
+  }
+  .metrics-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  /* Cada indicador vira uma linha (rótulo à esquerda, número à direita), em vez de um cartão. */
+  .metrics-groups .metrics-tiles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 0 var(--space-4) var(--space-2);
+  }
+  .metrics-groups .metrics-tile {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: var(--space-3);
+    padding: 0.4rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    border-radius: 0;
+    background: transparent;
+  }
+  .metrics-groups .metrics-tile:last-child {
+    border-bottom: 0;
+  }
+  .metrics-groups .metrics-tile dd {
+    font-size: 1.15rem;
+  }
+  .metrics-groups .metrics-tile dd.metrics-hint {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+  }
+}
 @media (max-width: 900px) {
   .metrics-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1959,6 +2072,210 @@ footer {
     padding: 0.4rem 0.25rem;
     font-size: 0.85rem;
   }
+}
+
+/* PR-01 (diagnóstico de 26/11/2026): com mouse ou touchpad o menu lateral usa itens mais baixos, para
+   caber em 1366×768 sem rolagem própria. Em toque (pointer: coarse) valem os 44 px de sempre. */
+@media (pointer: fine) and (min-width: 900px) {
+  .mesa-sidebar nav a,
+  .workspace .operation-group-toggle {
+    min-height: 36px;
+    line-height: 1.3;
+  }
+}
+
+/* PR-10: ficha organizada. Alertas primeiro, fatos agrupados, etiqueta e origem em blocos próprios.
+   Só apresentação; os textos, ações e permissões são os mesmos. */
+.ficha-alerts {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+.ficha-alerts:empty {
+  display: none;
+}
+.ficha-alerts > p {
+  margin: 0;
+}
+.ficha-facts,
+.ficha-label,
+.ficha-origin {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  background: var(--surface-panel);
+}
+.ficha-facts > p,
+.ficha-label > p {
+  margin: 0.25rem 0;
+}
+.ficha-facts .ficha-kind,
+.ficha-facts .ficha-tag {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.ficha-facts .ficha-balance {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+.ficha-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+.ficha-label > p {
+  margin: 0;
+}
+.ficha-origin > h3 {
+  margin-top: 0;
+}
+.ficha-origin ul[aria-label='Manipulações deste recipiente'] {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0 0 0 1rem;
+  border-left: 2px solid var(--border-control);
+}
+.ficha-origin ul[aria-label='Manipulações deste recipiente'] > li {
+  margin: 0 0 0.75rem;
+}
+.ficha-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.ficha-actions > p {
+  margin: 0;
+}
+
+/* PR-12 (D-078): barra inferior do celular e folha "Mais". Só existe em até 899 px (OperationsNav
+   troca o menu lateral por ela). Alvos de toque de 56 px; a área segura do aparelho fica abaixo. */
+.mesa-bottom-nav {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 30;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface-nav);
+  color: var(--text-on-dark);
+  border-top: 1px solid var(--border-control);
+}
+.workspace .mesa-bottom-nav > :is(a, button) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-height: 3.5rem;
+  min-width: var(--touch-target);
+  margin: 0;
+  padding: var(--space-1) 0.15rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
+}
+.mesa-bottom-nav > :is(a, button) > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.workspace .mesa-bottom-nav > :is(a, button):hover {
+  background: var(--surface-nav-hover);
+}
+.mesa-bottom-nav > a[aria-current='page'],
+.mesa-bottom-nav > button.is-current {
+  background: var(--surface-nav-hover);
+  box-shadow: inset 0 3px var(--brand-accent);
+  font-weight: 700;
+}
+.mesa-bottom-nav :focus-visible,
+.mesa-more-sheet :focus-visible {
+  outline: 3px solid var(--focus-dark);
+  outline-offset: -3px;
+}
+.mesa-more-sheet :focus-visible {
+  outline-color: var(--focus-light);
+}
+.mesa-more-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 45%);
+}
+.mesa-more-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 41;
+  max-height: 80dvh;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-3)
+    calc(var(--space-3) + env(safe-area-inset-bottom));
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 25%);
+}
+.mesa-more-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.mesa-more-sheet .mesa-nav-heading {
+  color: var(--text-secondary);
+}
+.mesa-more-group {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+}
+.workspace .mesa-more-group > a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 1rem;
+}
+.mesa-more-group > a .operation-icon {
+  color: var(--text-secondary);
+}
+.mesa-more-group > a:hover {
+  background: var(--surface-hover);
+}
+.mesa-more-group > a[aria-current='page'] {
+  background: var(--surface-hover);
+  box-shadow: inset 3px 0 var(--brand-accent);
+  font-weight: 700;
+}
+@media (max-width: 899px) {
+  /* O conteúdo nunca fica escondido atrás da barra. */
+  .mesa-workspace .unit-layout {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom) + var(--space-4));
+  }
+}
+
+/* PR-13: botão de recolher o menu com alvo de toque de 44 px (tablet deitado e notebook). */
+.workspace .mesa-sidebar .mesa-collapse {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 /* D-077: equipe da empresa. Reaproveita painel, lista e linha de ações da Mesa. */

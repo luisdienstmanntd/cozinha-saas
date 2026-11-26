@@ -49,17 +49,32 @@ export function placeSearch(
   unit: string | null,
   area: AreaId | null,
   expiryFilter: string | null = null,
+  container: string | null = null,
 ): string {
   const params = new URLSearchParams(current);
   params.delete('unidade');
   params.delete('area');
   params.delete('validade');
+  params.delete('recipiente');
   if (unit) {
     params.set('unidade', unit);
     if (area) params.set('area', area);
     if (area === 'validade' && expiryFilter)
       params.set('validade', expiryFilter);
+    // PR-11: ficha aberta dentro da unidade, só a partir de Visão geral e Etiquetas.
+    if (
+      container &&
+      UUID.test(container) &&
+      (area === 'etiquetas' || area === 'visao-geral')
+    )
+      params.set('recipiente', container.toLowerCase());
   }
   const text = params.toString();
   return text ? `?${text}` : '';
+}
+
+/** PR-11: `recipiente=<uuid>` do endereço da unidade; valor inválido vira ausente. */
+export function parseContainerParam(search: string): string | null {
+  const value = new URLSearchParams(search).get('recipiente');
+  return value && UUID.test(value) ? value.toLowerCase() : null;
 }

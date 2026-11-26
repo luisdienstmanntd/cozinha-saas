@@ -50,6 +50,7 @@ import {
   toDotQuantity,
 } from '../../../shared/format/quantity';
 import { toDotTemperature } from '../../../shared/format/temperature';
+import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { AreaLink, FirstSteps } from './FirstSteps';
 import type { AreaLinks } from './FirstSteps';
 
@@ -85,14 +86,6 @@ type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 type Listing = ContainerPage & { fetchedAt: Date; key: string };
 const LOAD_ERROR =
   'Não foi possível carregar todos os recebimentos. Confira o acesso e tente novamente.';
-// V3 (B4): o selo usa cor e símbolo, mas o texto sempre diz o status (não depende só da cor).
-const badgeSymbols = {
-  overdue: '⛔',
-  today: '⚠',
-  tomorrow: '●',
-  upcoming: '✓',
-  depleted: '○',
-} as const;
 
 function BatchContents({
   scope: { organizationId, establishmentId },
@@ -124,6 +117,10 @@ function BatchContents({
   const [loadFailed, setLoadFailed] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  // O aviso pertence à área em que nasceu (recebimento ou decisão de ocorrência em Validades).
+  const [noticeArea, setNoticeArea] = useState<'receber' | 'validade'>(
+    'receber',
+  );
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [origin, setOrigin] = useState('original');
@@ -154,6 +151,8 @@ function BatchContents({
   const [decidedRows, setDecidedRows] = useState<OccurrenceRow[] | null>(null);
   const [showDecided, setShowDecided] = useState(false);
   const [productId, setProductId] = useState('');
+  // PR-09: filtro só de tela sobre a lista de produtos do recebimento; não entra no envio.
+  const [productFilter, setProductFilter] = useState('');
   const [temperatureStatus, setTemperatureStatus] = useState('');
   const intent = useRef<string | null>(null);
   const listVersion = useRef(0);
@@ -457,6 +456,16 @@ function BatchContents({
     (item) => item.id === productId,
   );
   const storage = selectedProduct?.storage_condition ?? null;
+  // Mesma ordem do catálogo; o produto já escolhido nunca some da lista ao filtrar.
+  const productNeedle = productFilter.trim().toLocaleLowerCase('pt-BR');
+  const visibleProducts = (catalogData?.products ?? []).filter(
+    (p) =>
+      !productNeedle ||
+      p.id === productId ||
+      `${p.name} ${p.storage_condition ? storageLabels[p.storage_condition] : ''}`
+        .toLocaleLowerCase('pt-BR')
+        .includes(productNeedle),
+  );
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -550,12 +559,14 @@ function BatchContents({
       form.reset();
       setOrigin('original');
       setProductId('');
+      setProductFilter('');
       setTemperatureStatus('');
       reload();
       const held =
         input.data.temperatureStatus === 'not_measured'
           ? ' O recebimento ficou bloqueado para uso até a decisão do proprietário.'
           : '';
+      setNoticeArea('receber');
       setNotice(
         cleaned
           ? `Recebimento registrado.${held}`
@@ -573,7 +584,7 @@ function BatchContents({
       {showReceber && (
         <header className="operation-heading">
           <div>
-            <h3>Recebimentos</h3>
+            <h2>Recebimentos</h2>
             <p>
               Registre cada entrega com lote, quantidade e a validade informada
               pelo responsável.
@@ -670,8 +681,16 @@ function BatchContents({
           </button>
         </div>
       )}
-      {notice && <p role="status">{notice}</p>}
-      {!ready && !error && <p>Carregando recebimentos…</p>}
+      {notice && (area === undefined || area === noticeArea) && (
+        <p role="status">{notice}</p>
+      )}
+      {!ready && !error && (
+        <p role="status">
+          {showValidade && !showReceber
+            ? 'Carregando validades…'
+            : 'Carregando recebimentos…'}
+        </p>
+      )}
       {!ready && error && (
         <button className="secondary" onClick={reload}>
           Tentar novamente
@@ -689,7 +708,7 @@ function BatchContents({
             <section aria-label="Painel de validade" className="expiry-panel">
               <header className="operation-heading expiry-heading">
                 <div>
-                  <h3>Validades</h3>
+                  <h2>Validades</h2>
                   <p>Recipientes com saldo, ordenados pela validade.</p>
                 </div>
               </header>
@@ -781,7 +800,7 @@ function BatchContents({
               </div>
             </section>
             {!shown ? (
-              <p>Carregando recipientes…</p>
+              <p role="status">Carregando recipientes…</p>
             ) : shown.rows.length === 0 ? (
               <>
                 <p>
@@ -845,12 +864,11 @@ function BatchContents({
                               · {lotText(row.source_code)}
                             </span>
                           </p>{' '}
-                          <span className={`expiry-badge tone-${tone}`}>
-                            <span aria-hidden="true">{badgeSymbols[tone]}</span>{' '}
+                          <StatusBadge status={tone}>
                             {depleted
                               ? 'Esgotado'
                               : expiryBadgeText(row.expiry_date, timezone, now)}
-                          </span>
+                          </StatusBadge>
                         </div>{' '}
                         <dl className="card-facts">
                           <div className="fact-expiry">
@@ -1147,6 +1165,7 @@ function BatchContents({
                   now={now}
                   onDecided={(message) => {
                     reload();
+                    setNoticeArea('validade');
                     setNotice(message);
                   }}
                 />
@@ -1161,7 +1180,9 @@ function BatchContents({
                   />{' '}
                   Mostrar todas as ocorrências, inclusive decididas
                 </label>
-                {showDecided && !decidedRows && <p>Carregando ocorrências…</p>}
+                {showDecided && !decidedRows && (
+                  <p role="status">Carregando ocorrências…</p>
+                )}
               </div>
             )}
           </div>
@@ -1207,6 +1228,27 @@ function BatchContents({
                     </h4>
                     <p>
                       <label>
+                        Filtrar produtos{' '}
+                        <input
+                          type="search"
+                          value={productFilter}
+                          maxLength={120}
+                          autoComplete="off"
+                          onChange={(event) =>
+                            setProductFilter(event.target.value)
+                          }
+                        />
+                      </label>
+                      {productNeedle && (
+                        <small role="status">
+                          {visibleProducts.length === 0
+                            ? 'Nenhum produto encontrado.'
+                            : `${visibleProducts.length} de ${catalogData.products.length} produtos`}
+                        </small>
+                      )}
+                    </p>
+                    <p>
+                      <label>
                         Produto{' '}
                         <select
                           name="productId"
@@ -1220,7 +1262,7 @@ function BatchContents({
                           <option value="" disabled>
                             Selecione
                           </option>
-                          {catalogData.products.map((p) => (
+                          {visibleProducts.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.name} ({p.unit})
                             </option>
