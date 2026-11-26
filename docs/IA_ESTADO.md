@@ -158,3 +158,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 - Claude Code, branch `claude/ui-pr01-navegacao-estados`, base `main` `a504672`. Escape no botão Menu, aviso de recebimento só em Recebimentos, carregamentos anunciados como status, menu de desktop sem rolagem própria em 1366×768. Só interface e testes; sem migração. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr01-navegacao-estados.md).
 
+## PR-02 do roadmap de interface (tokens de tipografia, estado e densidade) — 26/11/2026
+
+- Claude Code, branch `claude/ui-pr02-tokens`, base `main` `843e759` (PR-01 mesclado como #82). Só variáveis CSS ainda não usadas e um teste de contraste; nada muda na tela. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr02-tokens.md).
+
