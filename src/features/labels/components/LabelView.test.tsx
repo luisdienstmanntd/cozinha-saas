@@ -691,3 +691,37 @@ it('ficha anulada mantém a mesma mensagem, sem botão de etiqueta e sem faixa d
   ).toBeNull();
   expect(container.querySelector('.expired-band')).toBeNull();
 });
+
+it('PR-11: dentro de uma unidade, recipiente de outra unidade não é mostrado', async () => {
+  const get = vi.fn().mockResolvedValue(
+    fichaData({
+      organization_id: 'org',
+      establishment_id: '30000000-0000-4000-8000-00000000000b',
+    }),
+  );
+  const { rerender } = render(
+    <LabelView
+      id="12345678-1234-4234-8234-123456789abc"
+      gateway={{ ensure: vi.fn(), get }}
+      unitId="30000000-0000-4000-8000-00000000000a"
+    />,
+  );
+  expect(
+    await screen.findByText('Recipiente indisponível ou sem acesso.'),
+  ).toBeVisible();
+  expect(screen.queryByText('Arroz')).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeNull();
+  // Da própria unidade (e pela rota do QR, sem unitId) a ficha aparece normalmente.
+  rerender(
+    <LabelView
+      id="12345678-1234-4234-8234-123456789abc"
+      gateway={{ ensure: vi.fn(), get }}
+      unitId="30000000-0000-4000-8000-00000000000b"
+    />,
+  );
+  expect(
+    await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeVisible();
+});

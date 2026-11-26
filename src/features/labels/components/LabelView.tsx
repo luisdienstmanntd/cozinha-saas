@@ -35,6 +35,7 @@ export function LabelView({
   canHandle,
   userId,
   onOpenContainer,
+  unitId,
 }: {
   id: string;
   gateway: LabelGateway;
@@ -44,6 +45,8 @@ export function LabelView({
   canHandle?: (organizationId: string) => boolean;
   userId?: string;
   onOpenContainer?: (id: string) => void;
+  // PR-11: ficha aberta dentro de uma unidade. Recipiente de outra unidade não é mostrado ali.
+  unitId?: string;
 }) {
   const [family, setFamily] = useState<Family | null>(null);
   const [familyError, setFamilyError] = useState('');
@@ -58,7 +61,16 @@ export function LabelView({
     let current = true;
     void gateway.get(id).then(
       (value) => {
-        if (current) setData(value);
+        if (!current) return;
+        if (
+          unitId &&
+          value.establishment_id &&
+          value.establishment_id !== unitId
+        ) {
+          setError('Recipiente indisponível ou sem acesso.');
+          return;
+        }
+        setData(value);
       },
       () => {
         if (current) setError('Recipiente indisponível ou sem acesso.');
@@ -68,7 +80,7 @@ export function LabelView({
       current = false;
       generation.current = version + 1;
     };
-  }, [gateway, id, reload]);
+  }, [gateway, id, reload, unitId]);
   const scopeIds = data?.organization_id && data.establishment_id;
   const organizationId = data?.organization_id;
   const establishmentId = data?.establishment_id;

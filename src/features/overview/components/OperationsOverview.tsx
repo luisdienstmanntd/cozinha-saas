@@ -17,6 +17,7 @@ import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import type { LocationGateway } from '../../locations/application/locationGateway';
 import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
 import { blockedContainers } from '../../occurrences/domain/occurrence';
+import { openInUnit } from '../../navigation/domain/openInUnit';
 import { containerPath } from '../../labels/domain/label';
 import type { Area, AreaId } from '../../navigation/domain/areas';
 import type { ExpiryFilter } from '../../batches/domain/expiryFilter';
@@ -40,6 +41,8 @@ export function OperationsOverview({
   select,
   expiryHref,
   selectExpiry,
+  fichaHref,
+  onOpenFicha,
 }: {
   scope: CatalogScope;
   timezone: string;
@@ -52,6 +55,9 @@ export function OperationsOverview({
   // V6 (D-072): cada contador abre Validades já filtrada por aquela categoria.
   expiryHref?: (filter: ExpiryFilter) => string;
   selectExpiry?: (filter: ExpiryFilter) => void;
+  // PR-11: abrir a ficha dentro da unidade; sem eles o link segue para a rota do QR.
+  fichaHref?: (containerId: string) => string;
+  onOpenFicha?: (containerId: string) => void;
 }) {
   const [data, setData] = useState<Results | null>(null);
   const [error, setError] = useState(false);
@@ -297,7 +303,16 @@ export function OperationsOverview({
                     {data.alerts.map((row) => (
                       <tr key={row.container_id}>
                         <td data-label="Produto">
-                          <a href={containerPath(row.container_id)}>
+                          <a
+                            href={
+                              fichaHref?.(row.container_id) ??
+                              containerPath(row.container_id)
+                            }
+                            data-ficha-for={row.container_id}
+                            onClick={(event) =>
+                              openInUnit(event, onOpenFicha, row.container_id)
+                            }
+                          >
                             {row.product_name}
                           </a>
                           <small>

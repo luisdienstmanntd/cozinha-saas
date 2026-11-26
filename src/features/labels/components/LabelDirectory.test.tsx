@@ -1,6 +1,12 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { LabelDirectory } from './LabelDirectory';
 import type { ContainerRow } from '../../batches/domain/container';
 import { localCivilDate } from '../../batches/domain/expiryStatus';
@@ -151,4 +157,42 @@ it('PR-07: falha da consulta mostra alerta com repetição, sem lista', async ()
       exact: false,
     }),
   ).toBeVisible();
+});
+
+it('PR-11: clique simples abre a ficha na unidade; Ctrl+clique e a falta de manipulador mantêm o link comum', async () => {
+  const containers = fakeContainers(rows);
+  const open = vi.fn();
+  const view = render(
+    <LabelDirectory
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      containers={containers}
+      revision={0}
+      fichaHref={(id) => `/?unidade=u&area=etiquetas&recipiente=${id}`}
+      onOpenFicha={open}
+    />,
+  );
+  const link = (
+    await screen.findAllByRole('link', { name: 'Abrir ficha' })
+  )[0]!;
+  expect(link).toHaveAttribute(
+    'href',
+    expect.stringContaining('area=etiquetas&recipiente=40000000-0000-4000'),
+  );
+  await userEvent.click(link);
+  expect(open).toHaveBeenCalledWith(
+    expect.stringMatching(/^40000000-0000-4000/),
+  );
+  open.mockClear();
+  fireEvent.click(link, { ctrlKey: true });
+  expect(open).not.toHaveBeenCalled();
+  view.unmount();
+  // Sem manipulador, o link segue para a rota do QR, como antes.
+  renderDirectory();
+  const plain = (
+    await screen.findAllByRole('link', { name: 'Abrir ficha' })
+  )[0]!;
+  expect(plain).toHaveAttribute(
+    'href',
+    expect.stringMatching(/^\/recipiente\/40000000-0000-4000/),
+  );
 });

@@ -9,16 +9,22 @@ import {
   expiryBadgeText,
   getExpiryStatus,
 } from '../../batches/domain/expiryStatus';
+import { openInUnit } from '../../navigation/domain/openInUnit';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 
 export function LabelDirectory({
   scope: { organizationId, establishmentId },
   containers,
   revision,
+  fichaHref,
+  onOpenFicha,
 }: {
   scope: CatalogScope;
   containers: ContainerGateway;
   revision: number;
+  // PR-11: abrir a ficha dentro da unidade; sem eles o link segue para a rota do QR.
+  fichaHref?: (containerId: string) => string;
+  onOpenFicha?: (containerId: string) => void;
 }) {
   const [input, setInput] = useState('');
   // PR-07: por padrão só recipientes com saldo; esgotados aparecem ao desmarcar (a lista antiga
@@ -190,7 +196,18 @@ export function LabelDirectory({
                     )}
                   </td>
                   <td data-label="Etiqueta">
-                    <a href={containerPath(row.container_id)}>Abrir ficha</a>
+                    <a
+                      href={
+                        fichaHref?.(row.container_id) ??
+                        containerPath(row.container_id)
+                      }
+                      data-ficha-for={row.container_id}
+                      onClick={(event) =>
+                        openInUnit(event, onOpenFicha, row.container_id)
+                      }
+                    >
+                      Abrir ficha
+                    </a>
                   </td>
                 </tr>
               ))}
