@@ -253,4 +253,51 @@ describe('painel de indicadores', () => {
       /teste|demo|piloto|supabase|pilot_metrics|seguro|conformidade/i,
     );
   });
+  it('PR-08: barra de participação só com base; o texto equivalente continua e o zero real não vira barra', async () => {
+    const read = vi.fn().mockResolvedValue({
+      ...zero,
+      handlings_total: 4,
+      handlings_same_expiry: 3,
+      handlings_late: 1,
+      productions_total: 0,
+    } satisfies UnitMetrics);
+    render(
+      <UnitMetricsPanel
+        scope={scope}
+        timezone="America/Sao_Paulo"
+        gateway={{ read }}
+      />,
+    );
+    await screen.findByText(/Últimos 30 dias: de/);
+    const same = tile('Abertura e porcionamento', 'Com a validade da origem');
+    const bar = same.querySelector('progress');
+    expect(bar).not.toBeNull();
+    expect(bar).toHaveAttribute('value', '3');
+    expect(bar).toHaveAttribute('max', '4');
+    // A barra é reforço visual: fica fora da leitura; o número e "75% do total" são o texto.
+    expect(bar!.parentElement).toHaveAttribute('aria-hidden', 'true');
+    expect(same).toHaveTextContent('75% do total');
+    // Sem base (produções = 0): "0" real, sem percentual e sem barra.
+    const late = tile('Produção da cozinha', 'Registradas com atraso');
+    expect(late.querySelector('progress')).toBeNull();
+    expect(late).toHaveTextContent('0');
+    expect(late).not.toHaveTextContent('%');
+    // Contagens sem participação não têm barra.
+    expect(
+      tile('Abertura e porcionamento', 'Manipulações').querySelector(
+        'progress',
+      ),
+    ).toBeNull();
+    // Os grupos de período ficam juntos num bloco; "Situação agora" fica fora dele.
+    expect(
+      screen
+        .getByRole('region', { name: 'Situação agora' })
+        .closest('.metrics-groups'),
+    ).toBeNull();
+    expect(
+      screen
+        .getByRole('region', { name: 'Armazenamento' })
+        .closest('.metrics-groups'),
+    ).not.toBeNull();
+  });
 });

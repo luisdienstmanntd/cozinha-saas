@@ -180,3 +180,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## PR-07 do roadmap de interface (Etiquetas mais úteis) — 26/11/2026
 
 - Claude Code, branch `claude/ui-pr07-etiquetas`, base `main` `4e0d8fa` (PR-06 mesclado como #87). Colunas Saldo e Situação, "Só com saldo" (ligado por padrão) e busca ao digitar na lista de Etiquetas; sem mudança em QR, contratos, download ou reimpressão. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr07-etiquetas.md).
+
+## PR-08 do roadmap de interface (Indicadores compactos) — 26/11/2026
+
+- Claude Code, branch `claude/ui-pr08-indicadores`, base `main` `da9cd34` (PR-07 mesclado como #88). Indicadores em 2 colunas e linhas no desktop, "Situação agora" em faixa baixa e barra de participação só com base; mesmos números. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr08-indicadores-compactos.md).
