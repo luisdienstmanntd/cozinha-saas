@@ -1963,6 +1963,97 @@ footer {
   font-size: 0.8rem;
   font-weight: 400;
 }
+/* PR-08: "Situação agora" compacta; grupos lado a lado a partir de 1200 px; barra de participação
+   (o número e "N% do total" continuam em texto, a barra é só reforço visual). */
+.metrics-group-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.metrics-group-now .metrics-group-heading {
+  flex: 1 1 20rem;
+  border-bottom: 0;
+}
+.metrics-group-now .metrics-tile {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.metrics-group-now .metrics-tiles {
+  flex: 0 1 16rem;
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: var(--space-3);
+}
+.metrics-groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+.metrics-bar {
+  display: block;
+  width: 100%;
+  height: 0.375rem;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.metrics-bar::-webkit-progress-bar {
+  background: var(--border-subtle);
+}
+.metrics-bar::-webkit-progress-value {
+  background: var(--text-secondary);
+  border-radius: 999px;
+}
+.metrics-bar::-moz-progress-bar {
+  background: var(--text-secondary);
+  border-radius: 999px;
+}
+@media (min-width: 1200px) {
+  .metrics-heading {
+    flex-wrap: nowrap;
+    align-items: flex-end;
+  }
+  .metrics-heading > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .metrics-controls {
+    flex: 0 0 auto;
+  }
+  .metrics-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  /* Cada indicador vira uma linha (rótulo à esquerda, número à direita), em vez de um cartão. */
+  .metrics-groups .metrics-tiles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 0 var(--space-4) var(--space-2);
+  }
+  .metrics-groups .metrics-tile {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: var(--space-3);
+    padding: 0.4rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    border-radius: 0;
+    background: transparent;
+  }
+  .metrics-groups .metrics-tile:last-child {
+    border-bottom: 0;
+  }
+  .metrics-groups .metrics-tile dd {
+    font-size: 1.15rem;
+  }
+  .metrics-groups .metrics-tile dd.metrics-hint {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+  }
+}
 @media (max-width: 900px) {
   .metrics-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
