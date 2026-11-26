@@ -12,6 +12,7 @@ import {
   localCivilDate,
 } from '../../batches/domain/expiryStatus';
 import { formatCivilDate } from '../../../shared/format/dates';
+import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import type { LocationGateway } from '../../locations/application/locationGateway';
 import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
 import { blockedContainers } from '../../occurrences/domain/occurrence';
@@ -260,15 +261,19 @@ export function OperationsOverview({
                           {formatCivilDate(row.expiry_date)}
                         </td>
                         <td data-label="Situação">
-                          <span
-                            className={`mesa-status ${getExpiryStatus(row.expiry_date, timezone, data.now)}`}
+                          <StatusBadge
+                            status={getExpiryStatus(
+                              row.expiry_date,
+                              timezone,
+                              data.now,
+                            )}
                           >
                             {expiryBadgeText(
                               row.expiry_date,
                               timezone,
                               data.now,
                             )}
-                          </span>
+                          </StatusBadge>
                           {data.blocked?.has(row.container_id) && (
                             <small>Bloqueado</small>
                           )}

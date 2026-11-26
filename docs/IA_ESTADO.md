@@ -164,3 +164,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## PR-03 do roadmap de interface (componentes base) — 26/11/2026
 
 - Claude Code, branch `claude/ui-pr03-componentes-base`, base `main` `b0dc408` (PR-02 mesclado como #83). Só componentes novos em `src/shared/ui/` ainda sem uso nas áreas e CSS com prefixo `ui-`; nada muda na tela. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr03-componentes-base.md).
+
+## PR-04 do roadmap de interface (selo único e "vence hoje") — 26/11/2026
+
+- Claude Code, branch `claude/ui-pr04-selo-unico`, base `main` `b668d3a` (PR-03 mesclado como #84). Selo único (`StatusBadge`) na Visão geral, Validades e ficha; "vence hoje" com cor própria. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr04-selo-unico.md).

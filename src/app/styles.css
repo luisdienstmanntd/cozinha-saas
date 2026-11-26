@@ -599,15 +599,6 @@ footer {
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
-.expiry-badge {
-  display: inline-block;
-  white-space: nowrap;
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  border: 2px solid currentColor;
-}
 .card-facts {
   display: flex;
   flex-wrap: wrap;
@@ -654,44 +645,37 @@ footer {
 .workspace .card-actions button {
   margin: 0;
 }
-/* Tons: borda do cartão e selo. Contraste do texto ≥ 4,5:1 sobre o fundo do selo. */
+/* Tons: borda do cartão e contadores, com os tokens de estado do PR-02 (o selo é o StatusBadge de
+   shared/ui). Contraste do texto ≥ 4,5:1 sobre o fundo, medido em tokens.test.ts. */
 .tone-overdue.container-card {
-  border-left-color: var(--danger-text);
-  background: var(--danger-surface);
+  border-left-color: var(--status-overdue-edge);
+  background: var(--status-overdue-surface);
 }
 .tone-today.container-card {
-  border-left-color: var(--warning-edge);
+  border-left-color: var(--status-today-edge);
 }
 .tone-tomorrow.container-card {
-  border-left-color: var(--warning-edge);
+  border-left-color: var(--status-tomorrow-edge);
 }
 .tone-depleted.container-card {
   border-left-color: var(--border-subtle);
   color: var(--text-secondary);
 }
-.expiry-badge.tone-overdue,
 .tile.tone-overdue {
-  background: var(--danger-surface);
-  color: var(--danger-hover);
+  background: var(--status-overdue-surface);
+  color: var(--status-overdue-text);
 }
-.expiry-badge.tone-today,
 .tile.tone-today {
-  background: var(--warning-surface);
-  color: var(--warning-text);
+  background: var(--status-today-surface);
+  color: var(--status-today-text);
 }
-.expiry-badge.tone-tomorrow,
 .tile.tone-tomorrow {
-  background: var(--warning-surface);
-  color: var(--warning-text);
+  background: var(--status-tomorrow-surface);
+  color: var(--status-tomorrow-text);
 }
-.expiry-badge.tone-upcoming,
 .tile.tone-upcoming {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-.expiry-badge.tone-depleted {
-  background: var(--surface-hover);
-  color: var(--text-secondary);
+  background: var(--status-later-surface);
+  color: var(--status-later-text);
 }
 .tile.tone-overdue,
 .tile.tone-today,
@@ -1392,27 +1376,11 @@ footer {
 .mesa-stat-link:focus-visible span {
   text-decoration: underline;
 }
-.mesa-danger,
-.mesa-status.overdue {
+.mesa-danger {
   color: var(--danger-text);
 }
-.mesa-warning,
-.mesa-status.today,
-.mesa-status.tomorrow {
+.mesa-warning {
   color: var(--warning-text);
-}
-.mesa-status {
-  background: var(--surface-hover);
-  padding: 0.2rem 0.45rem;
-  border-radius: 0.35rem;
-  display: inline-block;
-}
-.mesa-status.overdue {
-  background: var(--danger-surface);
-}
-.mesa-status.today,
-.mesa-status.tomorrow {
-  background: var(--warning-surface);
 }
 .mesa-panel-heading,
 .mesa-catalog-heading {

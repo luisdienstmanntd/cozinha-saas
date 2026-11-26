@@ -140,3 +140,24 @@ describe('tokens de tipografia e densidade', () => {
       expect(value(name)).not.toBe('');
   });
 });
+
+describe('PR-04: a tela usa os tokens de estado', () => {
+  const styles = readFileSync('src/app/styles.css', 'utf8');
+  const rule = (selector: string) =>
+    styles.match(
+      new RegExp(`${selector.replace(/[.[\]]/g, '\\$&')}\\s*\\{([^}]*)\\}`),
+    )?.[1] ?? '';
+
+  it.each([
+    ['.tile.tone-today', 'today'],
+    ['.tile.tone-tomorrow', 'tomorrow'],
+    ['.tile.tone-overdue', 'overdue'],
+  ])('%s usa as cores do seu estado', (selector, state) => {
+    expect(rule(selector)).toContain(`--status-${state}-text`);
+    expect(rule(selector)).toContain(`--status-${state}-surface`);
+  });
+
+  it('o selo antigo (.expiry-badge e .mesa-status) não existe mais', () => {
+    expect(styles).not.toMatch(/\.expiry-badge|\.mesa-status/);
+  });
+});

@@ -26,6 +26,7 @@ import {
 } from '../../batches/domain/expiryStatus';
 import { formatCivilDate } from '../../../shared/format/dates';
 import { formatQuantity } from '../../../shared/format/quantity';
+import { StatusBadge, type BadgeStatus } from '../../../shared/ui/StatusBadge';
 
 export function LabelView({
   id,
@@ -160,7 +161,7 @@ export function LabelView({
     ? (data.effective?.expiry_date ?? data.batch_receipts.expiry_date)
     : null;
   const zone = data?.batch_receipts.timezone;
-  let badge: { tone: string; text: string } | null = null;
+  let badge: { tone: BadgeStatus; text: string } | null = null;
   if (data && expiryDate && zone && !data.voided && !productionVoided) {
     try {
       badge =
@@ -188,9 +189,7 @@ export function LabelView({
           {badge && (
             <>
               {' '}
-              <span className={`expiry-badge tone-${badge.tone}`}>
-                {badge.text}
-              </span>
+              <StatusBadge status={badge.tone}>{badge.text}</StatusBadge>
             </>
           )}
         </p>
