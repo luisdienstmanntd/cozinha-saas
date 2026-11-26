@@ -184,3 +184,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## PR-08 do roadmap de interface (Indicadores compactos) — 26/11/2026
 
 - Claude Code, branch `claude/ui-pr08-indicadores`, base `main` `da9cd34` (PR-07 mesclado como #88). Indicadores em 2 colunas e linhas no desktop, "Situação agora" em faixa baixa e barra de participação só com base; mesmos números. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr08-indicadores-compactos.md).
+
+## PR-09 do roadmap de interface (filtro de produto no recebimento) — 26/11/2026
+
+- Claude Code, branch `claude/ui-pr09-filtro-produto`, base `main` `3550a5f` (PR-08 mesclado como #89). Campo "Filtrar produtos" no recebimento; só tela, sem mudar regras nem envio. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr09-filtro-produto.md).
