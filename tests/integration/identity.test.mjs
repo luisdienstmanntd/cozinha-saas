@@ -117,24 +117,20 @@ test('autenticação e isolamento real via API Supabase local', async (t) => {
       await t.test(`owner ${i}: falsificação e escalada negadas`, async () => {
         assert.ok(
           (
-            await c
-              .from('establishments')
-              .insert({
-                organization_id: other,
-                name: 'Ataque',
-                timezone: 'UTC',
-              })
+            await c.from('establishments').insert({
+              organization_id: other,
+              name: 'Ataque',
+              timezone: 'UTC',
+            })
           ).error,
         );
         assert.ok(
           (
-            await c
-              .from('establishments')
-              .insert({
-                organization_id: randomUUID(),
-                name: 'Ataque',
-                timezone: 'UTC',
-              })
+            await c.from('establishments').insert({
+              organization_id: randomUUID(),
+              name: 'Ataque',
+              timezone: 'UTC',
+            })
           ).error,
         );
         assert.ok(
@@ -150,13 +146,11 @@ test('autenticação e isolamento real via API Supabase local', async (t) => {
         );
         assert.ok(
           (
-            await c
-              .from('memberships')
-              .insert({
-                organization_id: other,
-                user_id: users[i],
-                role: 'owner',
-              })
+            await c.from('memberships').insert({
+              organization_id: other,
+              user_id: users[i],
+              role: 'owner',
+            })
           ).error,
         );
         for (const change of [
@@ -186,13 +180,11 @@ test('autenticação e isolamento real via API Supabase local', async (t) => {
         }
         assert.ok(
           (
-            await c
-              .from('establishments')
-              .insert({
-                organization_id: own,
-                name: 'Inválida',
-                timezone: 'Invalid/Zone',
-              })
+            await c.from('establishments').insert({
+              organization_id: own,
+              name: 'Inválida',
+              timezone: 'Invalid/Zone',
+            })
           ).error,
         );
       });
@@ -225,13 +217,11 @@ test('autenticação e isolamento real via API Supabase local', async (t) => {
         );
         assert.ok(
           (
-            await c
-              .from('establishments')
-              .insert({
-                organization_id: orgs[0],
-                name: 'Ataque',
-                timezone: 'UTC',
-              })
+            await c.from('establishments').insert({
+              organization_id: orgs[0],
+              name: 'Ataque',
+              timezone: 'UTC',
+            })
           ).error,
         );
         assert.ok(
@@ -297,13 +287,11 @@ test('autenticação e isolamento real via API Supabase local', async (t) => {
         );
         assert.ok(
           (
-            await c
-              .from('establishments')
-              .insert({
-                organization_id: orgs[0],
-                name: 'Ataque',
-                timezone: 'UTC',
-              })
+            await c.from('establishments').insert({
+              organization_id: orgs[0],
+              name: 'Ataque',
+              timezone: 'UTC',
+            })
           ).error,
         );
         assert.equal(

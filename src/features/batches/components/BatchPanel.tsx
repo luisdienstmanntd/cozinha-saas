@@ -571,7 +571,7 @@ function BatchContents({
       {showReceber && (
         <header className="operation-heading">
           <div>
-            <h3>Recebimentos</h3>
+            <h2>Recebimentos</h2>
             <p>
               Registre cada entrega com lote, quantidade e a validade informada
               pelo responsável.
@@ -695,7 +695,7 @@ function BatchContents({
             <section aria-label="Painel de validade" className="expiry-panel">
               <header className="operation-heading expiry-heading">
                 <div>
-                  <h3>Validades</h3>
+                  <h2>Validades</h2>
                   <p>Recipientes com saldo, ordenados pela validade.</p>
                 </div>
               </header>

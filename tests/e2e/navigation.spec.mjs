@@ -462,3 +462,29 @@ test('menu lateral cabe em 1366×768 sem rolagem própria e mantém 44 px no cel
     for (const height of heights) expect(height).toBeGreaterThanOrEqual(44);
   });
 });
+
+// PR-05 (M2): cada área mostra um único título de página, sempre h2.
+test('cada área mostra um único título de página em h2', async ({ page }) => {
+  page.setDefaultTimeout(5000);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await openUnit(page);
+    for (const [area, title] of [
+      ['Visão geral', 'Visão geral'],
+      ['Indicadores', 'Indicadores'],
+      ['Validade', 'Validades'],
+      ['Receber', 'Recebimentos'],
+      ['Etiquetas', 'Etiquetas'],
+      ['Produtos', 'Produtos'],
+      ['Fornecedores', 'Fornecedores'],
+      ['Unidade', 'Configurações da unidade'],
+    ]) {
+      await openArea(page, area);
+      const titles = page.locator('.workspace h2:visible');
+      await expect(titles).toHaveCount(1);
+      await expect(titles.first()).toHaveText(title);
+    }
+  });
+});

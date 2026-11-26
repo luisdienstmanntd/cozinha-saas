@@ -120,7 +120,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
       <section aria-label="Configurações da unidade">
         <header className="operation-heading">
           <div>
-            <h3>Configurações da unidade</h3>
+            <h2>Configurações da unidade</h2>
             <p>Regras de produção e de etiquetas desta unidade.</p>
           </div>
         </header>
@@ -142,7 +142,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
       <section aria-label="Configurações da unidade">
         <header className="operation-heading">
           <div>
-            <h3>Configurações da unidade</h3>
+            <h2>Configurações da unidade</h2>
             <p>Regras de produção e de etiquetas desta unidade.</p>
           </div>
         </header>
@@ -228,7 +228,7 @@ function SettingsContents({ scope, gateway, canEdit, onSaved }: Props) {
     <section aria-label="Configurações da unidade">
       <header className="operation-heading">
         <div>
-          <h3>Configurações da unidade</h3>
+          <h2>Configurações da unidade</h2>
           <p>Regras de produção e de etiquetas desta unidade.</p>
         </div>
       </header>

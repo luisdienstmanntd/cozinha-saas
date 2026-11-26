@@ -168,3 +168,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## PR-04 do roadmap de interface (selo único e "vence hoje") — 26/11/2026
 
 - Claude Code, branch `claude/ui-pr04-selo-unico`, base `main` `b668d3a` (PR-03 mesclado como #84). Selo único (`StatusBadge`) na Visão geral, Validades e ficha; "vence hoje" com cor própria. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr04-selo-unico.md).
+
+## PR-05 do roadmap de interface (título de página único em h2) — 26/11/2026
+
+- Claude Code, branch `claude/ui-pr05-cabecalho`, base `main` `7d05a8a` (PR-04 mesclado como #85). Validades, Recebimentos, Produção e Configurações da unidade passam de h3 para h2. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr05-cabecalho-pagina.md).
