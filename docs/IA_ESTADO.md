@@ -176,3 +176,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## PR-06 do roadmap de interface (Visão geral com "Prioridades de hoje") — 26/11/2026
 
 - Claude Code, branch `claude/ui-pr06-prioridades`, base `main` `67cb37c` (PR-05 mesclado como #86). Faixa de prioridades, contadores menores e atalhos no cabeçalho; só dados já carregados. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr06-prioridades-de-hoje.md).
+
+## PR-07 do roadmap de interface (Etiquetas mais úteis) — 26/11/2026
+
+- Claude Code, branch `claude/ui-pr07-etiquetas`, base `main` `4e0d8fa` (PR-06 mesclado como #87). Colunas Saldo e Situação, "Só com saldo" (ligado por padrão) e busca ao digitar na lista de Etiquetas; sem mudança em QR, contratos, download ou reimpressão. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr07-etiquetas.md).
