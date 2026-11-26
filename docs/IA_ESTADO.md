@@ -172,3 +172,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## PR-05 do roadmap de interface (título de página único em h2) — 26/11/2026
 
 - Claude Code, branch `claude/ui-pr05-cabecalho`, base `main` `7d05a8a` (PR-04 mesclado como #85). Validades, Recebimentos, Produção e Configurações da unidade passam de h3 para h2. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr05-cabecalho-pagina.md).
+
+## PR-06 do roadmap de interface (Visão geral com "Prioridades de hoje") — 26/11/2026
+
+- Claude Code, branch `claude/ui-pr06-prioridades`, base `main` `67cb37c` (PR-05 mesclado como #86). Faixa de prioridades, contadores menores e atalhos no cabeçalho; só dados já carregados. Aguarda aceite de luis; o PR #81 (Equipe) entra depois; merge publica o site. [Registro](ia-tarefas/ui-pr06-prioridades-de-hoje.md).
