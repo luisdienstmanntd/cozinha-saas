@@ -2,7 +2,7 @@
 
 - **ID:** ui-pr15-producao
 - **Responsável / sessão:** Claude Code (thread "Diagnóstico e roadmap de interface")
-- **Estado:** em_andamento
+- **Estado:** pronto para merge (autorizado por luis)
 - **Objetivo e aceite:** M14 do diagnóstico: cartão de produção com produto em destaque, código e quantidade alinhados à direita, "Produzida em … por …" na segunda linha e ações numa linha própria com espaço igual. Pedido de luis (26/11/2026, via coordenação): seguir com o PR-15 em rascunho. Aceite: mesmo texto e mesmos botões; só apresentação; bateria inteira verde; luis aceita.
 - **Branch / base:** `claude/ui-pr15-producao-cadastros`, base `main` `05bbde0` (PR-14, #95). O PR #81 (Equipe) não foi tocado por este PR.
 - **Arquivos:** `src/app/styles.css` (bloco `.production-card`), `docs/IA_ESTADO.md`.
@@ -15,3 +15,9 @@
 ### 26/11/2026 — Claude Code
 
 - **Feito:** CSS do cartão, capturas antes e depois em 1366 e 390 px. Bateria inteira local em execução.
+
+### 26/11/2026 — decisão de luis
+
+- **Cadastros (M15):** luis decidiu **manter a lista como está**, sem PR de tabela ("2 manter como está"). Não há pendência de tabela.
+- **Fila de interface concluída:** os 15 PRs do roadmap de 26/11/2026 (PR-01 a PR-15) estão entregues, com o PR-15 nesta tarefa. Ficam fora da sequência, cada um com proposta e aprovação próprias: prévia da etiqueta (M9), filtro por local em Validades, série diária para gráfico, histórico/exportação, editar/arquivar cadastros e Minha conta com senha/MFA.
+- **Equipe (#81):** continua sem merge; a migração `20261126000000_team_management.sql` ainda precisa ser aplicada no hospedado (ver `FASE_EQUIPE.md` §6).
