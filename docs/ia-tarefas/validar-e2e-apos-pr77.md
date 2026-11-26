@@ -37,3 +37,4 @@
 
 - Codex retoma a validação na mesma branch; `origin/main` permanece `a504672`, uma única instância Supabase principal ativa. Prova de conectividade: contêiner `postgres:16-alpine` com rede host alcança a porta local 54322.
 - Plano: preparar checkout LF e ambiente Linux de testes em D:, com Node, psql, CLI Docker e acesso à instância local já existente; executar a integração uma única vez e capturar saída. O ambiente temporário de testes não alterará migrações ou código de produto. Prosseguir ao E2E somente após aprovação da integração. Preservar dados e containers existentes.
+- Ambiente Linux preparado em contêiner, Node 24, psql e Docker CLI; `npm ci` passou usando a CA pública do Avast já confiada no Windows, sem desativar TLS. Checkout separado em `D:/codex-integracao-linux-20261126`; cliente Supabase, SQL e existência de apenas um banco foram verificados. Executar agora integração completa uma vez, antes do E2E.
