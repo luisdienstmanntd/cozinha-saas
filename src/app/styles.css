@@ -1419,6 +1419,55 @@ footer {
 .mesa-shortcuts {
   order: 0;
 }
+/* PR-06: faixa "Prioridades de hoje" (só vencidos e vencem hoje, números do resumo já carregado). */
+.mesa-priority {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+.mesa-priority h3 {
+  font-size: var(--text-md);
+}
+.mesa-priority-items,
+.mesa-priority .mesa-panel-message {
+  margin: 0;
+}
+.mesa-priority-link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  color: var(--action-primary);
+  font-weight: 600;
+}
+.mesa-priority .secondary {
+  margin: 0 0 0 auto;
+}
+@media (min-width: 900px) {
+  .mesa-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--space-3) var(--space-4);
+  }
+  .mesa-overview > * {
+    grid-column: 1 / -1;
+  }
+  .mesa-overview > .mesa-page-heading {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .mesa-overview > .mesa-shortcuts {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+  .mesa-stats > div {
+    padding: var(--space-2) var(--space-3);
+  }
+}
 .mesa-alerts {
   order: 1;
 }
@@ -1508,8 +1557,11 @@ footer {
   .mesa-alerts {
     order: -1;
   }
-  .mesa-overview .mesa-page-heading {
+  .mesa-priority {
     order: -2;
+  }
+  .mesa-overview .mesa-page-heading {
+    order: -3;
   }
   .mesa-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));

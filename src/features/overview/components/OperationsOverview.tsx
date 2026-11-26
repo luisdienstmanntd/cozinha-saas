@@ -12,6 +12,7 @@ import {
   localCivilDate,
 } from '../../batches/domain/expiryStatus';
 import { formatCivilDate } from '../../../shared/format/dates';
+import { ActionLink } from '../../../shared/ui/ActionLink';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import type { LocationGateway } from '../../locations/application/locationGateway';
 import type { OccurrenceGateway } from '../../occurrences/application/occurrenceGateway';
@@ -129,6 +130,10 @@ export function OperationsOverview({
     );
   }
 
+  // A categoria mais urgente com saldo: vencidos primeiro, senão os que vencem hoje.
+  const urgent: ExpiryFilter =
+    data && data.summary.overdue > 0 ? 'vencidos' : 'hoje';
+
   function available(id: AreaId) {
     return areas.some((area) => area.id === id);
   }
@@ -159,6 +164,53 @@ export function OperationsOverview({
       {!data && !error && <p role="status">Carregando visão geral…</p>}
       {data && !error && (
         <>
+          <section
+            aria-label="Prioridades de hoje"
+            className="mesa-priority mesa-panel"
+          >
+            <h3>Prioridades de hoje</h3>
+            {data.summary.overdue + data.summary.due_today > 0 ? (
+              <>
+                <p className="mesa-priority-items">
+                  {data.summary.overdue > 0 && (
+                    <StatusBadge status="overdue">
+                      {data.summary.overdue === 1
+                        ? '1 vencido'
+                        : `${data.summary.overdue} vencidos`}
+                    </StatusBadge>
+                  )}{' '}
+                  {data.summary.due_today > 0 && (
+                    <StatusBadge status="today">
+                      {data.summary.due_today === 1
+                        ? '1 vence hoje'
+                        : `${data.summary.due_today} vencem hoje`}
+                    </StatusBadge>
+                  )}
+                </p>
+                {expiryHref && selectExpiry ? (
+                  <ActionLink
+                    className="mesa-priority-link"
+                    href={expiryHref(urgent)}
+                    onNavigate={() => selectExpiry(urgent)}
+                  >
+                    Ver na lista
+                  </ActionLink>
+                ) : (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => select('validade')}
+                  >
+                    Ver na lista
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="mesa-panel-message">
+                Nada vencido nem vencendo hoje.
+              </p>
+            )}
+          </section>
           <section
             aria-label="Recipientes com saldo por validade"
             className="mesa-stats"
@@ -300,7 +352,6 @@ export function OperationsOverview({
         </>
       )}
       <section className="mesa-shortcuts" aria-label="Ações rápidas">
-        <h3>Ações rápidas</h3>
         <div className="mesa-action-row">
           {available('receber') && (
             <button type="button" onClick={() => select('receber')}>

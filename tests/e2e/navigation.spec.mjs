@@ -488,3 +488,37 @@ test('cada área mostra um único título de página em h2', async ({ page }) =>
     }
   });
 });
+
+// PR-06 (M5): "Prioridades de hoje" abre a Visão geral, antes dos contadores; sem vencidos e sem
+// vencem hoje, o zero é real e a mensagem diz isso.
+test('Visão geral: Prioridades de hoje vem antes dos contadores e das ações no cabeçalho', async ({
+  page,
+}) => {
+  page.setDefaultTimeout(5000);
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await withCatalogFixture(async ({ users }) => {
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await openUnit(page);
+    const priorities = page.getByRole('region', {
+      name: 'Prioridades de hoje',
+    });
+    await expect(priorities).toContainText('Nada vencido nem vencendo hoje.');
+    const counters = page.getByRole('region', {
+      name: 'Recipientes com saldo por validade',
+    });
+    const [p, c] = await Promise.all([
+      priorities.boundingBox(),
+      counters.boundingBox(),
+    ]);
+    expect(p.y).toBeLessThan(c.y);
+    const heading = await page
+      .getByRole('heading', { name: 'Visão geral', level: 2 })
+      .boundingBox();
+    const receive = await page
+      .getByRole('button', { name: '+ Recebimento' })
+      .boundingBox();
+    expect(receive.y).toBeLessThan(p.y);
+    expect(Math.abs(receive.y - heading.y)).toBeLessThan(80);
+  });
+});
