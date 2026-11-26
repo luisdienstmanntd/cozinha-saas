@@ -2151,3 +2151,120 @@ footer {
 .ficha-actions > p {
   margin: 0;
 }
+
+/* PR-12 (D-078): barra inferior do celular e folha "Mais". Só existe em até 899 px (OperationsNav
+   troca o menu lateral por ela). Alvos de toque de 56 px; a área segura do aparelho fica abaixo. */
+.mesa-bottom-nav {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 30;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface-nav);
+  color: var(--text-on-dark);
+  border-top: 1px solid var(--border-control);
+}
+.workspace .mesa-bottom-nav > :is(a, button) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-height: 3.5rem;
+  min-width: var(--touch-target);
+  margin: 0;
+  padding: var(--space-1) 0.15rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
+}
+.mesa-bottom-nav > :is(a, button) > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.workspace .mesa-bottom-nav > :is(a, button):hover {
+  background: var(--surface-nav-hover);
+}
+.mesa-bottom-nav > a[aria-current='page'],
+.mesa-bottom-nav > button.is-current {
+  background: var(--surface-nav-hover);
+  box-shadow: inset 0 3px var(--brand-accent);
+  font-weight: 700;
+}
+.mesa-bottom-nav :focus-visible,
+.mesa-more-sheet :focus-visible {
+  outline: 3px solid var(--focus-dark);
+  outline-offset: -3px;
+}
+.mesa-more-sheet :focus-visible {
+  outline-color: var(--focus-light);
+}
+.mesa-more-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 45%);
+}
+.mesa-more-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 41;
+  max-height: 80dvh;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-3)
+    calc(var(--space-3) + env(safe-area-inset-bottom));
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 25%);
+}
+.mesa-more-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.mesa-more-sheet .mesa-nav-heading {
+  color: var(--text-secondary);
+}
+.mesa-more-group {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+}
+.workspace .mesa-more-group > a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 1rem;
+}
+.mesa-more-group > a .operation-icon {
+  color: var(--text-secondary);
+}
+.mesa-more-group > a:hover {
+  background: var(--surface-hover);
+}
+.mesa-more-group > a[aria-current='page'] {
+  background: var(--surface-hover);
+  box-shadow: inset 3px 0 var(--brand-accent);
+  font-weight: 700;
+}
+@media (max-width: 899px) {
+  /* O conteúdo nunca fica escondido atrás da barra. */
+  .mesa-workspace .unit-layout {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom) + var(--space-4));
+  }
+}

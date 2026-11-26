@@ -5,20 +5,27 @@ const labels = {
 };
 
 export function areaLink(page, name) {
+  const label = labels[name] ?? name;
+  // Desktop: menu lateral. Celular (PR-12): barra inferior, ou a folha "Mais" para as demais áreas.
   return page
     .getByRole('navigation', { name: 'Áreas da unidade' })
-    .getByRole('link', { name: labels[name] ?? name, exact: true });
+    .getByRole('link', { name: label, exact: true })
+    .or(
+      page
+        .getByRole('dialog', { name: 'Mais áreas' })
+        .getByRole('link', { name: label, exact: true }),
+    );
 }
 
 export async function openArea(page, name) {
-  const menu = page.getByRole('button', { name: 'Menu', exact: true });
+  const more = page.getByRole('button', { name: 'Mais', exact: true });
   const link = areaLink(page, name);
   if (
     !(await link.isVisible()) &&
-    (await menu.isVisible()) &&
-    (await menu.getAttribute('aria-expanded')) === 'false'
+    (await more.isVisible()) &&
+    (await more.getAttribute('aria-expanded')) === 'false'
   )
-    await menu.click();
+    await more.click();
   const group = ['Produtos', 'Fornecedores', 'Preparações próprias'].includes(
     name,
   )
