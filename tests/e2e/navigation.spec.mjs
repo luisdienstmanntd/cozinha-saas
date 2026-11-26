@@ -222,22 +222,28 @@ for (const width of [390, 320]) {
       expect((await alerts.boundingBox()).y).toBeLessThan(
         (await totals.boundingBox()).y,
       );
-      const menu = page.getByRole('button', { name: 'Menu', exact: true });
-      await menu.click();
+      // PR-12 (D-078): barra inferior com 4 atalhos e "Mais"; as demais áreas ficam na folha.
       await expect(
-        page.getByRole('button', { name: 'Cadastros', exact: true }),
-      ).toHaveAttribute('aria-expanded', 'false');
+        page.getByRole('button', { name: 'Menu', exact: true }),
+      ).toHaveCount(0);
+      for (const link of await nav(page).getByRole('link').all()) {
+        const rect = await link.boundingBox();
+        expect(rect.height).toBeGreaterThanOrEqual(44);
+        expect(rect.width).toBeGreaterThanOrEqual(44);
+      }
+      const more = page.getByRole('button', { name: 'Mais', exact: true });
+      expect((await more.boundingBox()).height).toBeGreaterThanOrEqual(44);
       await expect(areaLink(page, 'Produtos')).toBeHidden();
-      for (const link of await nav(page)
-        .getByRole('link')
-        .filter({ visible: true })
-        .all()) {
+      await more.click();
+      const sheet = page.getByRole('dialog', { name: 'Mais áreas' });
+      await expect(sheet).toBeVisible();
+      for (const link of await sheet.getByRole('link').all()) {
         const rect = await link.boundingBox();
         expect(rect.height).toBeGreaterThanOrEqual(44);
         expect(rect.width).toBeGreaterThanOrEqual(44);
       }
       await openArea(page, 'Produtos');
-      await expect(nav(page)).toBeHidden();
+      await expect(sheet).toBeHidden();
       await expect(
         page.getByRole('heading', { name: 'Produtos' }),
       ).toBeVisible();
@@ -450,14 +456,22 @@ test('menu lateral cabe em 1366×768 sem rolagem própria e mantém 44 px no cel
     expect(overflow).toBeLessThanOrEqual(0);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole('button', { name: 'Menu', exact: true }).click();
-    const heights = await nav(page)
+    await page.getByRole('button', { name: 'Mais', exact: true }).click();
+    const heights = await page
+      .getByRole('dialog', { name: 'Mais áreas' })
       .getByRole('link')
       .evaluateAll((links) =>
         links
           .filter((link) => link.getBoundingClientRect().height > 0)
           .map((link) => link.getBoundingClientRect().height),
       );
+    heights.push(
+      ...(await nav(page)
+        .getByRole('link')
+        .evaluateAll((links) =>
+          links.map((link) => link.getBoundingClientRect().height),
+        )),
+    );
     expect(heights.length).toBeGreaterThan(3);
     for (const height of heights) expect(height).toBeGreaterThanOrEqual(44);
   });
