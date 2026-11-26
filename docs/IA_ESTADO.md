@@ -2,6 +2,10 @@
 
 Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotografia, não um bloqueio nem garantia de atualidade. Confira sempre o Git e o GitHub; cada tarefa mantém detalhes e checkpoints próprios em `ia-tarefas/`. Para evitar conflitos, edite apenas a linha da tarefa e o resumo necessários, preservando registros de outras sessões.
 
+## Validação após PR #77 — 26/11/2026
+
+- Codex: confirmação em andamento na branch `codex/validar-e2e-20261126`, base `a504672`. O Claude já corrigiu o aviso falso na `main`; preservar o teste estrito dele. O PR #81 de equipe permanece em rascunho e não é alterado. [Registro](ia-tarefas/validar-e2e-apos-pr77.md).
+
 ## Situação verificada em 13/11/2026
 
 - Com autorização de luis (13/11/2026), os PRs #1 a #12 foram integrados na `main` com commits de merge, na ordem #2, #1, #3, #4, #5 a #12. Os conflitos foram só em `DECISOES.md` e `IA_ESTADO.md`, conciliados mantendo as duas entradas. D-034 a D-041 passaram dos registros das fatias para `DECISOES.md`.
