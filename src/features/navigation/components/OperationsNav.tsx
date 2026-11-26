@@ -156,6 +156,11 @@ export function OperationsNav({
           if (!mobile && window.scrollY > 0) window.scrollTo({ top: 0 });
           setMobile(!mobile);
         }}
+        onKeyDown={(event) => {
+          // Com o foco no próprio botão, o Escape não passa pelo menu: fecha aqui também.
+          if (event.key !== 'Escape' || !mobile) return;
+          setMobile(false);
+        }}
       >
         ☰ Menu
       </button>

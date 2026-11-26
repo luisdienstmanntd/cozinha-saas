@@ -1960,3 +1960,13 @@ footer {
     font-size: 0.85rem;
   }
 }
+
+/* PR-01 (diagnóstico de 26/11/2026): com mouse ou touchpad o menu lateral usa itens mais baixos, para
+   caber em 1366×768 sem rolagem própria. Em toque (pointer: coarse) valem os 44 px de sempre. */
+@media (pointer: fine) and (min-width: 900px) {
+  .mesa-sidebar nav a,
+  .workspace .operation-group-toggle {
+    min-height: 36px;
+    line-height: 1.3;
+  }
+}

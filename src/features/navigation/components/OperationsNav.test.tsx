@@ -69,3 +69,23 @@ it('abre Cadastros no acesso direto e não oferece cadastro ao colaborador', () 
     screen.queryByRole('button', { name: 'Cadastros' }),
   ).not.toBeInTheDocument();
 });
+
+it('Escape fecha o menu do celular também com o foco no botão Menu', async () => {
+  const user = userEvent.setup();
+  render(
+    <OperationsNav
+      areas={workspaceAreas(true, true, true)}
+      current="visao-geral"
+      hrefFor={(id: AreaId) => `?area=${id}`}
+      select={vi.fn()}
+      unitName="Cozinha"
+    />,
+  );
+  const menu = screen.getByRole('button', { name: 'Menu' });
+  await user.click(menu);
+  expect(menu).toHaveAttribute('aria-expanded', 'true');
+  menu.focus();
+  await user.keyboard('{Escape}');
+  expect(menu).toHaveAttribute('aria-expanded', 'false');
+  expect(menu).toHaveFocus();
+});

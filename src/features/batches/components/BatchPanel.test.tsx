@@ -301,3 +301,76 @@ it('orienta o recebimento sem produtos e fornecedores, com destinos diretos', as
     screen.queryByRole('button', { name: 'Registrar recebimento' }),
   ).not.toBeInTheDocument();
 });
+
+it('o aviso de recebimento registrado aparece só na área Recebimentos', async () => {
+  sessionStorage.clear();
+  const product = {
+    id: '10000000-0000-4000-8000-000000000001',
+    name: 'Arroz',
+    unit: 'kg' as const,
+    storage_condition: 'ambient' as const,
+  };
+  const supplier = {
+    id: '10000000-0000-4000-8000-000000000002',
+    name: 'Horta',
+  };
+  const catalog = {
+    list: vi.fn(async (kind: string) =>
+      kind === 'products' ? [product] : [supplier],
+    ),
+    create: vi.fn(),
+    setStorageCondition: vi.fn(),
+  };
+  const props = {
+    scope: { organizationId: 'org', establishmentId: 'unit' },
+    timezone: 'America/Sao_Paulo',
+    canCreate: true,
+    userId: 'user-a',
+    catalog,
+    batches: {
+      list: vi.fn().mockResolvedValue([]),
+      receive: vi
+        .fn<BatchGateway['receive']>()
+        .mockResolvedValue('10000000-0000-4000-8000-000000000009'),
+    },
+    containers: fakeContainers([]),
+  };
+  const user = userEvent.setup();
+  const { rerender } = render(<BatchPanel {...props} area="receber" />);
+  await user.selectOptions(await screen.findByLabelText('Produto'), product.id);
+  await user.selectOptions(screen.getByLabelText('Fornecedor'), supplier.id);
+  await user.type(screen.getByLabelText('Lote de origem'), '0001');
+  await user.type(screen.getByLabelText('Quantidade recebida'), '1');
+  await user.type(screen.getByLabelText('Data de validade'), '2027-01-01');
+  await user.click(
+    screen.getByRole('button', { name: 'Registrar recebimento' }),
+  );
+  expect(await screen.findByText('Recebimento registrado.')).toBeVisible();
+  rerender(<BatchPanel {...props} area="validade" />);
+  expect(screen.queryByText('Recebimento registrado.')).not.toBeInTheDocument();
+  rerender(<BatchPanel {...props} area="receber" />);
+  expect(screen.getByText('Recebimento registrado.')).toBeVisible();
+});
+
+it('anuncia o carregamento como status, com o nome da área aberta', async () => {
+  const never = new Promise<never>(() => undefined);
+  const props = {
+    scope: { organizationId: 'org', establishmentId: 'unit' },
+    timezone: 'America/Sao_Paulo',
+    canCreate: true,
+    userId: 'user-a',
+    catalog: {
+      list: vi.fn(() => never),
+      create: vi.fn(),
+      setStorageCondition: vi.fn(),
+    },
+    batches: { list: vi.fn(() => never), receive: vi.fn() },
+    containers: fakeContainers([]),
+  };
+  const { rerender } = render(<BatchPanel {...props} area="validade" />);
+  expect(screen.getByRole('status')).toHaveTextContent('Carregando validades…');
+  rerender(<BatchPanel {...props} area="receber" />);
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'Carregando recebimentos…',
+  );
+});

@@ -266,7 +266,7 @@ function ProductionContents({
     return (
       <section aria-label="Produção da cozinha">
         <h3>Produção da cozinha</h3>
-        <p>Carregando produções…</p>
+        <p role="status">Carregando produções…</p>
       </section>
     );
 

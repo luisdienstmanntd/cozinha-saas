@@ -124,6 +124,10 @@ function BatchContents({
   const [loadFailed, setLoadFailed] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  // O aviso pertence à área em que nasceu (recebimento ou decisão de ocorrência em Validades).
+  const [noticeArea, setNoticeArea] = useState<'receber' | 'validade'>(
+    'receber',
+  );
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [origin, setOrigin] = useState('original');
@@ -556,6 +560,7 @@ function BatchContents({
         input.data.temperatureStatus === 'not_measured'
           ? ' O recebimento ficou bloqueado para uso até a decisão do proprietário.'
           : '';
+      setNoticeArea('receber');
       setNotice(
         cleaned
           ? `Recebimento registrado.${held}`
@@ -670,8 +675,16 @@ function BatchContents({
           </button>
         </div>
       )}
-      {notice && <p role="status">{notice}</p>}
-      {!ready && !error && <p>Carregando recebimentos…</p>}
+      {notice && (area === undefined || area === noticeArea) && (
+        <p role="status">{notice}</p>
+      )}
+      {!ready && !error && (
+        <p role="status">
+          {showValidade && !showReceber
+            ? 'Carregando validades…'
+            : 'Carregando recebimentos…'}
+        </p>
+      )}
       {!ready && error && (
         <button className="secondary" onClick={reload}>
           Tentar novamente
@@ -781,7 +794,7 @@ function BatchContents({
               </div>
             </section>
             {!shown ? (
-              <p>Carregando recipientes…</p>
+              <p role="status">Carregando recipientes…</p>
             ) : shown.rows.length === 0 ? (
               <>
                 <p>
@@ -1147,6 +1160,7 @@ function BatchContents({
                   now={now}
                   onDecided={(message) => {
                     reload();
+                    setNoticeArea('validade');
                     setNotice(message);
                   }}
                 />
@@ -1161,7 +1175,9 @@ function BatchContents({
                   />{' '}
                   Mostrar todas as ocorrências, inclusive decididas
                 </label>
-                {showDecided && !decidedRows && <p>Carregando ocorrências…</p>}
+                {showDecided && !decidedRows && (
+                  <p role="status">Carregando ocorrências…</p>
+                )}
               </div>
             )}
           </div>

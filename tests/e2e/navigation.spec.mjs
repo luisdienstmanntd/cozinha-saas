@@ -428,3 +428,37 @@ test('mantém revisão de configurações ao cancelar e descarta após confirmar
     ).toHaveCount(0);
   });
 });
+
+// PR-01 (diagnóstico de 26/11/2026): em notebook 1366×768 o menu lateral cabe inteiro, sem rolagem
+// própria, mesmo com Cadastros aberto; no celular o menu continua com alvos de toque de 44 px.
+test('menu lateral cabe em 1366×768 sem rolagem própria e mantém 44 px no celular', async ({
+  page,
+}) => {
+  page.setDefaultTimeout(5000);
+  await withCatalogFixture(async ({ users }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.goto('/');
+    await signIn(page, users[0]);
+    await openUnit(page);
+    await openArea(page, 'Preparações próprias');
+    await expect(
+      nav(page).getByRole('link', { name: 'Produtos', exact: true }),
+    ).toBeVisible();
+    const overflow = await page
+      .locator('.mesa-sidebar')
+      .evaluate((element) => element.scrollHeight - element.clientHeight);
+    expect(overflow).toBeLessThanOrEqual(0);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    const heights = await nav(page)
+      .getByRole('link')
+      .evaluateAll((links) =>
+        links
+          .filter((link) => link.getBoundingClientRect().height > 0)
+          .map((link) => link.getBoundingClientRect().height),
+      );
+    expect(heights.length).toBeGreaterThan(3);
+    for (const height of heights) expect(height).toBeGreaterThanOrEqual(44);
+  });
+});
