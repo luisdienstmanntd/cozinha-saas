@@ -5,7 +5,14 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react';
-import { useCompactLayout } from '../../../shared/ui/useCompactLayout';
+import {
+  useCompactLayout,
+  useTabletLayout,
+} from '../../../shared/ui/useCompactLayout';
+import {
+  readMenuCollapsed,
+  writeMenuCollapsed,
+} from '../domain/menuPreference';
 import { BrandLogo } from '../../../shared/ui/brand/BrandLogo';
 import type { Area, AreaId } from '../domain/areas';
 import { catalogPages } from '../domain/workspaceAreas';
@@ -18,17 +25,23 @@ export function OperationsNav({
   hrefFor,
   select,
   unitName,
+  personKey,
 }: {
   areas: Area[];
   current: AreaId;
   hrefFor: (area: AreaId) => string;
   select: (area: AreaId) => void;
   unitName: string;
+  // PR-13: quem está usando o menu, para lembrar se ele foi recolhido (opcional).
+  personKey?: string;
 }) {
   const menuId = useId();
   const menuButton = useRef<HTMLButtonElement>(null);
   const [mobile, setMobile] = useState(false);
-  const [compact, setCompact] = useState(false);
+  // PR-13: no tablet deitado (900 a 1199 px) o menu começa recolhido; a escolha da pessoa vale sempre.
+  const tablet = useTabletLayout();
+  const [chosen, setChosen] = useState(() => readMenuCollapsed(personKey));
+  const compact = chosen ?? tablet;
   const mobileLayout = useCompactLayout();
   const compactSidebar = compact && !mobileLayout;
   const [openGroups, setOpenGroups] = useState({
@@ -174,7 +187,10 @@ export function OperationsNav({
             type="button"
             className="mesa-collapse"
             aria-label={compact ? 'Expandir menu' : 'Recolher menu'}
-            onClick={() => setCompact(!compact)}
+            onClick={() => {
+              setChosen(!compact);
+              writeMenuCollapsed(personKey, !compact);
+            }}
           >
             {compact ? '›' : '‹'}
           </button>

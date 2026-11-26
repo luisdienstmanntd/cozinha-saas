@@ -4,7 +4,10 @@ import { afterEach, expect, it, vi, type Mock } from 'vitest';
 import { OperationsNav } from './OperationsNav';
 import { workspaceAreas } from '../domain/workspaceAreas';
 import type { AreaId } from '../domain/areas';
-import { COMPACT_QUERY } from '../../../shared/ui/useCompactLayout';
+import {
+  COMPACT_QUERY,
+  TABLET_QUERY,
+} from '../../../shared/ui/useCompactLayout';
 
 it('recolhe administração, abre o grupo do destino e permite fechá-lo manualmente', async () => {
   const user = userEvent.setup();
@@ -103,7 +106,10 @@ function compact() {
     })),
   );
 }
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  window.localStorage.clear();
+});
 
 function renderBar(
   options: {
@@ -244,4 +250,100 @@ it('PR-12: dentro de Mais, o botão fica marcado como atual; colaborador só tem
   expect(
     screen.queryByRole('link', { name: 'Produtos' }),
   ).not.toBeInTheDocument();
+});
+
+// PR-13: tablet deitado (900 a 1199 px): menu recolhido por padrão, escolha lembrada por pessoa.
+function widths(matching: string | null) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: query === matching,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  );
+}
+
+function renderMenu(personKey?: string) {
+  return render(
+    <OperationsNav
+      areas={workspaceAreas(true, true, true)}
+      current="visao-geral"
+      hrefFor={(id: AreaId) => `?area=${id}`}
+      select={vi.fn()}
+      unitName="Cozinha"
+      personKey={personKey}
+    />,
+  );
+}
+const sidebar = (container: HTMLElement) =>
+  container.querySelector('.mesa-sidebar')!;
+
+it('PR-13: no tablet deitado o menu começa recolhido, com os links por ícone e nome acessível', () => {
+  widths(TABLET_QUERY);
+  const { container } = renderMenu('pessoa-a');
+  expect(sidebar(container)).toHaveClass('is-compact');
+  expect(
+    screen.getByRole('button', { name: 'Expandir menu' }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Validades' })).toHaveAttribute(
+    'title',
+    'Validades',
+  );
+});
+
+it('PR-13: no notebook (1200 px ou mais) o menu continua expandido por padrão', () => {
+  widths(null);
+  const { container } = renderMenu('pessoa-a');
+  expect(sidebar(container)).not.toHaveClass('is-compact');
+  expect(
+    screen.getByRole('button', { name: 'Recolher menu' }),
+  ).toBeInTheDocument();
+});
+
+it('PR-13: expandir no tablet vale e é lembrado por pessoa neste aparelho', async () => {
+  widths(TABLET_QUERY);
+  const user = userEvent.setup();
+  const first = renderMenu('pessoa-a');
+  await user.click(screen.getByRole('button', { name: 'Expandir menu' }));
+  expect(sidebar(first.container)).not.toHaveClass('is-compact');
+  first.unmount();
+  // A mesma pessoa reabre expandido; outra pessoa, ou ninguém, recebe o padrão do tablet.
+  const again = renderMenu('pessoa-a');
+  expect(sidebar(again.container)).not.toHaveClass('is-compact');
+  again.unmount();
+  const other = renderMenu('pessoa-b');
+  expect(sidebar(other.container)).toHaveClass('is-compact');
+  other.unmount();
+  const anonymous = renderMenu();
+  expect(sidebar(anonymous.container)).toHaveClass('is-compact');
+});
+
+it('PR-13: recolher no notebook também é lembrado', async () => {
+  widths(null);
+  const user = userEvent.setup();
+  const first = renderMenu('pessoa-a');
+  await user.click(screen.getByRole('button', { name: 'Recolher menu' }));
+  expect(sidebar(first.container)).toHaveClass('is-compact');
+  first.unmount();
+  expect(sidebar(renderMenu('pessoa-a').container)).toHaveClass('is-compact');
+});
+
+it('PR-13: sem armazenamento (bloqueado ou ilegível) o menu funciona igual', async () => {
+  widths(TABLET_QUERY);
+  const user = userEvent.setup();
+  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    throw new Error('bloqueado');
+  });
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('bloqueado');
+  });
+  const { container } = renderMenu('pessoa-a');
+  expect(sidebar(container)).toHaveClass('is-compact');
+  await user.click(screen.getByRole('button', { name: 'Expandir menu' }));
+  expect(sidebar(container)).not.toHaveClass('is-compact');
+  vi.restoreAllMocks();
+  window.localStorage.setItem('cozzigo.menu-recolhido.pessoa-a', 'lixo');
+  expect(sidebar(renderMenu('pessoa-a').container)).toHaveClass('is-compact');
 });

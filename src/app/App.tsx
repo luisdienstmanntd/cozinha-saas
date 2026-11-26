@@ -201,6 +201,7 @@ function Workspace({
         hrefFor={hrefFor}
         select={select}
         unitName={unit.unitName}
+        personKey={userId}
       />
       <div
         id={unit.active === false ? undefined : 'conteudo-unidade'}

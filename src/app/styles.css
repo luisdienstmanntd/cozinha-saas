@@ -2268,3 +2268,13 @@ footer {
     padding-bottom: calc(3.5rem + env(safe-area-inset-bottom) + var(--space-4));
   }
 }
+
+/* PR-13: botão de recolher o menu com alvo de toque de 44 px (tablet deitado e notebook). */
+.workspace .mesa-sidebar .mesa-collapse {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
