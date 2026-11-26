@@ -25,7 +25,11 @@ import { ProductionPanel } from '../features/production/components/ProductionPan
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 import { SettingsPanel } from '../features/settings/components/SettingsPanel';
 import { UnitMetricsPanel } from '../features/metrics/components/UnitMetricsPanel';
-import { parsePlace, placeSearch } from '../features/navigation/domain/areas';
+import {
+  parseContainerParam,
+  parsePlace,
+  placeSearch,
+} from '../features/navigation/domain/areas';
 import type { AreaId } from '../features/navigation/domain/areas';
 import type { UnitContext } from '../features/identity/components/IdentityHome';
 import {
@@ -80,6 +84,13 @@ function Workspace({
     area === 'validade'
       ? parseExpiryFilter(new URLSearchParams(requested.search).get('validade'))
       : null;
+  // PR-11: ficha do recipiente aberta dentro da unidade (`recipiente=` no endereço), só a partir de
+  // Visão geral e Etiquetas. O endereço do QR (/recipiente/:id) continua sendo outra página.
+  const fichaId =
+    area === 'etiquetas' || area === 'visao-geral'
+      ? parseContainerParam(requested.search)
+      : null;
+  const fichaOpen = fichaId !== null && unit.active !== false;
   const content = useRef<HTMLDivElement>(null);
   const previous = useRef(area);
   useEffect(() => {
@@ -104,6 +115,28 @@ function Workspace({
     const destination = next === 'cadastros' ? 'produtos' : next;
     return `${window.location.pathname}${placeSearch(window.location.search, establishmentId, destination, filter)}`;
   }
+  function fichaHref(containerId: string) {
+    return `${window.location.pathname}${placeSearch(window.location.search, establishmentId, area, null, containerId)}`;
+  }
+  function openFicha(containerId: string) {
+    window.history.pushState({ ficha: true }, '', fichaHref(containerId));
+    setRequested({ search: window.location.search, hash: '' });
+    if (window.scrollY > 0) window.scrollTo({ top: 0 });
+  }
+  function closeFicha() {
+    const from = fichaId;
+    if (window.history.state?.ficha) window.history.back();
+    else {
+      window.history.pushState(null, '', hrefFor(area));
+      setRequested({ search: window.location.search, hash: '' });
+    }
+    if (from)
+      window.setTimeout(() =>
+        document
+          .querySelector<HTMLElement>(`[data-ficha-for="${from}"]`)
+          ?.focus(),
+      );
+  }
   function selectExpiry(filter: ExpiryFilter | null) {
     if (area === 'validade' && filter === expiryFilter && !window.location.hash)
       return;
@@ -111,7 +144,7 @@ function Workspace({
     setRequested({ search: window.location.search, hash: '' });
   }
   function select(next: AreaId) {
-    if (next === area && !window.location.hash) return;
+    if (next === area && !window.location.hash && !fichaOpen) return;
     window.history.pushState(null, '', hrefFor(next));
     setRequested({ search: window.location.search, hash: '' });
   }
@@ -188,19 +221,40 @@ function Workspace({
             onResolved={() => setPendingToken((value) => value + 1)}
           />
         )}
+        {fichaOpen && (
+          <div className="container-ficha">
+            <button type="button" className="secondary" onClick={closeFicha}>
+              ← Voltar para a lista
+            </button>
+            <LabelView
+              key={fichaId}
+              id={fichaId}
+              gateway={configuration.labels}
+              handling={tracked.handling}
+              canHandle={() => canCreate}
+              userId={userId}
+              unitId={establishmentId}
+              onOpenContainer={openFicha}
+            />
+          </div>
+        )}
         {area === 'visao-geral' && unit.active !== false && (
-          <OperationsOverview
-            scope={scope}
-            timezone={timezone}
-            containers={configuration.containers}
-            locations={configuration.locations}
-            occurrences={configuration.occurrences}
-            revision={pendingToken + stockToken}
-            areas={areas}
-            select={select}
-            expiryHref={(filter) => hrefFor('validade', filter)}
-            selectExpiry={selectExpiry}
-          />
+          <div hidden={fichaOpen}>
+            <OperationsOverview
+              scope={scope}
+              timezone={timezone}
+              containers={configuration.containers}
+              locations={configuration.locations}
+              occurrences={configuration.occurrences}
+              revision={pendingToken + stockToken}
+              areas={areas}
+              select={select}
+              expiryHref={(filter) => hrefFor('validade', filter)}
+              selectExpiry={selectExpiry}
+              fichaHref={fichaHref}
+              onOpenFicha={openFicha}
+            />
+          </div>
         )}
         {area === 'indicadores' && canCreate && unit.active !== false && (
           <UnitMetricsPanel
@@ -212,11 +266,15 @@ function Workspace({
           />
         )}
         {area === 'etiquetas' && unit.active !== false && (
-          <LabelDirectory
-            scope={scope}
-            containers={configuration.containers}
-            revision={pendingToken + stockToken}
-          />
+          <div hidden={fichaOpen}>
+            <LabelDirectory
+              scope={scope}
+              containers={configuration.containers}
+              revision={pendingToken + stockToken}
+              fichaHref={fichaHref}
+              onOpenFicha={openFicha}
+            />
+          </div>
         )}
         <div hidden={area !== 'validade' && area !== 'receber'}>
           <BatchPanel
