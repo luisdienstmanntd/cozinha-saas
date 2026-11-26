@@ -151,6 +151,8 @@ function BatchContents({
   const [decidedRows, setDecidedRows] = useState<OccurrenceRow[] | null>(null);
   const [showDecided, setShowDecided] = useState(false);
   const [productId, setProductId] = useState('');
+  // PR-09: filtro só de tela sobre a lista de produtos do recebimento; não entra no envio.
+  const [productFilter, setProductFilter] = useState('');
   const [temperatureStatus, setTemperatureStatus] = useState('');
   const intent = useRef<string | null>(null);
   const listVersion = useRef(0);
@@ -454,6 +456,16 @@ function BatchContents({
     (item) => item.id === productId,
   );
   const storage = selectedProduct?.storage_condition ?? null;
+  // Mesma ordem do catálogo; o produto já escolhido nunca some da lista ao filtrar.
+  const productNeedle = productFilter.trim().toLocaleLowerCase('pt-BR');
+  const visibleProducts = (catalogData?.products ?? []).filter(
+    (p) =>
+      !productNeedle ||
+      p.id === productId ||
+      `${p.name} ${p.storage_condition ? storageLabels[p.storage_condition] : ''}`
+        .toLocaleLowerCase('pt-BR')
+        .includes(productNeedle),
+  );
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -547,6 +559,7 @@ function BatchContents({
       form.reset();
       setOrigin('original');
       setProductId('');
+      setProductFilter('');
       setTemperatureStatus('');
       reload();
       const held =
@@ -1215,6 +1228,27 @@ function BatchContents({
                     </h4>
                     <p>
                       <label>
+                        Filtrar produtos{' '}
+                        <input
+                          type="search"
+                          value={productFilter}
+                          maxLength={120}
+                          autoComplete="off"
+                          onChange={(event) =>
+                            setProductFilter(event.target.value)
+                          }
+                        />
+                      </label>
+                      {productNeedle && (
+                        <small role="status">
+                          {visibleProducts.length === 0
+                            ? 'Nenhum produto encontrado.'
+                            : `${visibleProducts.length} de ${catalogData.products.length} produtos`}
+                        </small>
+                      )}
+                    </p>
+                    <p>
+                      <label>
                         Produto{' '}
                         <select
                           name="productId"
@@ -1228,7 +1262,7 @@ function BatchContents({
                           <option value="" disabled>
                             Selecione
                           </option>
-                          {catalogData.products.map((p) => (
+                          {visibleProducts.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.name} ({p.unit})
                             </option>
