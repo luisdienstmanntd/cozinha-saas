@@ -1,0 +1,110 @@
+/* PR-03: estilos dos componentes base de src/shared/ui. Ainda sem uso nas áreas (PR-04 em diante).
+   Só tokens de tokens.css; selecionadores com prefixo ui- para não colidir com o CSS atual. */
+.ui-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.ui-page-header h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.ui-page-header p {
+  margin: var(--space-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.ui-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.125rem var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.ui-badge-overdue,
+.ui-badge-blocked {
+  color: var(--status-overdue-text);
+  background: var(--status-overdue-surface);
+  border-color: var(--status-overdue-edge);
+}
+.ui-badge-today {
+  color: var(--status-today-text);
+  background: var(--status-today-surface);
+  border-color: var(--status-today-edge);
+}
+.ui-badge-tomorrow {
+  color: var(--status-tomorrow-text);
+  background: var(--status-tomorrow-surface);
+  border-color: var(--status-tomorrow-edge);
+}
+.ui-badge-upcoming {
+  color: var(--status-later-text);
+  background: var(--status-later-surface);
+  border-color: var(--status-later-edge);
+}
+.ui-badge-depleted {
+  color: var(--status-depleted-text);
+  background: var(--status-depleted-surface);
+  border-color: var(--status-depleted-edge);
+}
+
+.ui-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--panel-pad);
+  color: var(--text-primary);
+  text-decoration: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+}
+a.ui-tile {
+  min-height: var(--touch-target);
+}
+.ui-tile-label {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.ui-tile-value {
+  font-size: var(--text-num);
+  font-variant-numeric: tabular-nums;
+}
+.ui-tile-hint {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.ui-tile-overdue {
+  border-color: var(--status-overdue-edge);
+}
+.ui-tile-today {
+  border-color: var(--status-today-edge);
+}
+.ui-tile-tomorrow {
+  border-color: var(--status-tomorrow-edge);
+}
+
+.ui-state {
+  padding: var(--panel-pad);
+  color: var(--text-secondary);
+}
+.ui-state p {
+  margin: 0 0 var(--space-2);
+}
+.ui-state-error {
+  color: var(--danger-text);
+  background: var(--danger-surface);
+  border-radius: var(--radius-panel);
+}
