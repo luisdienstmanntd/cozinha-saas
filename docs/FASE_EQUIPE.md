@@ -17,17 +17,17 @@ Até aqui a equipe só mudava por SQL (`private.add_member_to_organization`, D-0
 
 ## 3. Regras no banco (`20261126000000_team_management.sql`)
 
-| Regra | Como |
-|---|---|
-| Só o proprietário ativo da própria empresa age | `private.lock_team` confere `has_membership(org, true)` (inclui sessão ativa da V2) **depois** de trancar a linha da empresa |
-| Dois proprietários ao mesmo tempo não deixam a empresa sem dono | `select … for update` na empresa serializa; o segundo reconfere o próprio papel e recebe "Acesso negado" (teste de integração com duas sessões reais) |
-| Ninguém troca o próprio papel nem se revoga | `22023`, mensagem orientando a pedir a outro proprietário |
-| Nunca sem proprietário ativo | `active_owner_count` antes de rebaixar ou revogar um proprietário (`23514`) |
-| Uma conta, um vínculo ativo (D-025) | Conta inexistente, não confirmada ou já vinculada em outra empresa: **mesma mensagem** (`P0002`), sem revelar a outra empresa |
-| Nada é apagado | Revogar grava `revoked_at`; restaurar limpa `revoked_at` na mesma linha e volta como `member` |
-| Revogação vale na hora | As políticas e funções de escrita já exigiam `revoked_at is null`; nenhuma mudança nelas |
-| Auditoria | Gatilhos gravam em `entity_changes` (`entity='membership'`, campos `role` e `access`, com `changed_by`). O vínculo criado numa sessão (pelo site) também; o provisionamento por SQL continua sem autor, como antes |
-| API | Funções privadas SECURITY DEFINER com `search_path` vazio; fachada pública SECURITY INVOKER; `anon` sem execução; nenhum INSERT/UPDATE direto em `memberships` |
+| Regra                                                           | Como                                                                                                                                                                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Só o proprietário ativo da própria empresa age                  | `private.lock_team` confere `has_membership(org, true)` (inclui sessão ativa da V2) **depois** de trancar a linha da empresa                                                                                       |
+| Dois proprietários ao mesmo tempo não deixam a empresa sem dono | `select … for update` na empresa serializa; o segundo reconfere o próprio papel e recebe "Acesso negado" (teste de integração com duas sessões reais)                                                              |
+| Ninguém troca o próprio papel nem se revoga                     | `22023`, mensagem orientando a pedir a outro proprietário                                                                                                                                                          |
+| Nunca sem proprietário ativo                                    | `active_owner_count` antes de rebaixar ou revogar um proprietário (`23514`)                                                                                                                                        |
+| Uma conta, um vínculo ativo (D-025)                             | Conta inexistente, não confirmada ou já vinculada em outra empresa: **mesma mensagem** (`P0002`), sem revelar a outra empresa                                                                                      |
+| Nada é apagado                                                  | Revogar grava `revoked_at`; restaurar limpa `revoked_at` na mesma linha e volta como `member`                                                                                                                      |
+| Revogação vale na hora                                          | As políticas e funções de escrita já exigiam `revoked_at is null`; nenhuma mudança nelas                                                                                                                           |
+| Auditoria                                                       | Gatilhos gravam em `entity_changes` (`entity='membership'`, campos `role` e `access`, com `changed_by`). O vínculo criado numa sessão (pelo site) também; o provisionamento por SQL continua sem autor, como antes |
+| API                                                             | Funções privadas SECURITY DEFINER com `search_path` vazio; fachada pública SECURITY INVOKER; `anon` sem execução; nenhum INSERT/UPDATE direto em `memberships`                                                     |
 
 Funções da API: `list_team_members(org)`, `add_team_member(org, email, nome, papel)`, `set_team_member_role(org, pessoa, papel)`, `revoke_team_member(org, pessoa)`, `restore_team_member(org, pessoa)`. Editar nome usa a função existente `set_member_display_name`.
 
@@ -57,6 +57,12 @@ Ordem obrigatória: **migração antes do merge**. O merge publica o site; se o 
 6. Só então, com autorização própria, o merge (publica o site). Depois, com o proprietário fictício: abrir Equipe, conferir a lista e revogar/restaurar o colaborador fictício.
 
 **Reversão:** a migração não cria tabela nem coluna e não altera dados. Para desfazer, remover as funções e gatilhos listados no fim do arquivo da migração; os `revoked_at` gravados continuam valendo e as linhas de auditoria ficam (append-only).
+
+### Pendência registrada (26/11/2026, luis)
+
+- luis autorizou aplicar esta migração em `cozinha-saas-testes` e, em seguida, mesclar o #81 (publica o site). A sessão em nuvem **não alcança** o projeto hospedado (a conexão do Supabase dela só vê outros dois projetos e não há token nem senha do banco), então a migração **ainda precisa ser aplicada**, por luis (passos 2 a 5 acima) ou por quem tiver acesso ao projeto.
+- Até lá o #81 **fica sem merge**. Branch atualizada sobre a `main` `05bbde0`, CI verde, head `0f05c00`.
+- Depois de aplicada: avisar; então mesclar, conferir main verde e site publicado, e abrir Equipe com o proprietário fictício.
 
 ## 7. Capturas
 

@@ -30,3 +30,4 @@
 - **Efeito esperado nos testes de navegação:** "Equipe" entra na folha "Mais" do proprietário; as listas esperadas em `OperationsNav.test.tsx`, `workspaceAreas.test.ts` e `bottom-nav.spec.mjs` ganharam esse item (nenhum teste enfraquecido).
 - **Bateria local após a atualização:** lint, typecheck, format, Vitest 776, build, ci-scripts 29, pgTAP 1575, integração 68, advisors sem problemas, E2E 53.
 - **Migração `20261126000000_team_management.sql`:** continua NÃO aplicada no hospedado. Merge e aplicação só com autorização específica de luis.
+- **Pendência (26/11, luis):** migração ainda NÃO aplicada no hospedado (a sessão em nuvem não alcança o projeto); o #81 fica sem merge até lá. Ver `FASE_EQUIPE.md` §6.
