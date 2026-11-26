@@ -23,3 +23,10 @@
 - **Observação:** o E2E imprime avisos de React "two children with the same key" já nos testes de catálogo e vírgula decimal, que não usam a área nova; não bloqueiam e ficam para outra tarefa.
 - **Capturas:** antes (menu Configurações sem Equipe, desktop e celular) e depois (lista, recusa genérica, confirmação de revogação, revogados, celular) em `capturas-equipe-d077/` na pasta do projeto.
 - **Próximo passo:** aceite de luis; depois, autorização para a migração no hospedado e, separada, para o merge (ver `FASE_EQUIPE.md` §6).
+
+### 26/11/2026, 22:5x UTC — Claude Code
+
+- **Atualização sobre a `main` `05bbde0`** (PRs de interface 01 a 14 mesclados): 4 conflitos resolvidos (`App.tsx`, `OperationsNav.tsx`, `styles.css`, `IA_ESTADO.md`). O ícone de Equipe foi para `areaIcons.ts` (que passou a abrigar os ícones) e o CSS da Equipe foi mantido ao fim do arquivo.
+- **Efeito esperado nos testes de navegação:** "Equipe" entra na folha "Mais" do proprietário; as listas esperadas em `OperationsNav.test.tsx`, `workspaceAreas.test.ts` e `bottom-nav.spec.mjs` ganharam esse item (nenhum teste enfraquecido).
+- **Bateria local após a atualização:** lint, typecheck, format, Vitest 776, build, ci-scripts 29, pgTAP 1575, integração 68, advisors sem problemas, E2E 53.
+- **Migração `20261126000000_team_management.sql`:** continua NÃO aplicada no hospedado. Merge e aplicação só com autorização específica de luis.
