@@ -48,4 +48,40 @@
   --danger-text: #b91c1c;
   --danger-surface: #fef2f2;
   --danger-hover: #991b1b;
+
+  /* PR-02: escala tipográfica (hoje os tamanhos estão soltos no CSS). Ainda não usada pelas áreas. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-num: 1.75rem;
+
+  /* PR-02: estados de validade. Texto, fundo do selo e borda funcional de cada estado; contraste
+     medido em `tokens.test.ts`. "Vence hoje" (laranja escuro) e "vence amanhã" (âmbar) são distintos,
+     e o laranja da marca não é cor de alerta. Ainda não usados pelas áreas (PR-04). */
+  --status-overdue-text: #991b1b;
+  --status-overdue-surface: #fef2f2;
+  --status-overdue-edge: #b91c1c;
+  --status-today-text: #9a3412;
+  --status-today-surface: #fff7ed;
+  --status-today-edge: #c2410c;
+  --status-tomorrow-text: #92400e;
+  --status-tomorrow-surface: #fffbeb;
+  --status-tomorrow-edge: #b45309;
+  --status-later-text: #272f35;
+  --status-later-surface: #edf2f7;
+  --status-later-edge: #758398;
+  --status-depleted-text: #58677a;
+  --status-depleted-surface: #edf2f7;
+  --status-depleted-edge: #e2e8f0;
+
+  /* PR-02: densidade. Toque mantém 44 px; ponteiro fino (mouse/touchpad) usa itens de menu mais baixos. */
+  --nav-item-h: 44px;
+  --nav-item-h-pointer: 36px;
+  --panel-pad: var(--space-4);
+  --row-h: 2.75rem;
+
+  /* PR-02: elevação só para sobreposições (hoje há uma sombra literal em "Minha conta"). */
+  --shadow-overlay: 0 8px 24px #272f3520;
 }
