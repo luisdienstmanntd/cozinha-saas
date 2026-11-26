@@ -99,7 +99,7 @@ it(
     expect(card('Arroz')).toHaveTextContent('· preparação própria');
     // O selo tem texto além da cor e o símbolo fica fora da leitura.
     const badge = within(card('Creme')).getByText('Vence hoje');
-    expect(badge).toHaveClass('expiry-badge', 'tone-today');
+    expect(badge).toHaveClass('ui-badge', 'ui-badge-today');
     expect(badge.querySelector('[aria-hidden="true"]')).not.toBeNull();
     // Nenhum UUID completo na lista principal, nem data ISO.
     expect(list.textContent).not.toMatch(

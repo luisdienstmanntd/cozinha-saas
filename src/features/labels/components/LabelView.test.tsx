@@ -544,7 +544,7 @@ it('mostra o selo de validade e a data no formato brasileiro no topo da ficha (V
       />,
     );
     const badge = await screen.findByText('Vence em 5 dias');
-    expect(badge).toHaveClass('expiry-badge', 'tone-upcoming');
+    expect(badge).toHaveClass('ui-badge', 'ui-badge-upcoming');
     expect(
       screen.getByText(/validade 20\/11\/2026 \(original\)/),
     ).toBeVisible();

@@ -50,6 +50,7 @@ import {
   toDotQuantity,
 } from '../../../shared/format/quantity';
 import { toDotTemperature } from '../../../shared/format/temperature';
+import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { AreaLink, FirstSteps } from './FirstSteps';
 import type { AreaLinks } from './FirstSteps';
 
@@ -85,14 +86,6 @@ type Catalog = { products: CatalogItem[]; suppliers: CatalogItem[] };
 type Listing = ContainerPage & { fetchedAt: Date; key: string };
 const LOAD_ERROR =
   'Não foi possível carregar todos os recebimentos. Confira o acesso e tente novamente.';
-// V3 (B4): o selo usa cor e símbolo, mas o texto sempre diz o status (não depende só da cor).
-const badgeSymbols = {
-  overdue: '⛔',
-  today: '⚠',
-  tomorrow: '●',
-  upcoming: '✓',
-  depleted: '○',
-} as const;
 
 function BatchContents({
   scope: { organizationId, establishmentId },
@@ -858,12 +851,11 @@ function BatchContents({
                               · {lotText(row.source_code)}
                             </span>
                           </p>{' '}
-                          <span className={`expiry-badge tone-${tone}`}>
-                            <span aria-hidden="true">{badgeSymbols[tone]}</span>{' '}
+                          <StatusBadge status={tone}>
                             {depleted
                               ? 'Esgotado'
                               : expiryBadgeText(row.expiry_date, timezone, now)}
-                          </span>
+                          </StatusBadge>
                         </div>{' '}
                         <dl className="card-facts">
                           <div className="fact-expiry">
