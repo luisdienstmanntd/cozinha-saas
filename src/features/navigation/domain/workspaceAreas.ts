@@ -29,7 +29,12 @@ export function workspaceAreas(
     );
   }
   areas.push({ id: 'config-unidade', label: 'Unidade' });
-  if (owner) areas.push({ id: 'config-organizacao', label: 'Organização' });
+  // D-077: equipe da empresa (listar, adicionar, papel, revogar), só para o proprietário.
+  if (owner)
+    areas.push(
+      { id: 'config-equipe', label: 'Equipe' },
+      { id: 'config-organizacao', label: 'Organização' },
+    );
   return areas;
 }
 

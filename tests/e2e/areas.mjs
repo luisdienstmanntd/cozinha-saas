@@ -23,7 +23,7 @@ export async function openArea(page, name) {
     name,
   )
     ? 'Cadastros'
-    : ['Unidade', 'Organização'].includes(name)
+    : ['Unidade', 'Equipe', 'Organização'].includes(name)
       ? 'Configurações'
       : null;
   if (group && !(await link.isVisible()))

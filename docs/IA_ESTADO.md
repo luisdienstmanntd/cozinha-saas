@@ -153,3 +153,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Indicadores da unidade (D-076, fatia A da auditoria) — 26/11/2026
 
 - Claude Code, branch `claude/painel-indicadores-piloto`, base `main` `1baa836`. Área "Indicadores" só para o proprietário, lendo `pilot_metrics` (sem migração). Só interface e testes; hospedado intocado. Aguarda aceite de luis; merge publica o site. [Registro](ia-tarefas/indicadores-unidade.md).
+
+## Equipe da empresa (D-077, fatia B da auditoria) — 26/11/2026
+
+- Claude Code, branch `claude/gestao-equipe`, base `main` `a504672`. Área "Equipe" (só proprietário): listar, vincular conta já criada, trocar papel, revogar e restaurar acesso. **Uma migração nova**, ainda não aplicada no hospedado (exige aval específico de luis, antes do merge). Aguarda aceite. [Registro](ia-tarefas/equipe-empresa.md), [relatório](FASE_EQUIPE.md).

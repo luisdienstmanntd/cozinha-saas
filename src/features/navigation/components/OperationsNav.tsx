@@ -25,6 +25,8 @@ const iconPaths: Partial<Record<AreaId, string>> = {
   fornecedores: 'M3 6h11v11H3zM14 10h4l3 3v4h-7m-8 0v2m12-2v2',
   preparacoes: 'M6 4h12v16H6zM9 8h6m-6 4h6m-6 4h4',
   'config-unidade': 'M4 11l8-7 8 7v9H4zM9 20v-6h6v6',
+  'config-equipe':
+    'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1m7-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm13 9v-1a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74',
   'config-organizacao':
     'M5 21V4h14v17M9 8h.01M15 8h.01M9 12h.01M15 12h.01M10 21v-5h4v5',
 };

@@ -25,6 +25,7 @@ import { ProductionPanel } from '../features/production/components/ProductionPan
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 import { SettingsPanel } from '../features/settings/components/SettingsPanel';
 import { UnitMetricsPanel } from '../features/metrics/components/UnitMetricsPanel';
+import { TeamPanel } from '../features/team/components/TeamPanel';
 import { parsePlace, placeSearch } from '../features/navigation/domain/areas';
 import type { AreaId } from '../features/navigation/domain/areas';
 import type { UnitContext } from '../features/identity/components/IdentityHome';
@@ -297,6 +298,14 @@ function Workspace({
             onSaved={() => setSettingsToken((value) => value + 1)}
           />
         </div>
+        {area === 'config-equipe' && canCreate && (
+          <TeamPanel
+            organizationId={organizationId}
+            organizationName={unit.organizationName}
+            timezone={timezone}
+            gateway={configuration.team}
+          />
+        )}
         {canCreate && (
           <div hidden={area !== 'config-organizacao'}>
             {unit.organizationTools}

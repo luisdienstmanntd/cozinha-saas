@@ -35,4 +35,22 @@ describe('páginas da Mesa operacional', () => {
     expect(workspacePage('?area=indicadores', '', owner)).toBe('indicadores');
     expect(workspacePage('?area=indicadores', '', member)).toBe('visao-geral');
   });
+
+  it('Equipe (D-077) só aparece para o proprietário, entre Unidade e Organização', () => {
+    expect(owner.map(({ id }) => id).slice(-3)).toEqual([
+      'config-unidade',
+      'config-equipe',
+      'config-organizacao',
+    ]);
+    expect(owner.find(({ id }) => id === 'config-equipe')?.label).toBe(
+      'Equipe',
+    );
+    expect(member.some(({ id }) => id === 'config-equipe')).toBe(false);
+    expect(workspacePage('?area=config-equipe', '', owner)).toBe(
+      'config-equipe',
+    );
+    expect(workspacePage('?area=config-equipe', '', member)).toBe(
+      'visao-geral',
+    );
+  });
 });

@@ -22,6 +22,7 @@ import { createProductionGateway } from '../features/production/data/supabasePro
 import { createEstablishmentGateway } from '../features/establishments/data/supabaseEstablishments';
 import { createSettingsGateway } from '../features/settings/data/supabaseSettings';
 import { createMetricsGateway } from '../features/metrics/data/supabaseMetrics';
+import { createTeamGateway } from '../features/team/data/supabaseTeam';
 
 function browserStorage(): Storage | null {
   try {
@@ -74,6 +75,7 @@ export function configureApp(
       establishments: createEstablishmentGateway(client),
       settings: createSettingsGateway(client),
       metrics: createMetricsGateway(client),
+      team: createTeamGateway(client),
     };
   } catch {
     return null;
