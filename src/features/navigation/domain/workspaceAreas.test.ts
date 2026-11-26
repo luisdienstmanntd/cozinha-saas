@@ -25,4 +25,14 @@ describe('páginas da Mesa operacional', () => {
     expect(workspacePage('?area=receber', '', member)).toBe('visao-geral');
     expect(workspacePage('?area=etiquetas', '', member)).toBe('etiquetas');
   });
+
+  it('Indicadores (D-076) só aparece para o proprietário, logo após a visão geral', () => {
+    expect(owner.map(({ id }) => id).slice(0, 2)).toEqual([
+      'visao-geral',
+      'indicadores',
+    ]);
+    expect(member.some(({ id }) => id === 'indicadores')).toBe(false);
+    expect(workspacePage('?area=indicadores', '', owner)).toBe('indicadores');
+    expect(workspacePage('?area=indicadores', '', member)).toBe('visao-geral');
+  });
 });

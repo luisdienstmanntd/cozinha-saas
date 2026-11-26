@@ -149,3 +149,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Revisão da interface para apresentação de produto (D-075) — 25/11/2026
 
 - Claude Code, branch `claude/revisao-interface-profissional`, base `main` `0bbeec0`. Logo embutido com reserva em texto, início só com escolha de unidade, Organização com título e blocos, cabeçalho igual em todas as áreas, "Atualizar lista". Só interface; renomeação dos dados do hospedado apenas proposta. Aguarda aceite de luis. [Registro](ia-tarefas/revisao-interface-profissional.md), [relatório](REVISAO_INTERFACE_PROFISSIONAL.md).
+
+## Indicadores da unidade (D-076, fatia A da auditoria) — 26/11/2026
+
+- Claude Code, branch `claude/painel-indicadores-piloto`, base `main` `1baa836`. Área "Indicadores" só para o proprietário, lendo `pilot_metrics` (sem migração). Só interface e testes; hospedado intocado. Aguarda aceite de luis; merge publica o site. [Registro](ia-tarefas/indicadores-unidade.md).
