@@ -248,7 +248,7 @@ function ProductionContents({
   if (loadError)
     return (
       <section aria-label="Produção da cozinha">
-        <h3>Produção da cozinha</h3>
+        <h2>Produção da cozinha</h2>
         <p role="alert">{loadError}</p>
         <button
           className="secondary"
@@ -265,7 +265,7 @@ function ProductionContents({
   if (!preparations || !rows || !rules)
     return (
       <section aria-label="Produção da cozinha">
-        <h3>Produção da cozinha</h3>
+        <h2>Produção da cozinha</h2>
         <p role="status">Carregando produções…</p>
       </section>
     );
@@ -421,7 +421,7 @@ function ProductionContents({
     <section aria-label="Produção da cozinha" className="production-panel">
       <header className="operation-heading">
         <div>
-          <h3>Produção da cozinha</h3>
+          <h2>Produção da cozinha</h2>
           <p>
             Preparações feitas na cozinha, com validade informada pelo
             responsável.

@@ -997,6 +997,7 @@ footer {
   background: var(--surface-panel);
 }
 
+.workspace .operation-heading h2,
 .workspace .operation-heading h3,
 .operation-heading p,
 .workspace .operation-heading button,
@@ -1753,6 +1754,7 @@ footer {
   background: transparent;
   margin: 0 0 var(--space-4);
 }
+.workspace.mesa-workspace .operation-heading h2,
 .workspace.mesa-workspace .operation-heading h3 {
   font-size: 1.65rem;
   line-height: 1.3;
