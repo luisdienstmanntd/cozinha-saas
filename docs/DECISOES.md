@@ -592,3 +592,9 @@
 - **Nome:** "Indicadores" em vez de "piloto" na interface, pela D-074 (produto final, sem termos de ensaio). No código e no banco o nome `pilot_metrics` permanece.
 - **Consequência:** só interface e testes; nenhum dado, regra, migração ou Supabase hospedado muda. Nada na tela avalia o alimento nem afirma conformidade (Q10 segue pendente).
 - **Revisar quando:** o piloto pedir período personalizado, comparação entre unidades ou exportação (fatia F), ou se a D-019 mudar e o colaborador passar a precisar dos números.
+
+## Contatos opcionais de fornecedores
+
+- Pedido de luis: nome do fornecedor, e-mail e contato no cadastro. Nome obrigatório; e-mail e telefone/WhatsApp opcionais. Contato livre até80 caracteres, e-mail até254; branco é null. Entrada de e-mail estrita; leitura tolera todos os endereços estruturalmente aceitos pelo banco, evitando bloquear o catálogo inteiro.
+- Preserva escopo por unidade, RLS, leitura por membros e criação só por proprietário. Campos não aparecem nos seletores de recebimento ou etiquetas. UPDATE permanece indisponível.
+- Publicação depende da migração aditiva antes do cliente; hospedado não alterado neste incremento. Rollback de colunas após uso exige preservar os contatos gravados.

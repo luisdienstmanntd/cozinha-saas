@@ -112,3 +112,17 @@ describe('consulta do catálogo por unidade', () => {
     expect(mock.from).toHaveBeenCalledTimes(1);
   });
 });
+
+it('lê contatos aceitos pelo banco sem bloquear o catálogo por validação mais estrita de entrada', async () => {
+  const row = {
+    id: '12345678-1234-4234-8234-123456789abc',
+    name: 'Fornecedor',
+    email: 'a@b.c',
+    contact: '+55 0011',
+  };
+  const mock = clientFor({ rows: [row] });
+  await expect(
+    createCatalogGateway(mock.client).list('suppliers', scope),
+  ).resolves.toEqual([row]);
+  expect(mock.catalog.select).toHaveBeenCalledWith('id,name,email,contact');
+});
