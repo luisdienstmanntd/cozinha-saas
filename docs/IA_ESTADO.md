@@ -207,3 +207,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Validades compactas (PR-16) — 27/11/2026
 
 - Claude Code, branch `claude/validades-compactas`, base `main` `aec8466` (#99 mesclado). Cartões de Validades em estilo lista, ações secundárias em botões de ícone (nome acessível, dica, alvo de 44 px); regras e textos intactos. PR em rascunho, sem merge. [Registro](ia-tarefas/validades-compactas.md).
+
+## Fornecedores — e-mail e contato
+
+- Codex, publicação autorizada e bloqueada por acesso ao Supabase correto; PR #98 em `codex/fornecedor-contatos`, base `6a2c9ed`. Campos opcionais persistidos, migração somente versionada; hospedado intocado. [Registro](ia-tarefas/fornecedor-contatos.md).

@@ -396,3 +396,50 @@ it('Mesa (D-070): painel nunca aberto não deixa campos no documento; fechar gua
     delete proto.close;
   }
 });
+
+it('cadastra fornecedor com contatos e preserva os campos após falha', async () => {
+  const supplier = {
+    id: 's1',
+    name: 'Horta',
+    email: 'horta@example.test',
+    contact: '+55 (51) 0011-2233',
+  };
+  const gateway: CatalogGateway = {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Sem conexão.'))
+      .mockResolvedValue(supplier),
+    setStorageCondition: vi.fn(),
+  };
+  const user = userEvent.setup();
+  render(<CatalogPanel scope={scope} gateway={gateway} canCreate />);
+  const drawer = within(screen.getByRole('region', { name: 'Fornecedores' }));
+  await drawer.findByText('Nenhum fornecedor cadastrado.');
+  await user.type(drawer.getByLabelText('Nome do fornecedor'), 'Horta');
+  await user.type(
+    drawer.getByLabelText('E-mail (opcional)'),
+    'horta@example.test',
+  );
+  await user.type(
+    drawer.getByLabelText('Contato — telefone/WhatsApp (opcional)'),
+    supplier.contact,
+  );
+  await user.click(
+    drawer.getByRole('button', { name: 'Cadastrar fornecedor' }),
+  );
+  expect(await drawer.findByRole('alert')).toHaveTextContent('Sem conexão.');
+  expect(drawer.getByLabelText('E-mail (opcional)')).toHaveValue(
+    supplier.email,
+  );
+  await user.click(
+    drawer.getByRole('button', { name: 'Cadastrar fornecedor' }),
+  );
+  expect(await screen.findByText(supplier.email)).toBeVisible();
+  expect(screen.getByText(supplier.contact)).toBeVisible();
+  expect(gateway.create).toHaveBeenLastCalledWith('suppliers', scope, {
+    name: 'Horta',
+    email: supplier.email,
+    contact: supplier.contact,
+  });
+});

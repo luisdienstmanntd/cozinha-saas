@@ -2505,3 +2505,16 @@ footer {
     text-align: start;
   }
 }
+
+.supplier-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.supplier-contact > span {
+  min-width: 0;
+  max-width: 100%;
+}
