@@ -14,3 +14,8 @@
 ### 26/11/2026 — Claude Code
 - **Feito:** auditoria escrita; PR em rascunho só de docs.
 - **Testes:** não se aplica (sem código). Não executados.
+
+## Retomada Codex — 27/11/2026
+
+- Usuário aceitou os PRs #79 e #81 e autorizou merge e deploy. A `main` avançou a `e460a77`; ambos têm conflitos. Esta cópia isolada prepara a reconciliação do #79 com a main atual, preservando as entradas de coordenação das duas partes.
+- Antes de concluir: confirmar CI no commit reconciliado, situação do #81 e aplicação segura da migração hospedada. O conector Supabase falhou ao iniciar; não presumir estado remoto. Evitar merge ou deploy enquanto os gates estiverem bloqueados.
