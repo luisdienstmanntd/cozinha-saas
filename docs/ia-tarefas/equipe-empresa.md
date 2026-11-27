@@ -47,3 +47,4 @@
 ### 27/11/2026 — autenticação concluída
 
 - luis confirmou login CLI; consulta inicial falhou por certificado HTTPS. Com `NODE_EXTRA_CA_CERTS` apontando ao certificado público Avast já confiado no Windows, consulta de projetos passou e confirmou `wtscafnacsmyfmqcaffy` sem expor credenciais. Próximo: vincular projeto e executar dry-run; aplicar somente a migração de equipe se todas as condições do procedimento se confirmarem.
+- `supabase link --project-ref wtscafnacsmyfmqcaffy` confirmou vínculo; `supabase db push --remote --dry-run` identificou `cozinha-saas-testes` e listou exclusivamente `20261126000000_team_management.sql`, sem seeds nem roles. Arquivo de migração confere com o head testado do PR #81. Próximo: aplicar migração autorizada, conferir histórico, segurança e só então mesclar o head testado.
