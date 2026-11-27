@@ -638,14 +638,60 @@ footer {
   border-left: 4px solid var(--warning-edge);
   padding: 0.15rem 0.4rem;
 }
+/* PR-16: cartão em estilo lista. Título e fatos à esquerda; ações (ícones e a ação principal) numa só
+   linha à direita. Avisos, ficha, movimentações e formulários ocupam a largura toda. */
+.container-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 0.75rem;
+  align-items: center;
+}
+.container-card > * {
+  grid-column: 1 / -1;
+}
+.container-card > .card-head,
+.container-card > .card-facts {
+  grid-column: 1;
+}
 .card-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
 }
 .workspace .card-actions button {
   margin: 0;
+}
+.workspace .card-actions button:not(.icon-action) {
+  white-space: nowrap;
+}
+/* Botão só com ícone: alvo de toque de 44 px (celular e tablet); com mouse e tela larga fica menor. */
+.workspace button.icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  min-width: var(--touch-target);
+  padding: 0;
+  border-radius: var(--radius-control);
+}
+/* Celular: sem espaço ao lado do título; as ações descem para uma linha própria, alinhada à direita. */
+@media (max-width: 560px) {
+  .card-actions {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    margin-top: 0.3rem;
+  }
+}
+@media (min-width: 1200px) and (pointer: fine) {
+  .workspace .card-actions button.icon-action {
+    width: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
 }
 /* Tons: borda do cartão e contadores, com os tokens de estado do PR-02 (o selo é o StatusBadge de
    shared/ui). Contraste do texto ≥ 4,5:1 sobre o fundo, medido em tokens.test.ts. */
@@ -745,9 +791,6 @@ footer {
   }
   .card-facts {
     gap: 0 1rem;
-  }
-  .card-actions button {
-    flex: 1 1 auto;
   }
 }
 .blocks-notice {
@@ -884,50 +927,6 @@ footer {
 .step-done {
   color: var(--success-text);
   font-weight: 600;
-}
-
-/* V4 (item 7): no celular, ações secundárias do cartão em "Mais ações" (detalhes nativos: teclado e
-   leitor de tela funcionam sem código extra). Avisos ficam fora deste grupo. */
-.more-actions {
-  flex: 1 1 100%;
-}
-.more-actions > summary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--touch-target);
-  padding: 0 1rem;
-  border: 1px solid var(--border-control);
-  border-radius: 0.5rem;
-  color: var(--text-primary);
-  background: var(--surface-panel);
-  font-weight: 650;
-  cursor: pointer;
-}
-.more-actions > summary::-webkit-details-marker {
-  display: none;
-}
-/* Seta decorativa (borda em CSS, sem texto para leitor de tela): para baixo fechado, para cima aberto. */
-.more-actions > summary::after {
-  content: '';
-  margin-left: 0.6rem;
-  border: 6px solid transparent;
-  border-top-color: currentColor;
-  transform: translateY(3px);
-}
-.more-actions[open] > summary::after {
-  border-top-color: transparent;
-  border-bottom-color: currentColor;
-  transform: translateY(-3px);
-}
-.more-actions[open] > summary {
-  background: var(--surface-hover);
-}
-.more-actions-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
 }
 
 /* Texto só para leitor de tela (nada é apagado; só sai da tela). */

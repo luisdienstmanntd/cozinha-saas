@@ -199,3 +199,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Minha conta (senha e verificação em duas etapas) — 27/11/2026
 
 - Claude Code, branch `claude/minha-conta`, base `main` `6a2c9ed` (#97 mesclado). Área "Senha e acesso" (trocar senha, ativar/remover app autenticador) e passo do código na entrada; sem migração e sem mudar a regra de 30 minutos. O banco não exige aal2; TOTP precisa ser ligado no Supabase hospedado por luis. PR em rascunho, sem merge; o PR #81 (Equipe) segue aguardando a migração no hospedado. [Registro](ia-tarefas/minha-conta.md).
+
+## Validades compactas (PR-16) — 27/11/2026
+
+- Claude Code, branch `claude/validades-compactas`, base `main` `aec8466` (#99 mesclado). Cartões de Validades em estilo lista, ações secundárias em botões de ícone (nome acessível, dica, alvo de 44 px); regras e textos intactos. PR em rascunho, sem merge. [Registro](ia-tarefas/validades-compactas.md).
