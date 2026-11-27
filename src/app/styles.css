@@ -2381,3 +2381,15 @@ footer {
   font-size: 0.55rem;
   overflow-wrap: anywhere;
 }
+
+/* Minha conta: QR do aplicativo autenticador e chave de cadastro. */
+.account-qr {
+  display: block;
+  margin: var(--space-3) 0;
+  border-radius: var(--radius-control, 0.5rem);
+  background: #fff;
+}
+.account-secret {
+  overflow-wrap: anywhere;
+  user-select: all;
+}
