@@ -1,7 +1,7 @@
 # Fornecedor com e-mail e contato
 
 - **Responsável:** Codex /root
-- **Estado:** em_andamento
+- **Estado:** aguardando_aceite
 - **Branch/base:** codex/fornecedor-contatos, worktree /workspace/work/cozzigo-fornecedor, main 6a2c9ed.
 - **Pedido/aceite:** registrar nome obrigatório, e-mail e contato (telefone/WhatsApp) opcionais; persistir e consultar na lista; fornecedores antigos seguem válidos; recebimento continua mostrando somente nome.
 - **Escopo:** domínio, gateway, formulário de fornecedores, migração aditiva e testes. Sem edição, novas permissões, alteração do roadmap ou aplicação no hospedado.
@@ -26,3 +26,9 @@
 ## Revisão independente
 - QA identificou que validação de leitura mais estrita que a constraint SQL poderia bloquear a lista toda. Corrigida leitura para string limitada e adicionada regressão do gateway; validação de entrada continua estrita. Restante dos grants/RLS revisado sem bloqueador.
 - Gate completo e CI pendentes; PR será rascunho, sem aplicação no hospedado.
+
+## Validação final do código 7d44800
+- Gates locais estáveis: lint, typecheck, build e786 testes passaram. Catálogo focado:35 testes passaram.
+- CI45923219752 aprovada no código7d44800: qualidade, pgTAP, análise de segurança, integração API e E2E. Resultado detalhado e contagem E2E constam no PR#98.
+- A execução local anterior acompanhou uma mudança no esquema de leitura e carregou a versão estrita anterior; não foi usada como aprovação. A execução estável posterior passou integralmente.
+- Código salvo no PR#98 em rascunho. Próximo passo é aceite e autorização de migração hospedada e publicação, nessa ordem. Banco hospedado e main permanecem intocados nesta tarefa.
