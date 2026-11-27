@@ -24,6 +24,7 @@ import {
 import { ProductionPanel } from '../features/production/components/ProductionPanel';
 import { EstablishmentTools } from '../features/establishments/components/EstablishmentTools';
 import { SettingsPanel } from '../features/settings/components/SettingsPanel';
+import { AccountPanel } from '../features/account/components/AccountPanel';
 import { UnitMetricsPanel } from '../features/metrics/components/UnitMetricsPanel';
 import {
   parseContainerParam,
@@ -360,6 +361,10 @@ function Workspace({
           <div hidden={area !== 'config-organizacao'}>
             {unit.organizationTools}
           </div>
+        )}
+        {/* Só monta ao abrir: não consulta a conta a cada unidade e não guarda senha digitada. */}
+        {area === 'config-conta' && (
+          <AccountPanel gateway={configuration.account} />
         )}
       </div>
     </div>
