@@ -13,6 +13,12 @@ export interface CatalogGateway {
     scope: CatalogScope,
     input: CatalogInput,
   ): Promise<CatalogItem>;
+  updateSupplier?(
+    scope: CatalogScope,
+    id: string,
+    input: CatalogInput,
+  ): Promise<CatalogItem>;
+  deleteSupplier?(scope: CatalogScope, id: string): Promise<void>;
   // Define a conservação do produto uma única vez (set_product_storage_condition).
   setStorageCondition(
     scope: CatalogScope,

@@ -207,3 +207,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Indicadores — resumo visual
 
 - Codex, aguardando aceite em `codex/indicadores-visuais`, base `aec8466`. Gráficos de volumes e atrasos, detalhamento sob demanda; sem backend. [Registro](ia-tarefas/indicadores-visuais.md).
+
+## Fornecedores — ações de edição e exclusão
+
+- Codex, extensão do PR #98 em andamento. Ícones acessíveis, edição auditada e exclusão somente sem recebimentos; nome preservado após uso para manter etiquetas. [Registro](ia-tarefas/fornecedor-acoes.md).

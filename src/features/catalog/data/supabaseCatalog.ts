@@ -81,6 +81,49 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
         );
       return (product ? productRow : supplierRow).parse(data);
     },
+    async updateSupplier(scope, id, input) {
+      const value = parseCatalogInput(
+        'suppliers',
+        input.name,
+        null,
+        input.email,
+        input.contact,
+      );
+      const { data, error } = await client.rpc('edit_supplier', {
+        p_organization_id: scope.organizationId,
+        p_establishment_id: scope.establishmentId,
+        p_supplier_id: z.uuid().parse(id),
+        p_name: value.name,
+        p_email: value.email,
+        p_contact: value.contact,
+      });
+      if (error?.code === '23505')
+        throw new Error('Esse nome já está cadastrado neste estabelecimento.');
+      if (error?.code === '22023')
+        throw new Error(
+          'O nome do fornecedor com recebimentos deve ser preservado. E-mail e contato podem ser atualizados.',
+        );
+      if (error)
+        throw new Error(
+          'Não foi possível salvar o fornecedor. Confira os dados e seu acesso.',
+        );
+      return supplierRow.parse(data);
+    },
+    async deleteSupplier(scope, id) {
+      const { error } = await client.rpc('delete_supplier', {
+        p_organization_id: scope.organizationId,
+        p_establishment_id: scope.establishmentId,
+        p_supplier_id: z.uuid().parse(id),
+      });
+      if (error?.code === '23503')
+        throw new Error(
+          'Este fornecedor possui recebimentos e não pode ser excluído. O histórico foi preservado.',
+        );
+      if (error)
+        throw new Error(
+          'Não foi possível excluir o fornecedor. Atualize a lista e confira seu acesso.',
+        );
+    },
     async setStorageCondition(scope, productId, condition) {
       const { data, error } = await client.rpc(
         'set_product_storage_condition',

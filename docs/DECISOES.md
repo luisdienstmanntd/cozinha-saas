@@ -604,3 +604,9 @@
 - Pedido de luis: melhorar experiência e visualização, comparando indicadores com gráficos/análises possíveis. Escolhidos volumes independentes em barras de escala comum e proporções de atraso com base explícita. Sem somatório entre atividades, metas inventadas ou gráficos de tendência sem série temporal.
 - Todos os números originais ficam em detalhamento nativo acessível. Vencidos atuais e pendências das ocorrências abertas no período continuam visíveis. O detalhamento aberto é preservado ao atualizar ou trocar período.
 - Somente apresentação: mesmos dados, consultas, escopo e permissões. Não relacionar decisões no período a todas as ocorrências desse mesmo período como taxa de resolução. Relatório de alternativas e limites em `ia-tarefas/indicadores-visuais.md`.
+
+## Ações de fornecedores — edição e exclusão auditadas
+
+- Ícones de lápis e lixeira com rótulos acessíveis e alvo mínimo44px; exclusão exige confirmação com nome e foco inicial em Cancelar.
+- RPCs apenas para proprietário, escopo completo e auditoria append-only; UPDATE/DELETE diretos seguem negados. Fornecedor com recebimentos não pode ser excluído. Nome fica preservado após primeiro recebimento para manter etiquetas históricas; e-mail e contato continuam editáveis.
+- Migração de contatos precede a de ações. Publicação depende de aplicar ambas no projeto correto; sem mudanças no Supabase hospedado nesta tarefa.

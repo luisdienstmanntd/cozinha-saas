@@ -2506,3 +2506,55 @@ footer {
     text-align: start;
   }
 }
+
+.workspace .ui-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: var(--space-2);
+}
+.supplier-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+.workspace .supplier-delete-icon {
+  color: var(--danger-text);
+}
+.supplier-confirm {
+  max-width: min(32rem, calc(100vw - 2rem));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  padding: var(--space-6);
+}
+.supplier-confirm::backdrop {
+  background: rgb(39 47 53 / 45%);
+}
+.supplier-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.supplier-actions .mesa-drawer fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.supplier-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+}
+.supplier-row > span,
+.supplier-row > .supplier-contact {
+  grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.supplier-row > .supplier-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}

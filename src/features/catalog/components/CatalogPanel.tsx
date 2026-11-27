@@ -1,3 +1,4 @@
+import { SupplierActions } from './SupplierActions';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CatalogGateway } from '../application/catalogGateway';
@@ -280,6 +281,7 @@ function CatalogSection({
   const drawer = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const headingId = useId();
+  const listHeading = useRef<HTMLHeadingElement>(null);
   const actionLabel =
     kind === 'products'
       ? 'Novo produto'
@@ -503,7 +505,9 @@ function CatalogSection({
       {standalone ? (
         <header className="mesa-page-heading mesa-catalog-heading">
           <div>
-            <h2>{title}</h2>
+            <h2 ref={listHeading} tabIndex={-1}>
+              {title}
+            </h2>
             <p>Consulte e mantenha os cadastros desta unidade.</p>
           </div>
           {canCreate && list.status === 'ready' && (
@@ -520,7 +524,9 @@ function CatalogSection({
           )}
         </header>
       ) : (
-        <h3>{title}</h3>
+        <h3 ref={listHeading} tabIndex={-1}>
+          {title}
+        </h3>
       )}
       {standalone && notice && <p role="status">{notice}</p>}
       {standalone && error && !formOpen && <p role="alert">{error}</p>}
@@ -596,13 +602,61 @@ function CatalogSection({
               }
             >
               {visibleItems.map((item) => (
-                <li key={item.id}>
+                <li
+                  key={item.id}
+                  className={kind === 'suppliers' ? 'supplier-row' : undefined}
+                >
                   {kind === 'suppliers' ? <span>{item.name}</span> : item.name}
                   {kind === 'suppliers' && (item.email || item.contact) && (
                     <div className="supplier-contact">
                       {item.email && <span>{item.email}</span>}
                       {item.contact && <span>{item.contact}</span>}
                     </div>
+                  )}
+                  {kind === 'suppliers' && canCreate && (
+                    <SupplierActions
+                      supplier={item}
+                      scope={{ organizationId, establishmentId }}
+                      gateway={gateway}
+                      active={
+                        !standalone || (page === kind && active !== false)
+                      }
+                      onUpdated={(updated) => {
+                        setList((previous) =>
+                          previous.status === 'ready'
+                            ? {
+                                status: 'ready',
+                                items: previous.items
+                                  .map((row) =>
+                                    row.id === updated.id ? updated : row,
+                                  )
+                                  .sort((a, b) =>
+                                    a.name.localeCompare(b.name, 'pt-BR'),
+                                  ),
+                              }
+                            : previous,
+                        );
+                        listHeading.current?.focus();
+                        setNotice('Fornecedor atualizado.');
+                        onCreated?.();
+                      }}
+                      onDeleted={() => {
+                        setList((previous) =>
+                          previous.status === 'ready'
+                            ? {
+                                status: 'ready',
+                                items: previous.items.filter(
+                                  (row) => row.id !== item.id,
+                                ),
+                              }
+                            : previous,
+                        );
+                        setNotice('Fornecedor excluído.');
+                        setPageNumber(0);
+                        onCreated?.();
+                        listHeading.current?.focus();
+                      }}
+                    />
                   )}
                   {item.unit && ` — ${item.unit}`}
                   {product &&
