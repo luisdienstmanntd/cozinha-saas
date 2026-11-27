@@ -725,3 +725,52 @@ it('PR-11: dentro de uma unidade, recipiente de outra unidade não é mostrado',
     await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
   ).toBeVisible();
 });
+
+// Prévia da etiqueta (M9): aparece junto do botão do PDF e some quando a etiqueta não pode sair.
+const previewData = {
+  id: '12345678-1234-4234-8234-123456789abc',
+  short_code: 'C-000001',
+  balance: 1,
+  batch_receipts: {
+    source_code: '0001',
+    quantity: 1,
+    unit: 'kg',
+    expiry_date: '2027-01-01',
+    expiry_origin: 'original' as const,
+    products: { name: 'Arroz' },
+  },
+};
+it('a ficha oferece a prévia junto do PDF e a esconde quando a etiqueta não pode sair', async () => {
+  const withPdf = render(
+    <LabelView
+      id={previewData.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue(previewData),
+      }}
+    />,
+  );
+  expect(
+    await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Ver prévia da etiqueta' }),
+  ).toBeVisible();
+  withPdf.unmount();
+  render(
+    <LabelView
+      id={previewData.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({ ...previewData, late_hold: true }),
+      }}
+    />,
+  );
+  await screen.findByText('Etiqueta em PDF · 100 × 100 mm');
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Ver prévia da etiqueta' }),
+  ).not.toBeInTheDocument();
+});

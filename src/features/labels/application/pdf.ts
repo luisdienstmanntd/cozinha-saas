@@ -1,224 +1,135 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
-import {
-  containerPath,
-  DERIVED_DATA_MESSAGE,
-  PRODUCED_LABEL_MESSAGE,
-  PRODUCTION_HOLD_MESSAGE,
-  PRODUCTION_VOIDED_MESSAGE,
-  LATE_HOLD_MESSAGE,
-} from '../domain/label';
-import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
-import { storageLabels } from '../../catalog/domain/catalog';
-import { formatQuantity } from '../../../shared/format/quantity';
+import { containerPath } from '../domain/label';
 import type { LabelData } from '../domain/label';
-import { isAuthorizedOrigin } from './labelOrigin';
+import {
+  labelContent,
+  openedContent,
+  preparationContent,
+  receiptContent,
+  validateLabels,
+} from './labelContent';
+import type { LabelContent } from './labelContent';
 
 // Fatia 7.4 (desenho da Fase 7, seção 5.2): terceiro modelo, "Preparação própria", para o integral e as
 // porções de um lote produzido pela cozinha. Nenhum texto afirma conformidade (teste 16).
 // Fatia 6.7 (desenho 7.2): dois modelos de 100 × 100 mm, legíveis sem ler o QR. "Recebimento" para o
 // recipiente integral e "Produto aberto" / "Produto fracionado" para o derivado. Gerar ou reimprimir
 // nunca grava nada (D-003). O QR leva só a URL e o ID opaco.
-const SAFE_TEXT = /[^\u0020-\u007e\u00a0-\u00ff]/u;
-const pad = (value: number) => String(value).padStart(2, '0');
-
-function day(iso: string): string {
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-function zoned(iso: string, timezone: string): { date: string; time: string } {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone,
-      hourCycle: 'h23',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-      .formatToParts(new Date(iso))
-      .map((part) => [part.type, part.value]),
-  );
-  return {
-    date: `${parts.day}/${parts.month}/${parts.year}`,
-    time: `${pad(Number(parts.hour))}:${pad(Number(parts.minute))}`,
-  };
-}
-
-function refuse(data: LabelData) {
-  // Fatia 6.4: recipiente de manipulação anulada não ganha etiqueta, mesmo chamado direto.
-  if (data.voided)
-    throw new Error(
-      'Manipulação anulada: este recipiente não vale mais e a etiqueta não pode ser gerada.',
-    );
-  // Fatia 7.4: lote produzido exige os dados da produção; anulado ou tardio sem liberação não sai.
-  if (data.batch_receipts.source_code === null || data.production) {
-    if (!data.production) throw new Error(PRODUCED_LABEL_MESSAGE);
-    if (data.production.voided) throw new Error(PRODUCTION_VOIDED_MESSAGE);
-    if (data.production_hold) throw new Error(PRODUCTION_HOLD_MESSAGE);
-    if (!(data.handling?.storage ?? data.storage))
-      throw new Error(PRODUCED_LABEL_MESSAGE);
-  }
-  if (data.late_hold) throw new Error(LATE_HOLD_MESSAGE);
-  if (data.kind === 'derived' && !data.handling)
-    throw new Error(DERIVED_DATA_MESSAGE);
-}
-
-// Ordem da seção 5.2: nome (maior texto), VALIDADE em destaque, produzido em, produzido por,
-// conservação, quantidade (e "porção X de N"), "Validade informada pelo responsável", código e QR.
-function preparationPage({ doc }: Page, data: LabelData) {
-  const p = data.production!;
-  const h = data.handling;
-  const batch = data.batch_receipts;
-  const made = zoned(p.produced_at, p.timezone);
-  const storage = (h?.storage ?? data.storage)!;
-  const expiry = h?.expiry_date ?? batch.expiry_date;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text('PREPARAÇÃO PRÓPRIA', 6, 7);
-  // O nome é o maior texto (16 pt); a validade vem logo abaixo, em negrito (15 pt).
-  doc.setFontSize(16);
-  const name = lines(doc, batch.products.name, 88, 3);
-  doc.text(name, 6, 14, { lineHeightFactor: 1.15 });
-  let y = 14 + name.length * 6.5;
-  doc.setFontSize(9);
-  doc.text('VALIDADE', 6, y);
-  y += 6.5;
-  doc.setFontSize(15);
-  doc.text(day(expiry), 6, y);
-  y += 4.5;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.text('Validade informada pelo responsável', 6, y);
-  y += 5;
-  doc.setFontSize(9);
-  const row = (text: string, width = 88, max = 2) => {
-    const wrapped = lines(doc, text, width, max);
-    doc.text(wrapped, 6, y);
-    y += wrapped.length * 4;
-  };
-  row(`Produzido em: ${made.date} ${made.time} (${p.timezone})`);
-  row(`Produzido por: ${p.handled_by_name}`);
-  // Abaixo da altura do QR (a partir de 61 mm) o texto fica na coluna da esquerda.
-  y = Math.max(y, 61);
-  row(`Conservação: ${storageLabels[storage]}`, 54, 1);
-  const shownQuantity = formatQuantity(
-    data.effective?.initial_quantity ?? batch.quantity,
-  );
-  row(
-    h
-      ? `Quantidade da porção: ${shownQuantity} ${batch.unit}`
-      : `Quantidade produzida: ${shownQuantity} ${batch.unit}`,
-    54,
-    2,
-  );
-  if (h?.kind === 'portioning' && h.position)
-    row(`Porção ${h.position}${h.siblings ? ` de ${h.siblings}` : ''}`, 54, 1);
-  if (y > (data.hold ? 81 : 93))
-    throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
-}
-
+const text = (c: LabelContent, key: string) =>
+  c.rows.find((row) => row.key === key)?.text;
 type Page = { doc: jsPDF; right: number };
-function lines(doc: jsPDF, text: string, width: number, max: number) {
-  const wrapped = doc.splitTextToSize(text, width) as string[];
+function lines(doc: jsPDF, value: string, width: number, max: number) {
+  const wrapped = doc.splitTextToSize(value, width) as string[];
   if (wrapped.length > max)
     throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
   return wrapped;
 }
 
-function receiptPage({ doc }: Page, data: LabelData) {
-  const batch = data.batch_receipts;
-  const supplier = batch.suppliers?.name ?? null;
+// Ordem da seção 5.2: nome (maior texto), VALIDADE em destaque, produzido em, produzido por,
+// conservação, quantidade (e "porção X de N"), "Validade informada pelo responsável", código e QR.
+// Os textos vêm de `labelContent.ts` (a mesma fonte da prévia em tela); aqui só ficam fonte e posição.
+function preparationPage({ doc }: Page, data: LabelData) {
+  const c = preparationContent(data);
+  const v = c.validity!;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.text('RECEBIMENTO', 6, 7);
-  doc.setFontSize(12);
-  const name = lines(doc, batch.products.name, 88, 3);
-  doc.text(name, 6, 13);
-  let y = 13 + name.length * 5;
-  doc.setFont('helvetica', 'normal');
+  doc.text(c.title, 6, 7);
+  // O nome é o maior texto (16 pt); a validade vem logo abaixo, em negrito (15 pt).
+  doc.setFontSize(16);
+  const name = lines(doc, c.name, 88, 3);
+  doc.text(name, 6, 14, { lineHeightFactor: 1.15 });
+  let y = 14 + name.length * 6.5;
   doc.setFontSize(9);
-  const row = (text: string, max = 2) => {
-    const wrapped = lines(doc, text, 88, max);
-    doc.text(wrapped, 6, y);
-    y += wrapped.length * 4;
-  };
-  row(`Lote: ${batch.source_code}`, 3);
-  if (supplier) row(`Fornecedor: ${supplier}`);
-  if (data.storage) row(`Conservação: ${storageLabels[data.storage]}`);
-  y += 1;
-  row(
-    `Quantidade inicial: ${formatQuantity(data.effective?.initial_quantity ?? batch.quantity)} ${batch.unit} (entrada)`,
-  );
-  row(
-    `Validade: ${day(batch.expiry_date)} (${batch.expiry_origin === 'original' ? 'original' : 'responsável'})`,
-  );
-  if (y > 60) throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
-}
-
-function openedPage({ doc }: Page, data: LabelData) {
-  const h = data.handling!;
-  const batch = data.batch_receipts;
-  const when = zoned(h.handled_at, h.timezone);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text(
-    h.kind === 'portioning' ? 'PRODUTO FRACIONADO' : 'PRODUTO ABERTO',
-    6,
-    7,
-  );
-  doc.setFontSize(13);
-  const name = lines(doc, batch.products.name, 88, 2);
-  doc.text(name, 6, 13);
-  let y = 13 + name.length * 5.5;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text(`Aberto em: ${when.date} ${when.time} (${h.timezone})`, 6, y);
-  y += 6;
-  doc.text('VALIDADE APÓS ABERTURA', 6, y);
-  y += 7;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text(day(h.expiry_date), 6, y);
-  y += 5;
+  doc.text(v.caption, 6, y);
+  y += 6.5;
+  doc.setFontSize(15);
+  doc.text(v.date, 6, y);
+  y += 4.5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.text(`definida por ${h.handled_by_name} em ${when.date}`, 6, y);
-  y += 4.5;
+  doc.text(v.note, 6, y);
+  y += 5;
   doc.setFontSize(9);
-  const row = (text: string, width = 88, max = 2) => {
-    const wrapped = lines(doc, text, width, max);
+  const row = (value: string, width = 88, max = 2) => {
+    const wrapped = lines(doc, value, width, max);
     doc.text(wrapped, 6, y);
     y += wrapped.length * 4;
   };
-  if (batch.expiry_origin === 'original')
-    row(`Validade do fabricante: ${day(batch.expiry_date)}`);
-  row(`Lote original: ${batch.source_code}`);
+  row(text(c, 'madeAt')!);
+  row(text(c, 'madeBy')!);
   // Abaixo da altura do QR (a partir de 61 mm) o texto fica na coluna da esquerda.
   y = Math.max(y, 61);
-  row(`Conservação: ${storageLabels[h.storage]}`, 54, 1);
-  row(`Manipulado por: ${h.handled_by_name}`, 54, 2);
-  if (h.kind === 'portioning' && h.position)
-    row(`Porção ${h.position}${h.siblings ? ` de ${h.siblings}` : ''}`, 54, 1);
-  if (data.effective)
-    row(
-      `Quantidade na criação: ${formatQuantity(data.effective.initial_quantity)} ${batch.unit}`,
-      54,
-      2,
-    );
+  row(text(c, 'storage')!, 54, 1);
+  row(text(c, 'quantity')!, 54, 2);
+  if (text(c, 'portion')) row(text(c, 'portion')!, 54, 1);
   if (y > (data.hold ? 81 : 93))
     throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
 }
 
-function textsOf(data: LabelData): string[] {
-  return [
-    data.batch_receipts.products.name,
-    data.batch_receipts.source_code ?? '',
-    data.batch_receipts.suppliers?.name ?? '',
-    data.handling?.handled_by_name ?? '',
-    data.production?.handled_by_name ?? '',
-  ];
+function receiptPage({ doc }: Page, data: LabelData) {
+  const c = receiptContent(data);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text(c.title, 6, 7);
+  doc.setFontSize(12);
+  const name = lines(doc, c.name, 88, 3);
+  doc.text(name, 6, 13);
+  let y = 13 + name.length * 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  const row = (value: string, max = 2) => {
+    const wrapped = lines(doc, value, 88, max);
+    doc.text(wrapped, 6, y);
+    y += wrapped.length * 4;
+  };
+  for (const item of c.rows) {
+    if (item.key === 'quantity') y += 1;
+    row(item.text, item.key === 'lot' ? 3 : 2);
+  }
+  if (y > 60) throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
+}
+
+function openedPage({ doc }: Page, data: LabelData) {
+  const c = openedContent(data);
+  const v = c.validity!;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text(c.title, 6, 7);
+  doc.setFontSize(13);
+  const name = lines(doc, c.name, 88, 2);
+  doc.text(name, 6, 13);
+  let y = 13 + name.length * 5.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(text(c, 'openedAt')!, 6, y);
+  y += 6;
+  doc.text(v.caption, 6, y);
+  y += 7;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text(v.date, 6, y);
+  y += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text(v.note, 6, y);
+  y += 4.5;
+  doc.setFontSize(9);
+  const row = (value: string, width = 88, max = 2) => {
+    const wrapped = lines(doc, value, width, max);
+    doc.text(wrapped, 6, y);
+    y += wrapped.length * 4;
+  };
+  if (text(c, 'manufacturer')) row(text(c, 'manufacturer')!);
+  row(text(c, 'lot')!);
+  // Abaixo da altura do QR (a partir de 61 mm) o texto fica na coluna da esquerda.
+  y = Math.max(y, 61);
+  row(text(c, 'storage')!, 54, 1);
+  row(text(c, 'handledBy')!, 54, 2);
+  if (text(c, 'portion')) row(text(c, 'portion')!, 54, 1);
+  if (text(c, 'quantity')) row(text(c, 'quantity')!, 54, 2);
+  if (y > (data.hold ? 81 : 93))
+    throw new Error('Conteúdo não cabe neste modelo de etiqueta.');
 }
 
 // Uma etiqueta por página, na ordem recebida. Qualquer recusa interrompe o arquivo inteiro.
@@ -226,16 +137,7 @@ export async function makeLabelsPdf(
   list: LabelData[],
   origin: string,
 ): Promise<Blob> {
-  if (list.length === 0) throw new Error('Nenhuma etiqueta para gerar.');
-  for (const data of list) refuse(data);
-  const url = new URL(origin);
-  if (!isAuthorizedOrigin(url.origin))
-    throw new Error('Endereço não autorizado para o QR da etiqueta.');
-  for (const data of list)
-    if (textsOf(data).some((item) => SAFE_TEXT.test(item)))
-      throw new Error(
-        'Nome ou lote contém caracteres não disponíveis neste modelo de PDF.',
-      );
+  const url = validateLabels(list, origin);
   const doc = new jsPDF({ unit: 'mm', format: [100, 100], compress: false });
   for (const [index, data] of list.entries()) {
     if (index > 0) doc.addPage([100, 100]);
@@ -260,9 +162,9 @@ export async function makeLabelsPdf(
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-      const [first, second] = BLOCK_TEXT[data.hold].split(' - ');
-      doc.text(first ?? '', 8, 88);
-      doc.text(second ?? '', 8 + doc.getTextWidth(`${first ?? ''}  `), 88);
+      const { first, second } = labelContent(data).hold!;
+      doc.text(first, 8, 88);
+      doc.text(second, 8 + doc.getTextWidth(`${first}  `), 88);
       doc.setTextColor(0, 0, 0);
     }
   }
