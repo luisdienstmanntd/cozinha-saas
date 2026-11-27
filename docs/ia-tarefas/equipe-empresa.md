@@ -36,3 +36,4 @@
 
 - luis aceitou os PRs #79 e #81 e autorizou merge e deploy. A main avançou a `e460a77`; reconciliar em worktree separado com testes antes de integrar. Base da branch #81: `2f28e95`. Não aplicar migração até concluir testes e verificar histórico no projeto correto.
 - Supabase CLI não possui token; conector não iniciou. Sessão GitHub no navegador não tem acesso ao projeto `wtscafnacsmyfmqcaffy`. Não tentar outra base por suposição. Próximo passo: reconciliar conflitos e obter acesso ao projeto correto para verificação e migração antes do merge.
+- Conflitos com `main` resolvidos em decisões, gateways, CSS, áreas e helper E2E, preservando Equipe e Senha e acesso. Teste de navegação falhou inicialmente por esperar Equipe como penúltima área; atualizado para incluir a área de conta e preservar a ordem. Testes focados: 42/42 passaram em 4 arquivos. Iniciar gates completos; banco hospedado ainda inacessível na conta disponível.

@@ -41,10 +41,11 @@ describe('páginas da Mesa operacional', () => {
   });
 
   it('Equipe (D-077) só aparece para o proprietário, entre Unidade e Organização', () => {
-    expect(owner.map(({ id }) => id).slice(-3)).toEqual([
+    expect(owner.map(({ id }) => id).slice(-4)).toEqual([
       'config-unidade',
       'config-equipe',
       'config-organizacao',
+      'config-conta',
     ]);
     expect(owner.find(({ id }) => id === 'config-equipe')?.label).toBe(
       'Equipe',
