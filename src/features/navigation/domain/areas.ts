@@ -10,6 +10,7 @@ export const AREA_IDS = [
   'cadastros',
   'visao-geral',
   'indicadores',
+  'historico',
   'etiquetas',
   'produtos',
   'fornecedores',

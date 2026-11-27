@@ -30,6 +30,17 @@ describe('páginas da Mesa operacional', () => {
     expect(workspacePage('?area=etiquetas', '', member)).toBe('etiquetas');
   });
 
+  it('Histórico (D-079) só aparece para o proprietário, logo após Indicadores', () => {
+    expect(owner.map(({ id }) => id).slice(0, 3)).toEqual([
+      'visao-geral',
+      'indicadores',
+      'historico',
+    ]);
+    expect(member.some(({ id }) => id === 'historico')).toBe(false);
+    expect(workspacePage('?area=historico', '', owner)).toBe('historico');
+    expect(workspacePage('?area=historico', '', member)).toBe('visao-geral');
+  });
+
   it('Indicadores (D-076) só aparece para o proprietário, logo após a visão geral', () => {
     expect(owner.map(({ id }) => id).slice(0, 2)).toEqual([
       'visao-geral',
@@ -72,6 +83,7 @@ describe('PR-12: destinos da barra inferior do celular', () => {
     ]);
     expect(ids(more)).toEqual([
       'indicadores',
+      'historico',
       'receber',
       'locais',
       'produtos',

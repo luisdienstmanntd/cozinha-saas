@@ -125,3 +125,19 @@ Ordem sugerida: **A** (agora), **B** e **C** (antes de o restaurante usar com ma
 - Todas as demais funções públicas do banco têm tela, inclusive saída em porções, anulações, locais, ocorrências, produção, temperatura, etiqueta e configurações da unidade.
 - Os itens "só pelo SQL Editor ou script" (criar empresa, reset, validar isolamento) são **por desenho** da D-067 e não devem ganhar tela sem decisão nova.
 - Fuso imutável, ausência de cadastro público e QR só com login são decisões registradas, não omissões.
+
+## 7. Atualização de 27/11/2026 (depois do merge deste documento)
+
+A `main` andou entre a leitura e o merge. Situação das fatias da seção 5:
+
+| Fatia | Situação |
+|---|---|
+| A. Painel do piloto | Pronta na `main`: área **Indicadores** (D-076, #89 e #100). |
+| B. Equipe | PR #81 em rascunho (D-077). |
+| C. Conta | Pronta na `main`: **Minha conta** com trocar senha e MFA TOTP (#99). O MFA ainda **não é obrigatório** no banco. |
+| D. Corrigir cadastro | Parcial: fornecedores com contatos, edição e exclusão auditada em rascunho (#98 e #102). Produto segue sem edição nem arquivamento. |
+| E. Anular recebimento | Não iniciada; pede desenho antes. |
+| F. Histórico e exportação | Implementada em rascunho (D-079, [HISTORICO_UNIDADE.md](HISTORICO_UNIDADE.md)). |
+
+Correção à seção 3.5: `entity_changes` não guarda só nomes. Também registra a conservação do produto, a janela de produção por preparação e as configurações da unidade (quem registra, janelas e regra da porção), além de nome, fuso e nome de exibição. Esse registro entra no Histórico da fatia F.
+

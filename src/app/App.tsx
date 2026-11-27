@@ -26,6 +26,7 @@ import { EstablishmentTools } from '../features/establishments/components/Establ
 import { SettingsPanel } from '../features/settings/components/SettingsPanel';
 import { AccountPanel } from '../features/account/components/AccountPanel';
 import { UnitMetricsPanel } from '../features/metrics/components/UnitMetricsPanel';
+import { HistoryPanel } from '../features/history/components/HistoryPanel';
 import { TeamPanel } from '../features/team/components/TeamPanel';
 import {
   parseContainerParam,
@@ -266,6 +267,14 @@ function Workspace({
             gateway={configuration.metrics}
             expiryHref={(filter) => hrefFor('validade', filter)}
             selectExpiry={selectExpiry}
+          />
+        )}
+        {area === 'historico' && canCreate && unit.active !== false && (
+          <HistoryPanel
+            scope={scope}
+            timezone={timezone}
+            unitName={unit.unitName}
+            gateway={configuration.history}
           />
         )}
         {area === 'etiquetas' && unit.active !== false && (
