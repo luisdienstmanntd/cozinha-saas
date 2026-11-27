@@ -26,6 +26,7 @@ import { EstablishmentTools } from '../features/establishments/components/Establ
 import { SettingsPanel } from '../features/settings/components/SettingsPanel';
 import { AccountPanel } from '../features/account/components/AccountPanel';
 import { UnitMetricsPanel } from '../features/metrics/components/UnitMetricsPanel';
+import { TeamPanel } from '../features/team/components/TeamPanel';
 import {
   parseContainerParam,
   parsePlace,
@@ -357,6 +358,14 @@ function Workspace({
             onSaved={() => setSettingsToken((value) => value + 1)}
           />
         </div>
+        {area === 'config-equipe' && canCreate && (
+          <TeamPanel
+            organizationId={organizationId}
+            organizationName={unit.organizationName}
+            timezone={timezone}
+            gateway={configuration.team}
+          />
+        )}
         {canCreate && (
           <div hidden={area !== 'config-organizacao'}>
             {unit.organizationTools}

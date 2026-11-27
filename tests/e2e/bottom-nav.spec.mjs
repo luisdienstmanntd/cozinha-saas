@@ -79,6 +79,7 @@ test('proprietário no celular: 4 atalhos em um toque, Mais com foco, Escape e a
       'Fornecedores',
       'Preparações próprias',
       'Unidade',
+      'Equipe',
       'Organização',
       'Senha e acesso',
     ]);

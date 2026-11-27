@@ -29,8 +29,13 @@ export function workspaceAreas(
     );
   }
   areas.push({ id: 'config-unidade', label: 'Unidade' });
-  if (owner) areas.push({ id: 'config-organizacao', label: 'Organização' });
-  // Senha e acesso (Minha conta): a própria senha e o segundo fator; vale para todos os perfis.
+  // D-077: equipe da empresa (listar, adicionar, papel, revogar), só para o proprietário.
+  if (owner)
+    areas.push(
+      { id: 'config-equipe', label: 'Equipe' },
+      { id: 'config-organizacao', label: 'Organização' },
+    );
+  // Senha e acesso está disponível a todos os perfis.
   areas.push({ id: 'config-conta', label: 'Senha e acesso' });
   return areas;
 }
