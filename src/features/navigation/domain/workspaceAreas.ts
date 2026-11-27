@@ -35,6 +35,8 @@ export function workspaceAreas(
       { id: 'config-equipe', label: 'Equipe' },
       { id: 'config-organizacao', label: 'Organização' },
     );
+  // Senha e acesso está disponível a todos os perfis.
+  areas.push({ id: 'config-conta', label: 'Senha e acesso' });
   return areas;
 }
 

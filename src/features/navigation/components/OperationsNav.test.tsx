@@ -191,6 +191,7 @@ it('PR-12: Mais abre a folha com as demais áreas por perfil, foco dentro, e Esc
     'Unidade',
     'Equipe',
     'Organização',
+    'Senha e acesso',
   ]);
   expect(sheet).toContainElement(document.activeElement as HTMLElement);
   await user.keyboard('{Escape}');
@@ -240,7 +241,7 @@ it('PR-12: dentro de Mais, o botão fica marcado como atual; colaborador só tem
     within(sheet)
       .getAllByRole('link')
       .map((link) => link.getAttribute('aria-label')),
-  ).toEqual(['Locais de armazenamento', 'Unidade']);
+  ).toEqual(['Locais de armazenamento', 'Unidade', 'Senha e acesso']);
   expect(within(sheet).getByRole('link', { name: 'Unidade' })).toHaveAttribute(
     'aria-current',
     'page',

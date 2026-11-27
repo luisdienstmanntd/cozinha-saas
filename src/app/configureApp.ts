@@ -21,6 +21,7 @@ import { createOperationGateway } from '../features/pending/data/supabaseOperati
 import { createProductionGateway } from '../features/production/data/supabaseProduction';
 import { createEstablishmentGateway } from '../features/establishments/data/supabaseEstablishments';
 import { createSettingsGateway } from '../features/settings/data/supabaseSettings';
+import { createAccountGateway } from '../features/account/data/supabaseAccount';
 import { createMetricsGateway } from '../features/metrics/data/supabaseMetrics';
 import { createTeamGateway } from '../features/team/data/supabaseTeam';
 
@@ -76,6 +77,8 @@ export function configureApp(
       settings: createSettingsGateway(client),
       metrics: createMetricsGateway(client),
       team: createTeamGateway(client),
+
+      account: createAccountGateway(client),
     };
   } catch {
     return null;

@@ -79,6 +79,7 @@ describe('PR-12: destinos da barra inferior do celular', () => {
       'config-unidade',
       'config-equipe',
       'config-organizacao',
+      'config-conta',
     ]);
   });
   it('sem Produção, Recebimentos ocupa o lugar de Produção', () => {
@@ -99,7 +100,7 @@ describe('PR-12: destinos da barra inferior do celular', () => {
       'producao',
       'etiquetas',
     ]);
-    expect(ids(more)).toEqual(['locais', 'config-unidade']);
+    expect(ids(more)).toEqual(['locais', 'config-unidade', 'config-conta']);
     for (const owner of [true, false])
       for (const production of [true, false])
         for (const locations of [true, false]) {
@@ -119,6 +120,6 @@ describe('PR-12: destinos da barra inferior do celular', () => {
       'etiquetas',
       'locais',
     ]);
-    expect(ids(more)).toEqual(['config-unidade']);
+    expect(ids(more)).toEqual(['config-unidade', 'config-conta']);
   });
 });
