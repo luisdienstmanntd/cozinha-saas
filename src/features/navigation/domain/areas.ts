@@ -16,6 +16,7 @@ export const AREA_IDS = [
   'fornecedores',
   'preparacoes',
   'config-unidade',
+  'config-equipe',
   'config-organizacao',
   'config-conta',
 ] as const;

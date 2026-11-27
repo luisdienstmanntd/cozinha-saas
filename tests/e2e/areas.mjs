@@ -38,7 +38,7 @@ export async function openArea(page, name) {
     name,
   )
     ? 'Cadastros'
-    : ['Unidade', 'Organização', 'Senha e acesso'].includes(name)
+    : ['Unidade', 'Equipe', 'Organização', 'Senha e acesso'].includes(name)
       ? 'Configurações'
       : null;
   if (group && !(await link.isVisible()))

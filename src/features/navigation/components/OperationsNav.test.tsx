@@ -190,6 +190,7 @@ it('PR-12: Mais abre a folha com as demais áreas por perfil, foco dentro, e Esc
     'Fornecedores',
     'Preparações próprias',
     'Unidade',
+    'Equipe',
     'Organização',
     'Senha e acesso',
   ]);

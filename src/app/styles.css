@@ -2311,6 +2311,100 @@ footer {
   padding: 0;
 }
 
+/* D-077: equipe da empresa. Reaproveita painel, lista e linha de ações da Mesa. */
+.team-page h3 {
+  margin: 0;
+}
+.team-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.team-person {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  min-width: 0;
+}
+.team-person small {
+  flex-basis: 100%;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.team-role,
+.team-badge {
+  border: 1px solid var(--border-subtle);
+  border-radius: 2rem;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.team-badge {
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.team-confirm {
+  flex-basis: 100%;
+  border-left: 3px solid var(--border-control);
+  padding-left: var(--space-3);
+}
+.team-confirm p {
+  margin: 0 0 var(--space-2);
+}
+.team-list form label {
+  display: grid;
+  gap: var(--space-1);
+}
+.team-form-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+}
+.team-form-fields label {
+  display: grid;
+  gap: var(--space-1);
+}
+.team-form-fields small,
+.team-role-option small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+.team-form-fields fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.team-form-fields legend {
+  padding: 0;
+  margin-bottom: var(--space-1);
+}
+.workspace .team-role-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.team-revoked summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.team-footnote {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+@media (max-width: 560px) {
+  .team-list .mesa-action-row,
+  .team-list .mesa-action-row > button {
+    width: 100%;
+  }
+}
+
 /* Prévia da etiqueta (M9): folha quadrada que imita a etiqueta de 100 × 100 mm. Só leitura. */
 .label-preview {
   flex-basis: 100%;
