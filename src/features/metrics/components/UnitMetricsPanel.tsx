@@ -1,3 +1,4 @@
+import { MetricCharts } from './MetricCharts';
 import { useEffect, useState } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import type { CatalogScope } from '../../catalog/domain/catalog';
@@ -132,6 +133,7 @@ export function UnitMetricsPanel({
     'loading',
   );
   const [retry, setRetry] = useState(0);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -265,93 +267,114 @@ export function UnitMetricsPanel({
           >
             {m.containers_expired_with_balance > 0 && expiredLink()}
           </Group>
-          <div className="metrics-groups">
-            <Group
-              title="Abertura e porcionamento"
-              description="Manipulações de recipientes registradas no período."
-              tiles={[
-                counted('Manipulações', m.handlings_total),
-                counted('Com a validade da origem', m.handlings_same_expiry, {
-                  of: m.handlings_total,
-                }),
-                counted(
-                  'Com validade menor que a da origem',
-                  m.handlings_shorter_expiry,
-                  { of: m.handlings_total },
-                ),
-                counted('Registradas com atraso', m.handlings_late, {
-                  of: m.handlings_total,
-                  tone: 'warning',
-                }),
-                counted('Anulações', m.handling_voids_total),
-                time(
-                  'Tempo até o registro (mediana)',
-                  m.handling_delay_p50_seconds,
-                ),
-                time(
-                  'Maior tempo até o registro',
-                  m.handling_delay_max_seconds,
-                ),
-              ]}
-            />
-            <Group
-              title="Produção da cozinha"
-              description="Preparações próprias registradas no período."
-              tiles={[
-                counted('Produções', m.productions_total),
-                counted('Registradas com atraso', m.productions_late, {
-                  of: m.productions_total,
-                  tone: 'warning',
-                }),
-                counted('Porcionamentos', m.production_portionings_total),
-                counted('Anulações', m.production_voids_total),
-                time(
-                  'Tempo até o registro (mediana)',
-                  m.production_delay_p50_seconds,
-                ),
-                time(
-                  'Maior tempo até o registro',
-                  m.production_delay_max_seconds,
-                ),
-              ]}
-            />
-            <Group
-              title="Ocorrências e decisões"
-              description="Ocorrências abertas e decisões do proprietário no período."
-              tiles={[
-                counted('Ocorrências', m.occurrences_total),
-                counted(
-                  'Por manipulação fora da janela',
-                  m.occurrences_late_handling,
-                  { of: m.occurrences_total },
-                ),
-                counted(
-                  'Por produção fora da janela',
-                  m.occurrences_late_production,
-                  { of: m.occurrences_total },
-                ),
-                counted('Ainda sem decisão', m.occurrences_undecided, {
-                  of: m.occurrences_total,
-                  tone: 'warning',
-                }),
-                counted('Decisões registradas', m.decisions_total),
-                time(
-                  'Espera pela decisão (mediana)',
-                  m.decision_wait_p50_seconds,
-                ),
-                time('Maior espera pela decisão', m.decision_wait_max_seconds),
-              ]}
-            />
-            <Group
-              title="Armazenamento"
-              description="Mudanças de local de recipientes no período."
-              tiles={[counted('Mudanças de local', m.location_moves_total)]}
-            />
-          </div>
+          {m.occurrences_undecided > 0 && (
+            <p className="metrics-pending" role="note">
+              <strong>
+                Ocorrências do período ainda sem decisão:{' '}
+                {m.occurrences_undecided}.
+              </strong>{' '}
+              Considera apenas as abertas no período escolhido que continuam sem
+              decisão nesta consulta.
+            </p>
+          )}
+          <MetricCharts metrics={m} />
+          <details
+            className="metrics-details"
+            open={detailsOpen}
+            onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
+          >
+            <summary>Ver todos os indicadores</summary>
+            <div className="metrics-groups">
+              <Group
+                title="Abertura e porcionamento"
+                description="Manipulações de recipientes registradas no período."
+                tiles={[
+                  counted('Manipulações', m.handlings_total),
+                  counted('Com a validade da origem', m.handlings_same_expiry, {
+                    of: m.handlings_total,
+                  }),
+                  counted(
+                    'Com validade menor que a da origem',
+                    m.handlings_shorter_expiry,
+                    { of: m.handlings_total },
+                  ),
+                  counted('Registradas com atraso', m.handlings_late, {
+                    of: m.handlings_total,
+                    tone: 'warning',
+                  }),
+                  counted('Anulações', m.handling_voids_total),
+                  time(
+                    'Tempo até o registro (mediana)',
+                    m.handling_delay_p50_seconds,
+                  ),
+                  time(
+                    'Maior tempo até o registro',
+                    m.handling_delay_max_seconds,
+                  ),
+                ]}
+              />
+              <Group
+                title="Produção da cozinha"
+                description="Preparações próprias registradas no período."
+                tiles={[
+                  counted('Produções', m.productions_total),
+                  counted('Registradas com atraso', m.productions_late, {
+                    of: m.productions_total,
+                    tone: 'warning',
+                  }),
+                  counted('Porcionamentos', m.production_portionings_total),
+                  counted('Anulações', m.production_voids_total),
+                  time(
+                    'Tempo até o registro (mediana)',
+                    m.production_delay_p50_seconds,
+                  ),
+                  time(
+                    'Maior tempo até o registro',
+                    m.production_delay_max_seconds,
+                  ),
+                ]}
+              />
+              <Group
+                title="Ocorrências e decisões"
+                description="Ocorrências abertas no período. A pendência mostra quais continuam sem decisão nesta consulta; decisões registradas podem tratar ocorrências anteriores."
+                tiles={[
+                  counted('Ocorrências', m.occurrences_total),
+                  counted(
+                    'Por manipulação fora da janela',
+                    m.occurrences_late_handling,
+                    { of: m.occurrences_total },
+                  ),
+                  counted(
+                    'Por produção fora da janela',
+                    m.occurrences_late_production,
+                    { of: m.occurrences_total },
+                  ),
+                  counted('Ainda sem decisão', m.occurrences_undecided, {
+                    of: m.occurrences_total,
+                    tone: 'warning',
+                  }),
+                  counted('Decisões registradas', m.decisions_total),
+                  time(
+                    'Espera pela decisão (mediana)',
+                    m.decision_wait_p50_seconds,
+                  ),
+                  time(
+                    'Maior espera pela decisão',
+                    m.decision_wait_max_seconds,
+                  ),
+                ]}
+              />
+              <Group
+                title="Armazenamento"
+                description="Mudanças de local de recipientes no período."
+                tiles={[counted('Mudanças de local', m.location_moves_total)]}
+              />
+            </div>
+          </details>
           <p className="metrics-footnote">
-            Os números contam apenas o que foi registrado no aplicativo. Tempo
-            até o registro é a diferença entre o horário informado da operação e
-            o horário em que ela foi gravada.
+            O período considera a data do registro no aplicativo. Tempo até o
+            registro é a diferença entre o horário informado da operação e o
+            horário em que ela foi gravada.
           </p>
         </>
       )}
