@@ -2505,3 +2505,62 @@ footer {
     text-align: start;
   }
 }
+
+/* D-079: histórico da unidade (só leitura, com exportação em CSV). */
+.history-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.workspace .history-controls > button,
+.workspace .history-controls .production-period button {
+  margin: 0;
+}
+.history-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.history-groups legend {
+  padding: 0;
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+}
+.history-search {
+  display: grid;
+  gap: var(--space-1);
+  max-width: 28rem;
+}
+.history-note,
+.history-count {
+  margin: 0;
+  color: var(--text-secondary);
+}
+.history-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.history-item {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+}
+.history-item p {
+  margin: 0;
+}
+.history-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+.history-actor {
+  color: var(--text-secondary);
+}

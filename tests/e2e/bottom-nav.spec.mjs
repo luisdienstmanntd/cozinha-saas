@@ -73,6 +73,7 @@ test('proprietário no celular: 4 atalhos em um toque, Mais com foco, Escape e a
     await expect(more).toHaveAttribute('aria-expanded', 'true');
     expect(await names(sheet(page))).toEqual([
       'Indicadores',
+      'Histórico',
       'Recebimentos',
       'Locais de armazenamento',
       'Produtos',
@@ -173,6 +174,7 @@ test('colaborador no celular só vê as áreas do perfil; Sair continua à vista
       'Recebimentos',
       'Produtos',
       'Indicadores',
+      'Histórico',
       'Organização',
     ])
       await expect(

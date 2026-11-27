@@ -148,7 +148,8 @@ export function OperationsNav({
       !Object.hasOwn(catalogPages, id) &&
       !id.startsWith('config-') &&
       id !== 'visao-geral' &&
-      id !== 'indicadores',
+      id !== 'indicadores' &&
+      id !== 'historico',
   );
 
   return (
@@ -200,7 +201,10 @@ export function OperationsNav({
             <p className="mesa-nav-heading">Principal</p>
             {links(
               areas.filter(
-                ({ id }) => id === 'visao-geral' || id === 'indicadores',
+                ({ id }) =>
+                  id === 'visao-geral' ||
+                  id === 'indicadores' ||
+                  id === 'historico',
               ),
             )}
           </div>

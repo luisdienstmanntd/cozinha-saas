@@ -598,3 +598,12 @@
 - Pedido de luis: melhorar experiência e visualização, comparando indicadores com gráficos/análises possíveis. Escolhidos volumes independentes em barras de escala comum e proporções de atraso com base explícita. Sem somatório entre atividades, metas inventadas ou gráficos de tendência sem série temporal.
 - Todos os números originais ficam em detalhamento nativo acessível. Vencidos atuais e pendências das ocorrências abertas no período continuam visíveis. O detalhamento aberto é preservado ao atualizar ou trocar período.
 - Somente apresentação: mesmos dados, consultas, escopo e permissões. Não relacionar decisões no período a todas as ocorrências desse mesmo período como taxa de resolução. Relatório de alternativas e limites em `ia-tarefas/indicadores-visuais.md`.
+
+## D-079 — Histórico da unidade com exportação CSV (27/11/2026)
+
+- **Status:** implementada em rascunho, aguardando aceite de luis (branch `claude/historico-unidade`). Fatia F da auditoria de funcionalidades sem tela (PR #79). Detalhes, limites e verificação em [HISTORICO_UNIDADE.md](HISTORICO_UNIDADE.md).
+- **Decisão:** nova área **Histórico**, só para o proprietário e só leitura, que junta numa linha do tempo os registros já guardados (recebimentos, produções, saídas, manipulações, mudanças de local, ocorrências e alterações de cadastro) nos últimos 7, 30 ou 90 dias, com filtros e busca, e exporta em CSV exatamente a lista mostrada (UTF-8 com BOM, separador `;`, fórmulas neutralizadas).
+- **Motivo:** o dado já existe e é imutável, mas o proprietário não tinha como vê-lo por período nem extraí-lo.
+- **Consequência:** sem migração, sem mudança de RLS e sem tocar no Supabase hospedado. Até 500 registros por tipo, com aviso quando chega ao limite. O CSV leva nomes de exibição: retenção e acesso dependem de orientação jurídica e da Q10. Nada afirma conformidade.
+- **Revisar quando:** o piloto pedir período personalizado, mais de 500 registros por tipo, histórico para o colaborador (D-019) ou retenção definida.
+

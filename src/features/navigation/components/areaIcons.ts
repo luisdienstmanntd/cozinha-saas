@@ -3,6 +3,7 @@ import type { AreaId } from '../domain/areas';
 export const iconPaths: Partial<Record<AreaId, string>> = {
   'visao-geral': 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z',
   indicadores: 'M4 20V10m6 10V4m6 16v-7m4 7H3',
+  historico: 'M12 7v5l3 2M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4',
   validade:
     'M7 3v4m10-4v4M4 10h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm4 10 2 2 4-4',
   receber:

@@ -17,6 +17,8 @@ export function workspaceAreas(
   ];
   // D-076: indicadores da unidade, só para o proprietário (a leitura continua filtrada pela RLS).
   if (owner) areas.splice(1, 0, { id: 'indicadores', label: 'Indicadores' });
+  // D-079: histórico da unidade com exportação CSV, só para o proprietário (leitura filtrada pela RLS).
+  if (owner) areas.splice(2, 0, { id: 'historico', label: 'Histórico' });
   if (owner) areas.push({ id: 'receber', label: 'Recebimentos' });
   if (production) areas.push({ id: 'producao', label: 'Produção' });
   areas.push({ id: 'etiquetas', label: 'Etiquetas' });

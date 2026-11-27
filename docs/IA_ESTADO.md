@@ -211,3 +211,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Validades compactas (PR-16) — 27/11/2026
 
 - Claude Code, branch `claude/validades-compactas`, base `main` `aec8466` (#99 mesclado). Cartões de Validades em estilo lista, ações secundárias em botões de ícone (nome acessível, dica, alvo de 44 px); regras e textos intactos. PR em rascunho, sem merge. [Registro](ia-tarefas/validades-compactas.md).
+
+## Histórico da unidade com exportação CSV (D-079) — 27/11/2026
+
+- Claude Code, branch `claude/historico-unidade`, base `main` `12fb3f8`. Área Histórico (proprietário, só leitura) com filtros e CSV, sem migração; registro em `ia-tarefas/historico-unidade.md` e `HISTORICO_UNIDADE.md`. PR em rascunho aguardando aceite de luis; merge publica o site.

@@ -183,6 +183,7 @@ it('PR-12: Mais abre a folha com as demais áreas por perfil, foco dentro, e Esc
       .map((link) => link.getAttribute('aria-label')),
   ).toEqual([
     'Indicadores',
+    'Histórico',
     'Recebimentos',
     'Locais de armazenamento',
     'Produtos',
