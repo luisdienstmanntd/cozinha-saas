@@ -30,6 +30,8 @@ export function workspaceAreas(
   }
   areas.push({ id: 'config-unidade', label: 'Unidade' });
   if (owner) areas.push({ id: 'config-organizacao', label: 'Organização' });
+  // Senha e acesso (Minha conta): a própria senha e o segundo fator; vale para todos os perfis.
+  areas.push({ id: 'config-conta', label: 'Senha e acesso' });
   return areas;
 }
 

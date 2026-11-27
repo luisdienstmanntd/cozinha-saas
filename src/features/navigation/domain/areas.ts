@@ -16,6 +16,7 @@ export const AREA_IDS = [
   'preparacoes',
   'config-unidade',
   'config-organizacao',
+  'config-conta',
 ] as const;
 export type AreaId = (typeof AREA_IDS)[number];
 

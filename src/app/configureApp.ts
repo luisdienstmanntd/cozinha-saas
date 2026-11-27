@@ -21,6 +21,7 @@ import { createOperationGateway } from '../features/pending/data/supabaseOperati
 import { createProductionGateway } from '../features/production/data/supabaseProduction';
 import { createEstablishmentGateway } from '../features/establishments/data/supabaseEstablishments';
 import { createSettingsGateway } from '../features/settings/data/supabaseSettings';
+import { createAccountGateway } from '../features/account/data/supabaseAccount';
 import { createMetricsGateway } from '../features/metrics/data/supabaseMetrics';
 
 function browserStorage(): Storage | null {
@@ -74,6 +75,7 @@ export function configureApp(
       establishments: createEstablishmentGateway(client),
       settings: createSettingsGateway(client),
       metrics: createMetricsGateway(client),
+      account: createAccountGateway(client),
     };
   } catch {
     return null;

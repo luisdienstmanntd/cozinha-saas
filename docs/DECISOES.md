@@ -598,3 +598,9 @@
 - Pedido de luis: nome do fornecedor, e-mail e contato no cadastro. Nome obrigatório; e-mail e telefone/WhatsApp opcionais. Contato livre até80 caracteres, e-mail até254; branco é null. Entrada de e-mail estrita; leitura tolera todos os endereços estruturalmente aceitos pelo banco, evitando bloquear o catálogo inteiro.
 - Preserva escopo por unidade, RLS, leitura por membros e criação só por proprietário. Campos não aparecem nos seletores de recebimento ou etiquetas. UPDATE permanece indisponível.
 - Publicação depende da migração aditiva antes do cliente; hospedado não alterado neste incremento. Rollback de colunas após uso exige preservar os contatos gravados.
+
+## Indicadores — resumo visual da operação
+
+- Pedido de luis: melhorar experiência e visualização, comparando indicadores com gráficos/análises possíveis. Escolhidos volumes independentes em barras de escala comum e proporções de atraso com base explícita. Sem somatório entre atividades, metas inventadas ou gráficos de tendência sem série temporal.
+- Todos os números originais ficam em detalhamento nativo acessível. Vencidos atuais e pendências das ocorrências abertas no período continuam visíveis. O detalhamento aberto é preservado ao atualizar ou trocar período.
+- Somente apresentação: mesmos dados, consultas, escopo e permissões. Não relacionar decisões no período a todas as ocorrências desse mesmo período como taxa de resolução. Relatório de alternativas e limites em `ia-tarefas/indicadores-visuais.md`.

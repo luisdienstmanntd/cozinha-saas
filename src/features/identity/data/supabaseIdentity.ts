@@ -82,6 +82,14 @@ export function createIdentityGateway(
       );
     return { access: valid, skipped: rows.length - valid.length };
   }
+  // Sessão só com a senha (aal1) de quem ativou o segundo fator: ainda não é uma entrada completa.
+  // Falha ao consultar conta como pendente (nega por padrão).
+  async function mfaPending() {
+    const { data, error } =
+      await client.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (error || !data) return true;
+    return data.nextLevel === 'aal2' && data.currentLevel !== 'aal2';
+  }
   return {
     async signIn(email, password) {
       const input = credentials.parse({ email, password });
@@ -93,6 +101,23 @@ export function createIdentityGateway(
         );
       return data.user.id;
     },
+    mfaRequired: mfaPending,
+    async verifyMfa(code) {
+      const { data, error } = await client.auth.mfa.listFactors();
+      const factor = data?.totp[0];
+      if (error || !factor)
+        throw new Error(
+          'Não foi possível confirmar o código. Tente entrar de novo.',
+        );
+      const verified = await client.auth.mfa.challengeAndVerify({
+        factorId: factor.id,
+        code,
+      });
+      if (verified.error)
+        throw new Error(
+          'Código incorreto ou vencido. Confira o app e tente de novo.',
+        );
+    },
     async signOut() {
       await end('signed_out');
     },
@@ -103,6 +128,7 @@ export function createIdentityGateway(
       const { data, error } = await client.auth.getSession();
       const user = data.session?.user;
       if (error || !user) return null;
+      if (await mfaPending()) return null;
       return { id: user.id, email: user.email ?? null };
     },
     async touch() {

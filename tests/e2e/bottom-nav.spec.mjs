@@ -80,6 +80,7 @@ test('proprietário no celular: 4 atalhos em um toque, Mais com foco, Escape e a
       'Preparações próprias',
       'Unidade',
       'Organização',
+      'Senha e acesso',
     ]);
     await expect(sheet(page).locator(':focus')).toHaveCount(1);
     for (const link of await sheet(page).getByRole('link').all()) {
@@ -166,6 +167,7 @@ test('colaborador no celular só vê as áreas do perfil; Sair continua à vista
     expect(await names(sheet(page))).toEqual([
       'Locais de armazenamento',
       'Unidade',
+      'Senha e acesso',
     ]);
     for (const hidden of [
       'Recebimentos',

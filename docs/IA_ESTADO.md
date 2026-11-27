@@ -199,3 +199,11 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Fornecedores — e-mail e contato
 
 - Codex, publicação autorizada e bloqueada por acesso ao Supabase correto; PR #98 em `codex/fornecedor-contatos`, base `6a2c9ed`. Campos opcionais persistidos, migração somente versionada; hospedado intocado. [Registro](ia-tarefas/fornecedor-contatos.md).
+
+## Minha conta (senha e verificação em duas etapas) — 27/11/2026
+
+- Claude Code, branch `claude/minha-conta`, base `main` `6a2c9ed` (#97 mesclado). Área "Senha e acesso" (trocar senha, ativar/remover app autenticador) e passo do código na entrada; sem migração e sem mudar a regra de 30 minutos. O banco não exige aal2; TOTP precisa ser ligado no Supabase hospedado por luis. PR em rascunho, sem merge; o PR #81 (Equipe) segue aguardando a migração no hospedado. [Registro](ia-tarefas/minha-conta.md).
+
+## Indicadores — resumo visual
+
+- Codex, aguardando aceite em `codex/indicadores-visuais`, base `aec8466`. Gráficos de volumes e atrasos, detalhamento sob demanda; sem backend. [Registro](ia-tarefas/indicadores-visuais.md).

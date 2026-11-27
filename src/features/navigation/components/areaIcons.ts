@@ -17,4 +17,5 @@ export const iconPaths: Partial<Record<AreaId, string>> = {
   'config-unidade': 'M4 11l8-7 8 7v9H4zM9 20v-6h6v6',
   'config-organizacao':
     'M5 21V4h14v17M9 8h.01M15 8h.01M9 12h.01M15 12h.01M10 21v-5h4v5',
+  'config-conta': 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-8 9a8 8 0 0 1 16 0z',
 };

@@ -129,6 +129,11 @@ export function IdentityHome({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  // Segundo passo da entrada (app autenticador): a senha já foi aceita, falta o código.
+  const [mfaStep, setMfaStep] = useState<{ id: string; email: string } | null>(
+    null,
+  );
+  const [mfaCode, setMfaCode] = useState('');
   // Sair só termina quando o servidor responde; até lá, Entrar fica desativado para que a resposta
   // atrasada do Sair não encerre a sessão de quem entrar logo em seguida no mesmo aparelho.
   const [signingOut, setSigningOut] = useState(false);
@@ -167,6 +172,8 @@ export function IdentityHome({
       `${window.location.pathname}${placeSearch(window.location.search, null, null)}`,
     );
     setPassword('');
+    setMfaStep(null);
+    setMfaCode('');
     setBusy(false);
     setRestoring(false);
     setNotice('');
@@ -426,12 +433,45 @@ export function IdentityHome({
       const current = generation.current;
       const id = await gateway.signIn(input.data.email, input.data.password);
       if (current !== generation.current) return;
-      store.write(Date.now());
-      setUserId(id);
-      setSessionEmail(input.data.email);
-      setPassword('');
-      await refresh(current);
+      if (gateway.mfaRequired && (await gateway.mfaRequired())) {
+        if (current !== generation.current) return;
+        setPassword('');
+        setMfaCode('');
+        setMfaStep({ id, email: input.data.email });
+        return;
+      }
+      await completeSignIn(id, input.data.email, current);
     });
+  }
+  async function completeSignIn(id: string, address: string, current: number) {
+    store.write(Date.now());
+    setUserId(id);
+    setSessionEmail(address);
+    setPassword('');
+    setMfaStep(null);
+    setMfaCode('');
+    await refresh(current);
+  }
+  function verifyMfaCode(event: FormEvent) {
+    event.preventDefault();
+    if (signingOut || !mfaStep || !gateway.verifyMfa) return;
+    const step = mfaStep;
+    void run(async () => {
+      const digits = mfaCode.replace(/[\s-]/g, '');
+      if (!/^\d{6}$/.test(digits))
+        throw new Error('Informe o código de 6 dígitos do aplicativo.');
+      const current = generation.current;
+      await gateway.verifyMfa!(digits);
+      if (current !== generation.current) return;
+      await completeSignIn(step.id, step.email, current);
+    });
+  }
+  function cancelMfa() {
+    setMfaStep(null);
+    setMfaCode('');
+    setError('');
+    // A sessão só com a senha não fica aberta neste aparelho.
+    void gateway.signOut().catch(() => {});
   }
 
   function renameOrganization(
@@ -623,6 +663,40 @@ export function IdentityHome({
       )}
       {restoring && !userId ? (
         <p role="status">Conferindo a sessão…</p>
+      ) : !userId && mfaStep ? (
+        <form
+          className="sign-in-form"
+          aria-labelledby="mfa-title"
+          onSubmit={verifyMfaCode}
+        >
+          <h2 id="mfa-title">Verificação em duas etapas</h2>
+          <p>
+            Digite o código de 6 dígitos do aplicativo autenticador para{' '}
+            {mfaStep.email}.
+          </p>
+          <p>
+            <label>
+              Código do aplicativo{' '}
+              <input
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={7}
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value)}
+                required
+              />
+            </label>
+          </p>
+          <button disabled={busy || signingOut}>Confirmar</button>{' '}
+          <button
+            type="button"
+            className="secondary"
+            onClick={cancelMfa}
+            disabled={busy}
+          >
+            Cancelar
+          </button>
+        </form>
       ) : !userId ? (
         <form
           className="sign-in-form"
