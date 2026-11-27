@@ -17,6 +17,10 @@ export interface IdentityGateway {
   currentUser?(): Promise<{ id: string; email: string | null } | null>;
   /** Registra atividade no servidor; 'expired' quando o banco recusa a sessão. */
   touch?(): Promise<'ok' | 'expired'>;
+  /** Verificação em duas etapas: a entrada com senha ainda precisa do código do aplicativo? */
+  mfaRequired?(): Promise<boolean>;
+  /** Confirma o código do aplicativo e completa a entrada. */
+  verifyMfa?(code: string): Promise<void>;
   /** Encerra a sessão por inatividade (o aviso diz o motivo). */
   expire?(): Promise<void>;
 }

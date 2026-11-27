@@ -131,7 +131,7 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     await expect(undo).toHaveCSS('color', RISK);
     await expect(undo).toHaveCSS('border-top-color', RISK);
 
-    // Celular: cabeçalho compacto, "Mais ações" pelo teclado e "Mudar de local" que fecha.
+    // Celular: cabeçalho compacto, ações em ícones (alvo de 44 px) e "Mudar de local" pelo teclado, que fecha.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
     const title = page.getByRole('heading', {
@@ -160,16 +160,17 @@ test('proprietário e colaborador: acabamento no desktop e no celular', async ({
     await expect(
       mobileCard.getByRole('button', { name: 'Abrir / porcionar' }),
     ).toBeVisible();
+    // PR-16: as ações secundárias são botões de ícone, todas à vista, com alvo de toque de 44 px e dica.
     const move = mobileCard.getByRole('button', { name: 'Mudar de local' });
-    await expect(move).toBeHidden();
-    const summary = mobileCard.locator('summary', { hasText: 'Mais ações' });
-    expect((await summary.boundingBox()).height).toBeGreaterThanOrEqual(44);
-    await summary.focus();
-    await page.keyboard.press('Enter');
     await expect(move).toBeVisible();
-    await expect(
-      mobileCard.getByRole('button', { name: 'Ver movimentações' }),
-    ).toBeVisible();
+    await expect(mobileCard.getByText('Mais ações')).toHaveCount(0);
+    for (const name of ['Ver ficha', 'Ver movimentações', 'Mudar de local']) {
+      const icon = mobileCard.getByRole('button', { name });
+      await expect(icon).toHaveAttribute('title', name);
+      const box = await icon.boundingBox();
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
     await move.focus();
     await page.keyboard.press('Enter');
     const form = page.getByRole('form', { name: 'Mudar de local' });

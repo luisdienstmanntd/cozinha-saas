@@ -174,7 +174,7 @@ test('registrar e anular produção da cozinha pela tela', async ({
 
     // Anular: motivo obrigatório; depois o saldo é zero e a lista mostra ANULADA.
     await openArea(page, 'Produção');
-    await productions.getByRole('button', { name: 'Anular produção' }).click();
+    await productions.getByRole('button', { name: /^Anular produção/ }).click();
     const voidForm = panel.getByRole('form', { name: /Anular produção C-/ });
     await voidForm
       .getByLabel('Motivo da anulação')
@@ -184,7 +184,7 @@ test('registrar e anular produção da cozinha pela tela', async ({
       /ANULADA em .*Validade digitada errada/,
     );
     await expect(
-      productions.getByRole('button', { name: 'Anular produção' }),
+      productions.getByRole('button', { name: /^Anular produção/ }),
     ).toHaveCount(0);
     await openArea(page, 'Validade');
     await expect(row).toHaveCount(0);
@@ -253,7 +253,7 @@ test('porções de uma preparação saem com o mesmo modelo de etiqueta', async 
     const productions = page
       .getByRole('region', { name: 'Produção da cozinha' })
       .getByRole('list', { name: 'Produções recentes' });
-    await productions.getByRole('button', { name: 'Anular produção' }).click();
+    await productions.getByRole('button', { name: /^Anular produção/ }).click();
     const voidForm = page.getByRole('form', { name: /Anular produção C-/ });
     await voidForm.getByLabel('Motivo da anulação').fill('Teste');
     await voidForm.getByRole('button', { name: 'Confirmar anulação' }).click();
@@ -366,7 +366,7 @@ test('colaborador registra a própria produção quando a unidade permite', asyn
     const productions = panel.getByRole('list', { name: 'Produções recentes' });
     await expect(productions).toContainText('por Bia Teste');
     await expect(
-      productions.getByRole('button', { name: 'Anular produção' }),
+      productions.getByRole('button', { name: /^Anular produção/ }),
     ).toHaveCount(0);
   });
 });

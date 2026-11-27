@@ -75,3 +75,80 @@ it('recusa atrasada do token de quem já saiu não encerra a sessão atual', asy
   expired(null);
   await vi.waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
 });
+
+function mfaGateway(
+  level: { data: unknown; error?: unknown },
+  factors: unknown[] = [],
+) {
+  const getAuthenticatorAssuranceLevel = vi
+    .fn()
+    .mockResolvedValue({ error: null, ...level });
+  const challengeAndVerify = vi
+    .fn()
+    .mockResolvedValue({ data: {}, error: null });
+  const getSession = vi.fn().mockResolvedValue({
+    data: { session: { user: { id: 'u1', email: 'ana@example.invalid' } } },
+    error: null,
+  });
+  const listFactors = vi
+    .fn()
+    .mockResolvedValue({ data: { totp: factors }, error: null });
+  const client = {
+    auth: {
+      getSession,
+      mfa: { getAuthenticatorAssuranceLevel, challengeAndVerify, listFactors },
+    },
+  } as unknown as SupabaseClient;
+  return { gateway: createIdentityGateway(client), challengeAndVerify };
+}
+
+it('segundo fator: senha aceita sem código (aal1 → aal2) ainda não é entrada completa', async () => {
+  const pending = mfaGateway({
+    data: { currentLevel: 'aal1', nextLevel: 'aal2' },
+  });
+  expect(await pending.gateway.mfaRequired!()).toBe(true);
+  expect(await pending.gateway.currentUser!()).toBeNull();
+});
+
+it('segundo fator: quem não ativou ou já confirmou segue normalmente', async () => {
+  for (const level of [
+    { currentLevel: 'aal1', nextLevel: 'aal1' },
+    { currentLevel: 'aal2', nextLevel: 'aal2' },
+  ]) {
+    const { gateway } = mfaGateway({ data: level });
+    expect(await gateway.mfaRequired!()).toBe(false);
+    expect(await gateway.currentUser!()).toEqual({
+      id: 'u1',
+      email: 'ana@example.invalid',
+    });
+  }
+});
+
+it('segundo fator: falha ao consultar o nível nega por padrão', async () => {
+  const { gateway } = mfaGateway({ data: null, error: { message: 'x' } });
+  expect(await gateway.mfaRequired!()).toBe(true);
+  expect(await gateway.currentUser!()).toBeNull();
+});
+
+it('segundo fator: confirma o código no fator do usuário', async () => {
+  const { gateway, challengeAndVerify } = mfaGateway(
+    { data: { currentLevel: 'aal1', nextLevel: 'aal2' } },
+    [{ id: 'f1' }],
+  );
+  await gateway.verifyMfa!('123456');
+  expect(challengeAndVerify).toHaveBeenCalledWith({
+    factorId: 'f1',
+    code: '123456',
+  });
+  challengeAndVerify.mockResolvedValue({ data: null, error: { message: 'x' } });
+  await expect(gateway.verifyMfa!('000000')).rejects.toThrow(
+    'Código incorreto',
+  );
+  const none = mfaGateway(
+    { data: { currentLevel: 'aal1', nextLevel: 'aal2' } },
+    [],
+  );
+  await expect(none.gateway.verifyMfa!('123456')).rejects.toThrow(
+    'entrar de novo',
+  );
+});

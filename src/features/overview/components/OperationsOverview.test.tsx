@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { OperationsOverview } from './OperationsOverview';
+import { localCivilDate } from '../../batches/domain/expiryStatus';
 
 it('orienta a consultar Validades quando os totais indicam urgência e a lista vem vazia', async () => {
   const summary = vi.fn().mockResolvedValue({
@@ -112,4 +113,147 @@ it('V6: cada contador leva a Validades filtrada, sem impedir abrir em outra aba'
     ctrlKey: true,
   });
   expect(selectExpiry).toHaveBeenCalledTimes(1);
+});
+
+it('PR-04: a lista de atenção usa o selo único e "vence hoje" difere de "vence amanhã"', async () => {
+  const timezone = 'America/Sao_Paulo';
+  const civil = (offset: number) =>
+    localCivilDate(new Date(Date.now() + offset * 86_400_000), timezone);
+  const row = (id: string, name: string, offset: number) => ({
+    container_id: `30000000-0000-4000-8000-00000000000${id.slice(1)}`,
+    product_name: name,
+    short_code: id,
+    source_code: null,
+    expiry_date: civil(offset),
+  });
+  render(
+    <OperationsOverview
+      scope={{ organizationId: 'org', establishmentId: 'unidade' }}
+      timezone={timezone}
+      containers={{
+        summary: vi.fn().mockResolvedValue({
+          overdue: 1,
+          due_today: 1,
+          due_tomorrow: 1,
+          later: 0,
+        }),
+        list: vi.fn().mockResolvedValue({
+          rows: [
+            row('A1', 'Caldo', -2),
+            row('B2', 'Molho', 0),
+            row('C3', 'Creme', 1),
+          ],
+          next: null,
+        } as never),
+        get: vi.fn(),
+      }}
+      occurrences={{ list: vi.fn().mockResolvedValue([]), decide: vi.fn() }}
+      revision={0}
+      areas={[{ id: 'validade', label: 'Validades' }]}
+      select={vi.fn()}
+    />,
+  );
+  const overdue = await screen.findByText('Vencido há 2 dias');
+  const today = screen.getByText('Vence hoje');
+  const tomorrow = screen.getByText('Vence amanhã');
+  expect(overdue).toHaveClass('ui-badge', 'ui-badge-overdue');
+  expect(today).toHaveClass('ui-badge', 'ui-badge-today');
+  expect(tomorrow).toHaveClass('ui-badge', 'ui-badge-tomorrow');
+  for (const badge of [overdue, today, tomorrow])
+    expect(badge.querySelector('[aria-hidden="true"]')).not.toBeNull();
+});
+
+function overviewWith(
+  summary: {
+    overdue: number;
+    due_today: number;
+    due_tomorrow: number;
+    later: number;
+  },
+  extra: Partial<React.ComponentProps<typeof OperationsOverview>> = {},
+) {
+  return render(
+    <OperationsOverview
+      scope={{ organizationId: 'org', establishmentId: 'unidade' }}
+      timezone="America/Sao_Paulo"
+      containers={{
+        summary: vi.fn().mockResolvedValue(summary),
+        list: vi.fn().mockResolvedValue({ rows: [], next: null }),
+        get: vi.fn(),
+      }}
+      occurrences={{ list: vi.fn().mockResolvedValue([]), decide: vi.fn() }}
+      revision={0}
+      areas={[{ id: 'validade', label: 'Validades' }]}
+      select={vi.fn()}
+      {...extra}
+    />,
+  );
+}
+
+it('PR-06: "Prioridades de hoje" soma só vencidos e vencem hoje, com selos de texto', async () => {
+  overviewWith({ overdue: 3, due_today: 1, due_tomorrow: 7, later: 9 });
+  const strip = await screen.findByRole('region', {
+    name: 'Prioridades de hoje',
+  });
+  expect(within(strip).getByText('3 vencidos')).toBeVisible();
+  expect(within(strip).getByText('1 vence hoje')).toBeVisible();
+  expect(within(strip).queryByText(/amanhã|7|9/)).toBeNull();
+});
+
+it('PR-06: o link da faixa vai para a categoria mais urgente e respeita Ctrl', async () => {
+  const selectExpiry = vi.fn();
+  const props = {
+    expiryHref: (filter: string) => `/?area=validade&validade=${filter}`,
+    selectExpiry,
+  };
+  const { unmount } = overviewWith(
+    { overdue: 2, due_today: 5, due_tomorrow: 0, later: 0 },
+    props,
+  );
+  const link = await screen.findByRole('link', { name: 'Ver na lista' });
+  expect(link).toHaveAttribute('href', '/?area=validade&validade=vencidos');
+  fireEvent.click(link);
+  expect(selectExpiry).toHaveBeenCalledWith('vencidos');
+  fireEvent.click(link, { ctrlKey: true });
+  expect(selectExpiry).toHaveBeenCalledTimes(1);
+  unmount();
+  overviewWith({ overdue: 0, due_today: 5, due_tomorrow: 0, later: 0 }, props);
+  expect(
+    await screen.findByRole('link', { name: 'Ver na lista' }),
+  ).toHaveAttribute('href', '/?area=validade&validade=hoje');
+});
+
+it('PR-06: zero real mostra "Nada vencido nem vencendo hoje" e sem link', async () => {
+  overviewWith({ overdue: 0, due_today: 0, due_tomorrow: 4, later: 3 });
+  const strip = await screen.findByRole('region', {
+    name: 'Prioridades de hoje',
+  });
+  expect(
+    within(strip).getByText('Nada vencido nem vencendo hoje.'),
+  ).toBeVisible();
+  expect(within(strip).queryByRole('link')).toBeNull();
+  expect(within(strip).queryByRole('button')).toBeNull();
+});
+
+it('PR-06: sem consulta respondida a faixa não inventa número', async () => {
+  render(
+    <OperationsOverview
+      scope={{ organizationId: 'org', establishmentId: 'unidade' }}
+      timezone="America/Sao_Paulo"
+      containers={{
+        summary: vi.fn().mockRejectedValue(new Error('falha')),
+        list: vi.fn().mockResolvedValue({ rows: [], next: null }),
+        get: vi.fn(),
+      }}
+      occurrences={{ list: vi.fn().mockResolvedValue([]), decide: vi.fn() }}
+      revision={0}
+      areas={[{ id: 'validade', label: 'Validades' }]}
+      select={vi.fn()}
+    />,
+  );
+  expect(await screen.findByRole('alert')).toBeVisible();
+  expect(screen.queryByText(/Nada vencido/)).toBeNull();
+  expect(
+    screen.queryByRole('region', { name: 'Prioridades de hoje' }),
+  ).toBeNull();
 });

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { parseArea, parsePlace, placeSearch } from './areas';
+import {
+  parseArea,
+  parseContainerParam,
+  parsePlace,
+  placeSearch,
+} from './areas';
 
 const unit = '30000000-0000-4000-8000-000000000001';
 
@@ -39,5 +44,33 @@ describe('áreas da unidade (V1)', () => {
     expect(placeSearch('', unit, 'producao', 'hoje')).toBe(
       `?unidade=${unit}&area=producao`,
     );
+  });
+  it('PR-11: a ficha dentro da unidade só acompanha Etiquetas e Visão geral', () => {
+    const id = '12345678-1234-4234-8234-123456789abc';
+    expect(placeSearch('?a=1', unit, 'etiquetas', null, id)).toBe(
+      `?a=1&unidade=${unit}&area=etiquetas&recipiente=${id}`,
+    );
+    expect(placeSearch('', unit, 'visao-geral', null, id)).toBe(
+      `?unidade=${unit}&area=visao-geral&recipiente=${id}`,
+    );
+    expect(placeSearch('', unit, 'validade', null, id)).toBe(
+      `?unidade=${unit}&area=validade`,
+    );
+    expect(placeSearch('', null, null, null, id)).toBe('');
+    expect(placeSearch('', unit, 'etiquetas', null, 'nao-e-uuid')).toBe(
+      `?unidade=${unit}&area=etiquetas`,
+    );
+    // Trocar de área ou sair da unidade remove o recipiente do endereço.
+    const open = `?unidade=${unit}&area=etiquetas&recipiente=${id}`;
+    expect(placeSearch(open, unit, 'etiquetas')).toBe(
+      `?unidade=${unit}&area=etiquetas`,
+    );
+    expect(placeSearch(open, null, null)).toBe('');
+  });
+  it('PR-11: lê o recipiente do endereço e ignora valor inválido', () => {
+    const id = '12345678-1234-4234-8234-123456789ABC';
+    expect(parseContainerParam(`?recipiente=${id}`)).toBe(id.toLowerCase());
+    expect(parseContainerParam('?recipiente=abc')).toBeNull();
+    expect(parseContainerParam('')).toBeNull();
   });
 });

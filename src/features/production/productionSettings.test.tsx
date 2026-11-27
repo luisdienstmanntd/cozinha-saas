@@ -110,7 +110,7 @@ describe('produção com a configuração da unidade (7.6)', () => {
       ),
     ).toBeVisible();
     expect(
-      screen.queryByRole('button', { name: 'Anular produção' }),
+      screen.queryByRole('button', { name: /^Anular produção/ }),
     ).toBeNull();
     await user.click(
       screen.getByRole('button', { name: 'Registrar produção' }),

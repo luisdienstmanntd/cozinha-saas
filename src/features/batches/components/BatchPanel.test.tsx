@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { BatchPanel } from './BatchPanel';
@@ -300,4 +300,178 @@ it('orienta o recebimento sem produtos e fornecedores, com destinos diretos', as
   expect(
     screen.queryByRole('button', { name: 'Registrar recebimento' }),
   ).not.toBeInTheDocument();
+});
+
+it('o aviso de recebimento registrado aparece só na área Recebimentos', async () => {
+  sessionStorage.clear();
+  const product = {
+    id: '10000000-0000-4000-8000-000000000001',
+    name: 'Arroz',
+    unit: 'kg' as const,
+    storage_condition: 'ambient' as const,
+  };
+  const supplier = {
+    id: '10000000-0000-4000-8000-000000000002',
+    name: 'Horta',
+  };
+  const catalog = {
+    list: vi.fn(async (kind: string) =>
+      kind === 'products' ? [product] : [supplier],
+    ),
+    create: vi.fn(),
+    setStorageCondition: vi.fn(),
+  };
+  const props = {
+    scope: { organizationId: 'org', establishmentId: 'unit' },
+    timezone: 'America/Sao_Paulo',
+    canCreate: true,
+    userId: 'user-a',
+    catalog,
+    batches: {
+      list: vi.fn().mockResolvedValue([]),
+      receive: vi
+        .fn<BatchGateway['receive']>()
+        .mockResolvedValue('10000000-0000-4000-8000-000000000009'),
+    },
+    containers: fakeContainers([]),
+  };
+  const user = userEvent.setup();
+  const { rerender } = render(<BatchPanel {...props} area="receber" />);
+  await user.selectOptions(await screen.findByLabelText('Produto'), product.id);
+  await user.selectOptions(screen.getByLabelText('Fornecedor'), supplier.id);
+  await user.type(screen.getByLabelText('Lote de origem'), '0001');
+  await user.type(screen.getByLabelText('Quantidade recebida'), '1');
+  await user.type(screen.getByLabelText('Data de validade'), '2027-01-01');
+  await user.click(
+    screen.getByRole('button', { name: 'Registrar recebimento' }),
+  );
+  expect(await screen.findByText('Recebimento registrado.')).toBeVisible();
+  rerender(<BatchPanel {...props} area="validade" />);
+  expect(screen.queryByText('Recebimento registrado.')).not.toBeInTheDocument();
+  rerender(<BatchPanel {...props} area="receber" />);
+  expect(screen.getByText('Recebimento registrado.')).toBeVisible();
+});
+
+it('anuncia o carregamento como status, com o nome da área aberta', async () => {
+  const never = new Promise<never>(() => undefined);
+  const props = {
+    scope: { organizationId: 'org', establishmentId: 'unit' },
+    timezone: 'America/Sao_Paulo',
+    canCreate: true,
+    userId: 'user-a',
+    catalog: {
+      list: vi.fn(() => never),
+      create: vi.fn(),
+      setStorageCondition: vi.fn(),
+    },
+    batches: { list: vi.fn(() => never), receive: vi.fn() },
+    containers: fakeContainers([]),
+  };
+  const { rerender } = render(<BatchPanel {...props} area="validade" />);
+  expect(screen.getByRole('status')).toHaveTextContent('Carregando validades…');
+  rerender(<BatchPanel {...props} area="receber" />);
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'Carregando recebimentos…',
+  );
+});
+
+it('PR-09: "Filtrar produtos" busca por nome ou conservação, mantém a ordem e o produto escolhido, e não entra no envio', async () => {
+  sessionStorage.clear();
+  const products = [
+    {
+      id: '10000000-0000-4000-8000-000000000001',
+      name: 'Arroz',
+      unit: 'kg' as const,
+      storage_condition: 'ambient' as const,
+    },
+    {
+      id: '10000000-0000-4000-8000-000000000003',
+      name: 'Leite',
+      unit: 'l' as const,
+      storage_condition: 'refrigerated' as const,
+    },
+    {
+      id: '10000000-0000-4000-8000-000000000004',
+      name: 'Frango',
+      unit: 'kg' as const,
+      storage_condition: 'frozen' as const,
+    },
+  ];
+  const supplier = {
+    id: '10000000-0000-4000-8000-000000000002',
+    name: 'Horta',
+  };
+  const receive = vi
+    .fn<BatchGateway['receive']>()
+    .mockResolvedValue('10000000-0000-4000-8000-000000000009');
+  const user = userEvent.setup();
+  render(
+    <BatchPanel
+      scope={{ organizationId: 'org', establishmentId: 'unit' }}
+      timezone="America/Sao_Paulo"
+      canCreate
+      userId="user-a"
+      catalog={{
+        list: vi.fn(async (kind: string) =>
+          kind === 'products' ? products : [supplier],
+        ),
+        create: vi.fn(),
+        setStorageCondition: vi.fn(),
+      }}
+      batches={{ list: vi.fn().mockResolvedValue([]), receive }}
+      containers={fakeContainers([])}
+      area="receber"
+    />,
+  );
+  const select = await screen.findByRole('combobox', { name: 'Produto' });
+  const names = () =>
+    within(select)
+      .getAllByRole('option')
+      .map((option) => option.textContent);
+  expect(names()).toEqual([
+    'Selecione',
+    'Arroz (kg)',
+    'Leite (l)',
+    'Frango (kg)',
+  ]);
+  const filter = screen.getByRole('searchbox', { name: 'Filtrar produtos' });
+  // Por nome, sem diferenciar maiúsculas; a ordem do catálogo se mantém.
+  await user.type(filter, 'LEI');
+  expect(names()).toEqual(['Selecione', 'Leite (l)']);
+  expect(screen.getByRole('status')).toHaveTextContent('1 de 3 produtos');
+  // Por conservação.
+  await user.clear(filter);
+  await user.type(filter, 'congel');
+  expect(names()).toEqual(['Selecione', 'Frango (kg)']);
+  // Sem resultado.
+  await user.clear(filter);
+  await user.type(filter, 'zzz');
+  expect(names()).toEqual(['Selecione']);
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'Nenhum produto encontrado.',
+  );
+  // O produto escolhido não some ao filtrar por outra coisa, e o envio é o de sempre.
+  await user.clear(filter);
+  await user.selectOptions(select, products[0]!.id);
+  await user.type(filter, 'leite');
+  expect(names()).toEqual(['Selecione', 'Arroz (kg)', 'Leite (l)']);
+  expect(select).toHaveValue(products[0]!.id);
+  await user.selectOptions(screen.getByLabelText('Fornecedor'), supplier.id);
+  await user.type(screen.getByLabelText('Lote de origem'), '0001');
+  await user.type(screen.getByLabelText('Quantidade recebida'), '1');
+  await user.type(screen.getByLabelText('Data de validade'), '2027-01-01');
+  await user.click(
+    screen.getByRole('button', { name: 'Registrar recebimento' }),
+  );
+  expect(await screen.findByText('Recebimento registrado.')).toBeVisible();
+  expect(receive).toHaveBeenCalledTimes(1);
+  expect(receive.mock.calls[0]![1]).toMatchObject({
+    productId: products[0]!.id,
+    sourceCode: '0001',
+  });
+  expect(JSON.stringify(receive.mock.calls[0])).not.toContain('leite');
+  // Depois de registrar, o formulário e o filtro voltam ao início.
+  expect(
+    screen.getByRole('searchbox', { name: 'Filtrar produtos' }),
+  ).toHaveValue('');
 });

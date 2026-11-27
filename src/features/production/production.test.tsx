@@ -565,7 +565,7 @@ describe('tela de produção', () => {
       await screen.findByRole('list', { name: 'Produções recentes' }),
     );
     expect(list.getByText(/C-000123/)).toBeVisible();
-    await user.click(list.getByRole('button', { name: 'Anular produção' }));
+    await user.click(list.getByRole('button', { name: /^Anular produção/ }));
     const form = within(
       screen.getByRole('form', { name: 'Anular produção C-000123' }),
     );
@@ -596,7 +596,7 @@ describe('tela de produção', () => {
     });
     expect(await screen.findByText(/ANULADA em/)).toBeVisible();
     expect(
-      screen.queryByRole('button', { name: 'Anular produção' }),
+      screen.queryByRole('button', { name: /^Anular produção/ }),
     ).not.toBeInTheDocument();
     expect(onChanged).toHaveBeenCalled();
   });
@@ -615,7 +615,7 @@ describe('tela de produção', () => {
       screen.queryByRole('form', { name: 'Registrar produção' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Anular produção' }),
+      screen.queryByRole('button', { name: /^Anular produção/ }),
     ).not.toBeInTheDocument();
     expect(loadMembers).not.toHaveBeenCalled();
   });
@@ -656,6 +656,9 @@ describe('tela de produção', () => {
     const list = within(
       await screen.findByRole('list', { name: 'Produções recentes' }),
     );
+    expect(
+      list.getByRole('button', { name: 'Baixar etiqueta (C-000123)' }),
+    ).toHaveClass('icon-action');
     expect(
       list.getByRole('button', { name: 'Baixar etiqueta (C-000123)' }),
     ).toBeVisible();

@@ -248,7 +248,7 @@ function ProductionContents({
   if (loadError)
     return (
       <section aria-label="Produção da cozinha">
-        <h3>Produção da cozinha</h3>
+        <h2>Produção da cozinha</h2>
         <p role="alert">{loadError}</p>
         <button
           className="secondary"
@@ -265,8 +265,8 @@ function ProductionContents({
   if (!preparations || !rows || !rules)
     return (
       <section aria-label="Produção da cozinha">
-        <h3>Produção da cozinha</h3>
-        <p>Carregando produções…</p>
+        <h2>Produção da cozinha</h2>
+        <p role="status">Carregando produções…</p>
       </section>
     );
 
@@ -421,7 +421,7 @@ function ProductionContents({
     <section aria-label="Produção da cozinha" className="production-panel">
       <header className="operation-heading">
         <div>
-          <h3>Produção da cozinha</h3>
+          <h2>Produção da cozinha</h2>
           <p>
             Preparações feitas na cozinha, com validade informada pelo
             responsável.
@@ -814,25 +814,28 @@ function ProductionContents({
               className="production-card"
               hidden={!visibleRows.includes(row)}
             >
-              <div className="production-card-heading">
-                <strong>{row.product_name}</strong>
-                <span>
-                  {row.short_code && `${row.short_code} — `}
-                  {formatQuantity(row.quantity)} {row.unit}
-                </span>
+              <div className="production-card-main">
+                <div className="production-card-heading">
+                  <strong>{row.product_name}</strong>
+                  <span>
+                    {row.short_code && `${row.short_code} — `}
+                    {formatQuantity(row.quantity)} {row.unit}
+                  </span>
+                </div>
+                <p className="production-card-details">
+                  Produzida em {when(row.produced_at, row.timezone)} por{' '}
+                  {row.handled_by_name} · validade {formatDate(row.expiry_date)}{' '}
+                  (definida pelo responsável)
+                  {row.late &&
+                    ` — registrada fora da janela de ${durationText(row.late_window_minutes ?? 120)}`}
+                </p>
               </div>
-              <p className="production-card-details">
-                Produzida em {when(row.produced_at, row.timezone)} por{' '}
-                {row.handled_by_name} · validade {formatDate(row.expiry_date)}{' '}
-                (definida pelo responsável)
-                {row.late &&
-                  ` — registrada fora da janela de ${durationText(row.late_window_minutes ?? 120)}`}
-              </p>
               {labels && row.container_id && !row.voided && (
                 <>
                   {' '}
                   <DownloadLabels
                     gateway={labels}
+                    icon
                     ids={[row.container_id]}
                     filename={`etiqueta-${row.container_id}.pdf`}
                     label={`Baixar etiqueta${row.short_code ? ` (${row.short_code})` : ''}`}
@@ -844,6 +847,45 @@ function ProductionContents({
                   />
                 </>
               )}
+              {canRegister &&
+                !row.voided &&
+                (canCreate || row.handled_by === userId) && (
+                  <>
+                    {' '}
+                    <RecordTemperature
+                      scope={{ organizationId, establishmentId }}
+                      batchId={row.batch_id}
+                      label={row.short_code ?? row.product_name}
+                      timezone={row.timezone}
+                      icon
+                      gateway={gateway}
+                      now={now}
+                      onRecorded={() => {
+                        setNotice('Temperatura registrada.');
+                        reloadList();
+                      }}
+                    />
+                  </>
+                )}
+              {!row.voided && canCreate && (
+                <>
+                  {' '}
+                  <VoidProduction
+                    icon
+                    scope={{ organizationId, establishmentId }}
+                    batchId={row.batch_id}
+                    label={row.short_code ?? row.product_name}
+                    gateway={gateway}
+                    onVoided={() => {
+                      setNotice(
+                        'Produção anulada: o saldo do lote foi zerado. Para corrigir, registre a produção de novo.',
+                      );
+                      reloadList();
+                      onChanged?.();
+                    }}
+                  />
+                </>
+              )}
               {unlabeled.some((item) => item.row === row) && (
                 <strong>
                   {' '}
@@ -852,6 +894,13 @@ function ProductionContents({
                     unlabeled.find((item) => item.row === row)!.minutes,
                   )}{' '}
                   (acima de {unlabeledLimit})
+                </strong>
+              )}
+              {row.voided && (
+                <strong>
+                  {' '}
+                  — ANULADA em {when(row.voided.created_at, row.timezone)}:{' '}
+                  {row.voided.reason}
                 </strong>
               )}
               {(row.temperatures ?? []).length > 0 && (
@@ -867,51 +916,6 @@ function ProductionContents({
                     </li>
                   ))}
                 </ul>
-              )}
-              {canRegister &&
-                !row.voided &&
-                (canCreate || row.handled_by === userId) && (
-                  <>
-                    {' '}
-                    <RecordTemperature
-                      scope={{ organizationId, establishmentId }}
-                      batchId={row.batch_id}
-                      label={row.short_code ?? row.product_name}
-                      timezone={row.timezone}
-                      gateway={gateway}
-                      now={now}
-                      onRecorded={() => {
-                        setNotice('Temperatura registrada.');
-                        reloadList();
-                      }}
-                    />
-                  </>
-                )}
-              {row.voided ? (
-                <strong>
-                  {' '}
-                  — ANULADA em {when(row.voided.created_at, row.timezone)}:{' '}
-                  {row.voided.reason}
-                </strong>
-              ) : (
-                canCreate && (
-                  <>
-                    {' '}
-                    <VoidProduction
-                      scope={{ organizationId, establishmentId }}
-                      batchId={row.batch_id}
-                      label={row.short_code ?? row.product_name}
-                      gateway={gateway}
-                      onVoided={() => {
-                        setNotice(
-                          'Produção anulada: o saldo do lote foi zerado. Para corrigir, registre a produção de novo.',
-                        );
-                        reloadList();
-                        onChanged?.();
-                      }}
-                    />
-                  </>
-                )
               )}
             </li>
           ))}

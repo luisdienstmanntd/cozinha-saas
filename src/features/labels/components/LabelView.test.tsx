@@ -544,7 +544,7 @@ it('mostra o selo de validade e a data no formato brasileiro no topo da ficha (V
       />,
     );
     const badge = await screen.findByText('Vence em 5 dias');
-    expect(badge).toHaveClass('expiry-badge', 'tone-upcoming');
+    expect(badge).toHaveClass('ui-badge', 'ui-badge-upcoming');
     expect(
       screen.getByText(/validade 20\/11\/2026 \(original\)/),
     ).toBeVisible();
@@ -617,4 +617,160 @@ it('ambiente hospedado não chama o modelo de demonstração e usa o endereço o
     setOfficialOrigin(null);
     vi.unstubAllGlobals();
   }
+});
+
+// PR-10: ficha organizada. Alertas antes dos fatos, etiqueta em bloco próprio; textos e ações iguais.
+const fichaData = (over: Record<string, unknown> = {}) => ({
+  id: '12345678-1234-4234-8234-123456789abc',
+  short_code: 'C-000077',
+  balance: 2,
+  batch_receipts: {
+    source_code: '0001',
+    quantity: 5,
+    unit: 'kg',
+    expiry_date: '2026-11-10',
+    expiry_origin: 'original' as const,
+    timezone: 'America/Sao_Paulo',
+    products: { name: 'Arroz' },
+  },
+  ...over,
+});
+
+it('ficha vencida mostra a faixa de alerta antes dos fatos e mantém a etiqueta no bloco próprio (PR-10)', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-11-15T15:00:00Z'));
+    const { container } = render(
+      <LabelView
+        id="12345678-1234-4234-8234-123456789abc"
+        gateway={{
+          ensure: vi.fn(),
+          get: vi.fn().mockResolvedValue(fichaData()),
+        }}
+      />,
+    );
+    const button = await screen.findByRole('button', {
+      name: 'Gerar etiqueta PDF',
+    });
+    const alerts = container.querySelector('.ficha-alerts')!;
+    const facts = container.querySelector('.ficha-facts')!;
+    const label = container.querySelector('.ficha-label')!;
+    expect(alerts).toHaveTextContent('VENCIDO');
+    expect(
+      alerts.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(facts).toHaveTextContent('Saldo atual: 2 kg');
+    expect(facts).toHaveTextContent(/validade 10\/11\/2026 \(original\)/);
+    expect(label).toContainElement(button);
+    expect(label).toHaveTextContent('Etiqueta em PDF · 100 × 100 mm');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('ficha anulada mantém a mesma mensagem, sem botão de etiqueta e sem faixa de vencido (PR-10)', async () => {
+  const { container } = render(
+    <LabelView
+      id="12345678-1234-4234-8234-123456789abc"
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue(fichaData({ voided: true })),
+      }}
+    />,
+  );
+  expect(
+    await screen.findByText(
+      'Manipulação anulada: este recipiente não vale mais e a etiqueta não pode ser gerada.',
+    ),
+  ).toBeVisible();
+  expect(container.querySelector('.ficha-alerts')).toContainElement(
+    screen.getByRole('alert'),
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeNull();
+  expect(container.querySelector('.expired-band')).toBeNull();
+});
+
+it('PR-11: dentro de uma unidade, recipiente de outra unidade não é mostrado', async () => {
+  const get = vi.fn().mockResolvedValue(
+    fichaData({
+      organization_id: 'org',
+      establishment_id: '30000000-0000-4000-8000-00000000000b',
+    }),
+  );
+  const { rerender } = render(
+    <LabelView
+      id="12345678-1234-4234-8234-123456789abc"
+      gateway={{ ensure: vi.fn(), get }}
+      unitId="30000000-0000-4000-8000-00000000000a"
+    />,
+  );
+  expect(
+    await screen.findByText('Recipiente indisponível ou sem acesso.'),
+  ).toBeVisible();
+  expect(screen.queryByText('Arroz')).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeNull();
+  // Da própria unidade (e pela rota do QR, sem unitId) a ficha aparece normalmente.
+  rerender(
+    <LabelView
+      id="12345678-1234-4234-8234-123456789abc"
+      gateway={{ ensure: vi.fn(), get }}
+      unitId="30000000-0000-4000-8000-00000000000b"
+    />,
+  );
+  expect(
+    await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeVisible();
+});
+
+// Prévia da etiqueta (M9): aparece junto do botão do PDF e some quando a etiqueta não pode sair.
+const previewData = {
+  id: '12345678-1234-4234-8234-123456789abc',
+  short_code: 'C-000001',
+  balance: 1,
+  batch_receipts: {
+    source_code: '0001',
+    quantity: 1,
+    unit: 'kg',
+    expiry_date: '2027-01-01',
+    expiry_origin: 'original' as const,
+    products: { name: 'Arroz' },
+  },
+};
+it('a ficha oferece a prévia junto do PDF e a esconde quando a etiqueta não pode sair', async () => {
+  const withPdf = render(
+    <LabelView
+      id={previewData.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue(previewData),
+      }}
+    />,
+  );
+  expect(
+    await screen.findByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Ver prévia da etiqueta' }),
+  ).toBeVisible();
+  withPdf.unmount();
+  render(
+    <LabelView
+      id={previewData.id}
+      gateway={{
+        ensure: vi.fn(),
+        get: vi.fn().mockResolvedValue({ ...previewData, late_hold: true }),
+      }}
+    />,
+  );
+  await screen.findByText('Etiqueta em PDF · 100 × 100 mm');
+  expect(
+    screen.queryByRole('button', { name: 'Gerar etiqueta PDF' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Ver prévia da etiqueta' }),
+  ).not.toBeInTheDocument();
 });

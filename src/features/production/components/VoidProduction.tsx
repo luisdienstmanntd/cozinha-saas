@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { IconAction } from '../../../shared/ui/IconAction';
 import type { FormEvent } from 'react';
 import type { CatalogScope } from '../../catalog/domain/catalog';
 import type { ProductionGateway } from '../application/productionGateway';
@@ -17,12 +18,15 @@ export function VoidProduction({
   label,
   gateway,
   onVoided,
+  icon = false,
 }: {
   scope: CatalogScope;
   batchId: string;
   label: string;
   gateway: ProductionGateway;
   onVoided: () => void;
+  /** Mostra só o ícone, em contorno vermelho (nome acessível e dica: "Anular produção <código>"). */
+  icon?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
@@ -65,7 +69,14 @@ export function VoidProduction({
     }
   }
   if (!open)
-    return (
+    return icon ? (
+      <IconAction
+        icon="anular"
+        risk
+        label={`Anular produção ${label}`}
+        onClick={() => setOpen(true)}
+      />
+    ) : (
       <button className="risk" type="button" onClick={() => setOpen(true)}>
         Anular produção
       </button>
