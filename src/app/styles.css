@@ -2504,6 +2504,7 @@ footer {
   .metrics-chart-late .metrics-chart-rows dd {
     text-align: start;
   }
+}
 
 .supplier-contact {
   display: flex;
