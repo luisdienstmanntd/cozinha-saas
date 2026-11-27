@@ -156,6 +156,7 @@ describe('painel de indicadores', () => {
     const [, period] = read.mock.calls[0]!;
     expect(period.to.getTime() - period.from.getTime()).toBe(30 * 86_400_000);
 
+    await userEvent.click(screen.getByText('Ver todos os indicadores'));
     const expired = tile('Situação agora', 'Recipientes vencidos com saldo');
     expect(expired).toHaveTextContent('2');
     expect(within(expired).getByText('2')).toHaveClass('mesa-danger');
@@ -269,6 +270,7 @@ describe('painel de indicadores', () => {
       />,
     );
     await screen.findByText(/Últimos 30 dias: de/);
+    await userEvent.click(screen.getByText('Ver todos os indicadores'));
     const same = tile('Abertura e porcionamento', 'Com a validade da origem');
     const bar = same.querySelector('progress');
     expect(bar).not.toBeNull();
@@ -300,4 +302,99 @@ describe('painel de indicadores', () => {
         .closest('.metrics-groups'),
     ).not.toBeNull();
   });
+});
+
+function chartRow(chart: string, label: string) {
+  return within(screen.getByRole('region', { name: chart })).getByText(label, {
+    selector: 'dt',
+  }).parentElement as HTMLElement;
+}
+
+it('compara volumes na mesma escala e taxas com bases próprias, sem sumarizar atividades sobrepostas', async () => {
+  const read = vi.fn().mockResolvedValue({
+    ...zero,
+    handlings_total: 4,
+    handlings_late: 1,
+    productions_total: 5,
+    productions_late: 0,
+    location_moves_total: 3,
+    occurrences_undecided: 2,
+  });
+  render(<UnitMetricsPanel scope={scope} timezone="UTC" gateway={{ read }} />);
+  await screen.findByText(/Últimos 30 dias: de/);
+  expect(
+    screen.getByRole('region', { name: 'Abertura e porcionamento' }),
+  ).not.toBeVisible();
+  for (const [label, value] of [
+    ['Manipulações', '4'],
+    ['Produções', '5'],
+    ['Mudanças de local', '3'],
+  ] as const) {
+    const row = chartRow('Volume de registros', label);
+    expect(row.querySelector('progress')).toHaveAttribute('value', value);
+    expect(row.querySelector('progress')).toHaveAttribute('max', '5');
+    expect(row.querySelector('progress')?.parentElement).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+  }
+  const handling = chartRow(
+    'Proporção de registros com atraso',
+    'Manipulações',
+  );
+  expect(handling).toHaveTextContent('25% do total');
+  expect(handling).toHaveTextContent('1 de 4 registros');
+  expect(handling.querySelector('progress')).toHaveAttribute('value', '25');
+  expect(handling.querySelector('progress')).toHaveAttribute('max', '100');
+  expect(
+    chartRow('Proporção de registros com atraso', 'Produções'),
+  ).toHaveTextContent('0% do total');
+  expect(screen.getByRole('note')).toHaveTextContent(
+    'Ocorrências do período ainda sem decisão: 2',
+  );
+  expect(read).toHaveBeenCalledTimes(1);
+  await userEvent.click(screen.getByText('Ver todos os indicadores'));
+  expect(screen.getByRole('region', { name: 'Armazenamento' })).toBeVisible();
+});
+
+it('não desenha participação sem base e diferencia contagem zero de falta de registros', async () => {
+  render(
+    <UnitMetricsPanel
+      scope={scope}
+      timezone="UTC"
+      gateway={{ read: vi.fn().mockResolvedValue(zero) }}
+    />,
+  );
+  await screen.findByText(/Últimos 30 dias: de/);
+  const late = screen.getByRole('region', {
+    name: 'Proporção de registros com atraso',
+  });
+  expect(late.querySelector('progress')).toBeNull();
+  expect(late).not.toHaveTextContent('%');
+  expect(within(late).getAllByText('Sem registros no período')).toHaveLength(2);
+  expect(
+    screen.getByRole('region', { name: 'Volume de registros' }),
+  ).toHaveTextContent('Nenhuma manipulação, produção ou mudança de local');
+});
+
+it('mantém o detalhamento aberto ao trocar período e remove gráficos antigos após falha', async () => {
+  const user = userEvent.setup();
+  const read = vi
+    .fn()
+    .mockResolvedValueOnce({ ...zero, productions_total: 8 })
+    .mockResolvedValueOnce({ ...zero, productions_total: 2 })
+    .mockRejectedValueOnce(new Error('offline'));
+  render(<UnitMetricsPanel scope={scope} timezone="UTC" gateway={{ read }} />);
+  await screen.findByText(/Últimos 30 dias: de/);
+  expect(chartRow('Volume de registros', 'Produções')).toHaveTextContent('8');
+  await user.click(screen.getByText('Ver todos os indicadores'));
+  await user.click(screen.getByRole('button', { name: 'Últimos 7 dias' }));
+  await screen.findByText(/Últimos 7 dias: de/);
+  expect(chartRow('Volume de registros', 'Produções')).toHaveTextContent('2');
+  expect(screen.getByRole('region', { name: 'Armazenamento' })).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Atualizar' }));
+  await screen.findByRole('alert');
+  expect(
+    screen.queryByRole('region', { name: 'Volume de registros' }),
+  ).not.toBeInTheDocument();
 });

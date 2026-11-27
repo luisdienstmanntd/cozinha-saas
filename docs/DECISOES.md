@@ -592,3 +592,9 @@
 - **Nome:** "Indicadores" em vez de "piloto" na interface, pela D-074 (produto final, sem termos de ensaio). No código e no banco o nome `pilot_metrics` permanece.
 - **Consequência:** só interface e testes; nenhum dado, regra, migração ou Supabase hospedado muda. Nada na tela avalia o alimento nem afirma conformidade (Q10 segue pendente).
 - **Revisar quando:** o piloto pedir período personalizado, comparação entre unidades ou exportação (fatia F), ou se a D-019 mudar e o colaborador passar a precisar dos números.
+
+## Indicadores — resumo visual da operação
+
+- Pedido de luis: melhorar experiência e visualização, comparando indicadores com gráficos/análises possíveis. Escolhidos volumes independentes em barras de escala comum e proporções de atraso com base explícita. Sem somatório entre atividades, metas inventadas ou gráficos de tendência sem série temporal.
+- Todos os números originais ficam em detalhamento nativo acessível. Vencidos atuais e pendências das ocorrências abertas no período continuam visíveis. O detalhamento aberto é preservado ao atualizar ou trocar período.
+- Somente apresentação: mesmos dados, consultas, escopo e permissões. Não relacionar decisões no período a todas as ocorrências desse mesmo período como taxa de resolução. Relatório de alternativas e limites em `ia-tarefas/indicadores-visuais.md`.
