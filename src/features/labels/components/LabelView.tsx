@@ -16,6 +16,7 @@ import { VoidHandling } from '../../handling/components/VoidHandling';
 import { formatDate, kindLabels } from '../../handling/domain/handling';
 import { BLOCK_TEXT } from '../../occurrences/domain/occurrence';
 import { DownloadLabels } from './DownloadLabels';
+import { LabelPreview } from './LabelPreview';
 import { labelOrigin } from '../application/labelOrigin';
 import {
   EXPIRED_NOTE,
@@ -300,9 +301,12 @@ export function LabelView({
               !data.late_hold &&
               !productionVoided &&
               !data.production_hold && (
-                <button disabled={busy} onClick={() => void download()}>
-                  Gerar etiqueta PDF
-                </button>
+                <>
+                  <LabelPreview data={data} />
+                  <button disabled={busy} onClick={() => void download()}>
+                    Gerar etiqueta PDF
+                  </button>
+                </>
               )}
           </div>
           {handling && scopeIds && (
