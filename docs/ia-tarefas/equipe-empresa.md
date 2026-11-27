@@ -31,3 +31,8 @@
 - **Bateria local após a atualização:** lint, typecheck, format, Vitest 776, build, ci-scripts 29, pgTAP 1575, integração 68, advisors sem problemas, E2E 53.
 - **Migração `20261126000000_team_management.sql`:** continua NÃO aplicada no hospedado. Merge e aplicação só com autorização específica de luis.
 - **Pendência (26/11, luis):** migração ainda NÃO aplicada no hospedado (a sessão em nuvem não alcança o projeto); o #81 fica sem merge até lá. Ver `FASE_EQUIPE.md` §6.
+
+### 27/11/2026 — Codex: retomada autorizada
+
+- luis aceitou os PRs #79 e #81 e autorizou merge e deploy. A main avançou a `e460a77`; reconciliar em worktree separado com testes antes de integrar. Base da branch #81: `2f28e95`. Não aplicar migração até concluir testes e verificar histórico no projeto correto.
+- Supabase CLI não possui token; conector não iniciou. Sessão GitHub no navegador não tem acesso ao projeto `wtscafnacsmyfmqcaffy`. Não tentar outra base por suposição. Próximo passo: reconciliar conflitos e obter acesso ao projeto correto para verificação e migração antes do merge.
