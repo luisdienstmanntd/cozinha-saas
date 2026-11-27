@@ -354,6 +354,8 @@ function CatalogSection({
         kind,
         values.get('name'),
         values.get('unit'),
+        values.get('email'),
+        values.get('contact'),
       );
       const storage = product
         ? parseStorageCondition(values.get('storageCondition'))
@@ -420,6 +422,32 @@ function CatalogSection({
           {text.nameLabel} <input name="name" maxLength={120} required />
         </label>
       </p>
+      {kind === 'suppliers' && (
+        <>
+          <p>
+            <label>
+              E-mail (opcional){' '}
+              <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                maxLength={254}
+              />
+            </label>
+          </p>
+          <p>
+            <label>
+              Contato — telefone/WhatsApp (opcional){' '}
+              <input
+                name="contact"
+                type="tel"
+                autoComplete="tel"
+                maxLength={80}
+              />
+            </label>
+          </p>
+        </>
+      )}
       {product && (
         <p>
           <label>
@@ -569,7 +597,13 @@ function CatalogSection({
             >
               {visibleItems.map((item) => (
                 <li key={item.id}>
-                  {item.name}
+                  {kind === 'suppliers' ? <span>{item.name}</span> : item.name}
+                  {kind === 'suppliers' && (item.email || item.contact) && (
+                    <div className="supplier-contact">
+                      {item.email && <span>{item.email}</span>}
+                      {item.contact && <span>{item.contact}</span>}
+                    </div>
+                  )}
                   {item.unit && ` — ${item.unit}`}
                   {product &&
                     (item.storage_condition

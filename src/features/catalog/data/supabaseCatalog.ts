@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CatalogGateway } from '../application/catalogGateway';
 import type { CatalogScope } from '../domain/catalog';
 import {
-  catalogRow,
+  supplierRow,
   productRow,
   parseCatalogInput,
   parseStorageCondition,
@@ -35,7 +35,7 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
       const product = kind !== 'suppliers';
       let query = client
         .from(product ? 'products' : 'suppliers')
-        .select(product ? PRODUCT_COLUMNS : 'id,name')
+        .select(product ? PRODUCT_COLUMNS : 'id,name,email,contact')
         .eq('organization_id', scope.organizationId)
         .eq('establishment_id', scope.establishmentId);
       // Fatia 7.1/7.3: preparações próprias (D-049) não entram no recebimento; têm lista própria.
@@ -49,7 +49,7 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
         throw new Error(
           'Não foi possível consultar o catálogo. Confira seu acesso e tente novamente.',
         );
-      const items = (product ? productRow : catalogRow).array().parse(data);
+      const items = (product ? productRow : supplierRow).array().parse(data);
       // RLS também produz uma lista vazia quando o acesso à unidade não está ativo.
       if (items.length === 0) await assertEstablishmentAccess(client, scope);
       return items;
@@ -59,13 +59,19 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
       const { data, error } = await client
         .from(product ? 'products' : 'suppliers')
         .insert({
-          ...parseCatalogInput(kind, input.name, input.unit),
+          ...parseCatalogInput(
+            kind,
+            input.name,
+            input.unit,
+            input.email,
+            input.contact,
+          ),
           // O tipo é escolhido só na criação (o cliente não tem UPDATE da coluna).
           ...(kind === 'preparations' ? { kind: 'preparation' } : {}),
           organization_id: scope.organizationId,
           establishment_id: scope.establishmentId,
         })
-        .select(product ? PRODUCT_COLUMNS : 'id,name')
+        .select(product ? PRODUCT_COLUMNS : 'id,name,email,contact')
         .single();
       if (error?.code === '23505')
         throw new Error('Esse nome já está cadastrado neste estabelecimento.');
@@ -73,7 +79,7 @@ export function createCatalogGateway(client: SupabaseClient): CatalogGateway {
         throw new Error(
           'Não foi possível cadastrar. Confira seu acesso e tente novamente.',
         );
-      return (product ? productRow : catalogRow).parse(data);
+      return (product ? productRow : supplierRow).parse(data);
     },
     async setStorageCondition(scope, productId, condition) {
       const { data, error } = await client.rpc(

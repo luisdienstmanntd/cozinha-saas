@@ -50,7 +50,23 @@ test('proprietário cadastra catálogo, lote e etiqueta com acesso autenticado',
     ).toBeVisible();
     await newCatalogItem(page, 'Fornecedores');
     await page.getByLabel('Nome do fornecedor').fill('Horta de teste');
+    await page
+      .getByLabel('E-mail (opcional)', { exact: true })
+      .fill('horta@example.test');
+    await page
+      .getByLabel('Contato — telefone/WhatsApp (opcional)')
+      .fill('+55 (51) 0011-2233');
     await page.getByRole('button', { name: 'Cadastrar fornecedor' }).click();
+    await expect(
+      page.getByText('horta@example.test', { exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByText('horta@example.test', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('+55 (51) 0011-2233', { exact: true }),
+    ).toBeVisible();
     await expect(
       page
         .getByRole('region', { name: 'Fornecedores', exact: true })
