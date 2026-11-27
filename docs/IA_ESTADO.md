@@ -2,6 +2,11 @@
 
 Leia `COORDENACAO_IA.md` antes de alterar o projeto. Este índice é uma fotografia, não um bloqueio nem garantia de atualidade. Confira sempre o Git e o GitHub; cada tarefa mantém detalhes e checkpoints próprios em `ia-tarefas/`. Para evitar conflitos, edite apenas a linha da tarefa e o resumo necessários, preservando registros de outras sessões.
 
+
+## Equipe e segurança de senhas — 27/11/2026
+
+- PR #81 mesclado em `a0450ca`; migração aplicada no projeto de testes. luis aceitou temporariamente o aviso remoto sobre proteção contra senhas vazadas desativada no plano Free e pediu implementação após validação do piloto em uso real. A pendência continua aberta; ver [registro](ia-tarefas/equipe-empresa.md).
+
 ## Situação verificada em 13/11/2026
 
 - Com autorização de luis (13/11/2026), os PRs #1 a #12 foram integrados na `main` com commits de merge, na ordem #2, #1, #3, #4, #5 a #12. Os conflitos foram só em `DECISOES.md` e `IA_ESTADO.md`, conciliados mantendo as duas entradas. D-034 a D-041 passaram dos registros das fatias para `DECISOES.md`.
