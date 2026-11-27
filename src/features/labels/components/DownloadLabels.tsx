@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LabelGateway } from '../application/labelGateway';
 import { downloadLabels } from '../application/download';
+import { IconAction } from '../../../shared/ui/IconAction';
 
 // "Baixar PDF de todas" / "Baixar esta" (desenho 7.2). Recusas (bloqueio por atraso, anulada, dados
 // indisponíveis) aparecem ao lado do botão, com a mensagem de quem recusou.
@@ -10,6 +11,7 @@ export function DownloadLabels({
   filename,
   label,
   onDownloaded,
+  icon = false,
 }: {
   gateway: LabelGateway;
   ids: string[];
@@ -17,6 +19,8 @@ export function DownloadLabels({
   label: string;
   // Fatia 7.8: chamado só depois que o PDF foi gerado e baixado.
   onDownloaded?: () => void;
+  /** Mostra só o ícone; o `label` vira nome acessível e dica. */
+  icon?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -46,9 +50,18 @@ export function DownloadLabels({
   }
   return (
     <>
-      <button type="button" disabled={busy} onClick={() => void run()}>
-        {label}
-      </button>
+      {icon ? (
+        <IconAction
+          icon="baixar"
+          label={label}
+          disabled={busy}
+          onClick={() => void run()}
+        />
+      ) : (
+        <button type="button" disabled={busy} onClick={() => void run()}>
+          {label}
+        </button>
+      )}
       {error && <span role="alert"> {error}</span>}
     </>
   );

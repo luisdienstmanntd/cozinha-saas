@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BatchPanel } from './BatchPanel';
@@ -159,67 +159,57 @@ describe('ações do cartão (M1 e item 7)', () => {
       expect(within(card).getByRole('button', { name })).toHaveClass(
         'secondary',
       );
-    expect(card.querySelector('details.more-actions')).toBeNull();
   });
 
-  it('celular: "Ver ficha" e a principal à vista; o resto em "Mais ações", acessível por teclado', async () => {
-    compact(true);
-    renderPanel({ rows: [fresh()] });
-    const card = await cardOf('Creme');
-    const more = card.querySelector('details.more-actions')!;
-    expect(more).not.toBeNull();
-    expect(more.hasAttribute('open')).toBe(false);
-    const summary = within(card).getByText('Mais ações').closest('summary')!;
-    // Nome acessível diz de qual recipiente são as ações.
-    expect(summary).toHaveTextContent(/Mais ações do recipiente C-\d+/);
-    expect(
-      within(card).getByRole('button', { name: 'Ver ficha' }),
-    ).toBeVisible();
-    expect(
-      within(card).getByRole('button', { name: 'Abrir / porcionar' }),
-    ).toBeVisible();
-    const hidden = within(more as HTMLElement);
-    expect(
-      hidden.getByRole('button', { name: 'Ver movimentações' }),
-    ).not.toBeVisible();
-    // O resumo é um controle nativo (foco e Enter testados no E2E, em navegador real).
-    await userEvent.click(summary);
-    expect(more.hasAttribute('open')).toBe(true);
-    expect(
-      hidden.getByRole('button', { name: 'Ver movimentações' }),
-    ).toBeVisible();
-    expect(
-      hidden.getByRole('button', { name: 'Mudar de local' }),
-    ).toBeVisible();
+  it('PR-16: ações secundárias são botões de ícone com nome acessível e dica; a principal segue com texto', async () => {
+    for (const small of [false, true]) {
+      compact(small);
+      renderPanel({ rows: [fresh()] });
+      const card = await cardOf('Creme');
+      for (const name of ['Ver ficha', 'Ver movimentações', 'Mudar de local']) {
+        const icon = within(card).getByRole('button', { name });
+        expect(icon).toBeVisible();
+        expect(icon).toHaveClass('icon-action', 'secondary');
+        expect(icon).toHaveAttribute('title', name);
+        expect(icon).toHaveTextContent('');
+        expect(icon.querySelector('svg')).toHaveAttribute(
+          'aria-hidden',
+          'true',
+        );
+      }
+      const main = within(card).getByRole('button', {
+        name: 'Abrir / porcionar',
+      });
+      expect(main).not.toHaveClass('icon-action');
+      expect(main).toHaveTextContent('Abrir / porcionar');
+      // Nada de "Mais ações": todas as ações ficam à vista, em uma só linha.
+      expect(within(card).queryByText('Mais ações')).toBeNull();
+      expect(card.querySelector('details')).toBeNull();
+      cleanup();
+    }
   });
 
-  it('celular, vencido: aviso e "Ver movimentações" (caminho do descarte) ficam fora de "Mais ações"', async () => {
+  it('celular, vencido: aviso e "Ver movimentações" (caminho do descarte) à vista, sem ação principal', async () => {
     compact(true);
     renderPanel({ rows: [expired()] });
     const card = await cardOf('Frango');
-    const more = card.querySelector('details.more-actions')!;
-    const band = within(card).getByText('VENCIDO - somente descarte');
-    expect(band).toBeVisible();
-    expect(more.contains(band)).toBe(false);
-    const history = within(card).getByRole('button', {
-      name: 'Ver movimentações',
-    });
-    expect(history).toBeVisible();
-    expect(more.contains(history)).toBe(false);
+    expect(within(card).getByText('VENCIDO - somente descarte')).toBeVisible();
+    expect(
+      within(card).getByRole('button', { name: 'Ver movimentações' }),
+    ).toBeVisible();
     expect(
       within(card).queryByRole('button', { name: 'Abrir / porcionar' }),
     ).toBeNull();
   });
 
-  it('celular, colaborador: só consulta, sem "Mais ações"', async () => {
+  it('celular, colaborador: só consulta', async () => {
     compact(true);
     renderPanel({ rows: [fresh()], owner: false });
     const card = await cardOf('Creme');
-    expect(card.querySelector('details.more-actions')).toBeNull();
     expect(
       within(card)
         .getAllByRole('button')
-        .map((b) => b.textContent),
+        .map((b) => b.getAttribute('aria-label')),
     ).toEqual(['Ver ficha', 'Ver movimentações']);
   });
 });

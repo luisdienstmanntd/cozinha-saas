@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { IconAction } from '../../../shared/ui/IconAction';
 import type { FormEvent } from 'react';
 import { markUnitDraftClean } from '../../identity/application/unitDrafts';
 import type { CatalogScope } from '../../catalog/domain/catalog';
@@ -25,6 +26,7 @@ export function RecordTemperature({
   gateway,
   now,
   onRecorded,
+  icon = false,
 }: {
   scope: CatalogScope;
   batchId: string;
@@ -33,6 +35,8 @@ export function RecordTemperature({
   gateway: ProductionGateway;
   now: () => Date;
   onRecorded: () => void;
+  /** Mostra só o ícone (nome acessível e dica: "Registrar temperatura <código>"). */
+  icon?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [moment, setMoment] = useState<TemperatureMoment>('cooling_end');
@@ -77,7 +81,16 @@ export function RecordTemperature({
   }
   if (!gateway.recordTemperature) return null;
   if (!open)
-    return (
+    return icon ? (
+      <IconAction
+        icon="temperatura"
+        label={`Registrar temperatura ${label}`}
+        onClick={() => {
+          setMeasuredAt(instantToZoned(now(), timezone));
+          setOpen(true);
+        }}
+      />
+    ) : (
       <button
         type="button"
         onClick={() => {

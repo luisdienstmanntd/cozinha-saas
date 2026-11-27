@@ -133,6 +133,26 @@ describe('esquema da temperatura (7.9)', () => {
 });
 
 describe('temperatura na tela de produção (7.9)', () => {
+  it('PR-17: temperatura e anular são botões de ícone com o código no nome e na dica; anular é de risco', async () => {
+    render9([row()]);
+    const temperature = await screen.findByRole('button', {
+      name: 'Registrar temperatura C-000123',
+    });
+    const cancel = screen.getByRole('button', {
+      name: 'Anular produção C-000123',
+    });
+    for (const button of [temperature, cancel]) {
+      expect(button).toHaveClass('icon-action');
+      expect(button).toHaveAttribute(
+        'title',
+        button.getAttribute('aria-label'),
+      );
+      expect(button).toHaveTextContent('');
+    }
+    expect(temperature).toHaveClass('secondary');
+    expect(cancel).toHaveClass('risk');
+    expect(cancel).not.toHaveClass('secondary');
+  });
   it('proprietário registra, com vírgula, e a lista é relida', async () => {
     const { gateway } = render9([row()]);
     const user = userEvent.setup();

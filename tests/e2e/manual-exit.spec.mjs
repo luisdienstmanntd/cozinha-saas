@@ -191,7 +191,6 @@ test('porção (derivado) no celular: baixa no próprio recipiente, origem intac
     const derived = cards(page).filter({ hasText: '(derivado)' });
     await expect(derived).toContainText('Saldo 250 g');
     await expect(origin).toContainText('Saldo 750 g');
-    await derived.locator('summary', { hasText: 'Mais ações' }).click();
     await derived.getByRole('button', { name: 'Ver movimentações' }).click();
     const movements = derived.getByRole('region', { name: 'Movimentações' });
     await expect(movements).toContainText('Saldo registrado: 250 g');

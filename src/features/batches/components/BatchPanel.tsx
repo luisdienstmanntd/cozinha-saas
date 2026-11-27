@@ -42,7 +42,7 @@ import { MoveContainer } from '../../locations/components/MoveContainer';
 import type { CurrentLocation } from '../../locations/domain/locations';
 import { OccurrencePanel } from '../../occurrences/components/OccurrencePanel';
 import { storageLabels } from '../../catalog/domain/catalog';
-import { useCompactLayout } from '../../../shared/ui/useCompactLayout';
+import { IconAction } from '../../../shared/ui/IconAction';
 import { MoreInfo } from '../../../shared/ui/MoreInfo';
 import {
   formatQuantity,
@@ -107,7 +107,6 @@ function BatchContents({
   expiryFilter,
   onExpiryFilter,
 }: Props) {
-  const compact = useCompactLayout();
   const showValidade = area === undefined || area === 'validade';
   const showReceber = area === undefined || area === 'receber';
   const [catalogData, setCatalogData] = useState<Catalog | null>(null);
@@ -943,10 +942,8 @@ function BatchContents({
                           </p>
                         )}
                         {(() => {
-                          // V4 (M1 e item 7): "Abrir / porcionar" é a ação principal do cartão; as demais
-                          // são secundárias. No celular, "Ver ficha" e a principal ficam à vista e o resto vai
-                          // para "Mais ações". Sem ação principal (vencido, bloqueado, esgotado ou
-                          // colaborador), "Ver movimentações" fica à vista, porque é por ela que se descarta.
+                          // PR-16: ações secundárias viram ícones (nome acessível e dica = o texto de antes);
+                          // "Porcionar" / "Abrir / porcionar" continua como botão com texto, à direita.
                           const canHandle =
                             canCreate &&
                             !!handling &&
@@ -954,27 +951,39 @@ function BatchContents({
                             !isBlocked &&
                             !expired;
                           const ficha = labels ? (
-                            <button
+                            <IconAction
                               key="ficha"
-                              type="button"
-                              className="secondary"
+                              icon="ficha"
+                              label="Ver ficha"
                               data-ficha-for={row.container_id}
                               onClick={() => openFicha(row.container_id)}
-                            >
-                              Ver ficha
-                            </button>
+                            />
                           ) : null;
                           // D-073 (etapa 2): porções e derivados também têm histórico e saída.
                           const history = movements ? (
-                            <button
+                            <IconAction
                               key="history"
-                              type="button"
-                              className="secondary"
+                              icon="movimentos"
+                              label="Ver movimentações"
                               onClick={() => setMovementId(row.container_id)}
-                            >
-                              Ver movimentações
-                            </button>
+                            />
                           ) : null;
+                          const move =
+                            canCreate &&
+                            locations &&
+                            handling &&
+                            !depleted &&
+                            !isBlocked ? (
+                              <IconAction
+                                key="move"
+                                icon="local"
+                                label="Mudar de local"
+                                onClick={() => {
+                                  setMovedId(null);
+                                  setMoveId(row.container_id);
+                                }}
+                              />
+                            ) : null;
                           const main = canHandle ? (
                             <button
                               key="handle"
@@ -986,52 +995,9 @@ function BatchContents({
                                 : 'Abrir / porcionar'}
                             </button>
                           ) : null;
-                          const move =
-                            canCreate &&
-                            locations &&
-                            handling &&
-                            !depleted &&
-                            !isBlocked ? (
-                              <button
-                                key="move"
-                                type="button"
-                                className="secondary"
-                                onClick={() => {
-                                  setMovedId(null);
-                                  setMoveId(row.container_id);
-                                }}
-                              >
-                                Mudar de local
-                              </button>
-                            ) : null;
-                          const inline = compact
-                            ? main
-                              ? [ficha, main]
-                              : [ficha, history]
-                            : [ficha, history, main, move];
-                          const extra = compact
-                            ? main
-                              ? [history, move]
-                              : [move]
-                            : [];
-                          const hidden = extra.filter(Boolean);
                           return (
                             <div className="card-actions">
-                              {inline.filter(Boolean)}
-                              {hidden.length > 0 && (
-                                <details className="more-actions">
-                                  <summary>
-                                    Mais ações
-                                    <span className="visually-hidden">
-                                      {' '}
-                                      do recipiente {row.short_code}
-                                    </span>
-                                  </summary>
-                                  <div className="more-actions-list">
-                                    {hidden}
-                                  </div>
-                                </details>
-                              )}
+                              {[ficha, history, move, main].filter(Boolean)}
                             </div>
                           );
                         })()}

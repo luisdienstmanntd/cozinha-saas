@@ -203,3 +203,7 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 ## Indicadores — resumo visual
 
 - Codex, aguardando aceite em `codex/indicadores-visuais`, base `aec8466`. Gráficos de volumes e atrasos, detalhamento sob demanda; sem backend. [Registro](ia-tarefas/indicadores-visuais.md).
+
+## Validades compactas (PR-16) — 27/11/2026
+
+- Claude Code, branch `claude/validades-compactas`, base `main` `aec8466` (#99 mesclado). Cartões de Validades em estilo lista, ações secundárias em botões de ícone (nome acessível, dica, alvo de 44 px); regras e textos intactos. PR em rascunho, sem merge. [Registro](ia-tarefas/validades-compactas.md).
