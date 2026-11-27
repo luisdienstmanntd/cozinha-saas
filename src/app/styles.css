@@ -1043,16 +1043,29 @@ footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1rem;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
   border: 1px solid var(--border-subtle);
   border-radius: 0.75rem;
   background: var(--surface-panel);
 }
 
-.production-card
-  > :is(.production-card-heading, .production-card-details, ul, strong) {
+/* PR-17: título e detalhes à esquerda; ações em ícone na mesma linha quando cabem e, no celular, logo
+   abaixo. Lista de temperaturas, avisos e formulários ocupam a linha toda. */
+.production-card-main {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+.production-card > :is(ul, strong, form) {
   flex: 1 1 100%;
+  margin: 0;
+}
+@media (max-width: 560px) {
+  .production-card-main {
+    flex-basis: 100%;
+  }
+}
+.production-card-main :is(.production-card-heading, .production-card-details) {
   margin: 0;
 }
 

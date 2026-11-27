@@ -10,3 +10,11 @@
 - **Testes que mudaram e por quê:** `BatchPanelV4.test.tsx` — três testes de celular verificavam o "Mais ações"; passam a verificar, nos dois layouts, que as três ações são botões de ícone visíveis com nome, `title`, `svg` oculto e sem texto, que a principal segue com texto, que não há `details`, que o vencido mostra o aviso e "Ver movimentações" sem ação principal e que o colaborador só tem ficha e movimentações (por `aria-label`). E2E `finishing.spec.mjs` (celular) e `manual-exit.spec.mjs`: sem clicar em "Mais ações"; ganharam a checagem de alvo de 44 px e de `title`. Nada removido sem equivalente.
 - **Capturas antes e depois:** `/mnt/project-files/validades-compactas/` (celular, tablet, notebook).
 - **Proposta (não feita):** o mesmo padrão pode valer para Etiquetas (ação "Abrir ficha") e Recebimentos; só com aprovação de luis.
+
+## PR-17 (mesmo PR): Produção compacta — 27/11/2026
+
+- **Pedido de luis:** o mesmo na tela Produção; cartões de "Produções recentes" minimalistas e ações em ícones.
+- **O que mudou:** o cartão tem o bloco de título e detalhes (`production-card-main`) e, na mesma linha quando cabe (celular: logo abaixo, em uma linha), três ações em ícone: "Baixar etiqueta (C-…)", "Registrar temperatura C-…" e "Anular produção C-…". O nome acessível e a dica levam o código. Anular fica em contorno vermelho (`risk`, sem `secondary`) e abre o mesmo formulário de motivo e confirmação. `DownloadLabels`, `RecordTemperature` e `VoidProduction` ganharam a opção `icon` (padrão desligado; outros usos não mudam). Ordem no cartão: ações, aviso de etiqueta não baixada, "ANULADA", temperaturas, formulários.
+- **Não mudou:** regras, permissões (quem vê cada ação), textos de recusa, o aviso de que baixar não comprova impressão, o painel "Produção registrada" (resultado).
+- **Testes que mudaram e por quê:** o nome do botão "Anular produção" passa a levar o código; as buscas exatas por `'Anular produção'` viraram `/^Anular produção/` (unitários e E2E), inclusive as que verificam ausência, para não perder a checagem. Testes novos: ícones com nome, dica, sem texto e anular de risco.
+- **Capturas antes e depois:** `/mnt/project-files/producao-compacta/`.
