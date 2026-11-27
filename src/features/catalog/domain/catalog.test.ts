@@ -9,6 +9,8 @@ describe('dados de catálogo', () => {
     });
     expect(parseCatalogInput('suppliers', ' Horta ', null)).toEqual({
       name: 'Horta',
+      email: null,
+      contact: null,
     });
   });
   it.each(['', '  ', 'a'.repeat(121)])('recusa nome inválido', (name) => {
@@ -24,4 +26,31 @@ describe('dados de catálogo', () => {
       );
     },
   );
+});
+
+it('normaliza contatos opcionais e valida e-mail e limite sem impor formato de telefone', () => {
+  expect(
+    parseCatalogInput(
+      'suppliers',
+      ' Horta ',
+      null,
+      ' compras@example.test ',
+      ' +55 (51) 0011-2233 ramal 4 ',
+    ),
+  ).toEqual({
+    name: 'Horta',
+    email: 'compras@example.test',
+    contact: '+55 (51) 0011-2233 ramal 4',
+  });
+  expect(parseCatalogInput('suppliers', 'Horta', null, ' ', '')).toEqual({
+    name: 'Horta',
+    email: null,
+    contact: null,
+  });
+  expect(() =>
+    parseCatalogInput('suppliers', 'Horta', null, 'inválido'),
+  ).toThrow('e-mail válido');
+  expect(() =>
+    parseCatalogInput('suppliers', 'Horta', null, null, 'x'.repeat(81)),
+  ).toThrow('80 caracteres');
 });

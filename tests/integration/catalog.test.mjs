@@ -16,7 +16,9 @@ test('catálogo via API: permissões e pares de organização/unidade', async ()
       for (const table of ['products', 'suppliers']) {
         const row = {
           name: 'Exemplo',
-          ...(table === 'products' ? { unit: 'kg' } : {}),
+          ...(table === 'products'
+            ? { unit: 'kg' }
+            : { email: 'compras@example.test', contact: '+55 (51) 0011-2233' }),
         };
         const { id: idA } = checked(
           await ownerA
@@ -25,6 +27,18 @@ test('catálogo via API: permissões e pares de organização/unidade', async ()
             .select('id')
             .single(),
         );
+        if (table === 'suppliers') {
+          assert.deepEqual(
+            checked(
+              await ownerA
+                .from(table)
+                .select('email,contact')
+                .eq('id', idA)
+                .single(),
+            ),
+            { email: row.email, contact: row.contact },
+          );
+        }
         const { id: idB } = checked(
           await ownerB
             .from(table)
@@ -131,7 +145,9 @@ test('catálogo via API: permissões e pares de organização/unidade', async ()
         const insert = {
           ...scopeA,
           name: 'Revogado',
-          ...(table === 'products' ? { unit: 'kg' } : {}),
+          ...(table === 'products'
+            ? { unit: 'kg' }
+            : { email: 'compras@example.test', contact: '+55 (51) 0011-2233' }),
         };
         assert.equal(
           (await ownerA.from(table).insert(insert)).error?.code,
