@@ -1,7 +1,7 @@
 # Fornecedor com e-mail e contato
 
 - **Responsável:** Codex /root
-- **Estado:** aguardando_aceite
+- **Estado:** bloqueada
 - **Branch/base:** codex/fornecedor-contatos, worktree /workspace/work/cozzigo-fornecedor, main 6a2c9ed.
 - **Pedido/aceite:** registrar nome obrigatório, e-mail e contato (telefone/WhatsApp) opcionais; persistir e consultar na lista; fornecedores antigos seguem válidos; recebimento continua mostrando somente nome.
 - **Escopo:** domínio, gateway, formulário de fornecedores, migração aditiva e testes. Sem edição, novas permissões, alteração do roadmap ou aplicação no hospedado.
@@ -32,3 +32,8 @@
 - CI45923219752 aprovada no código7d44800: qualidade, pgTAP, análise de segurança, integração API e E2E. Resultado detalhado e contagem E2E constam no PR#98.
 - A execução local anterior acompanhou uma mudança no esquema de leitura e carregou a versão estrita anterior; não foi usada como aprovação. A execução estável posterior passou integralmente.
 - Código salvo no PR#98 em rascunho. Próximo passo é aceite e autorização de migração hospedada e publicação, nessa ordem. Banco hospedado e main permanecem intocados nesta tarefa.
+
+## Publicação autorizada — bloqueio de acesso
+- Luis autorizou migração e publicação nesta conversa. Preflight da Cloudflare confirmou que o projeto oficial usa o Supabase wtscafnacsmyfmqcaffy.
+- A conexão Supabase disponível lista outros projetos e recusou a consulta de esquema do projeto correto por falta de permissão. Nenhuma migração executada; PR permanece sem merge para preservar compatibilidade com o esquema hospedado.
+- Próximo passo: reconectar Supabase com acesso ao projeto correto; então inspecionar suppliers, aplicar somente a migração aprovada, verificar colunas/grants e concluir integração/deploy. A autorização do usuário permanece válida; não pedir novamente.

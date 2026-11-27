@@ -198,4 +198,4 @@ Novas tarefas devem ter IDs distintos e arquivo próprio, criados a partir de `i
 
 ## Fornecedores — e-mail e contato
 
-- Codex, aguardando aceite no PR #98 em `codex/fornecedor-contatos`, base `6a2c9ed`. Campos opcionais persistidos, migração somente versionada; hospedado intocado. [Registro](ia-tarefas/fornecedor-contatos.md).
+- Codex, publicação autorizada e bloqueada por acesso ao Supabase correto; PR #98 em `codex/fornecedor-contatos`, base `6a2c9ed`. Campos opcionais persistidos, migração somente versionada; hospedado intocado. [Registro](ia-tarefas/fornecedor-contatos.md).
